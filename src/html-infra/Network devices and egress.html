@@ -1,0 +1,429 @@
+<h1 id="network-devices-vpn-and-egress">Network devices, VPN and egress</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>A network device sets PQ only where it terminates TLS or IKE itself. A decrypting firewall, ADC or proxy runs two separate handshakes: the <strong>client leg</strong> (client to device, where the device acts as the server) and the <strong>server leg</strong> (device to origin, where the device acts as the client). Each leg gets PQ only if that device&#39;s TLS stack and profile offer ML-KEM. A device that doesn&#39;t decrypt passes the client&#39;s handshake through unchanged, so PQ then depends on the two endpoints. It only has to forward the roughly 1.2 KB larger ClientHello without dropping it. For IPsec, both IKEv2 peers must support RFC 9370 additional key exchanges with ML-KEM.</p>
+<p>Network devices play two roles here: <strong>sensors</strong> that show which connections are classical, and <strong>converters</strong> that terminate classical TLS and re-originate PQ TLS for clients you can&#39;t upgrade. All tests on this tab ran on 2026-11-14 in local containers, without AWS access. Scripts and outputs are in the work directory <code>deep/netiot/</code> (<code>squid/</code>, <code>swan/</code>, <code>zeek/</code>, <code>envoy/</code>).</p>
+<h2 id="status-matrix-by-device-type">Status matrix by device type</h2>
+<p>Client leg = the device acting as a TLS server toward clients. Server leg = the device acting as a TLS client toward origins.</p>
+<table><thead><tr><th>Device type</th><th>Product (form)</th><th>Client leg PQ</th><th>Server leg PQ</th><th>IKEv2 ML-KEM</th><th>Min version</th><th>Evidence</th></tr></thead><tbody><tr><td>NGFW</td><td>Palo Alto PAN-OS (PA hardware, VM-Series on EC2)</td><td>Yes (decryption profile, PQC)</td><td>Yes</td><td>Yes (RFC 9370 rounds)</td><td>TLS 12.1.2; IKEv2 11.2</td><td>Documented (<a href="https://docs.paloaltonetworks.com/ngfw/release-notes/12-1/features-introduced-in-pan-os/decryption-features">decryption</a>, <a href="https://origin-docs.paloaltonetworks.com/network-security/quantum-security/administration/configure-quantum-resistant-ikev2-vpns/configure-post-quantum-ikev2-vpns-with-rfc-9242-and-rfc-9370-hybrid-keys">IKEv2</a>); VM-Series parity not confirmed</td></tr><tr><td>NGFW</td><td>Fortinet FortiGate (hardware, FortiGate-VM)</td><td>Yes (automatic in deep inspection)</td><td>Yes (legs not separated in docs)</td><td>Yes (<code>addke1 36</code>)</td><td>SSL 8.0.0; IPsec 7.6.x (7.6.5 guide; 7.6.1 claimed)</td><td>Documented (<a href="https://docs.fortinet.com/document/fortigate/8.0.0/administration-guide/771310">SSL 8.0</a>, <a href="https://docs.fortinet.com/document/fortigate/7.6.5/administration-guide/229631">IPsec 7.6.5</a>)</td></tr><tr><td>NGFW</td><td>Check Point Quantum (appliance, CloudGuard)</td><td>Yes (X25519MLKEM768 in HTTPS Inspection)</td><td>Not stated</td><td>Yes (Quantum Safe Key Exchange)</td><td>IKEv2 R82 (Kyber768), R82.10 (ML-KEM); HTTPS R82.10</td><td>Documented (<a href="https://sc1.checkpoint.com/documents/R82.10/WebAdminGuides/EN/CP_R82.10_RN/Content/Topics-RN/Whats-New.htm">R82.10 RN</a>, <a href="https://sc1.checkpoint.com/documents/R82.10/WebAdminGuides/EN/CP_R82.10_SitetoSiteVPN_AdminGuide/Content/Topics-VPNSG/Quantum-Safe-Key-Exchange.htm">VPN guide</a>)</td></tr><tr><td>NGFW</td><td>Cisco Secure Firewall FTD (hardware, FTDv)</td><td>No (roadmap FTD 10.5)</td><td>No</td><td>No (roadmap FTD 10.5)</td><td>none today</td><td>Claimed (<a href="https://blogs.cisco.com/security/preparing-for-post-quantum-cryptography-the-secure-firewall-roadmap">Cisco roadmap</a>)</td></tr><tr><td>NGFW</td><td>Cisco ASA / ASAv</td><td>No</td><td>No</td><td>RFC 9370 framework since 9.19; ML-KEM roadmap 9.25</td><td>none today</td><td>Claimed (same blog)</td></tr><tr><td>NGFW</td><td>Juniper SRX / vSRX</td><td>Not found</td><td>Not found</td><td>No (RFC 8784 PPK only)</td><td>none</td><td>Documented PPK (<a href="https://networkingdocs.hpe.com/documentation/us/en/software/junos/vpn-ipsec/topics/topic-map/quantum-safe-ipsec-vpn.html">Juniper</a>); ML-KEM not found</td></tr><tr><td>ADC</td><td>F5 BIG-IP (hardware, VE)</td><td>Yes (client-ssl cipher group)</td><td>Yes (server-ssl cipher group)</td><td>n/a</td><td>17.5.1; more groups 21.1</td><td>Documented (<a href="https://techdocs.f5.com/en-us/bigip-17-5-1/big-ip-system-ssl-administration/integrating-pqc-on-the-client-side.html">F5 17.5.1</a>)</td></tr><tr><td>ADC</td><td>NetScaler ADC (MPX, VPX)</td><td>Yes (front end)</td><td>Not documented</td><td>n/a</td><td>14.1 (build not confirmed)</td><td>Documented (<a href="https://docs.netscaler.com/us/en/citrix-adc/current-release/ssl/hybrid-pqc.html">NetScaler</a>)</td></tr><tr><td>ADC</td><td>A10 Thunder ACOS (hardware, vThunder)</td><td>Yes</td><td>Yes</td><td>n/a</td><td>ACOS 7.0.3</td><td>Claimed (<a href="https://www.a10networks.com/blog/post-quantum-cryptography-comes-to-a10-ssl-tls-data-plane/">A10 blog</a>)</td></tr><tr><td>ADC</td><td>HAProxy Enterprise 3.2+ / Community 3.3+ (AWS-LC build)</td><td>Yes (<code>curves</code>)</td><td>Yes (<code>ssl-default-server-curves</code>)</td><td>n/a</td><td>3.2 / 3.3</td><td>Documented (manual), Claimed (blog); config on <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a></td></tr><tr><td>Forward proxy</td><td>Squid 6.13 ssl-bump (Debian 13, OpenSSL 3.5.7)</td><td>Yes (OpenSSL default)</td><td>Yes (OpenSSL default)</td><td>n/a</td><td>Squid on OpenSSL 3.5</td><td><strong>Tested</strong> (4/4)</td></tr><tr><td>Egress proxy</td><td>Envoy 1.40.2 (BoringSSL)</td><td>Yes</td><td>Yes (<code>ecdh_curves</code>; default from 1.40)</td><td>n/a</td><td>1.40.0 default; log field 1.39.0</td><td><strong>Tested</strong> (2/2), Documented (<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl">Envoy</a>)</td></tr><tr><td>SWG (SaaS)</td><td>Zscaler ZIA</td><td>Yes</td><td>Yes (offers all hybrid groups)</td><td>n/a</td><td>since Feb 2026</td><td>Claimed (<a href="https://www.zscaler.com/blogs/product-insights/leading-security-service-edge-now-quantum-ready">Zscaler blog</a>)</td></tr><tr><td>SWG (SaaS)</td><td>Netskope NG-SWG</td><td>Beta, X25519MLKEM768</td><td>Beta, separate flag</td><td>n/a</td><td>Release 137, via support</td><td>Documented (<a href="https://docs.netskope.com/en/post-quantum-cryptography-support">Netskope</a>)</td></tr><tr><td>SASE (SaaS)</td><td>Cloudflare One (WARP, Gateway, Tunnel, IPsec)</td><td>Yes (WARP, Access)</td><td>Yes (Gateway egress, Tunnel)</td><td>Yes (ML-KEM-768/1024 + DH20)</td><td>GA</td><td>Documented (<a href="https://developers.cloudflare.com/ssl/post-quantum-cryptography/pqc-cloudflare-products/">Cloudflare</a>)</td></tr><tr><td>SASE (SaaS)</td><td>Palo Alto Prisma Access</td><td>Not found</td><td>Not found</td><td>Not found</td><td>—</td><td>Not found</td></tr><tr><td>VPN</td><td>strongSwan 6.0.7 (Alpine 3.24, OpenSSL 3.5.9)</td><td>n/a</td><td>n/a</td><td>Yes</td><td>6.0.0 (ml / AWS-LC), 6.0.2 (OpenSSL 3.5)</td><td><strong>Tested</strong> (<code>KE1_ML_KEM_768</code>)</td></tr><tr><td>VPN</td><td>strongSwan 6.0.1 (Debian 13 package)</td><td>n/a</td><td>n/a</td><td><strong>No</strong> (openssl plugin has no ML-KEM; SA failed)</td><td>—</td><td><strong>Tested</strong> (fail)</td></tr><tr><td>VPN</td><td>libreswan 5.4 (NSS 3.118.1+)</td><td>n/a</td><td>n/a</td><td>Yes (ML_KEM_768 only)</td><td>5.4</td><td>Documented (<a href="https://github.com/libreswan/libreswan/blob/main/CHANGES">CHANGES</a>)</td></tr><tr><td>VPN</td><td>OpenVPN 2.6 + OpenSSL 3.5</td><td>Yes (<code>tls-groups</code>)</td><td>Yes</td><td>n/a</td><td>2.6 + OpenSSL 3.5 both ends</td><td>Documented (<a href="https://openvpn.net/as-docs/v3/tutorials/tutorial--post-quantum-cryptography.html">OpenVPN tutorial</a>)</td></tr><tr><td>VPN</td><td>WireGuard</td><td>No (Curve25519); Rosenpass adds a PQ pre-shared key</td><td>—</td><td>—</td><td>—</td><td>Documented (<a href="https://rosenpass.eu/">Rosenpass</a>)</td></tr><tr><td>AWS managed</td><td>Site-to-Site VPN</td><td>—</td><td>—</td><td>No (DH groups 2, 14–24)</td><td>—</td><td>Documented (<a href="https://docs.aws.amazon.com/vpn/latest/s2svpn/CGRequirements.html">CGW requirements</a>)</td></tr><tr><td>AWS managed</td><td>Client VPN (OpenVPN based)</td><td>No PQ statement</td><td>—</td><td>—</td><td>—</td><td>Not found</td></tr><tr><td>AWS managed</td><td>Network Firewall TLS inspection</td><td>Readiness page says hybrid PQ launched; groups per leg not documented</td><td>TLS 1.3 to the server; PQ not stated</td><td>—</td><td>—</td><td>Documented but incomplete (<a href="https://aws.amazon.com/security/post-quantum-cryptography/aws-pq-readiness-confidentiality/">readiness</a>, <a href="https://docs.aws.amazon.com/network-firewall/latest/developerguide/tls-inspection-considerations.html">TLS inspection</a>)</td></tr><tr><td>AWS managed</td><td>Gateway Load Balancer</td><td>No TLS (layer 3, GENEVE 6081); PQ is the appliance&#39;s</td><td>—</td><td>—</td><td>—</td><td>Documented (<a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html">GWLB</a>)</td></tr><tr><td>AWS managed</td><td>Transit Gateway, VPC peering, PrivateLink, Direct Connect</td><td>No TLS termination; endpoint handshake passes through</td><td>—</td><td>—</td><td>—</td><td>Documented (behaviour)</td></tr><tr><td>AWS managed</td><td>VPC Lattice HTTPS listener, Verified Access</td><td>Not documented</td><td>—</td><td>—</td><td>—</td><td>Not found</td></tr><tr><td>Sensor</td><td>Zeek 8.0.10 (EC2 + Traffic Mirroring)</td><td>Logs the negotiated group</td><td>—</td><td>—</td><td><code>curve</code> = X25519MLKEM768 from 7.1.0</td><td><strong>Tested</strong></td></tr><tr><td>Sensor</td><td>Suricata 7/8</td><td>Can&#39;t log the group</td><td>—</td><td>—</td><td>—</td><td>Documented (absence, <a href="https://docs.suricata.io/en/latest/output/eve/eve-json-format.html">EVE</a>)</td></tr></tbody></table>
+<h2 id="next-generation-firewalls-tls-decryption-and-ipsec">Next-generation firewalls (TLS decryption and IPsec)</h2>
+<p>Hardware and virtual forms run the same OS, so these settings also apply to VM-Series, FortiGate-VM, CloudGuard and the other AWS Marketplace images. Check the image&#39;s OS version first: Marketplace AMIs often lag the current release.</p>
+<h3 id="palo-alto-pan-os-decryption-1212-ikev2-112">Palo Alto PAN-OS (decryption 12.1.2+, IKEv2 11.2+)</h3>
+<ul><li><p><strong>Decryption, both legs (Documented):</strong> Objects &gt; Decryption &gt; Decryption Profile &gt; <em>profile</em> &gt; SSL Protocol Settings. Set the max version to TLSv1.3. Tick <strong>Post-quantum Cryptography (PQC)</strong> and choose <strong>PQC-Standard</strong> (ML-KEM; leave PQC-Experimental off). Under <strong>Preferred Session Settings</strong>, tick <strong>Post-Quantum SSL preferred for Client-side session</strong> (firewall as server) and/or <strong>Post-Quantum SSL preferred for Server-side session</strong> (firewall as client). It applies to SSL Forward Proxy, SSL Inbound Inspection and Decryption Mirror.</p></li><li><p><strong>Cipher translation:</strong> each leg is chosen on its own, so a classical client can reach a PQ server and the reverse. A peer without PQ gets a classical handshake. The docs show no &quot;block non-PQ&quot; option in the decryption profile.</p></li><li><p><strong>Logging:</strong> the decryption log has <code>tls_keyxchg</code> (Key Exchange Algorithm) and <code>ec_curve</code> (Elliptic Curve). Whether <code>ec_curve</code> shows <code>X25519MLKEM768</code> is not confirmed; check on your firewall before you rely on it.</p></li><li><p><strong>IKEv2 (Documented):</strong> Network &gt; Network Profiles &gt; IKE Crypto &gt; <em>profile</em> &gt; Advanced Options &gt; <strong>Post-Quantum IKEv2 Additional Key Exchange</strong>: round 1 = ML-KEM-768. In IPSec Crypto &gt; Advanced Options, set <strong>Post-Quantum IPSec Additional Key Exchange</strong> the same way (one KEM per round). On the IKE Gateway, set IKEv2 only, enable <strong>IKEv2 Fragmentation</strong> on the General tab, and under Advanced Options &gt; PQ KEM tick <strong>Enable Post-Quantum Key Exchange</strong>. Optionally tick <strong>Block IKEv2 if vulnerable cipher is used</strong>. Falling back to IKEv1 disables PQ.</p></li></ul>
+<h3 id="fortinet-fortigate-ssl-inspection-80-ipsec-76x">Fortinet FortiGate (SSL inspection 8.0, IPsec 7.6.x)</h3>
+<ul><li><p><strong>SSL deep inspection (8.0.0+, Documented):</strong> there&#39;s no profile switch. Any policy with a deep-inspection <code>ssl-ssh-profile</code> negotiates X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024, in proxy mode and in flow mode (through the updated IPS engine). SIP-TLS isn&#39;t covered yet. Counters: <code>diagnose ips ssl status</code>, under &quot;TLS 1.3 (EC)DHE Named Groups&quot;, e.g. <code>x25519mlkem768: 1</code>. Before 7.4.6/7.6.1, the IPS engine broke Chrome&#39;s ML-KEM handshakes in flow mode, so upgrade first.</p></li><li><p><strong>IPsec (Documented):</strong> <code>set addke1 36</code> in phase1-interface and phase2-interface; the full file is <code>fortigate-ipsec-pq.conf</code> under Full configuration files. Verify with <code>diagnose vpn ike gateway list</code>, which should show <code>PQC-KEM (IKE): yes</code> and <code>PQC-KEM (all IPsec): yes</code>. The PQ groups aren&#39;t available in FIPS-CC mode.</p></li></ul>
+<h3 id="check-point-r82-r8210">Check Point (R82, R82.10)</h3>
+<ul><li><p><strong>IKEv2 (Documented):</strong> SmartConsole &gt; Object Explorer &gt; VPN Communities &gt; <em>community</em> &gt; Encryption &gt; tick <strong>Quantum Safe Key Exchange</strong>, then install policy. To change the profile, use the Management API: <code>add multiple-key-exchanges</code>, then <code>set vpn-community-star</code> (or <code>-meshed</code>) with <code>ike-phase-1</code> / <code>ike-phase-2</code> → <code>use-multiple-key-exchanges true</code>. <code>use-standard-proposal false</code> makes it PQ-only. It doesn&#39;t work with Traditional Mode VPN.</p></li><li><p><strong>HTTPS Inspection (R82.10):</strong> adds X25519MLKEM768. A vendor blog says an inspected client that offers only PQ groups and won&#39;t accept a downgrade is dropped. The config path and log field aren&#39;t documented: not confirmed.</p></li></ul>
+<h3 id="cisco-secure-firewall-ftd-asa-juniper-srx">Cisco Secure Firewall (FTD), ASA, Juniper SRX</h3>
+<ul><li><p>Cisco has no ML-KEM today. The roadmap puts ML-KEM IKEv2 and PQ TLS decryption in FTD 10.5 / ASA 9.25, &quot;late 2026&quot; (Claimed). ASA has had RFC 9370 additional key exchanges (classical) since 9.19.</p></li><li><p>Juniper documents only RFC 8784 post-quantum pre-shared keys (Junos Key Manager) for IPsec. A strong PPK distributed out of band protects against harvest-now attacks, but it isn&#39;t ML-KEM.</p></li><li><p>Interim path for these platforms: put a PQ-capable device in the path (PAN-OS or FortiGate VM, strongSwan 6.0.2+) or use SASE IPsec (Cloudflare). Record the flows that stay classical as exceptions.</p></li></ul>
+<h2 id="adcs-and-load-balancers">ADCs and load balancers</h2>
+<table><thead><tr><th>Product</th><th>Client leg (virtual server)</th><th>Server leg (pool)</th><th>Logging the group</th><th>Evidence</th></tr></thead><tbody><tr><td>F5 BIG-IP 17.5.1+</td><td>cipher rule <code>dh-groups X25519MLKEM768:DEFAULT</code> → cipher group → <code>client-ssl … cipher-group &lt;grp&gt; ciphers none</code></td><td>the same cipher group on the <code>server-ssl</code> profile (GUI documented; the tmsh line is our inference)</td><td>Not documented</td><td>Documented</td></tr><tr><td>NetScaler 14.1</td><td><code>bind ssl profile &lt;p&gt; -eccCurveName X25519_MLKEM768</code> (Enhanced SSL profile)</td><td>Not documented</td><td>Not documented</td><td>Documented</td></tr><tr><td>A10 ACOS 7.0.3</td><td>client-SSL template (syntax not published)</td><td>server-SSL template</td><td>Not found</td><td>Claimed</td></tr><tr><td>HAProxy 3.2+ Enterprise / 3.3+ Community</td><td><code>curves X25519MLKEM768:X25519:P-256</code> on <code>bind</code>, or <code>ssl-default-bind-curves</code></td><td><code>ssl-default-server-curves</code> or <code>curves</code> on <code>server</code></td><td><code>%[ssl_fc_curve]</code> / <code>%[ssl_bc_curve]</code> (2.9+)</td><td>Documented</td></tr></tbody></table>
+<p>Complete F5 and NetScaler files are under Full configuration files. HAProxy, nginx and other open-source server configs are on <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>. AWS ALB and NLB PQ policies are on <a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>.</p>
+<h2 id="forward-proxies-and-secure-web-gateways-egress">Forward proxies and secure web gateways (egress)</h2>
+<h3 id="squid-ssl-bump-tested">Squid ssl-bump (Tested)</h3>
+<p>Squid has no TLS groups directive. <code>http_port</code> offers only <code>tls-dh=[curve:]file</code> (a single ECDH curve), and <code>tls_outgoing_options</code> has no curve option (<a href="https://www.squid-cache.org/Doc/config/http_port/">http_port</a>). Both legs therefore use the OpenSSL library defaults. Squid 6.13 on Debian 13 (<code>squid-openssl</code>, OpenSSL 3.5.7) negotiated X25519MLKEM768 on both legs with no Squid setting. It also bridged a classical client to a PQ-only origin, and a PQ client to a classical-only origin. Restricting the process with <code>OPENSSL_CONF</code> (<code>Groups = X25519:P-256</code>) made the PQ-only origin fail, which shows where the control point is. Squid logs the TLS version and cipher per leg (<code>%ssl::&gt;negotiated_version</code>, <code>%ssl::&lt;negotiated_cipher</code>) but not the group, so use Zeek or the origin&#39;s logs for that.</p>
+<table><thead><tr><th>Test (Squid 6.13, OpenSSL 3.5.7, debian:trixie-slim)</th><th>Result</th></tr></thead><tbody><tr><td>PQ client → Squid → PQ-only origin</td><td>200; client leg <code>Negotiated TLS1.3 group: X25519MLKEM768</code></td></tr><tr><td>Classical client (<code>--curves X25519</code>) → Squid → PQ-only origin</td><td>200 (Squid converts)</td></tr><tr><td>PQ client → Squid → classical-only origin</td><td>200 (server-leg fallback)</td></tr><tr><td>Squid with <code>OPENSSL_CONF</code> Groups=X25519:P-256 → PQ-only origin</td><td>fails, as expected</td></tr></tbody></table>
+<p>Squid packages on Debian 12, Ubuntu 24.04 and AL2 link OpenSSL 3.0 or 1.1.1 and give no PQ. Build from a Debian 13 or Alpine 3.24 base (see <a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>).</p>
+<h3 id="envoy-egress-gateway-tested">Envoy egress gateway (Tested)</h3>
+<p>Envoy 1.40.2 (BoringSSL) originated TLS 1.3 to a PQ-only origin and logged <code>upstream_group=X25519MLKEM768</code>. Pointed at a classical-only origin, it fell back and logged <code>upstream_group=X25519</code>. The group comes from the access-log fields <code>%UPSTREAM_TLS_GROUP%</code> and <code>%DOWNSTREAM_TLS_GROUP%</code>, available since 1.39.0. From 1.40.0, X25519MLKEM768 is in the default curves; setting <code>ecdh_curves</code> makes it explicit. Istio egress gateways are covered on <a data-atom="ref" data-ref="file/569dd476-c063">Service mesh</a>.</p>
+<h3 id="saas-swg-and-sase">SaaS SWG and SASE</h3>
+<table><thead><tr><th>Service</th><th>What to configure</th><th>Logging</th><th>Evidence</th></tr></thead><tbody><tr><td>Zscaler ZIA</td><td>Nothing. Hybrid is used when the client offers it, and the upstream ClientHello offers hybrid groups</td><td>&quot;selected key exchange group is always logged&quot; (field name not published)</td><td>Claimed</td></tr><tr><td>Netskope NG-SWG</td><td>Ask support to enable PQ for the tenant (front-end and back-end flags are separate); falls back to X25519/P-256</td><td>Not mentioned</td><td>Documented (beta)</td></tr><tr><td>Cloudflare One</td><td>Gateway egress, WARP client, Tunnel and Access are PQ by default. IPsec needs ML-KEM proposals on your device (validated: FortiOS 7.6.6+, Cisco IOS XR 26.1.1)</td><td>Not covered here</td><td>Documented</td></tr><tr><td>Prisma Access</td><td>No PQ decryption document found</td><td>—</td><td>Not found</td></tr></tbody></table>
+<h2 id="vpn">VPN</h2>
+<table><thead><tr><th>VPN</th><th>How to get PQ</th><th>Evidence</th></tr></thead><tbody><tr><td>AWS Site-to-Site VPN</td><td>Not possible: phase 1 and phase 2 offer classical DH groups only. Run your own PQ IPsec on EC2 (strongSwan 6.0.2+, PAN-OS 11.2+, FortiGate 7.6.x, Check Point R82.10) over the internet or Direct Connect, or carry the traffic in PQ TLS</td><td>Documented (absence)</td></tr><tr><td>AWS Client VPN</td><td>No PQ statement; AWS manages the endpoint&#39;s TLS stack</td><td>Not found</td></tr><tr><td>strongSwan</td><td><code>proposals = aes256gcm16-prfsha384-x25519-ke1_mlkem768[-ke1_none]</code>. Needs 6.0.0+ with the <code>ml</code> plugin or AWS-LC, or 6.0.2+ with OpenSSL 3.5</td><td><strong>Tested</strong> (6.0.7), Documented</td></tr><tr><td>libreswan 5.4</td><td><code>ike=aes128-sha2-dh31;addke1=ml_kem_768</code> with <code>intermediate=yes</code></td><td>Documented</td></tr><tr><td>OpenVPN 2.6</td><td><code>tls-groups X25519MLKEM768:X25519</code> with OpenSSL 3.5 on both ends; the log shows <code>key agreement: X25519MLKEM768</code>. OpenVPN Connect v3 not yet supported</td><td>Documented (vendor tutorial)</td></tr><tr><td>WireGuard</td><td>No ML-KEM. Rosenpass (Classic McEliece + Kyber) feeds WireGuard a PQ pre-shared key; WireGuard keeps its classical handshake</td><td>Documented</td></tr><tr><td>PAN-OS, FortiGate, Check Point</td><td>See Next-generation firewalls</td><td>Documented</td></tr></tbody></table>
+<p><strong>strongSwan test (Tested):</strong> two Alpine 3.24 containers ran strongSwan 6.0.7 with the openssl plugin (OpenSSL 3.5.9); <code>swanctl --list-algs</code> showed <code>ML_KEM_512/768/1024[openssl]</code>. The IKE SA came up as <code>AES_GCM_16-256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768</code>. The ML-KEM share went in <code>IKE_INTERMEDIATE</code> (fragmented <code>EF(1/2)</code>, <code>EF(2/2)</code>), and the transport-mode CHILD SA was installed. Only <code>--cap-add NET_ADMIN</code> was needed. The same config with <strong>Debian 13&#39;s strongSwan 6.0.1</strong> package failed: its openssl plugin offers no ML-KEM. ML-KEM through OpenSSL 3.5 arrived in 6.0.2 (<a href="https://strongswan.org/blog/2025/07/14/strongswan-6.0.2-released.html">release note</a>).</p>
+<pre><code class="language-text">[CFG] selected proposal: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768
+[ENC] generating IKE_INTERMEDIATE request 1 [ KE ]
+[ENC] parsed IKE_INTERMEDIATE response 1 [ KE ]
+pq: #1, ESTABLISHED, IKEv2 ... AES_GCM_16-256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768
+  net: #1, reqid 1, INSTALLED, TRANSPORT, ESP:AES_GCM_16-256</code></pre>
+<h2 id="aws-network-services">AWS network services</h2>
+<ul><li><p><strong>AWS Network Firewall:</strong> the PQ readiness page says hybrid PQ key exchange launched on FIPS and non-FIPS endpoints. It adds that &quot;you may need to adjust rules that aggressively drop connections&quot;, because the ClientHello is larger. The TLS inspection docs don&#39;t say which groups each leg offers, and the TLS log has no group field. Treat PQ through NFW TLS inspection as <strong>not confirmed</strong>, and test it with the PQ-only and classical-only probes under Verify. Without TLS inspection NFW passes the handshake through, so PQ is end to end. Check stateful rules that match on <code>tls.sni</code> or on handshake size against the 1.2 KB larger ClientHello.</p></li><li><p><strong>Gateway Load Balancer:</strong> layer 3, GENEVE on UDP 6081; it never sees TLS. PQ is whatever the appliance behind it does (PAN-OS, FortiGate, Check Point as above). Allow for GENEVE overhead in the appliance MTU.</p></li><li><p><strong>Transit Gateway, VPC peering, Direct Connect, PrivateLink:</strong> no TLS termination. They don&#39;t block PQ; the endpoints decide.</p></li><li><p><strong>Site-to-Site and Client VPN:</strong> classical only (see VPN).</p></li><li><p><strong>ALB, NLB, CloudFront, API Gateway:</strong> see <a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a> and <a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>.</p></li></ul>
+<h2 id="sensors-detect-non-pq-connections">Sensors: detect non-PQ connections</h2>
+<table><thead><tr><th>Sensor</th><th>What it shows</th><th>How</th><th>Evidence</th></tr></thead><tbody><tr><td>Zeek 7.1+ (8.0.10 tested)</td><td>Negotiated group in <code>ssl.log</code> field <code>curve</code> (<code>X25519MLKEM768</code>, <code>x25519</code>, <code>secp256r1</code>)</td><td><code>pq-tls.zeek</code> adds a <code>pq</code> column and raises <code>PQTLS::Classical_Key_Exchange</code> notices</td><td><strong>Tested</strong></td></tr><tr><td>Suricata 7/8</td><td>Version, cipher and extension IDs only; no group</td><td>—</td><td>Documented (absence)</td></tr><tr><td>JA4 (<code>zkg install zeek/foxio/ja4</code>)</td><td>What the client <strong>offers</strong>; finds clients that never offer ML-KEM</td><td>JA4 fingerprints in <code>ssl.log</code></td><td>Documented (plugin)</td></tr><tr><td>Envoy / HAProxy / OpenVPN logs</td><td>Negotiated group per connection</td><td><code>%DOWNSTREAM_TLS_GROUP%</code>, <code>%[ssl_fc_curve]</code>, <code>key agreement:</code></td><td><strong>Tested</strong> (Envoy), Documented</td></tr><tr><td>FortiOS</td><td>Group counters</td><td><code>diagnose ips ssl status</code></td><td>Documented</td></tr><tr><td>VPC Flow Logs</td><td>No TLS data</td><td>—</td><td>Documented</td></tr></tbody></table>
+<p>The Zeek test used a pcap of three handshakes: OpenSSL 3.5 defaults, X25519 only, and TLS 1.2. <code>zeek-cut server_name version curve pq &lt; ssl.log</code> printed:</p>
+<pre><code class="language-text">pq.example       TLSv13  X25519MLKEM768  T
+classic.example  TLSv13  x25519          F
+tls12.example    TLSv12  x25519          F</code></pre>
+<p>It also raised two notices, for example <code>non-PQ TLS key exchange: group=x25519 version=TLSv13 sni=classic.example</code>.</p>
+<p><strong>Packet capture on AWS:</strong> VPC Traffic Mirroring works only from Nitro EC2 network interfaces. It can&#39;t mirror Fargate tasks, Lambda or AWS-managed endpoints. Mirror the ENIs of NAT instances, proxies or app hosts to a Zeek sensor ENI, or to an NLB for a sensor fleet. Mirrored packets arrive VXLAN-encapsulated on UDP 4789, which Zeek decodes by default. Mirror only TCP 443 and other TLS ports to cut cost. Don&#39;t truncate packets: the hybrid ClientHello spans two segments. Terraform and CloudFormation are under Full configuration files (<a href="https://docs.aws.amazon.com/vpc/latest/mirroring/what-is-traffic-mirroring.html">Traffic Mirroring</a>).</p>
+<h2 id="packaging-per-compute-type">Packaging per compute type</h2>
+<table><thead><tr><th>Component</th><th>EC2 (appliance or Linux)</th><th>ECS / Fargate / EKS</th><th>Notes</th></tr></thead><tbody><tr><td>Vendor NGFW / ADC</td><td>Marketplace AMI behind GWLB (NGFW) or NLB (ADC)</td><td>—</td><td>Pin the OS version that has PQ (see the matrix) in the launch template</td></tr><tr><td>Squid egress proxy</td><td>Debian 13 AMI + <code>squid-openssl</code>; add <code>Environment=OPENSSL_CONF=</code> in the unit only to restrict groups</td><td><code>Dockerfile.squid</code> (Debian 13) + <code>squid-taskdef.json</code>, bump CA from Secrets Manager</td><td>Every client must trust the bump CA</td></tr><tr><td>Envoy egress</td><td>Envoy binary or container on EC2</td><td><code>envoyproxy/envoy:v1.40.x</code> pinned by digest, config in a ConfigMap</td><td>Istio: <a data-atom="ref" data-ref="file/569dd476-c063">Service mesh</a></td></tr><tr><td>strongSwan PQ VPN</td><td>Alpine 3.24 container with <code>--cap-add NET_ADMIN --network host</code>, or a source build of 6.0.2+ against OpenSSL 3.5</td><td>Not suitable (needs xfrm and host networking)</td><td>Debian 13&#39;s 6.0.1 package doesn&#39;t work</td></tr><tr><td>Zeek sensor</td><td>Nitro EC2 receiving Traffic Mirroring (VXLAN 4789)</td><td>—</td><td><code>zeek/zeek:8.0</code> image pinned by digest</td></tr></tbody></table>
+<p>The Squid Dockerfile and task definition are built around the tested <code>squid.conf</code>. They weren&#39;t deployed to AWS (no access), so treat them as a starting point.</p>
+<h2 id="verify">Verify</h2>
+<ol><li><p><strong>Posture:</strong> for each device, record the OS version, whether PQ is on for each leg, and the IKE proposals. Compare them with the status matrix.</p></li><li><p><strong>Client leg, through the device:</strong> from an OpenSSL 3.5 host, <code>openssl s_client -connect &lt;vip&gt;:443 -groups X25519MLKEM768 -tls1_3 -brief &lt;/dev/null</code> must print <code>Negotiated TLS1.3 group: X25519MLKEM768</code>. Through a forward proxy, add <code>-proxy &lt;proxy&gt;:3128</code>. A classical client (<code>-groups X25519</code>) must still connect; it prints <code>Peer Temp Key: X25519, 253 bits</code>.</p></li><li><p><strong>Server leg:</strong> point the device at a PQ-only origin (<code>openssl s_server -groups X25519MLKEM768 -tls1_3 -www</code>); the request must succeed. Then point it at a classical-only origin (<code>-groups X25519</code>); that must succeed too (fallback).</p></li><li><p><strong>IPsec:</strong> <code>swanctl --list-sas</code> shows <code>KE1_ML_KEM_768</code>. FortiOS <code>diagnose vpn ike gateway list</code> shows <code>PQC-KEM (IKE): yes</code>. The libreswan log shows <code>addke1=ML_KEM_768</code>.</p></li><li><p><strong>Observed signal:</strong> the Zeek <code>ssl.log</code> <code>pq</code> column, Envoy <code>%UPSTREAM_TLS_GROUP%</code>, HAProxy <code>%[ssl_fc_curve]</code>, FortiOS <code>diagnose ips ssl status</code>. Alert on <code>pq=F</code> toward any endpoint you expect to be PQ.</p></li></ol>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p><strong>Middleboxes that drop big ClientHellos:</strong> X25519MLKEM768 adds about 1.2 KB, so the ClientHello spans two TCP segments. Old IPS signatures, Network Firewall rules and some load balancers dropped or reset these; FortiOS flow mode did before 7.4.6/7.6.1. Test every inline device before you turn on PQ in clients.</p></li><li><p><strong>One leg PQ, the other classical:</strong> a decrypting device that is PQ on one side only gives no end-to-end PQ. Check both legs.</p></li><li><p><strong>Decryption breaks pinning and mutual TLS:</strong> exclude those flows from decryption, and AWS SDK traffic to PQ endpoints such as KMS, so they stay PQ end to end.</p></li><li><p><strong>IKE fragmentation:</strong> ML-KEM-768 IKE messages exceed 1,280 bytes. Enable IKEv2 fragmentation (RFC 7383) on both peers. IKE_SA_INIT can&#39;t be fragmented, which is why ML-KEM goes in IKE_INTERMEDIATE.</p></li><li><p><strong>Distro packages lag:</strong> Debian 13 ships strongSwan 6.0.1 without ML-KEM (Tested). Squid, HAProxy and OpenVPN on Debian 12 and Ubuntu 24.04 link OpenSSL 3.0, which has no ML-KEM.</p></li><li><p><strong>Logging gaps:</strong> Squid, F5, NetScaler and Check Point don&#39;t document a group field, and PAN-OS&#39;s is not confirmed. Add a Zeek sensor or log at the origin.</p></li><li><p><strong>Rollback:</strong> decryption profiles: untick PQC (PAN-OS) or detach the cipher group (F5). IPsec: keep a classical option in the same proposal (<code>ke1_none</code> in strongSwan, classical proposals elsewhere) during migration, so a peer without PQ still connects. Squid: set <code>OPENSSL_CONF</code> to classical groups. Envoy: set <code>ecdh_curves</code>, or the runtime flag <code>envoy.reloadable_features.pqc_default_ecdh_curves: false</code>.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>Each file is complete. The label says whether it was Tested here, comes from vendor docs, or is an untested starting point.</p>
+<p><strong><code>/etc/squid/squid.conf</code></strong> (Tested, Squid 6.13 / OpenSSL 3.5.7; the <code>localnet</code> ranges were narrowed after the test)</p>
+<pre><code class="language-text"># /etc/squid/squid.conf - ssl-bump forward proxy (tested: Debian 13 trixie squid-openssl, OpenSSL 3.5)
+# Squid has no TLS &quot;groups&quot; directive; both legs use the OpenSSL library default
+# groups, which on OpenSSL 3.5 put X25519MLKEM768 first. Control them with OPENSSL_CONF.
+http_port 3128 ssl-bump \
+    tls-cert=/etc/squid/bump-ca.pem tls-key=/etc/squid/bump-ca.key \
+    generate-host-certificates=on dynamic_cert_mem_cache_size=16MB \
+    options=NO_SSLv3,NO_TLSv1,NO_TLSv1_1
+sslcrtd_program /usr/lib/squid/security_file_certgen -s /var/spool/squid/ssl_db -M 16MB
+sslcrtd_children 4
+
+# Server leg (squid -&gt; origin): trust store and minimum version
+tls_outgoing_options cafile=/etc/squid/origin-ca.pem min-version=1.2
+
+acl step1 at_step SslBump1
+ssl_bump peek step1
+ssl_bump bump all
+
+acl localnet src 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.1
+http_access allow localnet
+http_access deny all
+
+# Log TLS version/cipher of both legs (Squid cannot log the key-exchange group)
+logformat tlsinfo %ts.%03tu %&gt;a %Ss/%&gt;Hs %rm %ru cl=%ssl::&gt;negotiated_version/%ssl::&gt;negotiated_cipher sv=%ssl::&lt;negotiated_version/%ssl::&lt;negotiated_cipher
+access_log stdio:/var/log/squid/access.log tlsinfo
+cache deny all</code></pre>
+<p><strong><code>Dockerfile.squid</code></strong> (not deployed; uses the tested base image)</p>
+<pre><code class="language-dockerfile"># Dockerfile.squid - ssl-bump egress proxy on Debian 13 (OpenSSL 3.5: hybrid ML-KEM on both legs by default)
+# Pin the base by digest (docker image inspect --format &#39;{{index .RepoDigests 0}}&#39; debian:trixie-slim)
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+RUN apt-get update \
+ &amp;&amp; apt-get install -y --no-install-recommends squid-openssl openssl ca-certificates \
+ &amp;&amp; rm -rf /var/lib/apt/lists/*
+COPY squid.conf /etc/squid/squid.conf
+COPY squid-entrypoint.sh /usr/local/bin/squid-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/squid-entrypoint.sh
+EXPOSE 3128
+ENTRYPOINT [&quot;/usr/local/bin/squid-entrypoint.sh&quot;]</code></pre>
+<p><strong><code>squid-entrypoint.sh</code></strong> (not deployed)</p>
+<pre><code class="language-bash">#!/bin/sh
+# squid-entrypoint.sh - writes the bump CA from env (ECS &quot;secrets&quot; from Secrets Manager) and starts Squid.
+# BUMP_CA_PEM / BUMP_CA_KEY: PEM text. ORIGIN_CA_BUNDLE: optional extra CAs for the server leg.
+set -eu
+umask 077
+printf &#39;%s\n&#39; &quot;$BUMP_CA_PEM&quot; &gt; /etc/squid/bump-ca.pem
+printf &#39;%s\n&#39; &quot;$BUMP_CA_KEY&quot; &gt; /etc/squid/bump-ca.key
+if [ -n &quot;${ORIGIN_CA_BUNDLE:-}&quot; ]; then
+  printf &#39;%s\n&#39; &quot;$ORIGIN_CA_BUNDLE&quot; &gt; /etc/squid/origin-ca.pem
+else
+  cp /etc/ssl/certs/ca-certificates.crt /etc/squid/origin-ca.pem
+fi
+chown proxy:proxy /etc/squid/bump-ca.* /etc/squid/origin-ca.pem
+[ -d /var/spool/squid/ssl_db ] || /usr/lib/squid/security_file_certgen -c -s /var/spool/squid/ssl_db -M 16MB
+chown -R proxy:proxy /var/spool/squid /var/log/squid
+# Optional: restrict TLS groups for both legs, e.g. OPENSSL_CONF=/etc/squid/openssl-pq-only.cnf
+openssl version
+exec squid -N -f /etc/squid/squid.conf</code></pre>
+<p><strong><code>squid-taskdef.json</code></strong> (ECS Fargate; not deployed)</p>
+<pre><code class="language-json">{
+  &quot;family&quot;: &quot;egress-squid-pq&quot;,
+  &quot;requiresCompatibilities&quot;: [&quot;FARGATE&quot;],
+  &quot;networkMode&quot;: &quot;awsvpc&quot;,
+  &quot;cpu&quot;: &quot;1024&quot;,
+  &quot;memory&quot;: &quot;2048&quot;,
+  &quot;runtimePlatform&quot;: { &quot;operatingSystemFamily&quot;: &quot;LINUX&quot;, &quot;cpuArchitecture&quot;: &quot;ARM64&quot; },
+  &quot;executionRoleArn&quot;: &quot;arn:aws:iam::111122223333:role/egress-squid-exec&quot;,
+  &quot;containerDefinitions&quot;: [
+    {
+      &quot;name&quot;: &quot;squid&quot;,
+      &quot;image&quot;: &quot;111122223333.dkr.ecr.us-east-1.amazonaws.com/egress-squid@sha256:&lt;digest&gt;&quot;,
+      &quot;essential&quot;: true,
+      &quot;portMappings&quot;: [{ &quot;containerPort&quot;: 3128, &quot;protocol&quot;: &quot;tcp&quot; }],
+      &quot;secrets&quot;: [
+        { &quot;name&quot;: &quot;BUMP_CA_PEM&quot;, &quot;valueFrom&quot;: &quot;arn:aws:secretsmanager:us-east-1:111122223333:secret:egress/bump-ca:cert::&quot; },
+        { &quot;name&quot;: &quot;BUMP_CA_KEY&quot;, &quot;valueFrom&quot;: &quot;arn:aws:secretsmanager:us-east-1:111122223333:secret:egress/bump-ca:key::&quot; }
+      ],
+      &quot;logConfiguration&quot;: {
+        &quot;logDriver&quot;: &quot;awslogs&quot;,
+        &quot;options&quot;: {
+          &quot;awslogs-group&quot;: &quot;/ecs/egress-squid&quot;,
+          &quot;awslogs-region&quot;: &quot;us-east-1&quot;,
+          &quot;awslogs-stream-prefix&quot;: &quot;squid&quot;
+        }
+      },
+      &quot;healthCheck&quot;: {
+        &quot;command&quot;: [&quot;CMD-SHELL&quot;, &quot;bash -c &#39;&lt;/dev/tcp/127.0.0.1/3128&#39; || exit 1&quot;],
+        &quot;interval&quot;: 30, &quot;timeout&quot;: 5, &quot;retries&quot;: 3, &quot;startPeriod&quot;: 20
+      }
+    }
+  ]
+}</code></pre>
+<p><strong><code>/etc/envoy/envoy-egress.yaml</code></strong> (Tested, Envoy 1.40.2; change the cluster address, SNI and SAN to your partner host)</p>
+<pre><code class="language-yaml">static_resources:
+  listeners:
+  - name: egress_http
+    address: { socket_address: { address: 0.0.0.0, port_value: 10000 } }
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          &quot;@type&quot;: type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: egress
+          access_log:
+          - name: envoy.access_loggers.stdout
+            typed_config:
+              &quot;@type&quot;: type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+              log_format:
+                text_format_source:
+                  inline_string: &quot;[%START_TIME%] %REQ(:AUTHORITY)% %RESPONSE_CODE% upstream_tls=%UPSTREAM_TLS_VERSION% upstream_group=%UPSTREAM_TLS_GROUP%\n&quot;
+          route_config:
+            virtual_hosts:
+            - name: partner
+              domains: [&quot;*&quot;]
+              routes:
+              - match: { prefix: &quot;/&quot; }
+                route: { cluster: partner_api }
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config: { &quot;@type&quot;: type.googleapis.com/envoy.extensions.filters.http.router.v3.Router }
+  clusters:
+  - name: partner_api
+    type: STRICT_DNS
+    connect_timeout: 5s
+    load_assignment:
+      cluster_name: partner_api
+      endpoints:
+      - lb_endpoints:
+        - endpoint: { address: { socket_address: { address: origin, port_value: 4433 } } }
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        &quot;@type&quot;: type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        sni: origin
+        common_tls_context:
+          tls_params:
+            tls_minimum_protocol_version: TLSv1_2
+            tls_maximum_protocol_version: TLSv1_3
+            ecdh_curves: [X25519MLKEM768, X25519, P-256]
+          validation_context:
+            trusted_ca: { filename: /certs/origin-ca.pem }
+            match_typed_subject_alt_names:
+            - san_type: DNS
+              matcher: { exact: origin }</code></pre>
+<p><strong><code>/etc/swanctl/conf.d/pq.conf</code></strong> (Tested, strongSwan 6.0.7 / OpenSSL 3.5.9; replace LOCAL and REMOTE on each peer, and use certificates instead of the lab PSK in production)</p>
+<pre><code class="language-text"># /etc/swanctl/conf.d/pq.conf - IKEv2 hybrid X25519 + ML-KEM-768 (RFC 9370), strongSwan 6.0.2+ with OpenSSL 3.5
+connections {
+  pq {
+    version = 2
+    local_addrs  = LOCAL
+    remote_addrs = REMOTE
+    # Hybrid: classical x25519 in IKE_SA_INIT, ML-KEM-768 in IKE_INTERMEDIATE.
+    # Drop &quot;-ke1_none&quot; to REQUIRE ML-KEM (no classical fallback).
+    proposals = aes256gcm16-prfsha384-x25519-ke1_mlkem768-ke1_none
+    local {
+      auth = psk
+      id = LOCAL
+    }
+    remote {
+      auth = psk
+      id = REMOTE
+    }
+    children {
+      net {
+        local_ts  = LOCAL/32
+        remote_ts = REMOTE/32
+        esp_proposals = aes256gcm16-x25519-ke1_mlkem768-ke1_none
+        mode = transport
+        start_action = none
+      }
+    }
+  }
+}
+secrets {
+  ike-pq {
+    secret = &quot;lab-only-psk-change-me&quot;
+  }
+}</code></pre>
+<p><strong><code>/etc/strongswan.d/zz-log.conf</code></strong> (logs the selected proposal, including <code>KE1_ML_KEM_768</code>)</p>
+<pre><code class="language-text">charon {
+  filelog {
+    pq {
+      path = /var/log/charon.log
+      time_format = %b %e %T
+      default = 1
+      ike = 2
+      cfg = 2
+    }
+  }
+}</code></pre>
+<p><strong><code>fortigate-ipsec-pq.conf</code></strong> (FortiOS 7.6.5+ CLI. The <code>addke1</code> and <code>childless-ike</code> lines are from the <a href="https://docs.fortinet.com/document/fortigate/7.6.5/administration-guide/229631">Fortinet guide</a>; interface, proposal and peer lines are placeholders. Not tested)</p>
+<pre><code class="language-text"># addke IDs: 35 = ML-KEM-512, 36 = ML-KEM-768, 37 = ML-KEM-1024 (not available in FIPS-CC mode)
+config vpn ipsec phase1-interface
+    edit &quot;to-aws-pq&quot;
+        set interface &quot;port1&quot;
+        set ike-version 2
+        set peertype any
+        set net-device disable
+        set proposal aes256gcm-prfsha384
+        set dhgrp 20
+        set addke1 36
+        set childless-ike enable
+        set fragmentation enable
+        set remote-gw 203.0.113.10
+        set psksecret &lt;psk&gt;
+    next
+end
+config vpn ipsec phase2-interface
+    edit &quot;to-aws-pq-p2&quot;
+        set phase1name &quot;to-aws-pq&quot;
+        set proposal aes256gcm
+        set dhgrp 20
+        set addke1 36
+    next
+end
+# Verify:  diagnose vpn ike gateway list name to-aws-pq  -&gt;  PQC-KEM (IKE): yes / PQC-KEM (all IPsec): yes</code></pre>
+<p><strong><code>f5-pq.tmsh</code></strong> (BIG-IP 17.5.1+, TLS 1.3 only. Steps 1–3 are from the <a href="https://techdocs.f5.com/en-us/bigip-17-5-1/big-ip-system-ssl-administration/integrating-pqc-on-the-client-side.html">F5 guide</a>; the server-ssl line is our inference from the documented GUI step)</p>
+<pre><code class="language-text"># 1. Cipher rule: hybrid first, then the default groups (classical fallback)
+create ltm cipher rule PQ_HYBRID cipher DEFAULT dh-groups X25519MLKEM768:DEFAULT signature-algorithms DEFAULT
+# 2. Cipher group that allows the rule
+create ltm cipher group PQ_HYBRID allow add { PQ_HYBRID }
+# 3. Client leg (clients -&gt; virtual server)
+create ltm profile client-ssl clientssl-pq defaults-from clientssl cipher-group PQ_HYBRID ciphers none options { dont-insert-empty-fragments }
+# 4. Server leg (BIG-IP -&gt; pool); GUI: Server SSL profile &gt; Cipher Group
+create ltm profile server-ssl serverssl-pq defaults-from serverssl cipher-group PQ_HYBRID ciphers none
+# 5. Attach to the virtual server
+modify ltm virtual vs_app_443 profiles add { clientssl-pq { context clientside } serverssl-pq { context serverside } }
+save sys config</code></pre>
+<p><strong><code>netscaler-pq.cli</code></strong> (NetScaler 14.1, front end only. Only the <code>bind ssl profile … -eccCurveName</code> lines are from the <a href="https://docs.netscaler.com/us/en/citrix-adc/current-release/ssl/hybrid-pqc.html">NetScaler page</a>; check the profile setup lines against your build)</p>
+<pre><code class="language-text">set ssl parameter -defaultProfile ENABLED
+add ssl profile fe_pq -sslProfileType FrontEnd -tls13 ENABLED
+# Either append the hybrid group to the bound curves ...
+bind ssl profile fe_pq -eccCurveName X25519_MLKEM768
+# ... or rebind ALL (puts X25519_MLKEM768 first):  bind ssl profile fe_pq -eccCurveName ALL
+set ssl vserver vs_app_443 -sslProfile fe_pq
+# GUI: Traffic Management &gt; SSL &gt; SSL Profiles &gt; fe_pq &gt; Advanced Settings &gt; ECC Curve &gt; X25519_MLKEM768 &gt; Bind</code></pre>
+<p><strong><code>/etc/openvpn/server/pq.conf</code> (PQ lines)</strong> (OpenVPN 2.6 linked to OpenSSL 3.5+ on both ends; Documented in the <a href="https://openvpn.net/community-docs/community-articles/openvpn-2-6-manual.html">2.6 manual</a> and the <a href="https://openvpn.net/as-docs/v3/tutorials/tutorial--post-quantum-cryptography.html">vendor tutorial</a>; add to your existing server and client configs)</p>
+<pre><code class="language-text">tls-version-min 1.3
+# Prefer hybrid, keep classical for peers without OpenSSL 3.5 (drop &quot;:X25519&quot; to require PQ)
+tls-groups X25519MLKEM768:X25519
+# Log line to check: &quot;key agreement: X25519MLKEM768&quot;</code></pre>
+<p><strong><code>/opt/zeek/share/zeek/site/pq-tls.zeek</code></strong> (Tested, Zeek 8.0.10; add <code>@load ./pq-tls</code> to <code>local.zeek</code>)</p>
+<pre><code class="language-text">##! pq-tls.zeek - flag TLS sessions whose negotiated key exchange is not hybrid post-quantum.
+##! Needs Zeek 7.1+ (SSL::ec_curves knows 0x11EC = X25519MLKEM768).
+@load base/protocols/ssl
+@load base/frameworks/notice
+
+module PQTLS;
+
+export {
+    redef enum Notice::Type += { PQTLS::Classical_Key_Exchange };
+
+    ## Groups counted as post-quantum (hybrid ML-KEM).
+    const pq_groups: set[string] = {
+        &quot;X25519MLKEM768&quot;, &quot;SecP256r1MLKEM768&quot;, &quot;SecP384r1MLKEM1024&quot;,
+    } &amp;redef;
+
+    ## Add a boolean column &quot;pq&quot; to ssl.log.
+    redef record SSL::Info += {
+        pq: bool &amp;log &amp;optional;
+    };
+}
+
+event ssl_established(c: connection) &amp;priority=3
+    {
+    if ( ! c?$ssl ) return;
+    local grp = c$ssl?$curve ? c$ssl$curve : &quot;none&quot;;
+    c$ssl$pq = grp in pq_groups;
+    if ( ! c$ssl$pq )
+        NOTICE([$note=PQTLS::Classical_Key_Exchange,
+                $msg=fmt(&quot;non-PQ TLS key exchange: group=%s version=%s sni=%s&quot;, grp,
+                         c$ssl?$version ? c$ssl$version : &quot;?&quot;,
+                         c$ssl?$server_name ? c$ssl$server_name : &quot;-&quot;),
+                $conn=c,
+                $identifier=cat(c$id$resp_h, c$id$resp_p, grp),
+                $suppress_for=1hr]);
+    }</code></pre>
+<p><strong><code>traffic-mirror.tf</code></strong> (Terraform; not deployed. Mirrored packets arrive at the sensor as VXLAN on UDP 4789, so allow that in the sensor&#39;s security group)</p>
+<pre><code class="language-hcl">variable &quot;source_eni_id&quot; { type = string } # NAT instance / proxy / app host ENI (Nitro)
+variable &quot;sensor_eni_id&quot; { type = string } # Zeek sensor ENI
+
+resource &quot;aws_ec2_traffic_mirror_target&quot; &quot;zeek&quot; {
+  network_interface_id = var.sensor_eni_id
+  description          = &quot;Zeek PQ TLS sensor&quot;
+}
+
+resource &quot;aws_ec2_traffic_mirror_filter&quot; &quot;tls&quot; {
+  description = &quot;TLS handshakes only&quot;
+}
+
+resource &quot;aws_ec2_traffic_mirror_filter_rule&quot; &quot;egress_443&quot; {
+  traffic_mirror_filter_id = aws_ec2_traffic_mirror_filter.tls.id
+  traffic_direction        = &quot;egress&quot;
+  rule_number              = 100
+  rule_action              = &quot;accept&quot;
+  protocol                 = 6
+  destination_port_range {
+    from_port = 443
+    to_port   = 443
+  }
+  source_cidr_block      = &quot;0.0.0.0/0&quot;
+  destination_cidr_block = &quot;0.0.0.0/0&quot;
+}
+
+resource &quot;aws_ec2_traffic_mirror_filter_rule&quot; &quot;ingress_443&quot; {
+  traffic_mirror_filter_id = aws_ec2_traffic_mirror_filter.tls.id
+  traffic_direction        = &quot;ingress&quot;
+  rule_number              = 100
+  rule_action              = &quot;accept&quot;
+  protocol                 = 6
+  source_port_range {
+    from_port = 443
+    to_port   = 443
+  }
+  source_cidr_block      = &quot;0.0.0.0/0&quot;
+  destination_cidr_block = &quot;0.0.0.0/0&quot;
+}
+
+resource &quot;aws_ec2_traffic_mirror_session&quot; &quot;src&quot; {
+  network_interface_id     = var.source_eni_id
+  traffic_mirror_target_id = aws_ec2_traffic_mirror_target.zeek.id
+  traffic_mirror_filter_id = aws_ec2_traffic_mirror_filter.tls.id
+  session_number           = 1
+  virtual_network_id       = 4242
+  # No packet_length: the hybrid ClientHello spans two segments, so don&#39;t truncate.
+  description = &quot;PQ TLS sensor&quot;
+}</code></pre>
+<p><strong><code>traffic-mirror.yaml</code></strong> (CloudFormation; not deployed)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Description: Mirror TLS (443) from a Nitro EC2 ENI to a Zeek sensor ENI (VXLAN UDP 4789)
+Parameters:
+  SourceEniId: { Type: String, Description: ENI to mirror (NAT instance, proxy, app host) }
+  SensorEniId: { Type: String, Description: Zeek sensor ENI }
+Resources:
+  ZeekTarget:
+    Type: AWS::EC2::TrafficMirrorTarget
+    Properties:
+      NetworkInterfaceId: !Ref SensorEniId
+      Description: Zeek PQ TLS sensor
+  TlsFilter:
+    Type: AWS::EC2::TrafficMirrorFilter
+    Properties:
+      Description: TLS handshakes only
+  Egress443:
+    Type: AWS::EC2::TrafficMirrorFilterRule
+    Properties:
+      TrafficMirrorFilterId: !Ref TlsFilter
+      TrafficDirection: egress
+      RuleNumber: 100
+      RuleAction: accept
+      Protocol: 6
+      DestinationPortRange: { FromPort: 443, ToPort: 443 }
+      SourceCidrBlock: 0.0.0.0/0
+      DestinationCidrBlock: 0.0.0.0/0
+  Ingress443:
+    Type: AWS::EC2::TrafficMirrorFilterRule
+    Properties:
+      TrafficMirrorFilterId: !Ref TlsFilter
+      TrafficDirection: ingress
+      RuleNumber: 100
+      RuleAction: accept
+      Protocol: 6
+      SourcePortRange: { FromPort: 443, ToPort: 443 }
+      SourceCidrBlock: 0.0.0.0/0
+      DestinationCidrBlock: 0.0.0.0/0
+  Session:
+    Type: AWS::EC2::TrafficMirrorSession
+    Properties:
+      NetworkInterfaceId: !Ref SourceEniId
+      TrafficMirrorTargetId: !Ref ZeekTarget
+      TrafficMirrorFilterId: !Ref TlsFilter
+      SessionNumber: 1
+      VirtualNetworkId: 4242
+      Description: PQ TLS sensor</code></pre>

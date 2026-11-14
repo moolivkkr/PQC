@@ -1,0 +1,94 @@
+<h1 id="mobile-desktop-and-cli-clients">Mobile, desktop and CLI clients</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>Each client&#39;s own TLS stack decides what it offers: the OS stack on iOS, macOS and Windows; BoringSSL in Chrome; NSS in Firefox; OpenSSL, GnuTLS or LibreSSL in command-line tools; Go&#39;s <code>crypto/tls</code> in kubectl, helm and terraform. A client only gets PQ if the server also offers it, so most of these clients start using PQ against your estate only after the front doors run a PQ policy (<a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>, <a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>). Every client below still connects to classical servers.</p>
+<h2 id="status-matrix">Status matrix</h2>
+<p>Tested = run here on 2026-11-14 against a PQ-only server (<code>openssl s_server -groups X25519MLKEM768 -tls1_3</code>, OpenSSL 3.5.7) and a classical-only server (<code>-groups X25519</code>). Every Tested client also reached the classical server. Scripts and output: <code>deep/hosts/run-hosts*.sh</code> and <code>run-hosts*.out</code> in the work dir.</p>
+<h3 id="devices-and-browsers">Devices and browsers</h3>
+<table><thead><tr><th>Client</th><th>PQ by default</th><th>Version that matters</th><th>Evidence</th></tr></thead><tbody><tr><td>iOS / iPadOS apps on URLSession or Network.framework</td><td>Yes</td><td>iOS/iPadOS 26+</td><td>Documented (<a href="https://support.apple.com/en-gb/guide/security/sec100a75d12/web">Apple Platform Security</a>, <a href="https://support.apple.com/en-gb/122756">Apple 122756</a>)</td></tr><tr><td>macOS apps on URLSession / Network.framework; visionOS</td><td>Yes</td><td>macOS Tahoe 26+, visionOS 26+</td><td>Documented (Apple 122756)</td></tr><tr><td>macOS <code>/usr/bin/curl</code>, <code>/usr/bin/python3</code></td><td><strong>No</strong></td><td>macOS 27.0.1: curl 8.7.1 on LibreSSL 3.3.6; python3 on LibreSSL 2.8.3</td><td>Tested (handshake failure on PQ-only)</td></tr><tr><td>Android: Chrome and WebView</td><td>Yes</td><td>Current Chrome / WebView</td><td>Claimed (press summaries of Google posts)</td></tr><tr><td>Android apps on platform TLS (HttpsURLConnection, OkHttp on the platform provider)</td><td><strong>Not confirmed</strong></td><td>Android 16/17: no documented platform default found</td><td>Searched 2026-11-14; none found</td></tr><tr><td>Android or JVM apps bundling Conscrypt</td><td>Yes from Conscrypt 2.6.1, per a maintainer</td><td>Conscrypt 2.6.1 (July 2026)</td><td>Claimed (<a href="https://github.com/google/conscrypt/issues/1500">conscrypt#1500</a>)</td></tr><tr><td>Windows apps on Schannel (.NET Framework, WinHTTP, PowerShell 5.1)</td><td>No: opt-in</td><td>Windows 11 24H2/25H2 KB5089573; Server 2025 KB5099536</td><td>Documented (<a href="https://techcommunity.microsoft.com/t5/post-quantum-crypto-tech-blog/windows-tls-1-3-and-post-quantum-crypto-faq/ba-p/4556389">Microsoft FAQ</a>)</td></tr><tr><td>Chrome (desktop, Android)</td><td>Yes</td><td>131+; can&#39;t be turned off from 138</td><td>131 Documented by AWS (<a href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">sdkref</a>); 138 change Claimed</td></tr><tr><td>Edge</td><td>Yes</td><td>131+; enterprise opt-out removed from 147</td><td>Claimed (<a href="https://developers.cloudflare.com/ssl/post-quantum-cryptography/pqc-support/">Cloudflare PQC support</a>)</td></tr><tr><td>Firefox</td><td>Yes</td><td>Desktop 132+; Android 145+</td><td>Desktop Documented by AWS; Android Claimed (Cloudflare)</td></tr><tr><td>Safari</td><td>Yes</td><td>Safari 26+ (iOS 26, macOS 26)</td><td>Documented (Apple 122756)</td></tr></tbody></table>
+<h3 id="command-line-and-developer-tools">Command-line and developer tools</h3>
+<table><thead><tr><th>Tool</th><th>Build tested</th><th>TLS library</th><th>PQ-only server</th><th>Evidence</th></tr></thead><tbody><tr><td>curl, Debian 13</td><td>8.14.1</td><td>OpenSSL 3.5.7</td><td>Pass (<code>X25519MLKEM768</code>)</td><td>Tested</td></tr><tr><td>curl, Ubuntu 26.04</td><td>8.18.0</td><td>OpenSSL 3.5.5</td><td>Pass</td><td>Tested</td></tr><tr><td>curl, Alpine 3.24 / <code>curlimages/curl</code></td><td>8.23.0</td><td>OpenSSL 3.5.9</td><td>Pass</td><td>Tested</td></tr><tr><td>curl, AL2023 (<code>curl-minimal</code>)</td><td>8.21.0</td><td>OpenSSL 3.5.8</td><td>Fail at <code>DEFAULT</code>; pass at <code>DEFAULT:PQ</code> or with <code>OPENSSL_CONF</code></td><td>Tested</td></tr><tr><td>curl, Debian 12 / Ubuntu 24.04 / Alpine 3.21</td><td>7.88.1 / 8.5.0 / 8.14.1</td><td>OpenSSL 3.0 / 3.0 / 3.3</td><td>Fail</td><td>Tested</td></tr><tr><td>curl, macOS system</td><td>8.7.1</td><td>LibreSSL 3.3.6</td><td>Fail</td><td>Tested</td></tr><tr><td>GNU wget, Debian 13 / Ubuntu 26.04</td><td>1.25.0</td><td><strong>GnuTLS 3.8.9 / 3.8.12</strong> (no ML-KEM group)</td><td><strong>Fail</strong></td><td>Tested</td></tr><tr><td>GNU wget, Alpine 3.24</td><td>1.25.0</td><td>OpenSSL 3.5.9</td><td>Pass</td><td>Tested</td></tr><tr><td>GNU wget, AL2023</td><td>1.21.3</td><td>GnuTLS 3.8.10</td><td>Pass at <code>DEFAULT:PQ</code></td><td>Tested</td></tr><tr><td>BusyBox wget, Alpine 3.24</td><td>1.37.0</td><td>BusyBox <code>ssl_client</code> (library not checked)</td><td>Pass</td><td>Tested</td></tr><tr><td>git, Debian 13</td><td>2.47.3</td><td><code>libcurl-gnutls</code></td><td><strong>Fail</strong> (<code>GnuTLS, handshake failed</code>)</td><td>Tested</td></tr><tr><td>git, Alpine 3.24</td><td>2.54.1</td><td>libcurl + OpenSSL 3.5</td><td>Pass</td><td>Tested</td></tr><tr><td>AWS CLI v2 (<code>amazon/aws-cli</code>)</td><td>2.40.3</td><td>Bundled OpenSSL (3.5.6+ from 2.34.54)</td><td>Pass</td><td>Tested; version rule Documented</td></tr><tr><td>AWS CLI v1 on <code>python:3.13-slim</code></td><td>1.46.3</td><td>OpenSSL 3.5.7</td><td>Pass</td><td>Tested</td></tr><tr><td>AWS CLI v1 on <code>python:3.12-slim-bookworm</code></td><td>1.46.3</td><td>OpenSSL 3.0.22</td><td>Fail</td><td>Tested</td></tr><tr><td>kubectl (<code>alpine/k8s:1.34.1</code>)</td><td>1.34.1, go1.24.6</td><td>Go <code>crypto/tls</code></td><td>Pass</td><td>Tested</td></tr><tr><td>helm (<code>alpine/helm</code>)</td><td>4.3.2, go1.27.4</td><td>Go</td><td>Pass</td><td>Tested</td></tr><tr><td>terraform (<code>hashicorp/terraform:latest</code>)</td><td>go1.26.10, no <code>tlsmlkem=0</code> in DefaultGODEBUG</td><td>Go</td><td>Not run live; PQ expected by the Go rule</td><td>Tested (<code>go version -m</code> only)</td></tr><tr><td>OpenSSH client</td><td>Debian 13 10.0p2, Ubuntu 26.04 10.2p1, Alpine 3.24 10.3p1, Alpine 3.21 9.9p2; macOS 27 10.3p1</td><td></td><td>ML-KEM negotiated (macOS: version only)</td><td>Tested</td></tr><tr><td>OpenSSH client</td><td>Ubuntu 24.04 9.6p1, Debian 12 9.2p1</td><td></td><td>sntrup761 only</td><td>Tested</td></tr><tr><td>JMeter, Gatling, other JVM tools</td><td>JVM</td><td>JSSE</td><td>Follows the JDK (Java tab: JDK 25.0.5 PQ by default)</td><td>Documented via Java tab</td></tr><tr><td>Python CLIs (requests, httpie), Node CLIs (npm)</td><td></td><td>Runtime&#39;s TLS</td><td>See the Python and Node.js tabs</td><td></td></tr><tr><td>Postman (desktop)</td><td></td><td>Electron (Chromium + Node)</td><td>Not confirmed which stack sends requests</td><td>Unverified</td></tr></tbody></table>
+<p>For Go tools, run <code>go version -m &lt;binary&gt;</code>: Go ≥ 1.24 and no <code>tlsmlkem=0</code> in <code>DefaultGODEBUG</code> means PQ is offered.</p>
+<h2 id="client-side-app-level">Client side (app level)</h2>
+<h3 id="ios-ipados-macos-apps">iOS, iPadOS, macOS apps</h3>
+<ul><li><p>Nothing to change for URLSession and Network.framework on 26+. The ClientHello carries X25519MLKEM768 plus a key share (Apple 122756).</p></li><li><p>Apple says some legacy servers fail to read the larger ClientHello. It offers a temporary compatibility mode that &quot;will not be available in a future version&quot;. Fix the server instead.</p></li><li><p>Apps on their own TLS (BoringSSL, OpenSSL, Flutter&#39;s <code>dart:io</code>) follow that library. Not checked here.</p></li><li><p>I found no public Apple API that returns the negotiated group. Verify on the server side (ALB connection log <code>keyExchange</code>).</p></li></ul>
+<h3 id="android-apps">Android apps</h3>
+<ul><li><p>Chrome and WebView traffic: PQ.</p></li><li><p>For app traffic on the platform TLS provider, I found no documented Android 16 or 17 default. Treat it as classical until Google documents it.</p></li><li><p>To control it in the app, bundle Conscrypt and install it as the first provider; OkHttp uses Conscrypt when it is the default provider. A Conscrypt maintainer says 2.6.1 offers X25519MLKEM768 by default (Claimed; not tested here).</p></li></ul>
+<pre><code class="language-kotlin">// Application.onCreate() (excerpt)
+Security.insertProviderAt(Conscrypt.newProvider(), 1)</code></pre>
+<h3 id="windows-clients">Windows clients</h3>
+<ul><li><p>Schannel apps: <code>Enable-TlsEccCurve -Name &quot;X25519_MLKEM768&quot; -Position 0</code> on Windows 11 24H2/25H2 with KB5089573. GPO overrides PowerShell. SSM document in <a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>.</p></li><li><p>Browsers on Windows use their own stacks and are PQ already.</p></li><li><p>PowerShell 7 runs on .NET, which uses Schannel on Windows, so the same setting applies (<a data-atom="ref" data-ref="file/c09219a7-69d4">.NET</a>).</p></li></ul>
+<h3 id="curl">curl</h3>
+<ul><li><p>PQ by default when linked to OpenSSL ≥ 3.5 and the OS policy allows it. Check <code>curl -V</code> (look for <code>OpenSSL/3.5</code>) and <code>curl -v</code>, which prints <code>SSL connection using TLSv1.3 / … / X25519MLKEM768</code>.</p></li><li><p>To pin the order or test a PQ-only server: <code>--curves X25519MLKEM768:X25519</code> (OpenSSL backend).</p></li><li><p>macOS: the system curl can&#39;t do PQ; use a curl built on OpenSSL 3.5 (Homebrew, or a container).</p></li></ul>
+<h3 id="wget-and-git">wget and git</h3>
+<ul><li><p>Debian and Ubuntu build wget, and git through <code>libcurl-gnutls</code>, on GnuTLS. Their GnuTLS (3.8.9 on Debian 13, 3.8.12 on Ubuntu 26.04) has no ML-KEM group, so these fail on PQ-only servers even where curl works.</p></li><li><p>Use curl instead of wget in scripts, or use Alpine 3.24 or AL2023 (<code>DEFAULT:PQ</code>) images.</p></li><li><p>For git in CI on Debian/Ubuntu images I found no switch to an OpenSSL backend. Use an Alpine-based git image, or keep the git server&#39;s front door accepting classical.</p></li></ul>
+<h3 id="aws-cli">AWS CLI</h3>
+<ul><li><p>v2 on Linux: ≥ 2.34.54 (Documented); 2.40.3 Tested.</p></li><li><p>v1: follows Python&#39;s OpenSSL (Tested both ways above).</p></li><li><p>macOS: Homebrew install with Homebrew OpenSSL ≥ 3.5 (AWS doc). Windows: depends on the OS; not confirmed.</p></li><li><p>Details: <a data-atom="ref" data-ref="file/5a29f676-6958">AWS service endpoints</a>.</p></li></ul>
+<h3 id="kubectl-helm-terraform-and-other-go-tools">kubectl, helm, terraform and other Go tools</h3>
+<ul><li><p>Released binaries built with Go ≥ 1.24 offer PQ (kubectl 1.34.1 and helm 4.3.2 tested live).</p></li><li><p>Plugins and providers are separate binaries: terraform providers, kubectl plugins and credential helpers each have their own TLS (<code>aws eks get-token</code> is the AWS CLI). Check each with <code>go version -m</code>.</p></li></ul>
+<h3 id="openssh-client">OpenSSH client</h3>
+<p>OpenSSH ≥ 10.0 is PQ by default; 9.9 supports ML-KEM; 9.0–9.8 only sntrup761. Config in <a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>.</p>
+<h2 id="server-side">Server side</h2>
+<p>These clients benefit only if the server offers PQ:</p>
+<table><thead><tr><th>Front door</th><th>What to set</th><th>Tab</th></tr></thead><tbody><tr><td>ALB / NLB</td><td><code>ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code></td><td><a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a></td></tr><tr><td>CloudFront (viewer)</td><td>Nothing: PQ by default</td><td><a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a></td></tr><tr><td>API Gateway REST</td><td><code>SecurityPolicy_TLS13_1_2_PQ_2025_09</code></td><td>Edge and API front doors</td></tr><tr><td>nginx / Envoy / HAProxy on your hosts</td><td>OpenSSL 3.5 + groups</td><td><a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a></td></tr><tr><td>sshd / SFTP</td><td>OpenSSH ≥ 9.9, or Transfer Family PQ policy</td><td><a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>; Edge</td></tr></tbody></table>
+<p>Keep classical groups on public front doors: Debian/Ubuntu wget and git, macOS system curl, Android platform TLS, Windows Server 2019/2022 and older JDKs can&#39;t do PQ yet.</p>
+<h2 id="packaging">Packaging</h2>
+<table><thead><tr><th>Where</th><th>What to ship</th></tr></thead><tbody><tr><td>CI runners and build images</td><td>A toolbox image on Alpine 3.24 (curl, wget, git, OpenSSH 10.3) plus kubectl and helm copied from their images; run the AWS CLI from <code>amazon/aws-cli</code> ≥ 2.34.54. Dockerfile below</td></tr><tr><td>Developer laptops (macOS)</td><td>Homebrew curl and OpenSSL ≥ 3.5; AWS CLI via Homebrew; OpenSSH 10.x already ships with macOS 27</td></tr><tr><td>Windows laptops and jump hosts</td><td>KB5089573 plus the Schannel group via Intune or GPO (Hosts and OS tab)</td></tr><tr><td>Mobile apps</td><td>iOS 26+ minimum for guaranteed PQ; Android: bundle Conscrypt ≥ 2.6.1 if PQ is required</td></tr></tbody></table>
+<h2 id="verify">Verify</h2>
+<ol><li><p><strong>Posture:</strong> <code>curl -V</code>, <code>ssh -V</code>, <code>aws --version</code>, <code>go version -m $(which kubectl)</code>, <code>ldd $(git --exec-path)/git-remote-https | grep -E &#39;gnutls|ssl&#39;</code>, <code>wget --version | grep ssl/</code>.</p></li><li><p><strong>Live:</strong> against a PQ-only test endpoint, <code>curl -sv https://pq-test/ 2&gt;&amp;1 | grep &#39;SSL connection using&#39;</code> must show <code>X25519MLKEM768</code>; <code>ssh -v host true 2&gt;&amp;1 | grep &#39;kex: algorithm&#39;</code> must show <code>mlkem768x25519-sha256</code>; a classical endpoint must still work.</p></li><li><p><strong>Observed:</strong> ALB connection logs and NLB access logs carry <code>keyExchange</code> per connection. Group them by user agent to see which client families are still classical.</p></li></ol>
+<h2 id="pitfalls">Pitfalls</h2>
+<ul><li><p>curl and wget on the same Debian host differ (OpenSSL vs GnuTLS). So do curl and git.</p></li><li><p>Upgrading macOS doesn&#39;t upgrade <code>/usr/bin/curl</code>&#39;s LibreSSL (still 3.3.6 on macOS 27.0.1).</p></li><li><p>A PQ-only listener breaks every classical client in the matrix. Use PQ-only only on internal endpoints whose client list you control.</p></li><li><p>Older middleboxes may drop the bigger ClientHello; Apple and AWS both warn about it.</p></li><li><p>Rollback for a client is its previous version or config; servers keep accepting classical clients unless you made them PQ-only.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>The toolbox tools, <code>--curves</code> and ssh settings match what was Tested; the Android and Windows files were not run here.</p>
+<p><strong><code>ci/toolbox/Dockerfile</code></strong> (PQ-capable CI toolbox; every tool here passed the PQ-only test)</p>
+<pre><code class="language-dockerfile"># tested: helm 4.3.2 (alpine/helm:latest); pin by digest
+FROM alpine/helm:latest AS helm
+FROM alpine/k8s:1.34.1 AS k8s
+
+FROM alpine:3.24
+RUN apk add --no-cache curl wget git openssh-client openssl ca-certificates bash
+COPY --from=k8s  /usr/bin/kubectl /usr/local/bin/kubectl
+COPY --from=helm /usr/bin/helm    /usr/local/bin/helm
+# AWS CLI v2 is built for glibc: run it from amazon/aws-cli (&gt;= 2.34.54) as a separate step.
+RUN curl -V | grep -q &#39;OpenSSL/3\.[5-9]&#39; &amp;&amp; ssh -V 2&gt;&amp;1 | grep -q &#39;OpenSSH_1[0-9]&#39;</code></pre>
+<p>Pin each <code>FROM</code> by digest in real use (the digests tested are in <code>run-hosts.out</code>).</p>
+<p><strong><code>~/.curlrc</code></strong> (pin the group order; optional, OpenSSL-backed curl only)</p>
+<pre><code class="language-text">curves = X25519MLKEM768:X25519:secp256r1</code></pre>
+<p><strong><code>~/.ssh/config</code></strong> (OpenSSH ≥ 9.9 clients)</p>
+<pre><code class="language-text">Host *
+    KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org</code></pre>
+<p><strong><code>app/src/main/java/com/example/App.kt</code></strong> (Android: bundle Conscrypt as the first provider)</p>
+<pre><code class="language-kotlin">package com.example
+
+import android.app.Application
+import java.security.Security
+import org.conscrypt.Conscrypt
+
+class App : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        // Conscrypt 2.6.1+ is reported to offer X25519MLKEM768 by default (not tested here).
+        Security.insertProviderAt(Conscrypt.newProvider(), 1)
+    }
+}</code></pre>
+<p><strong><code>app/build.gradle.kts</code></strong> (excerpt; OkHttp version is an example)</p>
+<pre><code class="language-kotlin">dependencies {
+    implementation(&quot;org.conscrypt:conscrypt-android:2.6.1&quot;)
+    implementation(&quot;com.squareup.okhttp3:okhttp:5.1.0&quot;)
+}</code></pre>
+<p><strong><code>windows/Enable-PqTls.ps1</code></strong> (Windows 11 client, elevated)</p>
+<pre><code class="language-powershell"># Requires KB5089573 (Windows 11 24H2/25H2) or KB5099536 (Server 2025).
+Enable-TlsEccCurve -Name &quot;X25519_MLKEM768&quot; -Position 0
+Get-TlsEccCurve | Select-Object -First 5</code></pre>
+<p><strong><code>ci/check-clients.sh</code></strong> (posture gate for a CI image)</p>
+<pre><code class="language-bash">#!/bin/sh
+# Fails if a tool in this image can&#39;t offer X25519MLKEM768.
+set -e
+curl -V | head -1 | grep -q &#39;OpenSSL/3\.[5-9]&#39; || { echo &quot;curl not on OpenSSL &gt;= 3.5&quot;; exit 1; }
+if command -v git &gt;/dev/null; then
+  ldd &quot;$(git --exec-path)/git-remote-https&quot; 2&gt;/dev/null | grep -q gnutls &amp;&amp; { echo &quot;git uses GnuTLS (no ML-KEM)&quot;; exit 1; }
+fi
+if command -v wget &gt;/dev/null; then
+  wget --version | grep -q -- &#39;+ssl/gnutls&#39; &amp;&amp; { echo &quot;wget uses GnuTLS (no ML-KEM)&quot;; exit 1; }
+fi
+ssh -V 2&gt;&amp;1 | grep -Eq &#39;OpenSSH_(9\.9|1[0-9])&#39; || { echo &quot;OpenSSH &lt; 9.9&quot;; exit 1; }
+echo &quot;client posture OK&quot;</code></pre>

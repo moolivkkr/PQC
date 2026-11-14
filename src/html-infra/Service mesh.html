@@ -1,0 +1,259 @@
+<h1 id="service-mesh-and-east-west-traffic">Service mesh and east-west traffic</h1>
+<p>Linkerd 2.19+ is PQ for meshed traffic by default. Istio 1.27+ and Consul 2.1+ need one setting, and Istio&#39;s setting enforces PQ-only. Cilium&#39;s node encryption, ECS Service Connect and Kuma have no PQ key-exchange setting that we could find. App Mesh was shut down on 2026-09-30. Envoy configs and Kyverno guardrails were tested locally on 2026-11-14; no cluster was stood up.</p>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>The mesh proxy&#39;s TLS library and the group list the control plane pushes to it. The app talks plaintext to its local proxy, and proxy-to-proxy mTLS carries the hop: Envoy (BoringSSL) in Istio sidecars, Istio gateways, Consul and ECS Service Connect; the Rust proxies (Linkerd proxy, Istio ztunnel) use aws-lc. If the app does its own TLS, the mesh only forwards the encrypted bytes and the app&#39;s runtime decides (language tabs). Gateways and TLS origination to external hosts are &quot;non-mesh TLS&quot; and often have a separate setting. Certificate signatures stay classical in every mesh listed (Certificates (ML-DSA) tab).</p>
+<h2 id="status-matrix">Status matrix</h2>
+<table><thead><tr><th>Mesh and version</th><th>Data path</th><th>PQ by default</th><th>How to turn on</th><th>Compute</th><th>Evidence</th></tr></thead><tbody><tr><td>Linkerd 2.19+ (from edge-25.8.4)</td><td>Meshed pod-to-pod mTLS</td><td><strong>Yes</strong>, prefers X25519MLKEM768</td><td>Upgrade control plane, restart workloads</td><td>EKS</td><td>Documented (<a href="https://linkerd.io/2025/10/31/announcing-linkerd-2.19/">2.19 announcement</a>, <a href="https://linkerd.io/2025/09/05/linkerd-edge-release-roundup/">edge-25.8.4</a>)</td></tr><tr><td>Istio 1.27+ sidecar</td><td>Envoy-to-Envoy mTLS, gateway downstream and upstream, xDS</td><td>No</td><td><code>COMPLIANCE_POLICY=pqc</code> on istiod: TLS 1.3 and X25519MLKEM768 <strong>only</strong></td><td>EKS</td><td>Documented (<a href="https://istio.io/latest/news/releases/1.27.x/announcing-1.27/change-notes/">1.27 change notes</a>); Helm render Tested</td></tr><tr><td>Istio 1.27+ ambient</td><td>ztunnel HBONE mTLS, waypoints</td><td>No</td><td><code>COMPLIANCE_POLICY=pqc</code> on istiod <strong>and</strong> ztunnel</td><td>EKS</td><td>Documented; Helm render Tested</td></tr><tr><td>Istio gateways and TLS origination</td><td>Ingress/egress listeners, DestinationRule <code>SIMPLE</code></td><td>No</td><td><code>meshConfig.tlsDefaults.ecdhCurves: [X25519MLKEM768, X25519]</code> (mesh-wide; not mesh mTLS)</td><td>EKS</td><td>Documented (<a href="https://docs.redhat.com/en/documentation/red_hat_openshift_service_mesh/3.3/html/installing/ossm-pqc-install">Red Hat OSSM 3.3</a>); Helm render Tested</td></tr><tr><td>Istio proxyv2 1.28.0 (Envoy 1.36.3)</td><td>Proxy binary</td><td>No unless pushed</td><td>Accepts <code>X25519MLKEM768</code> in <code>ecdh_curves</code>, both directions</td><td>any</td><td>Tested</td></tr><tr><td>Envoy 1.36.13 standalone or self-managed sidecar</td><td>Listener and cluster TLS</td><td>No (X25519, P-256)</td><td><code>ecdh_curves</code> both sides, TLS 1.3 min <strong>and</strong> max upstream</td><td>ECS, EKS, EC2</td><td>Tested</td></tr><tr><td>Consul 2.1+</td><td>Mesh incoming and outgoing, agent RPC/HTTPS/gRPC</td><td>Yes when TLS 1.3 is the minimum and the list is empty</td><td>Mesh config entry <code>TLS.Incoming/Outgoing</code>, agent <code>tls_ecdh_curves</code></td><td>EKS, ECS, EC2</td><td>Documented (<a href="https://developer.hashicorp.com/consul/docs/secure/encryption/post-quantum">Consul PQ TLS</a>)</td></tr><tr><td>Consul ingress and API gateway external listeners</td><td>North-south TLS</td><td>No (Envoy default)</td><td>No setting exposed</td><td>EKS, ECS, EC2</td><td>Documented</td></tr><tr><td>Cilium WireGuard</td><td>Node-to-node</td><td>No (WireGuard Curve25519)</td><td>No PQ option found in Cilium docs</td><td>EKS</td><td>Unverified</td></tr><tr><td>Cilium IPsec</td><td>Node-to-node</td><td>Not applicable: pre-shared keys from the <code>cilium-ipsec-keys</code> Secret, no public-key exchange</td><td>Use per-tunnel keys (<code>3+</code>), rotate</td><td>EKS</td><td>Documented (<a href="https://docs.cilium.io/en/stable/security/network/encryption-ipsec/">Cilium IPsec</a>)</td></tr><tr><td>Cilium ztunnel encryption (1.19+, beta)</td><td>Pod-to-pod mTLS</td><td>Not documented</td><td>none found</td><td>EKS</td><td>Unverified</td></tr><tr><td>ECS Service Connect TLS</td><td>Task-to-task via AWS-managed Envoy, TLS 1.3</td><td>Not documented; no key-exchange setting</td><td>none; use a self-managed Envoy sidecar or app TLS</td><td>ECS</td><td>Documented (TLS 1.3 only: <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-tls.html">ECS docs</a>); PQ Unverified</td></tr><tr><td>AWS App Mesh</td><td>n/a</td><td>n/a</td><td>Discontinued 2026-09-30; console and resources gone</td><td>ECS, EKS, EC2</td><td>Documented (<a href="https://docs.aws.amazon.com/app-mesh/latest/userguide/what-is-app-mesh.html">App Mesh guide</a>)</td></tr><tr><td>Kuma / Kong Mesh</td><td>Envoy mTLS</td><td>No PQ setting found</td><td>none found</td><td>EKS, EC2</td><td>Unverified</td></tr></tbody></table>
+<p>Lambda functions are not meshed; their outbound TLS is the language tabs.</p>
+<h2 id="client-side-app-level">Client side (app level)</h2>
+<p>Inside a mesh, the best client setting is none: send plaintext HTTP to the local proxy and let the mesh do mTLS. Then PQ follows the mesh row above, whatever language the app uses.</p>
+<ul><li><p><strong>Calls to services inside the mesh</strong>: use <code>http://svc.ns.svc.cluster.local</code>. If the app uses <code>https://</code> itself, the mesh only passes the bytes through, and the app&#39;s runtime picks the groups (Go, Python, Node.js, Java, .NET tabs).</p></li><li><p><strong>Calls to external hosts (egress)</strong>: either the app does TLS (language tab), or the app sends plain HTTP and Istio originates TLS with a <code>ServiceEntry</code> plus a <code>DestinationRule</code> in <code>tls.mode: SIMPLE</code>. Origination is non-mesh TLS, so it follows <code>meshConfig.tlsDefaults.ecdhCurves</code> or <code>COMPLIANCE_POLICY=pqc</code>.</p><pre><code class="language-yaml">trafficPolicy:
+  portLevelSettings:
+  - port: { number: 443 }
+    tls: { mode: SIMPLE, sni: api.partner.example, credentialName: partner-ca }</code></pre></li><li><p><strong>Linkerd</strong>: traffic to unmeshed or external destinations is not mesh mTLS; PQ there is the app&#39;s own TLS.</p></li><li><p><strong>ECS without a PQ mesh</strong>: run a self-managed Envoy sidecar; the app calls <code>http://127.0.0.1:8080/&lt;service&gt;/</code> and Envoy originates TLS with <code>ecdh_curves</code> (task definition and Dockerfile in Full configuration files; Envoy config in the Web servers tab).</p></li></ul>
+<h2 id="server-side-mesh-control-plane-and-proxies">Server side (mesh control plane and proxies)</h2>
+<ul><li><p><strong>Istio (enforcing, all proxy TLS)</strong>: istiod Helm values <code>pilot.env.COMPLIANCE_POLICY: pqc</code>; ambient adds the ztunnel chart value <code>env.COMPLIANCE_POLICY: pqc</code>. Restart workloads so proxies reconnect.</p><pre><code class="language-yaml">pilot:
+  env:
+    COMPLIANCE_POLICY: pqc</code></pre></li><li><p><strong>Istio (gateways only, with fallback)</strong>: <code>meshConfig.tlsDefaults.ecdhCurves: [X25519MLKEM768, X25519]</code>. Use this for internet-facing gateways, because <code>COMPLIANCE_POLICY=pqc</code> also covers gateway downstream TLS and would refuse classical clients.</p></li><li><p><strong>Linkerd 2.19+</strong>: nothing to set. <code>helm upgrade linkerd-crds</code> then <code>linkerd-control-plane</code>, then <code>kubectl rollout restart</code> each meshed workload.</p></li><li><p><strong>Consul 2.1+</strong>: mesh config entry and agent TLS:</p><pre><code class="language-hcl">Kind = &quot;mesh&quot;
+TLS {
+  Outgoing {
+    TLSMinVersion = &quot;TLSv1_3&quot;
+    TLSMaxVersion = &quot;TLSv1_3&quot;
+    ECDHCurves    = [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+  }
+}</code></pre><p><code>Incoming</code> takes the same three keys. Agent <code>tls.defaults</code>: <code>tls_min_version = &quot;TLSv1_3&quot;</code> and <code>tls_ecdh_curves = &quot;X25519MLKEM768,X25519&quot;</code> (a comma-separated string, not a list). Allowed names: X25519MLKEM768, X25519, P-256, P-384, P-521.</p></li><li><p><strong>Envoy self-managed</strong>: <code>ecdh_curves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]</code> in both <code>DownstreamTlsContext</code> and <code>UpstreamTlsContext</code> (Tested; full file in the Web servers tab).</p></li><li><p><strong>Cilium</strong>: keep IPsec per-tunnel keys (<code>3+</code> prefix; global keys deprecated in 1.16) or WireGuard; neither gives PQ key exchange, so put PQ in a mesh layer above it when the threat model needs it.</p></li></ul>
+<p><strong>Guardrails (Kyverno).</strong> The earlier ClusterPolicy version had three checks, run in Audit first: istiod and ztunnel must carry <code>COMPLIANCE_POLICY=pqc</code>; Envoy Gateway <code>ClientTrafficPolicy.spec.tls.ecdhCurves</code> must start with X25519MLKEM768; the ingress-nginx ConfigMap <code>ssl-ecdh-curve</code> must start with X25519MLKEM768. It passed on Kyverno CLI v1.16.0 (3 compliant resources passed, 3 non-compliant failed), but Kyverno 1.20 no longer runs kyverno.io/v1 ClusterPolicy (Tested: the 1.20 CLI rejects the file). Only the istiod check has been ported to the CEL ValidatingPolicy shown here (Tested, CLI 1.20.0); the ztunnel and Envoy Gateway checks are not ported yet, so on 1.20+ write them as ValidatingPolicy before relying on them. Gatekeeper equivalents were not written. Org-wide controls are in the Enforcement and guardrails tab.</p>
+<h2 id="packaging-per-compute-type">Packaging per compute type</h2>
+<ul><li><p><strong>EKS (Istio)</strong>: <code>helm upgrade istiod istio/istiod -n istio-system -f values-istiod-pqc.yaml</code>; ambient also <code>helm upgrade ztunnel istio/ztunnel -n istio-system -f values-ztunnel-pqc.yaml</code>. Rendering the 1.28.0 charts put <code>COMPLIANCE_POLICY=pqc</code> on the istiod container and <code>tlsDefaults.ecdhCurves</code> in the <code>istio</code> ConfigMap (Tested, <code>helm template</code> only). IstioOperator form is in Full configuration files.</p></li><li><p><strong>EKS (Linkerd)</strong>: chart version 2.19+ (or Buoyant Enterprise 2.19+); no values.</p></li><li><p><strong>ECS / Fargate</strong>: Service Connect has no group setting, so for PQ between ECS services today use either app-level TLS (language tabs) or a self-managed Envoy sidecar: Dockerfile plus task definition in Terraform and CloudFormation below (CloudFormation passed cfn-lint; not deployed).</p></li><li><p><strong>EC2 (Consul)</strong>: agent <code>tls.hcl</code> in <code>/etc/consul.d/</code>, mesh entry with <code>consul config write mesh.hcl</code>, then restart the agent and Envoy sidecars.</p></li></ul>
+<h2 id="verify">Verify</h2>
+<ol><li><p><strong>Posture.</strong> Istio: <code>istioctl version</code> 1.27+; <code>kubectl -n istio-system get deploy istiod -o jsonpath=&#39;{.spec.template.spec.containers[0].env}&#39; | grep COMPLIANCE_POLICY</code>. Linkerd: <code>linkerd version</code> 2.19+ and <code>linkerd check --proxy</code> (all proxies on the new version). Consul: <code>consul version</code> 2.1+ and <code>consul config read -kind mesh -name mesh</code>.</p></li><li><p><strong>Envoy counters (Istio, Consul, self-managed).</strong> On fresh connections, <code>ssl.curves.X25519MLKEM768</code> must rise and <code>ssl.curves.X25519</code> must not. Tested on standalone Envoy 1.36: <code>listener.0.0.0.0_8443.ssl.curves.X25519MLKEM768: 5</code> and <code>cluster.be_pq.ssl.curves.X25519MLKEM768: 1</code>.</p><pre><code class="language-sh">kubectl exec deploy/orders -c istio-proxy -- pilot-agent request GET &#39;stats?filter=ssl.curves&#39;
+kubectl exec deploy/orders -c istio-proxy -- pilot-agent request GET config_dump | grep -A3 ecdh_curves</code></pre></li><li><p><strong>Linkerd.</strong> 2.19 exports the negotiated TLS key exchange as proxy metrics (<a href="https://linkerd.io/2025/10/31/announcing-linkerd-2.19/">announcement</a>); check <code>linkerd diagnostics proxy-metrics -n &lt;ns&gt; deploy/&lt;name&gt;</code> for the key-exchange label. The exact metric name was not confirmed here.</p></li><li><p><strong>Gateways, live.</strong> From outside: <code>openssl s_client -connect gw:443 -tls1_3 -groups X25519MLKEM768</code> must show <code>Negotiated TLS1.3 group: X25519MLKEM768</code>; <code>-groups X25519</code> must still connect unless you chose <code>COMPLIANCE_POLICY=pqc</code>, which refuses it.</p></li><li><p><strong>Envoy test results (2026-11-14).</strong> Envoy 1.36.13 and Istio&#39;s Envoy 1.36.3 with the Web servers tab config: 12 of 12 checks passed (PQ client, classical fallback, TLS 1.2 refused, PQ-only and classical backends reached). With <code>ecdh_curves</code> removed, the PQ-only client was refused and the PQ-only backend gave 503 (expected).</p></li></ol>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p><strong><code>COMPLIANCE_POLICY=pqc</code> is PQ-only.</strong> It refuses peers without X25519MLKEM768: older Istio in multicluster, classical clients on ingress gateways, and external hosts reached by TLS origination. Turn it on per cluster after every peer is 1.27+; use <code>tlsDefaults.ecdhCurves</code> with fallback for internet-facing gateways.</p></li><li><p><strong><code>tlsDefaults.ecdhCurves</code> does not touch mesh mTLS</strong> and applies mesh-wide; there is no per-workload setting (Red Hat OSSM docs).</p></li><li><p><strong>FIPS builds.</strong> Red Hat says PQC is unavailable on OpenShift clusters in FIPS mode. Envoy BoringSSL-FIPS defaults to P-256 only; Consul lists FIPS Envoy builds 1.38.4 and 1.39.1 that accept the hybrid group. Check your FIPS image before turning it on.</p></li><li><p><strong>Envoy upstream maximum TLS defaults to 1.2</strong>: a TLS 1.3 minimum without a maximum fails with <code>NO_SUPPORTED_VERSIONS_ENABLED</code> (Tested). Consul notes the same.</p></li><li><p><strong>Existing connections keep their groups</strong> until they close. Restart workloads or wait for connection churn before measuring.</p></li><li><p><strong>Mixed versions</strong> (Linkerd proxies older than 2.19, Envoys without ML-KEM) negotiate classical silently with Linkerd and Consul fallback lists.</p></li><li><p><strong>Apps doing their own TLS</strong> bypass all of this.</p></li><li><p><strong>Rollback.</strong> Istio: remove <code>COMPLIANCE_POLICY</code> (and <code>tlsDefaults.ecdhCurves</code>), <code>helm upgrade</code>, restart istiod, ztunnel and workloads. Consul: set <code>ECDHCurves = [&quot;X25519&quot;]</code> and write the mesh entry. Linkerd: no switch to turn PQ off was found; downgrading below 2.19 is the only route (not recommended).</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p><code>values-istiod-pqc.yaml</code>, <code>values-ztunnel-pqc.yaml</code>, <code>istio-operator-pqc.yaml</code>, <code>egress-tls-origination.yaml</code> (Istio)</p>
+<pre><code class="language-yaml"># ---- values-istiod-pqc.yaml (helm upgrade istiod istio/istiod -n istio-system -f values-istiod-pqc.yaml) ----
+# Rendered with helm template oci://gcr.io/istio-release/charts/istiod --version 1.28.0: env lands on the
+# discovery container, tlsDefaults lands in the istio ConfigMap (checked 2026-11-14).
+pilot:
+  env:
+    COMPLIANCE_POLICY: pqc          # Istio 1.27+: TLS 1.3 + X25519MLKEM768 only, for mesh mTLS, gateways and xDS
+meshConfig:
+  tlsDefaults:
+    # Non-mesh TLS (gateway listeners, TLS origination). Used on its own when you want PQ-preferred
+    # with classical fallback on gateways instead of the enforcing COMPLIANCE_POLICY.
+    ecdhCurves: [X25519MLKEM768, X25519]
+---
+# ---- values-ztunnel-pqc.yaml (ambient only; helm upgrade ztunnel istio/ztunnel -n istio-system -f ...) ----
+env:
+  COMPLIANCE_POLICY: pqc
+---
+# ---- istio-operator-pqc.yaml (istioctl install -f istio-operator-pqc.yaml) ----
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: pqc
+  namespace: istio-system
+spec:
+  profile: default                  # &quot;ambient&quot; for ambient mode
+  meshConfig:
+    tlsDefaults:
+      ecdhCurves: [X25519MLKEM768, X25519]
+  values:
+    pilot:
+      env:
+        COMPLIANCE_POLICY: pqc
+    ztunnel:                        # ambient profile only
+      env:
+        COMPLIANCE_POLICY: pqc
+---
+# ---- egress-tls-origination.yaml: app sends plain HTTP, the egress gateway / sidecar does PQ TLS to the external host ----
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: partner-api
+  namespace: payments
+spec:
+  hosts: [api.partner.example]
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
+  location: MESH_EXTERNAL
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: partner-api-tls
+  namespace: payments
+spec:
+  host: api.partner.example
+  trafficPolicy:
+    portLevelSettings:
+    - port: { number: 443 }
+      tls:
+        mode: SIMPLE                # TLS origination; key-exchange groups from tlsDefaults / COMPLIANCE_POLICY
+        sni: api.partner.example
+        credentialName: partner-ca  # Secret with ca.crt; or caCertificates: /etc/ssl/certs/ca-certificates.crt</code></pre>
+<p><code>mesh.hcl</code>, <code>mesh.yaml</code>, <code>/etc/consul.d/tls.hcl</code>, systemd drop-in (Consul)</p>
+<pre><code class="language-hcl">### mesh.hcl  (consul config write mesh.hcl) - Consul 2.1+
+Kind = &quot;mesh&quot;
+TLS {
+  Incoming {
+    TLSMinVersion = &quot;TLSv1_3&quot;
+    TLSMaxVersion = &quot;TLSv1_3&quot;
+    ECDHCurves    = [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+  }
+  Outgoing {
+    TLSMinVersion = &quot;TLSv1_3&quot;
+    TLSMaxVersion = &quot;TLSv1_3&quot;   # set it: Envoy&#39;s upstream maximum otherwise defaults to TLS 1.2
+    ECDHCurves    = [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+  }
+}
+
+### mesh.yaml  (Kubernetes, consul-k8s CRD; confirm with: kubectl explain mesh.spec.tls.incoming)
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: Mesh
+metadata:
+  name: mesh
+spec:
+  tls:
+    incoming:
+      tlsMinVersion: TLSv1_3
+      tlsMaxVersion: TLSv1_3
+      ecdhCurves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+    outgoing:
+      tlsMinVersion: TLSv1_3
+      tlsMaxVersion: TLSv1_3
+      ecdhCurves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+
+### /etc/consul.d/tls.hcl  (agent TLS: internal RPC, HTTPS, gRPC; Helm: server.extraConfig)
+tls {
+  defaults {
+    ca_file         = &quot;/etc/consul.d/certs/consul-agent-ca.pem&quot;
+    cert_file       = &quot;/etc/consul.d/certs/server.pem&quot;
+    key_file        = &quot;/etc/consul.d/certs/server-key.pem&quot;
+    verify_incoming = true
+    verify_outgoing = true
+    tls_min_version = &quot;TLSv1_3&quot;
+    tls_ecdh_curves = &quot;X25519MLKEM768,X25519&quot;
+  }
+  internal_rpc {
+    verify_server_hostname = true
+  }
+}
+
+### /etc/systemd/system/consul.service.d/override.conf  (EC2)
+[Service]
+ExecStartPre=/usr/bin/consul validate /etc/consul.d/</code></pre>
+<p><code>Dockerfile</code> (self-managed Envoy sidecar for ECS; <code>envoy.yaml</code> is in the Web servers tab)</p>
+<pre><code class="language-dockerfile"># Dockerfile - pq-envoy sidecar. Envoy 1.36.13 (BoringSSL) accepts X25519MLKEM768 (Tested 2026-11-14).
+# The base image (Ubuntu 22.04) has no curl, which the ECS health check needs.
+FROM envoyproxy/envoy@sha256:93e25ef06d87a908a1114e8dff9a2b3a3046fbbfda7e644d448d752332633de6
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends curl &amp;&amp; rm -rf /var/lib/apt/lists/*
+# envoy.yaml = the Web servers tab file: listener 8443 terminates PQ TLS from peers,
+# listener 8080 takes the app&#39;s plain HTTP and originates PQ TLS (ecdh_curves + TLS 1.3 min AND max) to peers.
+COPY envoy.yaml /etc/envoy/envoy.yaml
+# Certificates: write them to /certs at task start (e.g. an init container reading Secrets Manager);
+# never bake private keys into the image.</code></pre>
+<p><code>ecs-envoy-sidecar.tf</code> (Terraform)</p>
+<pre><code class="language-hcl"># ecs-envoy-sidecar.tf - ECS/Fargate: self-managed Envoy sidecar doing PQ TLS for east-west calls,
+# for teams that need PQ between ECS services today (Service Connect has no key-exchange setting).
+# The app calls http://127.0.0.1:8080/&lt;svc&gt;/...; Envoy originates TLS with ecdh_curves to the peer task,
+# and the peer&#39;s Envoy terminates on 8443. Image = envoyproxy/envoy with envoy.yaml baked in (Web servers tab).
+variable &quot;app_image&quot; { type = string }
+variable &quot;envoy_image&quot; { type = string } # e.g. &lt;acct&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/pq-envoy@sha256:...
+variable &quot;execution_role_arn&quot; { type = string }
+
+resource &quot;aws_ecs_task_definition&quot; &quot;orders&quot; {
+  family                   = &quot;orders&quot;
+  requires_compatibilities = [&quot;FARGATE&quot;]
+  network_mode             = &quot;awsvpc&quot;
+  cpu                      = &quot;512&quot;
+  memory                   = &quot;1024&quot;
+  execution_role_arn       = var.execution_role_arn
+  container_definitions = jsonencode([
+    {
+      name         = &quot;app&quot;
+      image        = var.app_image
+      essential    = true
+      environment  = [{ name = &quot;PAYMENTS_URL&quot;, value = &quot;http://127.0.0.1:8080/payments&quot; }]
+      dependsOn    = [{ containerName = &quot;envoy&quot;, condition = &quot;HEALTHY&quot; }]
+      portMappings = []
+    },
+    {
+      name         = &quot;envoy&quot;
+      image        = var.envoy_image
+      essential    = true
+      command      = [&quot;envoy&quot;, &quot;-c&quot;, &quot;/etc/envoy/envoy.yaml&quot;]
+      portMappings = [{ containerPort = 8443, protocol = &quot;tcp&quot; }]
+      healthCheck = {
+        command  = [&quot;CMD-SHELL&quot;, &quot;curl -sf http://127.0.0.1:9901/ready || exit 1&quot;]
+        interval = 10
+        retries  = 3
+      }
+    }
+  ])
+}</code></pre>
+<p><code>ecs-envoy-sidecar.yaml</code> (CloudFormation)</p>
+<pre><code class="language-yaml"># ecs-envoy-sidecar.yaml - CloudFormation equivalent of ecs-envoy-sidecar.tf
+AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Parameters:
+  AppImage: { Type: String }
+  EnvoyImage: { Type: String }
+  ExecutionRoleArn: { Type: String }
+Resources:
+  OrdersTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: orders
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: &quot;512&quot;
+      Memory: &quot;1024&quot;
+      ExecutionRoleArn: !Ref ExecutionRoleArn
+      ContainerDefinitions:
+        - Name: app
+          Image: !Ref AppImage
+          Essential: true
+          Environment:
+            - Name: PAYMENTS_URL
+              Value: http://127.0.0.1:8080/payments
+          DependsOn:
+            - ContainerName: envoy
+              Condition: HEALTHY
+        - Name: envoy
+          Image: !Ref EnvoyImage
+          Essential: true
+          Command: [envoy, -c, /etc/envoy/envoy.yaml]
+          PortMappings:
+            - ContainerPort: 8443
+              Protocol: tcp
+          HealthCheck:
+            Command: [&quot;CMD-SHELL&quot;, &quot;curl -sf http://127.0.0.1:9901/ready || exit 1&quot;]
+            Interval: 10
+            Retries: 3</code></pre>
+<p><code>kyverno-pq-policies.yaml</code> (and the test resources in <code>kyverno-test-resources.yaml</code> under the work dir)</p>
+<p>Tested (kyverno CLI 1.20)</p>
+<pre><code class="language-yaml">apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: pq-tls-istiod
+spec:
+  validationActions: [ Audit ]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [ apps ]
+        apiVersions: [ v1 ]
+        operations: [ CREATE, UPDATE ]
+        resources: [ deployments ]
+  matchConditions:
+    - name: istiod
+      expression: &quot;object.metadata.namespace == &#39;istio-system&#39; &amp;&amp; object.metadata.name.startsWith(&#39;istiod&#39;)&quot;
+  validations:
+    - expression: &gt;-
+        object.spec.template.spec.containers.exists(c, c.name == &#39;discovery&#39; &amp;&amp; has(c.env) &amp;&amp;
+        c.env.exists(e, e.name == &#39;COMPLIANCE_POLICY&#39; &amp;&amp; has(e.value) &amp;&amp; e.value == &#39;pqc&#39;))
+      message: &quot;PQ-K4: istiod container needs env COMPLIANCE_POLICY=pqc&quot;</code></pre>
+<p>Full policy set: see the <a data-atom="ref" data-ref="file/0803191b-9855">Enforcement and guardrails</a> tab.</p>

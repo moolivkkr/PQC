@@ -1,0 +1,662 @@
+<h1 id="web-servers-reverse-proxies-and-app-servers-self-managed">Web servers, reverse proxies and app servers (self-managed)</h1>
+<p>Every OpenSSL 3.5, Go 1.24+ and JDK 25 server tested here negotiates X25519MLKEM768 on both legs with one or two lines of config; Envoy and anything under the Amazon Linux 2023 crypto policy stay classical until you set the group list. 110 checks across 20 server configurations, run 2026-11-14.</p>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>The TLS library linked into the server binary decides, separately for each leg. <strong>Inbound</strong> (client to server) uses the listener&#39;s group list. <strong>Upstream</strong> (server to backend: <code>proxy_pass</code>, <code>ProxyPass</code>, HAProxy <code>server</code> lines, Envoy clusters) uses the proxy&#39;s client-side group list.</p>
+<p>OpenSSL 3.5 puts X25519MLKEM768 first in its built-in default, so nginx, Apache httpd, HAProxy and Tomcat&#39;s OpenSSL connector are PQ on both legs with no directive at all, unless a system policy overrides it (Amazon Linux 2023 and other RHEL-family crypto-policies). Envoy (BoringSSL) defaults to X25519 and P-256 and must be told. Caddy and Traefik use Go&#39;s crypto/tls, PQ by default since Go 1.24. Tomcat&#39;s JSSE connector follows the JDK (<a data-atom="ref" data-ref="file/cd465386-557e">Java</a>); IIS follows Windows SChannel (<a data-atom="ref" data-ref="file/c09219a7-69d4">.NET</a>, <a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>).</p>
+<h2 id="status-matrix">Status matrix</h2>
+<p><strong>Tested</strong> = run here on 2026-11-14 with the image and version shown (arm64 images, pulled by digest). Pass counts are in Verify. Lambda does not apply: there is no long-running web server.</p>
+<table><thead><tr><th>Product and version</th><th>Image or package (compute)</th><th>TLS library</th><th>Inbound PQ by default</th><th>Upstream PQ by default</th><th>Setting that controls it</th><th>Evidence</th></tr></thead><tbody><tr><td>nginx 1.31.8 mainline</td><td><code>nginx:latest</code>, Debian 13 (ECS, Fargate, EKS)</td><td>OpenSSL 3.5.7</td><td>Yes</td><td>Yes</td><td><code>ssl_ecdh_curve</code>, <code>proxy_ssl_conf_command Groups</code></td><td>Tested</td></tr><tr><td>nginx 1.31.8</td><td><code>nginx:alpine</code>, Alpine 3.24</td><td>OpenSSL 3.5.9</td><td>Yes</td><td>Yes</td><td>same</td><td>Tested</td></tr><tr><td>nginx 1.30.6 stable</td><td><code>nginx:stable</code>, Debian 13</td><td>OpenSSL 3.5.7</td><td>Yes (same OpenSSL)</td><td>Yes</td><td>same</td><td>Tested (version check only)</td></tr><tr><td>nginx 1.30.6</td><td>Amazon Linux 2023 <code>dnf install nginx</code> (EC2, AL2023 images)</td><td>OpenSSL 3.5.8 + crypto policy</td><td><strong>No</strong></td><td><strong>No</strong></td><td>explicit directives, or <code>DEFAULT:PQ</code> policy</td><td>Tested</td></tr><tr><td>Apache httpd 2.4.71</td><td><code>httpd:2.4</code> Debian 13, <code>httpd:2.4-alpine</code></td><td>OpenSSL 3.5.7 / 3.5.9</td><td>Yes</td><td>Yes</td><td><code>SSLOpenSSLConfCmd Groups</code>; no proxy-side directive</td><td>Tested</td></tr><tr><td>Apache httpd (AL2023 package)</td><td>Amazon Linux 2023 <code>dnf install httpd mod_ssl</code></td><td>OpenSSL 3.5.8 + crypto policy</td><td>Yes with <code>SSLOpenSSLConfCmd</code></td><td><strong>No</strong>; Yes after <code>update-crypto-policies --set DEFAULT:PQ</code></td><td>host crypto policy or <code>OPENSSL_CONF</code></td><td>Tested</td></tr><tr><td>HAProxy 3.4.7</td><td><code>haproxy:latest</code> / <code>lts</code> Debian 13, <code>haproxy:lts-alpine</code></td><td>OpenSSL 3.5.7 / 3.5.9</td><td>Yes</td><td>Yes</td><td><code>curves</code> on bind and server lines, <code>ssl-default-bind-curves</code>, <code>ssl-default-server-curves</code></td><td>Tested</td></tr><tr><td>Envoy 1.36.13</td><td><code>envoyproxy/envoy:v1.36-latest</code></td><td>BoringSSL</td><td><strong>No</strong> (X25519, P-256)</td><td><strong>No</strong></td><td><code>tls_params.ecdh_curves</code> on both contexts</td><td>Tested</td></tr><tr><td>Envoy 1.36.3 in Istio proxyv2 1.28.0</td><td><code>istio/proxyv2:1.28.0</code></td><td>BoringSSL</td><td>No unless set</td><td>No unless set</td><td>same; Istio pushes it (<a data-atom="ref" data-ref="file/569dd476-c063">Service mesh</a>)</td><td>Tested</td></tr><tr><td>Caddy 2.11.9 (Go 1.27.3)</td><td><code>caddy:2</code></td><td>Go crypto/tls</td><td>Yes</td><td>Yes</td><td><code>tls { curves }</code>, <code>transport http { tls_curves }</code></td><td>Tested</td></tr><tr><td>Traefik 3.7.19 (Go 1.27.4)</td><td><code>traefik:v3</code></td><td>Go crypto/tls</td><td>Yes</td><td>Yes (Go default; no curve option on serversTransport)</td><td>TLS option <code>curvePreferences</code></td><td>Tested</td></tr><tr><td>Tomcat 11.0.29, JSSE connector</td><td><code>tomcat:11-jdk25-temurin</code> (JDK 25.0.5)</td><td>JDK JSSE</td><td>Yes</td><td>n/a (app clients: Java tab)</td><td><code>SSLHostConfig groups</code></td><td>Tested</td></tr><tr><td>Tomcat 11.0.29, OpenSSL connector</td><td>same image, Ubuntu 26.04</td><td>OpenSSL 3.5.5 via tomcat-native</td><td>Yes</td><td>n/a</td><td><code>&lt;OpenSSLConfCmd name=&quot;Groups&quot;&gt;</code></td><td>Tested</td></tr><tr><td>ingress-nginx controller v1.14.0 (nginx 1.27.1)</td><td><code>registry.k8s.io/ingress-nginx/controller:v1.14.0</code>, Alpine 3.22</td><td>OpenSSL 3.5.4</td><td>Yes</td><td>Yes</td><td>ConfigMap <code>ssl-ecdh-curve</code></td><td>Tested (its nginx binary with the same directives; ConfigMap path not run)</td></tr><tr><td>nginx, httpd, HAProxy on Ubuntu 24.04 or Debian 12</td><td>distro packages (EC2)</td><td>OpenSSL 3.0.x</td><td>No, cannot</td><td>No, cannot</td><td>upgrade the OS or run a container image</td><td>Tested 2026-11-12/13 (Hosts tab)</td></tr><tr><td>IIS on Windows Server 2025</td><td>SChannel</td><td>SChannel</td><td>not confirmed</td><td>not confirmed</td><td>Microsoft lists hybrid ML-KEM groups from the July 14, 2026 update KB5099536 (<a href="https://techcommunity.microsoft.com/t5/post-quantum-crypto-tech-blog/windows-tls-1-3-and-post-quantum-crypto-faq/ba-p/4556389">Microsoft FAQ</a>); default ordering not confirmed</td><td>Documented (availability only)</td></tr></tbody></table>
+<p>Device types: everything above is software on Linux-class compute (EC2, ECS/Fargate, EKS) or Windows for IIS. Managed front doors (ALB, NLB, CloudFront, API Gateway) are in <a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a> and <a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>; hardware and virtual appliances (F5, Citrix, firewalls) are in <a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a>.</p>
+<h2 id="client-side-upstream-leg">Client side (upstream leg)</h2>
+<p>The upstream leg is the one most often missed: a PQ listener in front of a classical <code>proxy_pass</code> leaves the backend hop exposed. Test it against a PQ-only backend (Verify).</p>
+<ul><li><p><strong>nginx</strong> (1.19.4+ for <code>proxy_ssl_conf_command</code>). Without it nginx uses OpenSSL&#39;s default list: PQ on OpenSSL 3.5, but not under the AL2023 policy (Tested: HTTP 502 to a PQ-only backend).</p><pre><code class="language-nginx">location /api/ {
+    proxy_pass https://backend:8443/;
+    proxy_ssl_protocols TLSv1.3;
+    proxy_ssl_conf_command Groups X25519MLKEM768:X25519;
+    proxy_ssl_verify on;
+    proxy_ssl_trusted_certificate /etc/ssl/certs/ca.pem;
+}</code></pre></li><li><p><strong>Apache httpd</strong>: there is no <code>SSLProxy*</code> directive for groups; <code>SSLOpenSSLConfCmd</code> applies to the server side only. The proxy leg takes OpenSSL&#39;s default: PQ on the Debian and Alpine images (Tested). On AL2023 it failed with <code>AH02003: SSL Proxy connect failed ... handshake failure</code> until the host policy was set to <code>DEFAULT:PQ</code> (Tested). The alternative is <code>OPENSSL_CONF</code> pointing at a PQ config in the systemd unit (<a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>).</p><pre><code class="language-apache">SSLProxyEngine on
+SSLProxyProtocol -all +TLSv1.3
+SSLProxyVerify require
+SSLProxyCACertificateFile /etc/ssl/certs/ca.pem
+ProxyPass /api/ https://backend:8443/</code></pre></li><li><p><strong>HAProxy</strong>: <code>curves</code> on each <code>server</code> line, or once in <code>global</code> with <code>ssl-default-server-curves</code> (both accepted by 3.4.7, Tested).</p><pre><code class="language-haproxy">backend be_api
+    server api1 backend:8443 ssl verify required ca-file /etc/ssl/certs/ca.pem sni str(backend) curves X25519MLKEM768:X25519 ssl-min-ver TLSv1.3</code></pre></li><li><p><strong>Envoy</strong>: set <code>ecdh_curves</code> in the cluster&#39;s <code>UpstreamTlsContext</code>, and set <strong>both</strong> minimum and maximum version. The upstream maximum defaults to TLS 1.2, so <code>tls_minimum_protocol_version: TLSv1_3</code> alone fails with <code>NO_SUPPORTED_VERSIONS_ENABLED</code> (Tested). Without <code>ecdh_curves</code>, a PQ-only backend returns 503 (Tested).</p><pre><code class="language-yaml">transport_socket:
+  name: envoy.transport_sockets.tls
+  typed_config:
+    &quot;@type&quot;: type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+    sni: backend
+    common_tls_context:
+      tls_params:
+        tls_minimum_protocol_version: TLSv1_3
+        tls_maximum_protocol_version: TLSv1_3
+        ecdh_curves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]</code></pre></li><li><p><strong>Caddy</strong>: <code>tls_curves</code> in the <code>reverse_proxy</code> HTTP transport (Tested; PQ without it too, from Go&#39;s default).</p><pre><code class="language-caddy">reverse_proxy https://backend:8443 {
+    transport http {
+        tls_server_name backend
+        tls_curves x25519mlkem768 x25519
+    }
+}</code></pre></li><li><p><strong>Traefik</strong>: <code>serversTransport</code> has no curve option (<a href="https://doc.traefik.io/traefik/reference/routing-configuration/http/tls/tls-options/">Traefik 3.7 TLS options</a>). The backend leg uses Go&#39;s default, which includes X25519MLKEM768 in builds on Go 1.24+ (Tested with 3.7.19).</p></li><li><p><strong>Tomcat as a client</strong> (HttpClient, RestTemplate, WebClient inside the webapp) follows the JDK: <a data-atom="ref" data-ref="file/cd465386-557e">Java</a>.</p></li></ul>
+<h2 id="server-side-inbound">Server side (inbound)</h2>
+<p>Keep a classical fallback (<code>X25519</code>, then P-256) after the hybrid group unless you are deliberately enforcing PQ-only. Every row was Tested with four clients: PQ-only (got X25519MLKEM768), default OpenSSL 3.5 (got X25519MLKEM768), classical X25519 (got X25519), and TLS 1.2 (refused, because each config is TLS 1.3-only).</p>
+<table><thead><tr><th>Server</th><th>Directive (excerpt)</th><th>Docs</th></tr></thead><tbody><tr><td>nginx</td><td><code>ssl_protocols TLSv1.3;</code> <code>ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;</code></td><td><a href="https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_ecdh_curve">ssl_ecdh_curve</a></td></tr><tr><td>Apache httpd</td><td><code>SSLProtocol -all +TLSv1.3</code> and <code>SSLOpenSSLConfCmd Groups X25519MLKEM768:X25519:secp256r1</code></td><td><a href="https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslopensslconfcmd">SSLOpenSSLConfCmd</a></td></tr><tr><td>HAProxy</td><td><code>bind :443 ssl crt /etc/haproxy/site.pem curves X25519MLKEM768:X25519:P-256 ssl-min-ver TLSv1.3</code></td><td><a href="https://docs.haproxy.org/3.2/configuration.html#5.1-curves">curves</a></td></tr><tr><td>Envoy</td><td><code>DownstreamTlsContext</code> <code>tls_params.ecdh_curves: [&quot;X25519MLKEM768&quot;,&quot;X25519&quot;,&quot;P-256&quot;]</code></td><td><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto">TlsParameters</a></td></tr><tr><td>Caddy</td><td><code>tls cert key { protocols tls1.3; curves x25519mlkem768 x25519 secp256r1 }</code></td><td><a href="https://caddyserver.com/docs/caddyfile/directives/tls">tls directive</a></td></tr><tr><td>Traefik</td><td>TLS option <code>minVersion: VersionTLS13</code>, <code>curvePreferences: [X25519MLKEM768, X25519, CurveP256]</code></td><td><a href="https://doc.traefik.io/traefik/reference/routing-configuration/http/tls/tls-options/">TLS options</a></td></tr><tr><td>Tomcat JSSE</td><td><code>&lt;SSLHostConfig protocols=&quot;TLSv1.3&quot; groups=&quot;X25519MLKEM768,x25519,secp256r1&quot;&gt;</code></td><td><a href="https://tomcat.apache.org/tomcat-11.0-doc/config/http.html">SSLHostConfig groups</a></td></tr><tr><td>Tomcat OpenSSL</td><td><code>&lt;OpenSSLConf&gt;&lt;OpenSSLConfCmd name=&quot;Groups&quot; value=&quot;X25519MLKEM768:X25519:secp256r1&quot;/&gt;&lt;/OpenSSLConf&gt;</code></td><td>same page</td></tr></tbody></table>
+<p><strong>PQ-only enforcement</strong> (internal endpoints whose every client you control): list only <code>X25519MLKEM768</code>. Classical clients then fail with <code>no suitable key share</code>, the error we saw in the reverse case (AL2023 nginx refusing a PQ-only client). In Traefik, setting <code>curvePreferences</code> without X25519MLKEM768 turns PQ <strong>off</strong>, the same as an explicit <code>CurvePreferences</code> in Go (<a data-atom="ref" data-ref="file/f452a156-1a48">Go</a>).</p>
+<h3 id="kubernetes-ingress-and-gateways">Kubernetes ingress and gateways</h3>
+<ul><li><p><strong>ingress-nginx</strong>: ConfigMap <code>ssl-ecdh-curve: &quot;X25519MLKEM768:X25519:prime256v1&quot;</code> and <code>ssl-protocols: &quot;TLSv1.3&quot;</code> (or <code>&quot;TLSv1.2 TLSv1.3&quot;</code>). The v1.14.0 image links OpenSSL 3.5.4, so the upstream leg is PQ by default. The project was retired on 2026-03-24 with no further fixes (<a href="https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/">Kubernetes blog</a>); plan the move to Gateway API.</p></li><li><p><strong>AWS Load Balancer Controller</strong>: the ALB or NLB terminates TLS, so set the PQ security policy with <code>alb.ingress.kubernetes.io/ssl-policy</code> (Ingress) or <code>service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy</code> (Service). Policy names and the target-group leg: <a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>.</p></li><li><p><strong>Envoy Gateway</strong>: <code>ClientTrafficPolicy.spec.tls.ecdhCurves</code> for listeners and <code>EnvoyProxy.spec.backendTLS.ecdhCurves</code> for backends. Both default to X25519 and P-256 (<a href="https://gateway.envoyproxy.io/docs/api/extension_types/">API reference v1.10</a>). Documented; not run here.</p></li><li><p><strong>Istio ingress and egress gateways</strong>: <code>meshConfig.tlsDefaults.ecdhCurves</code> or <code>COMPLIANCE_POLICY=pqc</code> (<a data-atom="ref" data-ref="file/569dd476-c063">Service mesh</a>).</p></li></ul>
+<h2 id="packaging-per-compute-type">Packaging per compute type</h2>
+<p>The rule for containers: pick an image on Debian 13 or Alpine 3.22+ and pin it by digest; the config file does the rest. No environment variable is needed.</p>
+<table><thead><tr><th>Compute</th><th>What to ship</th><th>Files (below)</th></tr></thead><tbody><tr><td>ECS / Fargate</td><td>Image with <code>nginx.conf</code> baked in; task definition with awslogs so the <code>group=</code> access-log field reaches CloudWatch</td><td><code>Dockerfile</code>, <code>ecs-nginx.tf</code>, <code>ecs-nginx.yaml</code></td></tr><tr><td>EKS</td><td>Config from a ConfigMap; ingress-nginx Helm value <code>controller.config.ssl-ecdh-curve</code>; Envoy Gateway policies</td><td><code>ingress-nginx-values.yaml</code>, <code>envoy-gateway-pq.yaml</code></td></tr><tr><td>EC2, Amazon Linux 2023</td><td>The crypto policy removes ML-KEM from the defaults. Put explicit directives in the server config (nginx, HAProxy, httpd inbound) or set the host policy to <code>DEFAULT:PQ</code> (required for the httpd proxy leg; host-wide change in <a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>)</td><td><code>ssm-nginx-pq.tf</code>, <code>ssm-nginx-pq.yaml</code></td></tr><tr><td>EC2, Ubuntu 24.04 or Debian 12</td><td>OpenSSL 3.0 cannot do ML-KEM. Run the official container image on the host, or move to Ubuntu 26.04 (OpenSSL 3.5.5 seen in the Tomcat image) or AL2023</td><td>none</td></tr><tr><td>Lambda</td><td>Not applicable</td><td>none</td></tr></tbody></table>
+<p>The SSM document&#39;s nginx snippet was Tested on AL2023 (nginx 1.30.6, OpenSSL 3.5.8): <code>nginx -t</code> passed, a PQ-only client got X25519MLKEM768 and a classical client got X25519. The CloudFormation templates passed cfn-lint and the Terraform passed <code>terraform fmt</code>; neither was deployed (no AWS credentials here).</p>
+<h2 id="verify">Verify</h2>
+<ol><li><p><strong>Posture.</strong> OpenSSL must be 3.5 or later: <code>nginx -V 2&gt;&amp;1 | grep OpenSSL</code>, <code>haproxy -vv | grep &#39;SSL library&#39;</code>, <code>httpd -v</code> plus <code>openssl version</code>. Envoy: <code>envoy --version</code> (BoringSSL; check the config, not the version). Go servers: <code>caddy version</code>, <code>traefik version</code> (Go 1.24+). On AL2023 also <code>update-crypto-policies --show</code>.</p></li><li><p><strong>Inbound, live.</strong> The PQ client must get the hybrid group and the classical client must still connect:</p><pre><code class="language-sh">openssl s_client -connect host:443 -tls1_3 -groups X25519MLKEM768 &lt;/dev/null 2&gt;&amp;1 | grep &#39;Negotiated TLS1.3 group&#39;
+# Negotiated TLS1.3 group: X25519MLKEM768
+openssl s_client -connect host:443 -tls1_3 -groups X25519 &lt;/dev/null 2&gt;&amp;1 | grep &#39;Peer Temp Key&#39;
+# Peer Temp Key: X25519, 253 bits
+openssl s_client -connect host:443 -tls1_2 &lt;/dev/null   # must fail when the listener is TLS 1.3-only</code></pre></li><li><p><strong>Upstream, live.</strong> Point a test route at a PQ-only backend (<code>openssl s_server -accept 8443 -www -tls1_3 -groups X25519MLKEM768 -cert c.pem -key k.pem</code>) and at a classical-only one (<code>-groups X25519</code>). Both must return HTTP 200 through the proxy.</p></li><li><p><strong>Logs and metrics.</strong> nginx: add <code>$ssl_curve</code> to <code>log_format</code> (Tested: <code>proto=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384 group=X25519MLKEM768</code>). Envoy: admin <code>/stats</code> counters <code>listener.&lt;addr&gt;.ssl.curves.X25519MLKEM768</code> and <code>cluster.&lt;name&gt;.ssl.curves.X25519MLKEM768</code> (Tested). Apache httpd and HAProxy log formats have no negotiated-group variable that we found, so use the s_client checks or a packet capture (<a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a>).</p></li></ol>
+<p><strong>Test results, 2026-11-14</strong> (harness <code>run-tests.sh</code> in the work dir; backends were OpenSSL 3.5.7 <code>s_server</code> on Debian 13):</p>
+<table><thead><tr><th>Configuration</th><th>Checks passed</th><th>Notes</th></tr></thead><tbody><tr><td>nginx, nginx-alpine, nginx with no group directive</td><td>18 / 18</td><td>OpenSSL default is PQ on both legs</td></tr><tr><td>ingress-nginx v1.14.0 nginx binary</td><td>6 / 6</td><td>OpenSSL 3.5.4</td></tr><tr><td>httpd, httpd-alpine</td><td>12 / 12</td><td>proxy leg PQ from OpenSSL default</td></tr><tr><td>HAProxy Debian, Alpine, no curves line</td><td>18 / 18</td><td></td></tr><tr><td>Envoy 1.36.13, Istio Envoy 1.36.3</td><td>12 / 12</td><td>after adding TLS 1.3 maximum upstream</td></tr><tr><td>Envoy with no <code>ecdh_curves</code></td><td>4 / 4 expected</td><td>PQ-only client refused, PQ-only backend 503</td></tr><tr><td>Caddy 2.11.9, Traefik 3.7.19</td><td>12 / 12</td><td></td></tr><tr><td>Tomcat 11 JSSE, Tomcat 11 OpenSSL</td><td>8 / 8</td><td>inbound only</td></tr><tr><td>AL2023 nginx, explicit directives</td><td>6 / 6</td><td></td></tr><tr><td>AL2023 nginx, no directive</td><td>3 / 6</td><td>expected: X25519 only, PQ-only client refused, upstream 502</td></tr><tr><td>AL2023 httpd, default policy</td><td>5 / 6</td><td>expected: proxy to PQ-only backend 500</td></tr><tr><td>AL2023 httpd, <code>DEFAULT:PQ</code> policy</td><td>6 / 6</td><td></td></tr></tbody></table>
+<p>Total: 110 passed; the 4 misses are the AL2023 negatives listed.</p>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p><strong>Envoy&#39;s upstream TLS maximum defaults to 1.2.</strong> Setting only the minimum to 1.3 gives <code>NO_SUPPORTED_VERSIONS_ENABLED</code> and 503s. Set both (Tested).</p></li><li><p><strong>Envoy has no ML-KEM by default.</strong> Without <code>ecdh_curves</code>, a PQ-only client is refused and a PQ-only backend gives 503 (Tested).</p></li><li><p><strong>Amazon Linux 2023&#39;s crypto policy</strong> drops ML-KEM from OpenSSL&#39;s defaults, even with OpenSSL 3.5.8. Explicit server directives work; the Apache proxy leg needs the host policy (Tested).</p></li><li><p><strong>Old OpenSSL rejects the name.</strong> On OpenSSL 3.0 hosts, a config naming X25519MLKEM768 is expected to fail at load (<code>nginx -t</code>, <code>haproxy -c</code>). Not tested here, so run the config check in CI before rollout.</p></li><li><p><strong>Explicit lists replace the default.</strong> Traefik <code>curvePreferences</code>, an nginx <code>ssl_ecdh_curve</code> or a HAProxy <code>curves</code> list without X25519MLKEM768 turns PQ off.</p></li><li><p><strong>PQ-only listeners lock out classical clients.</strong> Keep <code>X25519</code> after the hybrid group on anything internet-facing. One community report describes intermittent failures after forcing PQ-only on nginx (<a href="https://community.nginx.org/t/error-when-trying-to-enforce-pqc-hndl-resistant-nginx-configuration-no-suitable-key-share/9558">forum thread</a>, Claimed).</p></li><li><p><strong>Larger ClientHello</strong> (about 1.2 KB more) can upset old middleboxes on the upstream path: <a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a>.</p></li><li><p><strong>ingress-nginx is retired</strong>, so fixes have stopped; plan the Gateway API move rather than relying on it long term.</p></li><li><p><strong>Rollback:</strong> remove the group directive, or put <code>X25519</code> first, then reload (<code>nginx -s reload</code>, <code>systemctl reload haproxy</code>, <code>apachectl graceful</code>, Envoy hot restart or xDS push). Clients need no change. On AL2023, <code>update-crypto-policies --set DEFAULT</code> and restart the service.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>All files below were used in the tests except the AWS IaC (linted, not deployed). Lab shortcuts (<code>verify none</code>, <code>tls_insecure_skip_verify</code>) are marked; use CA verification in production.</p>
+<p><code>/etc/nginx/nginx.conf</code></p>
+<pre><code class="language-nginx"># /etc/nginx/nginx.conf - PQ hybrid TLS on the listener and on the proxy_pass (upstream) leg
+# Needs nginx linked against OpenSSL 3.5+ (nginx:1.29+/stable on Debian 13 or Alpine 3.22+).
+worker_processes auto;
+events { worker_connections 1024; }
+
+http {
+    access_log /dev/stdout;
+    error_log  /dev/stderr info;
+
+    # Log the negotiated group per request ($ssl_curve, nginx 1.21.5+).
+    log_format tls &#39;$remote_addr &quot;$request&quot; $status proto=$ssl_protocol &#39;
+                   &#39;cipher=$ssl_cipher group=$ssl_curve&#39;;
+
+    # ---- Server side (inbound) ----
+    server {
+        listen 8443 ssl;
+        server_name srv;
+        access_log /dev/stdout tls;
+
+        ssl_certificate     /certs/server.crt;
+        ssl_certificate_key /certs/server.key;
+
+        # TLS 1.3 only. Use &quot;TLSv1.2 TLSv1.3&quot; if you still have 1.2-only clients.
+        ssl_protocols TLSv1.3;
+        # Hybrid first, classical fallback for clients that do not offer ML-KEM.
+        ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
+
+        location / { return 200 &quot;ok group=$ssl_curve\n&quot;; }
+    }
+
+    # ---- Client side (upstream / proxy_pass) ----
+    server {
+        listen 8080;
+
+        location /pq/ {
+            proxy_pass https://be:8443/;          # PQ-only backend
+            proxy_ssl_server_name on;
+            proxy_ssl_name be;
+            proxy_ssl_protocols TLSv1.3;
+            # nginx 1.19.4+: pass Groups straight to OpenSSL for the upstream leg.
+            proxy_ssl_conf_command Groups X25519MLKEM768:X25519;
+            # Production: proxy_ssl_verify on; proxy_ssl_trusted_certificate /etc/ssl/certs/ca.pem;
+        }
+
+        location /classic/ {
+            proxy_pass https://be:9443/;          # classical-only backend (fallback check)
+            proxy_ssl_server_name on;
+            proxy_ssl_name be;
+            proxy_ssl_protocols TLSv1.3;
+            proxy_ssl_conf_command Groups X25519MLKEM768:X25519;
+        }
+    }
+}</code></pre>
+<p><code>/usr/local/apache2/conf/httpd.conf</code> (official image; on AL2023 use <code>ServerRoot &quot;/etc/httpd&quot;</code>, <code>User apache</code>, <code>Group apache</code>, DocumentRoot <code>/var/www/html</code>, and drop the <code>mod_mime</code> line)</p>
+<pre><code class="language-apache"># /usr/local/apache2/conf/httpd.conf - minimal, complete. PQ hybrid inbound (mod_ssl) and on the reverse-proxy leg.
+# Needs Apache httpd 2.4.x with mod_ssl linked against OpenSSL 3.5+ (httpd:2.4 on Debian 13 / Alpine 3.22+).
+ServerRoot &quot;/usr/local/apache2&quot;
+ServerName srv
+Listen 8443
+Listen 8080
+
+LoadModule mpm_event_module      modules/mod_mpm_event.so
+LoadModule authz_core_module     modules/mod_authz_core.so
+LoadModule unixd_module          modules/mod_unixd.so
+LoadModule log_config_module     modules/mod_log_config.so
+LoadModule mime_module           modules/mod_mime.so
+LoadModule dir_module            modules/mod_dir.so
+LoadModule ssl_module            modules/mod_ssl.so
+LoadModule socache_shmcb_module  modules/mod_socache_shmcb.so
+LoadModule proxy_module          modules/mod_proxy.so
+LoadModule proxy_http_module     modules/mod_proxy_http.so
+
+User daemon
+Group daemon
+ErrorLog /proc/self/fd/2
+LogLevel warn ssl:info
+# %{SSL_PROTOCOL}x / %{SSL_CIPHER}x are standard. mod_ssl has no &quot;negotiated group&quot; variable,
+# so the group itself is not loggable here (check with s_client or a packet capture).
+LogFormat &quot;%h \&quot;%r\&quot; %&gt;s %{SSL_PROTOCOL}x %{SSL_CIPHER}x&quot; tls
+CustomLog /proc/self/fd/1 tls
+
+SSLSessionCache shmcb:/tmp/ssl_scache(512000)
+
+# ---- Server side (inbound) ----
+&lt;VirtualHost *:8443&gt;
+    SSLEngine on
+    SSLCertificateFile    /certs/server.crt
+    SSLCertificateKeyFile /certs/server.key
+    SSLProtocol -all +TLSv1.3
+    # Passed to OpenSSL SSL_CONF: hybrid first, classical fallback.
+    SSLOpenSSLConfCmd Groups X25519MLKEM768:X25519:secp256r1
+    DocumentRoot /usr/local/apache2/htdocs
+    &lt;Directory /usr/local/apache2/htdocs&gt;
+        Require all granted
+    &lt;/Directory&gt;
+&lt;/VirtualHost&gt;
+
+# ---- Client side (reverse proxy to TLS backends) ----
+&lt;VirtualHost *:8080&gt;
+    SSLProxyEngine on
+    SSLProxyProtocol -all +TLSv1.3
+    # Lab only. Production: SSLProxyVerify require + SSLProxyCACertificateFile.
+    SSLProxyVerify none
+    SSLProxyCheckPeerName off
+    SSLProxyCheckPeerCN off
+    # There is no SSLProxy* directive for groups: the proxy leg uses OpenSSL&#39;s default group list
+    # (X25519MLKEM768 first on OpenSSL 3.5), or whatever the system openssl.cnf sets.
+    ProxyPass        /pq/      https://be:8443/
+    ProxyPass        /classic/ https://be:9443/
+&lt;/VirtualHost&gt;</code></pre>
+<p><code>/usr/local/etc/haproxy/haproxy.cfg</code></p>
+<pre><code class="language-haproxy"># /usr/local/etc/haproxy/haproxy.cfg - PQ hybrid on bind (inbound) and server (upstream) lines.
+# Needs HAProxy built against OpenSSL 3.5+ (haproxy:3.x on Debian 13 / Alpine 3.22+).
+global
+    log stdout format raw local0 info
+    # Defaults for every bind line / every server line
+    ssl-default-bind-curves   X25519MLKEM768:X25519:P-256
+    ssl-default-bind-options  ssl-min-ver TLSv1.3
+    ssl-default-server-curves X25519MLKEM768:X25519:P-256
+    ssl-default-server-options ssl-min-ver TLSv1.3
+
+defaults
+    mode http
+    log global
+    # %sslv / %sslc are protocol and cipher; no log variable for the negotiated group was found.
+    log-format &quot;%ci \&quot;%r\&quot; %ST %sslv %sslc&quot;
+    timeout connect 5s
+    timeout client  10s
+    timeout server  10s
+
+# ---- Server side (inbound) ----
+frontend fe_tls
+    bind :8443 ssl crt /certs/server.pem curves X25519MLKEM768:X25519:P-256 ssl-min-ver TLSv1.3
+    http-request return status 200 content-type text/plain string &quot;ok&quot;
+
+# ---- Client side (upstream) ----
+frontend fe_http
+    bind :8080
+    use_backend be_pq if { path_beg /pq/ }
+    default_backend be_classic
+
+backend be_pq
+    # Lab only: verify none. Production: verify required ca-file /etc/ssl/certs/ca.pem sni str(be)
+    server pq be:8443 ssl verify none curves X25519MLKEM768:X25519 ssl-min-ver TLSv1.3
+
+backend be_classic
+    server cl be:9443 ssl verify none curves X25519MLKEM768:X25519 ssl-min-ver TLSv1.3</code></pre>
+<p><code>/etc/caddy/Caddyfile</code></p>
+<pre><code class="language-caddy"># /etc/caddy/Caddyfile - Caddy 2.10+ (Go 1.24+): X25519MLKEM768 is in Go&#39;s default list, so the
+# explicit &quot;curves&quot; lines below only pin the order and make the intent auditable.
+{
+	auto_https off
+	log {
+		output stdout
+	}
+}
+
+# ---- Server side (inbound) ----
+https://:8443 {
+	tls /certs/server.crt /certs/server.key {
+		protocols tls1.3
+		curves x25519mlkem768 x25519 secp256r1
+	}
+	respond &quot;ok&quot;
+}
+
+# ---- Client side (reverse_proxy to TLS backends) ----
+:8080 {
+	handle_path /pq/* {
+		reverse_proxy https://be:8443 {
+			transport http {
+				tls_server_name be
+				tls_insecure_skip_verify   # lab only; production: tls_trust_pool file /etc/ssl/certs/ca.pem
+				tls_curves x25519mlkem768 x25519
+			}
+		}
+	}
+	handle_path /classic/* {
+		reverse_proxy https://be:9443 {
+			transport http {
+				tls_server_name be
+				tls_insecure_skip_verify
+				tls_curves x25519mlkem768 x25519
+			}
+		}
+	}
+}</code></pre>
+<p><code>/etc/traefik/traefik.yml</code> (static)</p>
+<pre><code class="language-yaml">entryPoints:
+  websecure:
+    address: &quot;:8443&quot;
+  web:
+    address: &quot;:8080&quot;
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+log:
+  level: INFO
+accessLog: {}</code></pre>
+<p><code>/etc/traefik/dynamic.yml</code> (file provider)</p>
+<pre><code class="language-yaml">tls:
+  certificates:
+    - certFile: /certs/server.crt
+      keyFile: /certs/server.key
+  options:
+    default:                       # applies to every TLS router unless a router names another option
+      minVersion: VersionTLS13
+      curvePreferences:
+        - X25519MLKEM768
+        - X25519
+        - CurveP256
+
+http:
+  routers:
+    tls-in:
+      entryPoints: [websecure]
+      rule: &quot;PathPrefix(`/`)&quot;
+      tls: {}
+      service: be-classic
+    pq:
+      entryPoints: [web]
+      rule: &quot;PathPrefix(`/pq/`)&quot;
+      middlewares: [strip]
+      service: be-pq
+    classic:
+      entryPoints: [web]
+      rule: &quot;PathPrefix(`/classic/`)&quot;
+      middlewares: [strip]
+      service: be-classic
+  middlewares:
+    strip:
+      stripPrefix:
+        prefixes: [&quot;/pq&quot;, &quot;/classic&quot;]
+  serversTransports:
+    backend-tls:
+      serverName: be
+      insecureSkipVerify: true     # lab only; production: rootCAs: [/etc/ssl/certs/ca.pem]
+      # No curve setting on serversTransport: the upstream leg uses Go&#39;s default list,
+      # which includes X25519MLKEM768 in Go 1.24+ builds.
+  services:
+    be-pq:
+      loadBalancer:
+        serversTransport: backend-tls
+        servers: [{ url: &quot;https://be:8443&quot; }]
+    be-classic:
+      loadBalancer:
+        serversTransport: backend-tls
+        servers: [{ url: &quot;https://be:9443&quot; }]</code></pre>
+<p><code>/etc/envoy/envoy.yaml</code> (also the sidecar config for the Service mesh tab&#39;s ECS example)</p>
+<pre><code class="language-yaml"># /etc/envoy/envoy.yaml - standalone Envoy: PQ hybrid downstream (listener) and upstream (cluster) TLS.
+# Envoy default ecdh_curves is X25519, P-256 (no ML-KEM): you must set the list on BOTH sides.
+admin:
+  address: { socket_address: { address: 0.0.0.0, port_value: 9901 } }
+
+static_resources:
+  listeners:
+  # ---- Server side (downstream TLS) ----
+  - name: tls_in
+    address: { socket_address: { address: 0.0.0.0, port_value: 8443 } }
+    filter_chains:
+    - transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          &quot;@type&quot;: type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          common_tls_context:
+            tls_params:
+              tls_minimum_protocol_version: TLSv1_3
+              tls_maximum_protocol_version: TLSv1_3
+              ecdh_curves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;, &quot;P-256&quot;]
+            tls_certificates:
+            - certificate_chain: { filename: /certs/server.crt }
+              private_key: { filename: /certs/server.key }
+      filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          &quot;@type&quot;: type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: tls_in
+          access_log:
+          - name: envoy.access_loggers.stdout
+            typed_config:
+              &quot;@type&quot;: type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+              log_format:
+                text_format_source:
+                  inline_string: &quot;%REQ(:PATH)% %RESPONSE_CODE% %DOWNSTREAM_TLS_VERSION% %DOWNSTREAM_TLS_CIPHER%\n&quot;
+          route_config:
+            virtual_hosts:
+            - name: local
+              domains: [&quot;*&quot;]
+              routes:
+              - match: { prefix: &quot;/&quot; }
+                direct_response: { status: 200, body: { inline_string: &quot;ok\n&quot; } }
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config: { &quot;@type&quot;: type.googleapis.com/envoy.extensions.filters.http.router.v3.Router }
+
+  # ---- Client side (plain HTTP in, TLS to backends) ----
+  - name: http_in
+    address: { socket_address: { address: 0.0.0.0, port_value: 8080 } }
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          &quot;@type&quot;: type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: http_in
+          route_config:
+            virtual_hosts:
+            - name: backends
+              domains: [&quot;*&quot;]
+              routes:
+              - match: { prefix: &quot;/pq/&quot; }
+                route: { cluster: be_pq, prefix_rewrite: &quot;/&quot; }
+              - match: { prefix: &quot;/classic/&quot; }
+                route: { cluster: be_classic, prefix_rewrite: &quot;/&quot; }
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config: { &quot;@type&quot;: type.googleapis.com/envoy.extensions.filters.http.router.v3.Router }
+
+  clusters:
+  - name: be_pq
+    type: STRICT_DNS
+    load_assignment:
+      cluster_name: be_pq
+      endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: be, port_value: 8443 } } } }] }]
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        &quot;@type&quot;: type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        sni: be
+        common_tls_context:
+          tls_params:
+            tls_minimum_protocol_version: TLSv1_3
+            tls_maximum_protocol_version: TLSv1_3   # upstream max defaults to TLSv1_2!
+            ecdh_curves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+          # Production: validation_context: { trusted_ca: { filename: /etc/ssl/certs/ca.pem } }
+  - name: be_classic
+    type: STRICT_DNS
+    load_assignment:
+      cluster_name: be_classic
+      endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: be, port_value: 9443 } } } }] }]
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        &quot;@type&quot;: type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        sni: be
+        common_tls_context:
+          tls_params:
+            tls_minimum_protocol_version: TLSv1_3
+            tls_maximum_protocol_version: TLSv1_3   # upstream max defaults to TLSv1_2!
+            ecdh_curves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]</code></pre>
+<p><code>/usr/local/tomcat/conf/server.xml</code> (JSSE connector)</p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!-- Tomcat 11, JSSE connector. PQ comes from the JDK: JDK 25.0.5+ (Temurin/Corretto) offers X25519MLKEM768
+     by default. On Java 8-21 use the Bouncy Castle JSSE agent from the Java tab instead. --&gt;
+&lt;Server port=&quot;-1&quot; shutdown=&quot;SHUTDOWN&quot;&gt;
+  &lt;Listener className=&quot;org.apache.catalina.startup.VersionLoggerListener&quot; /&gt;
+  &lt;Service name=&quot;Catalina&quot;&gt;
+    &lt;Connector port=&quot;8443&quot; protocol=&quot;org.apache.coyote.http11.Http11NioProtocol&quot;
+               SSLEnabled=&quot;true&quot; maxThreads=&quot;50&quot;
+               sslImplementationName=&quot;org.apache.tomcat.util.net.jsse.JSSEImplementation&quot;&gt;
+      &lt;!-- groups = named groups in preference order (JSSE names). Omit it to use jdk.tls.namedGroups / JDK default. --&gt;
+      &lt;SSLHostConfig protocols=&quot;TLSv1.3&quot; groups=&quot;X25519MLKEM768,x25519,secp256r1&quot;&gt;
+        &lt;Certificate certificateKeystoreFile=&quot;/certs/server.p12&quot;
+                     certificateKeystoreType=&quot;PKCS12&quot;
+                     certificateKeystorePassword=&quot;changeit&quot; /&gt;
+      &lt;/SSLHostConfig&gt;
+    &lt;/Connector&gt;
+    &lt;Engine name=&quot;Catalina&quot; defaultHost=&quot;localhost&quot;&gt;
+      &lt;Host name=&quot;localhost&quot; appBase=&quot;webapps&quot; unpackWARs=&quot;false&quot; autoDeploy=&quot;false&quot; /&gt;
+    &lt;/Engine&gt;
+  &lt;/Service&gt;
+&lt;/Server&gt;</code></pre>
+<p><code>/usr/local/tomcat/conf/server.xml</code> (OpenSSL implementation via tomcat-native)</p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!-- Tomcat 11, NIO connector with the OpenSSL implementation (libtcnative linked to the system OpenSSL).
+     PQ depends on the image&#39;s OpenSSL: 3.5+ (tomcat:11-jdk25 on Ubuntu 26.04 ships 3.5.5). --&gt;
+&lt;Server port=&quot;-1&quot; shutdown=&quot;SHUTDOWN&quot;&gt;
+  &lt;Listener className=&quot;org.apache.catalina.startup.VersionLoggerListener&quot; /&gt;
+  &lt;Listener className=&quot;org.apache.catalina.core.AprLifecycleListener&quot; /&gt;
+  &lt;Service name=&quot;Catalina&quot;&gt;
+    &lt;Connector port=&quot;8443&quot; protocol=&quot;org.apache.coyote.http11.Http11NioProtocol&quot;
+               SSLEnabled=&quot;true&quot; maxThreads=&quot;50&quot;
+               sslImplementationName=&quot;org.apache.tomcat.util.net.openssl.OpenSSLImplementation&quot;&gt;
+      &lt;SSLHostConfig protocols=&quot;TLSv1.3&quot;&gt;
+        &lt;!-- Passed to OpenSSL SSL_CONF_cmd, same as nginx ssl_conf_command / Apache SSLOpenSSLConfCmd --&gt;
+        &lt;OpenSSLConf&gt;
+          &lt;OpenSSLConfCmd name=&quot;Groups&quot; value=&quot;X25519MLKEM768:X25519:secp256r1&quot; /&gt;
+        &lt;/OpenSSLConf&gt;
+        &lt;Certificate certificateFile=&quot;/certs/server.crt&quot;
+                     certificateKeyFile=&quot;/certs/server.key&quot;
+                     type=&quot;EC&quot; /&gt;
+      &lt;/SSLHostConfig&gt;
+    &lt;/Connector&gt;
+    &lt;Engine name=&quot;Catalina&quot; defaultHost=&quot;localhost&quot;&gt;
+      &lt;Host name=&quot;localhost&quot; appBase=&quot;webapps&quot; unpackWARs=&quot;false&quot; autoDeploy=&quot;false&quot; /&gt;
+    &lt;/Engine&gt;
+  &lt;/Service&gt;
+&lt;/Server&gt;</code></pre>
+<p><code>ingress-nginx-values.yaml</code> (Helm)</p>
+<pre><code class="language-yaml"># helm upgrade ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f ingress-nginx-values.yaml
+# Controller v1.14.0 links OpenSSL 3.5.4 (checked 2026-11-14). Project retired 2026-03-24: plan a Gateway API move.
+controller:
+  image:
+    digest: sha256:e4127065d0317bd11dc64c4dd38dcf7fb1c3d72e468110b4086e636dbaac943d
+  config:
+    ssl-ecdh-curve: &quot;X25519MLKEM768:X25519:prime256v1&quot;
+    ssl-protocols: &quot;TLSv1.3&quot;            # &quot;TLSv1.2 TLSv1.3&quot; if 1.2-only clients remain
+    # Upstream (backend-protocol: HTTPS) uses OpenSSL&#39;s default list, X25519MLKEM768 first on 3.5.
+    # For an explicit upstream list (needs snippets enabled):
+    # http-snippet: |
+    #   proxy_ssl_conf_command Groups X25519MLKEM768:X25519;</code></pre>
+<p><code>envoy-gateway-pq.yaml</code> (field names from the v1.10 API reference; not run here)</p>
+<pre><code class="language-yaml">apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: pq-listener
+  namespace: default
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+  tls:
+    minVersion: &quot;1.3&quot;
+    maxVersion: &quot;1.3&quot;
+    ecdhCurves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;, &quot;P-256&quot;]
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: pq-proxy
+  namespace: envoy-gateway-system
+spec:
+  backendTLS:
+    minVersion: &quot;1.3&quot;
+    maxVersion: &quot;1.3&quot;      # Envoy&#39;s upstream maximum otherwise defaults to 1.2
+    ecdhCurves: [&quot;X25519MLKEM768&quot;, &quot;X25519&quot;]
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: pq-proxy
+    namespace: envoy-gateway-system</code></pre>
+<p><code>Dockerfile</code> (nginx for ECS, Fargate, EKS)</p>
+<pre><code class="language-dockerfile"># nginx:1.31.8 on Debian 13, OpenSSL 3.5.7 (checked 2026-11-14). Pin by digest; refresh it when you patch.
+FROM nginx@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
+COPY nginx.conf /etc/nginx/nginx.conf
+# Certificates: mount at /certs at runtime (Kubernetes Secret, or written at task start); never bake keys in.
+RUN nginx -V 2&gt;&amp;1 | grep -q &#39;OpenSSL 3\.[5-9]&#39; || (echo &quot;nginx not linked to OpenSSL 3.5+&quot; &amp;&amp; exit 1)
+EXPOSE 8443 8080</code></pre>
+<p><code>ecs-nginx.tf</code> (Terraform)</p>
+<pre><code class="language-hcl">variable &quot;image&quot; {
+  description = &quot;ECR image by digest, e.g. 123456789012.dkr.ecr.eu-west-1.amazonaws.com/pq-nginx@sha256:...&quot;
+  type        = string
+}
+variable &quot;execution_role_arn&quot; { type = string }
+
+resource &quot;aws_cloudwatch_log_group&quot; &quot;nginx&quot; {
+  name              = &quot;/ecs/pq-nginx&quot;
+  retention_in_days = 30
+}
+
+resource &quot;aws_ecs_task_definition&quot; &quot;nginx&quot; {
+  family                   = &quot;pq-nginx&quot;
+  requires_compatibilities = [&quot;FARGATE&quot;]
+  network_mode             = &quot;awsvpc&quot;
+  cpu                      = &quot;256&quot;
+  memory                   = &quot;512&quot;
+  execution_role_arn       = var.execution_role_arn
+  runtime_platform {
+    operating_system_family = &quot;LINUX&quot;
+    cpu_architecture        = &quot;ARM64&quot;
+  }
+  container_definitions = jsonencode([{
+    name         = &quot;nginx&quot;
+    image        = var.image
+    essential    = true
+    portMappings = [{ containerPort = 8443, protocol = &quot;tcp&quot; }]
+    # access log carries group=$ssl_curve -&gt; CloudWatch Logs Insights can count non-PQ handshakes
+    logConfiguration = {
+      logDriver = &quot;awslogs&quot;
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.nginx.name
+        awslogs-region        = data.aws_region.current.name
+        awslogs-stream-prefix = &quot;nginx&quot;
+      }
+    }
+    healthCheck = {
+      command  = [&quot;CMD-SHELL&quot;, &quot;nginx -t || exit 1&quot;]
+      interval = 30
+      retries  = 3
+    }
+  }])
+}
+
+data &quot;aws_region&quot; &quot;current&quot; {}</code></pre>
+<p><code>ecs-nginx.yaml</code> (CloudFormation)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Parameters:
+  Image:
+    Type: String
+    Description: ECR image by digest (repo@sha256:...)
+  ExecutionRoleArn:
+    Type: String
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/pq-nginx
+      RetentionInDays: 30
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: pq-nginx
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: &quot;256&quot;
+      Memory: &quot;512&quot;
+      ExecutionRoleArn: !Ref ExecutionRoleArn
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: ARM64
+      ContainerDefinitions:
+        - Name: nginx
+          Image: !Ref Image
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8443
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: nginx
+          HealthCheck:
+            Command: [&quot;CMD-SHELL&quot;, &quot;nginx -t || exit 1&quot;]
+            Interval: 30
+            Retries: 3</code></pre>
+<p><code>ssm-nginx-pq.tf</code> (Terraform; EC2 on AL2023, run with State Manager or Run Command)</p>
+<pre><code class="language-hcl">resource &quot;aws_ssm_document&quot; &quot;nginx_pq&quot; {
+  name            = &quot;PQ-Nginx-Groups&quot;
+  document_type   = &quot;Command&quot;
+  document_format = &quot;YAML&quot;
+  content         = &lt;&lt;-DOC
+    schemaVersion: &quot;2.2&quot;
+    description: &quot;Enable X25519MLKEM768 on nginx inbound and proxy_pass legs (AL2023)&quot;
+    mainSteps:
+      - action: aws:runShellScript
+        name: nginxPq
+        inputs:
+          runCommand:
+            - set -euo pipefail
+            - nginx -V 2&gt;&amp;1 | grep -q &#39;OpenSSL 3\.[5-9]&#39; || { echo &quot;nginx OpenSSL &lt; 3.5&quot;; exit 1; }
+            - |
+              cat &gt; /etc/nginx/conf.d/00-pq-tls.conf &lt;&lt;&#39;EOF&#39;
+              # http-level defaults; server blocks inherit unless they override
+              ssl_protocols TLSv1.2 TLSv1.3;
+              ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
+              proxy_ssl_protocols TLSv1.2 TLSv1.3;
+              proxy_ssl_conf_command Groups X25519MLKEM768:X25519:prime256v1;
+              EOF
+            - nginx -t
+            - systemctl reload nginx
+            - echo | openssl s_client -connect 127.0.0.1:443 -tls1_3 -groups X25519MLKEM768 2&gt;&amp;1 | grep &#39;Negotiated TLS1.3 group&#39;
+  DOC
+}</code></pre>
+<p><code>ssm-nginx-pq.yaml</code> (CloudFormation)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Resources:
+  NginxPqDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      Name: PQ-Nginx-Groups
+      DocumentType: Command
+      DocumentFormat: YAML
+      Content:
+        schemaVersion: &quot;2.2&quot;
+        description: Enable X25519MLKEM768 on nginx inbound and proxy_pass legs (AL2023)
+        mainSteps:
+          - action: aws:runShellScript
+            name: nginxPq
+            inputs:
+              runCommand:
+                - set -euo pipefail
+                - nginx -V 2&gt;&amp;1 | grep -q &#39;OpenSSL 3\.[5-9]&#39; || { echo &quot;nginx OpenSSL &lt; 3.5&quot;; exit 1; }
+                - |
+                  cat &gt; /etc/nginx/conf.d/00-pq-tls.conf &lt;&lt;&#39;EOF&#39;
+                  ssl_protocols TLSv1.2 TLSv1.3;
+                  ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
+                  proxy_ssl_protocols TLSv1.2 TLSv1.3;
+                  proxy_ssl_conf_command Groups X25519MLKEM768:X25519:prime256v1;
+                  EOF
+                - nginx -t
+                - systemctl reload nginx
+                - echo | openssl s_client -connect 127.0.0.1:443 -tls1_3 -groups X25519MLKEM768 2&gt;&amp;1 | grep &#39;Negotiated TLS1.3 group&#39;</code></pre>

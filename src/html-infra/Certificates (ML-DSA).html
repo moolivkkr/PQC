@@ -1,0 +1,275 @@
+<h1 id="certificates-and-signatures-ml-dsa">Certificates and signatures (ML-DSA)</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>ML-DSA (FIPS 204) replaces the signatures in certificates; it is the second step after ML-KEM key exchange. It is less urgent: recorded traffic can be decrypted later, but a signature only has to hold at the moment of the handshake. Today ML-DSA works in private PKI only.</p>
+<p>Three parties decide whether a handshake uses an ML-DSA certificate. The CA must sign with ML-DSA. The server must hold an ML-DSA certificate and a TLS library that can sign with it (OpenSSL 3.5+). The client must offer ML-DSA in its <code>signature_algorithms</code> extension and be able to verify the chain. A server that also holds an ECDSA certificate falls back to it for clients that don&#39;t offer ML-DSA; that dual-certificate setup is the safe way to start (Tested 2026-11-14).</p>
+<table><thead><tr><th></th><th>ML-KEM (key exchange)</th><th>ML-DSA (signatures, certificates)</th></tr></thead><tbody><tr><td>Threat</td><td>Traffic recorded today, decrypted later</td><td>Forged certificates once a quantum computer exists</td></tr><tr><td>Urgency</td><td>Now</td><td>Later</td></tr><tr><td>What changes</td><td>TLS libraries and config at both ends</td><td>The CA, every certificate, every verifier</td></tr><tr><td>Where it works</td><td>Most of this document</td><td>Private PKI only</td></tr></tbody></table>
+<h2 id="status-matrix">Status matrix</h2>
+<h3 id="aws-services">AWS services</h3>
+<table><thead><tr><th>Service</th><th>ML-DSA</th><th>Evidence</th></tr></thead><tbody><tr><td>AWS Private CA</td><td>CA and end-entity certificates. <code>KeyAlgorithm</code> and <code>SigningAlgorithm</code> <code>ML_DSA_44</code>, <code>ML_DSA_65</code>, <code>ML_DSA_87</code> (the same value in both). All commercial, GovCloud and China regions since November 2025.</td><td>Documented (<a href="https://docs.aws.amazon.com/privateca/latest/userguide/PcaWelcome.html#supported-algorithms">algorithms</a>, <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_CertificateAuthorityConfiguration.html">API</a>)</td></tr><tr><td>AWS KMS</td><td>Signing keys <code>ML_DSA_44/65/87</code>, algorithm <code>ML_DSA_SHAKE_256</code>; <code>RAW</code> messages up to 4 KB, <code>EXTERNAL_MU</code> for larger</td><td>Documented (<a href="https://docs.aws.amazon.com/kms/latest/developerguide/mldsa.html">KMS ML-DSA</a>)</td></tr><tr><td>IAM Roles Anywhere</td><td>ML-DSA trust anchors and end-entity certificates (March 2026)</td><td>Documented</td></tr><tr><td>ACM public certificates; ALB, NLB, CloudFront, API Gateway listeners</td><td>RSA and ECDSA only; cannot serve ML-DSA</td><td>Claimed (third-party report)</td></tr><tr><td>ACM private certificates (from Private CA)</td><td>ACM supports &quot;some but not all&quot; Private CA algorithms; ML-DSA through ACM not confirmed</td><td>Documented (the caveat); ML-DSA Unverified</td></tr><tr><td>AWS CloudHSM</td><td>AWS&#39;s PQC migration page lists ML-DSA as preview; GA not confirmed</td><td>Unverified</td></tr><tr><td>Public web PKI and browsers</td><td>No public CA issues ML-DSA; browsers don&#39;t accept it; Chrome is pursuing Merkle Tree Certificates</td><td>Claimed</td></tr></tbody></table>
+<h3 id="clients-and-runtimes">Clients and runtimes</h3>
+<p>Tested 2026-11-14 against nginx 1.29 (OpenSSL 3.5.5) holding an ML-DSA-44 chain and an ECDSA P-256 chain.</p>
+<table><thead><tr><th>Client</th><th>TLS: offers ML-DSA? Leaf received</th><th>Offline ML-DSA chain verification</th><th>Evidence</th></tr></thead><tbody><tr><td>OpenSSL 3.5.7 <code>s_client</code>, curl (Debian 13)</td><td>Yes; ML-DSA-44 leaf (<code>Peer signature type: mldsa44</code>)</td><td><code>openssl verify</code>: OK</td><td>Tested</td></tr><tr><td>OpenSSL 3.5 with <code>-sigalgs ecdsa_secp256r1_sha256</code></td><td>No; ECDSA leaf</td><td>–</td><td>Tested</td></tr><tr><td>OpenSSL 3.0 (Debian 12)</td><td>No; ECDSA leaf</td><td>No</td><td>Tested</td></tr><tr><td>Python 3.13 (Debian 13, OpenSSL 3.5.7)</td><td>Yes; ML-DSA-44 leaf, verified</td><td>via OpenSSL</td><td>Tested</td></tr><tr><td>Node 24.22.3 (bundled OpenSSL 3.5.9)</td><td>Yes; ML-DSA-44 leaf, <code>authorized=true</code></td><td>via OpenSSL</td><td>Tested</td></tr><tr><td>.NET 10.0.15 (Alpine 3.24)</td><td>Yes; ML-DSA-44 leaf, chain built with a custom root</td><td><code>X509Chain.Build</code>: true; <code>MLDsa.IsSupported</code>: true</td><td>Tested</td></tr><tr><td>Go 1.25.14</td><td>No; ECDSA leaf</td><td>No: unknown key algorithm, &quot;signed by unknown authority&quot;</td><td>Tested</td></tr><tr><td>Go 1.27.4</td><td>No; ECDSA leaf (crypto/tls does not offer ML-DSA)</td><td>Yes: <code>x509.Verify</code> OK</td><td>Tested</td></tr><tr><td>Java 25.0.5 (Temurin, stock JSSE)</td><td>No; EC leaf</td><td>Yes: PKIX <code>CertPathValidator</code> OK</td><td>Tested</td></tr><tr><td>Bouncy Castle JSSE</td><td>Not tested</td><td>–</td><td>Unverified</td></tr></tbody></table>
+<p>Size cost (Tested, DER): ML-DSA-87 root 7,510 bytes, ML-DSA-65 intermediate 6,876, ML-DSA-44 leaf 4,953; ECDSA P-256 root 424 and leaf 464. Leaf plus intermediate grows from about 0.9 KB to 11.8 KB. An ML-DSA-44 signature is 2,420 bytes and its public key 1,312 bytes, against 64 bytes for an ECDSA P-256 signature.</p>
+<h2 id="client-side-app-level">Client side (app level)</h2>
+<p>A client needs the private root in its trust store and, to receive the ML-DSA certificate, a TLS stack that offers ML-DSA. Clients that have only the root still work against a dual-certificate server; they receive ECDSA.</p>
+<table><thead><tr><th>Runtime</th><th>Trust the private root</th><th>Notes</th></tr></thead><tbody><tr><td>OpenSSL tools, curl, libpq, Valkey</td><td><code>--cacert</code> / <code>sslrootcert=</code>; or the system store: Debian/Alpine <code>/usr/local/share/ca-certificates/*.crt</code> + <code>update-ca-certificates</code>; AL2023 <code>/etc/pki/ca-trust/source/anchors/</code> + <code>update-ca-trust</code></td><td>OpenSSL 3.5 offers <code>mldsa44/65/87</code> by default (seen in a ClientHello trace, Tested)</td></tr><tr><td>Python</td><td><code>ssl.create_default_context(cafile=...)</code>; <code>SSL_CERT_FILE</code>; requests: <code>REQUESTS_CA_BUNDLE</code> (certifi has no private roots)</td><td>Python must link OpenSSL 3.5 (Python tab)</td></tr><tr><td>Node.js</td><td><code>tls.connect({ ca })</code>; <code>NODE_EXTRA_CA_CERTS=/path/root.pem</code></td><td>Node 24 bundles OpenSSL 3.5 (Tested)</td></tr><tr><td>Go</td><td><code>x509.NewCertPool()</code> + <code>AppendCertsFromPEM</code>; <code>SSL_CERT_FILE</code></td><td>Go 1.27 verifies ML-DSA chains; crypto/tls never selects ML-DSA, so the server must also hold ECDSA</td></tr><tr><td>Java</td><td>PKCS12 truststore (<code>javax.net.ssl.trustStore</code>)</td><td>Stock JDK 25 validates ML-DSA chains, but JSSE negotiates ECDSA</td></tr><tr><td>.NET</td><td><code>X509ChainPolicy.CustomTrustStore</code> with <code>TrustMode = CustomRootTrust</code>, or the OS store</td><td>Linux needs OpenSSL 3.5; macOS has no ML-DSA in .NET 10 (Claimed)</td></tr></tbody></table>
+<p>.NET 10 validation callback (Tested). Copy the server-sent intermediates into <code>ExtraStore</code> when you rebuild the chain, or the build fails:</p>
+<pre><code class="language-csharp">c.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+c.ChainPolicy.CustomTrustStore.AddRange(roots);
+foreach (var el in ch!.ChainPolicy.ExtraStore) c.ChainPolicy.ExtraStore.Add(el);
+bool ok = c.Build(cert!);</code></pre>
+<h2 id="server-side">Server side</h2>
+<h3 id="nginx-ml-dsa-and-ecdsa-side-by-side-tested">nginx: ML-DSA and ECDSA side by side (Tested)</h3>
+<pre><code class="language-nginx">ssl_certificate     /etc/nginx/pki/mldsa-fullchain.crt;
+ssl_certificate_key /etc/nginx/pki/mldsa-leaf.key;
+ssl_certificate     /etc/nginx/pki/ec-fullchain.crt;
+ssl_certificate_key /etc/nginx/pki/ec-leaf.key;
+ssl_ecdh_curve      X25519MLKEM768:X25519:prime256v1;</code></pre>
+<p>OpenSSL picks the certificate from the client&#39;s <code>signature_algorithms</code>. OpenSSL 3.5, Python, Node and .NET clients got ML-DSA; Go, Java and OpenSSL 3.0 clients got ECDSA. Key exchange stayed X25519MLKEM768 (or X25519 for OpenSSL 3.0). Full configs for other web servers: <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>.</p>
+<h3 id="apache-httpd-haproxy-envoy">Apache httpd, HAProxy, Envoy</h3>
+<p>Apache accepts several <code>SSLCertificateFile</code> / <code>SSLCertificateKeyFile</code> pairs and HAProxy loads multi-type bundles, but neither was tested with ML-DSA here (Unverified). Envoy uses BoringSSL; ML-DSA serving not confirmed (Unverified). AWS load balancers cannot serve ML-DSA.</p>
+<h3 id="aws-private-ca">AWS Private CA</h3>
+<p>CLI flow (Documented values; not run here, no AWS credentials):</p>
+<pre><code class="language-bash">aws acm-pca create-certificate-authority --certificate-authority-type ROOT \
+  --certificate-authority-configuration &#39;{&quot;KeyAlgorithm&quot;:&quot;ML_DSA_65&quot;,&quot;SigningAlgorithm&quot;:&quot;ML_DSA_65&quot;,&quot;Subject&quot;:{&quot;CommonName&quot;:&quot;Example ML-DSA Root&quot;}}&#39;
+aws acm-pca get-certificate-authority-csr --certificate-authority-arn $CA --output text &gt; ca.csr
+aws acm-pca issue-certificate --certificate-authority-arn $CA --csr fileb://ca.csr \
+  --signing-algorithm ML_DSA_65 --template-arn arn:aws:acm-pca:::template/RootCACertificate/V1 \
+  --validity Value=10,Type=YEARS
+# get-certificate, then import-certificate-authority-certificate to activate
+openssl genpkey -algorithm ML-DSA-44 -out leaf.key
+openssl req -new -key leaf.key -subj &quot;/CN=svc.internal&quot; -addext &quot;subjectAltName=DNS:svc.internal&quot; -out leaf.csr
+aws acm-pca issue-certificate --certificate-authority-arn $CA --csr fileb://leaf.csr \
+  --signing-algorithm ML_DSA_65 --template-arn arn:aws:acm-pca:::template/EndEntityCertificate/V1 \
+  --validity Value=90,Type=DAYS</code></pre>
+<p>Private CA copies the SAN and public key from the CSR without validating them, so build the CSR carefully. A subordinate CA must use a key algorithm its parent supports (both Documented). Terraform and CloudFormation are in Full configuration files; whether your provider or resource schema version accepts <code>ML_DSA_*</code> is not confirmed (Unverified).</p>
+<h3 id="aws-kms-ml-dsa-signing-not-tls">AWS KMS (ML-DSA signing, not TLS)</h3>
+<pre><code class="language-bash">aws kms create-key --key-spec ML_DSA_65 --key-usage SIGN_VERIFY
+aws kms sign --key-id $K --message fileb://msg.bin --message-type RAW \
+  --signing-algorithm ML_DSA_SHAKE_256 --query Signature --output text | base64 -d &gt; sig.bin
+aws kms verify --key-id $K --message fileb://msg.bin --message-type RAW \
+  --signing-algorithm ML_DSA_SHAKE_256 --signature fileb://sig.bin</code></pre>
+<p>Documented. Use it for code and artifact signing or as a KMS-backed CA key; it does not put ML-DSA into TLS by itself.</p>
+<h3 id="composite-and-hybrid-certificates">Composite and hybrid certificates</h3>
+<ul><li><p>Composite ML-DSA for X.509 (ML-DSA plus RSA or ECDSA in one key and signature) was published as RFC 10073, Proposed Standard, November 2026 (Documented, <a href="https://datatracker.ietf.org/doc/draft-ietf-lamps-pq-composite-sigs/">datatracker</a>).</p></li><li><p>.NET 10 has a <code>CompositeMLDsa</code> API that moved to draft-08 at GA (Documented, <a href="https://learn.microsoft.com/dotnet/core/compatibility/cryptography/10.0/composite-mldsa-draft-08">Microsoft Learn</a>); check it matches the RFC before use.</p></li><li><p>OpenSSL 3.5 composite support: not confirmed (Unverified). AWS Private CA lists no composite algorithms.</p></li><li><p>The ML-DSA TLS code points (<code>mldsa44</code> 0x0904, <code>mldsa65</code> 0x0905, <code>mldsa87</code> 0x0906) come from draft-ietf-tls-mldsa, still a draft; OpenSSL 3.5 already sends them (Tested).</p></li><li><p>Until composites are widely supported, dual certificates (ML-DSA plus ECDSA) give the same fallback without a new format.</p></li></ul>
+<h2 id="the-clm-products-role">The CLM product&#39;s role</h2>
+<p>The CLM codebase already has ML-DSA plumbing: certificate policy (<code>clm/internal/certpolicy/quantumsafe.go</code>), HSM signing (<code>clm/internal/hsm/craton_mldsa.go</code>), the Nitro enclave signer (<code>nitro-enclave/internal/pqc/signer.go</code>), and composite and hybrid certificate tests. These were found by file name; the code paths weren&#39;t reviewed.</p>
+<p>Split of responsibilities:</p>
+<ul><li><p><strong>ML-KEM:</strong> discovery plus runtime and config fixes (the rest of this document).</p></li><li><p><strong>ML-DSA:</strong> a CLM re-issuance campaign. Start with internal mutual TLS, service-to-service and code signing; public endpoints wait for the web PKI. CLM should issue the ML-DSA and ECDSA pair together so servers can run dual certificates.</p></li></ul>
+<h3 id="steps">Steps</h3>
+<ol><li><p>Finish ML-KEM rollout first; it protects against the urgent threat.</p></li><li><p>Inventory certificate signature algorithms in CLM, starting with long-lived roots and intermediates.</p></li><li><p>Build an ML-DSA hierarchy beside the existing one (Private CA or CLM) and add its root to every client trust store.</p></li><li><p>Pilot dual certificates (ML-DSA plus ECDSA) on one internal mutual TLS path. Expect OpenSSL 3.5, Python, Node and .NET clients to take ML-DSA, and Go and Java to stay on ECDSA.</p></li><li><p>Expand per path, keeping the ECDSA certificate until every verifier on the path negotiates ML-DSA.</p></li><li><p>Public certificates when CA/Browser Forum rules and browsers allow.</p></li></ol>
+<h2 id="packaging-per-compute-type">Packaging per compute type</h2>
+<p>Clients need the private root in their trust store; servers need both key pairs.</p>
+<table><thead><tr><th>Compute</th><th>Client trust</th><th>Server certificates</th><th>Evidence</th></tr></thead><tbody><tr><td>Lambda zip</td><td>Ship <code>pki/roots.pem</code> in the package; <code>SSL_CERT_FILE=/var/task/pki/roots.pem</code> (Python, Go), <code>NODE_EXTRA_CA_CERTS=/var/task/pki/roots.pem</code> (Node)</td><td>n/a</td><td>Unverified on Lambda</td></tr><tr><td>Lambda image</td><td><code>COPY roots.pem</code> plus the same variables</td><td>n/a</td><td>Unverified</td></tr><tr><td>ECS/Fargate, EKS</td><td>Debian 13 or Alpine 3.24 base; root into <code>/usr/local/share/ca-certificates/</code> + <code>update-ca-certificates</code></td><td>nginx (Debian 13) with both pairs from Secrets Manager or a mounted secret</td><td>Tested (nginx, clients); <code>update-ca-certificates</code> with an ML-DSA root Unverified</td></tr><tr><td>EC2 (AL2023)</td><td><code>/etc/pki/ca-trust/source/anchors/</code> + <code>update-ca-trust</code></td><td>nginx on OpenSSL 3.5 with both pairs</td><td>Unverified</td></tr></tbody></table>
+<h2 id="verify">Verify</h2>
+<pre><code class="language-bash"># Which certificate does the server pick? (OpenSSL 3.5 client)
+openssl s_client -connect web:443 -CAfile roots.pem -sigalgs mldsa44:mldsa65:mldsa87 &lt;/dev/null | grep -E &#39;Peer signature type|a:PKEY&#39;
+openssl s_client -connect web:443 -CAfile roots.pem -sigalgs ecdsa_secp256r1_sha256 &lt;/dev/null | grep -E &#39;Peer signature type|a:PKEY&#39;
+# Inventory: signature algorithm of a certificate on disk
+openssl x509 -in cert.pem -noout -text | grep -E &#39;Signature Algorithm|Public Key Algorithm&#39;</code></pre>
+<p>Expect <code>Peer signature type: mldsa44</code> for the first and <code>ecdsa_secp256r1_sha256</code> for the second (Tested). Old clients (OpenSSL 3.0, Go, Java) must still complete the handshake (Tested).</p>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p>Never serve only an ML-DSA certificate to a mixed fleet: Go, Java and OpenSSL 3.0 clients cannot negotiate it (Tested).</p></li><li><p>Chains grow about 13 times (0.9 KB to 11.8 KB). Watch MTU-sensitive paths, middleboxes, IoT devices and client-certificate size limits.</p></li><li><p>A certificate carries one algorithm. Re-issue; don&#39;t re-sign.</p></li><li><p>Rollback: remove the ML-DSA <code>ssl_certificate</code> pair and reload; ECDSA keeps serving. The ML-DSA root can stay in trust stores; it is harmless when unused.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<h3 id="mkchainsh-openssl-35-ml-dsa-and-ecdsa-chains-tested">mkchain.sh (OpenSSL 3.5: ML-DSA and ECDSA chains, Tested)</h3>
+<pre><code class="language-bash">#!/bin/sh
+# mkchain.sh - root ML-DSA-87 -&gt; intermediate ML-DSA-65 -&gt; leaf ML-DSA-44, plus an ECDSA P-256 chain.
+# Tested in postgres:18 (Debian 13, OpenSSL 3.5.7). Run in a directory that holds ca.ext.
+set -e
+openssl version
+
+openssl genpkey -algorithm ML-DSA-87 -out mldsa-root.key
+openssl req -x509 -new -key mldsa-root.key -subj &quot;/CN=Example ML-DSA Root CA&quot; -days 3650 \
+  -addext &quot;basicConstraints=critical,CA:TRUE&quot; -addext &quot;keyUsage=critical,keyCertSign,cRLSign&quot; \
+  -out mldsa-root.crt
+
+openssl genpkey -algorithm ML-DSA-65 -out mldsa-int.key
+openssl req -new -key mldsa-int.key -subj &quot;/CN=Example ML-DSA Issuing CA&quot; -out mldsa-int.csr
+openssl x509 -req -in mldsa-int.csr -CA mldsa-root.crt -CAkey mldsa-root.key -CAcreateserial -days 1825 \
+  -extfile ca.ext -extensions v3_int -out mldsa-int.crt
+
+openssl genpkey -algorithm ML-DSA-44 -out mldsa-leaf.key
+openssl req -new -key mldsa-leaf.key -subj &quot;/CN=web&quot; -out mldsa-leaf.csr
+openssl x509 -req -in mldsa-leaf.csr -CA mldsa-int.crt -CAkey mldsa-int.key -CAcreateserial -days 90 \
+  -extfile ca.ext -extensions v3_leaf -out mldsa-leaf.crt
+cat mldsa-leaf.crt mldsa-int.crt &gt; mldsa-fullchain.crt
+
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ec-root.key
+openssl req -x509 -new -key ec-root.key -subj &quot;/CN=Example ECDSA Root CA&quot; -days 3650 \
+  -addext &quot;basicConstraints=critical,CA:TRUE&quot; -addext &quot;keyUsage=critical,keyCertSign,cRLSign&quot; -out ec-root.crt
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ec-leaf.key
+openssl req -new -key ec-leaf.key -subj &quot;/CN=web&quot; -out ec-leaf.csr
+openssl x509 -req -in ec-leaf.csr -CA ec-root.crt -CAkey ec-root.key -CAcreateserial -days 90 \
+  -extfile ca.ext -extensions v3_leaf -out ec-leaf.crt
+cat ec-leaf.crt &gt; ec-fullchain.crt
+
+cat mldsa-root.crt ec-root.crt &gt; roots-both.crt
+openssl verify -CAfile mldsa-root.crt -untrusted mldsa-int.crt mldsa-leaf.crt</code></pre>
+<h3 id="caext">ca.ext</h3>
+<pre><code class="language-ini"># ca.ext - extensions for the intermediate and leaf certificates
+[ v3_int ]
+basicConstraints       = critical, CA:TRUE, pathlen:0
+keyUsage               = critical, keyCertSign, cRLSign
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always
+
+[ v3_leaf ]
+basicConstraints       = critical, CA:FALSE
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = serverAuth, clientAuth
+subjectAltName         = DNS:web, DNS:localhost
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always</code></pre>
+<h3 id="defaultconf-nginx-dual-certificate-server-tested">default.conf (nginx dual-certificate server, Tested)</h3>
+<pre><code class="language-nginx"># /etc/nginx/conf.d/default.conf - ML-DSA to clients that offer ML-DSA signature algorithms,
+# ECDSA to everyone else. Needs nginx on OpenSSL 3.5+. Tested: nginx 1.29 (Debian 13, OpenSSL 3.5.5).
+server {
+    listen 443 ssl;
+    server_name web;
+
+    ssl_certificate     /etc/nginx/pki/mldsa-fullchain.crt;
+    ssl_certificate_key /etc/nginx/pki/mldsa-leaf.key;
+    ssl_certificate     /etc/nginx/pki/ec-fullchain.crt;
+    ssl_certificate_key /etc/nginx/pki/ec-leaf.key;
+
+    ssl_protocols   TLSv1.3 TLSv1.2;
+    ssl_ecdh_curve  X25519MLKEM768:X25519:prime256v1;
+
+    location / {
+        return 200 &quot;ok $ssl_protocol $ssl_curve\n&quot;;
+    }
+}</code></pre>
+<h3 id="web-sslconf-apache-httpd-unverified-with-ml-dsa">web-ssl.conf (Apache httpd; Unverified with ML-DSA)</h3>
+<pre><code class="language-apache"># /etc/apache2/sites-available/web-ssl.conf - same dual-certificate idea; not tested with ML-DSA
+&lt;VirtualHost *:443&gt;
+    ServerName web
+    SSLEngine on
+    SSLProtocol -all +TLSv1.3 +TLSv1.2
+    SSLOpenSSLConfCmd Groups X25519MLKEM768:X25519:prime256v1
+    SSLCertificateFile    /etc/apache2/pki/mldsa-fullchain.crt
+    SSLCertificateKeyFile /etc/apache2/pki/mldsa-leaf.key
+    SSLCertificateFile    /etc/apache2/pki/ec-fullchain.crt
+    SSLCertificateKeyFile /etc/apache2/pki/ec-leaf.key
+&lt;/VirtualHost&gt;</code></pre>
+<h3 id="private-ca-mldsatf-terraform-provider-acceptance-of-mldsa-values-unverified">private-ca-mldsa.tf (Terraform; provider acceptance of ML_DSA values Unverified)</h3>
+<pre><code class="language-hcl"># private-ca-mldsa.tf - ML-DSA-65 root CA in AWS Private CA, self-signed and activated, plus a KMS ML-DSA key
+resource &quot;aws_acmpca_certificate_authority&quot; &quot;mldsa_root&quot; {
+  type = &quot;ROOT&quot;
+
+  certificate_authority_configuration {
+    key_algorithm     = &quot;ML_DSA_65&quot;
+    signing_algorithm = &quot;ML_DSA_65&quot;
+    subject {
+      common_name  = &quot;Example ML-DSA Root&quot;
+      organization = &quot;Example&quot;
+    }
+  }
+
+  permanent_deletion_time_in_days = 7
+}
+
+resource &quot;aws_acmpca_certificate&quot; &quot;mldsa_root&quot; {
+  certificate_authority_arn   = aws_acmpca_certificate_authority.mldsa_root.arn
+  certificate_signing_request = aws_acmpca_certificate_authority.mldsa_root.certificate_signing_request
+  signing_algorithm           = &quot;ML_DSA_65&quot;
+  template_arn                = &quot;arn:aws:acm-pca:::template/RootCACertificate/V1&quot;
+
+  validity {
+    type  = &quot;YEARS&quot;
+    value = 10
+  }
+}
+
+resource &quot;aws_acmpca_certificate_authority_certificate&quot; &quot;mldsa_root&quot; {
+  certificate_authority_arn = aws_acmpca_certificate_authority.mldsa_root.arn
+  certificate               = aws_acmpca_certificate.mldsa_root.certificate
+  certificate_chain         = aws_acmpca_certificate.mldsa_root.certificate_chain
+}
+
+# End-entity certificate from a CSR made with: openssl genpkey -algorithm ML-DSA-44
+resource &quot;aws_acmpca_certificate&quot; &quot;svc&quot; {
+  certificate_authority_arn   = aws_acmpca_certificate_authority.mldsa_root.arn
+  certificate_signing_request = file(&quot;${path.module}/leaf.csr&quot;)
+  signing_algorithm           = &quot;ML_DSA_65&quot;
+  template_arn                = &quot;arn:aws:acm-pca:::template/EndEntityCertificate/V1&quot;
+
+  validity {
+    type  = &quot;DAYS&quot;
+    value = 90
+  }
+
+  depends_on = [aws_acmpca_certificate_authority_certificate.mldsa_root]
+}
+
+resource &quot;aws_kms_key&quot; &quot;mldsa_signing&quot; {
+  description              = &quot;ML-DSA-65 signing key&quot;
+  customer_master_key_spec = &quot;ML_DSA_65&quot;
+  key_usage                = &quot;SIGN_VERIFY&quot;
+  deletion_window_in_days  = 7
+}</code></pre>
+<h3 id="private-ca-mldsayaml-cloudformation-schema-acceptance-of-mldsa-values-unverified">private-ca-mldsa.yaml (CloudFormation; schema acceptance of ML_DSA values Unverified)</h3>
+<pre><code class="language-yaml"># private-ca-mldsa.yaml - ML-DSA-65 root CA, its certificate, activation, and a KMS ML-DSA key
+AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Resources:
+  MlDsaRootCA:
+    Type: AWS::ACMPCA::CertificateAuthority
+    Properties:
+      Type: ROOT
+      KeyAlgorithm: ML_DSA_65
+      SigningAlgorithm: ML_DSA_65
+      Subject:
+        CommonName: Example ML-DSA Root
+        Organization: Example
+  MlDsaRootCert:
+    Type: AWS::ACMPCA::Certificate
+    Properties:
+      CertificateAuthorityArn: !Ref MlDsaRootCA
+      CertificateSigningRequest: !GetAtt MlDsaRootCA.CertificateSigningRequest
+      SigningAlgorithm: ML_DSA_65
+      TemplateArn: arn:aws:acm-pca:::template/RootCACertificate/V1
+      Validity:
+        Type: YEARS
+        Value: 10
+  MlDsaRootActivation:
+    Type: AWS::ACMPCA::CertificateAuthorityActivation
+    Properties:
+      CertificateAuthorityArn: !Ref MlDsaRootCA
+      Certificate: !GetAtt MlDsaRootCert.Certificate
+      Status: ACTIVE
+  MlDsaSigningKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: ML-DSA-65 signing key
+      KeySpec: ML_DSA_65
+      KeyUsage: SIGN_VERIFY
+      KeyPolicy:
+        Version: &quot;2012-10-17&quot;
+        Statement:
+          - Sid: AccountAdmin
+            Effect: Allow
+            Principal: { AWS: !Sub &quot;arn:aws:iam::${AWS::AccountId}:root&quot; }
+            Action: &quot;kms:*&quot;
+            Resource: &quot;*&quot;
+Outputs:
+  CaArn:
+    Value: !Ref MlDsaRootCA</code></pre>
+<h3 id="dockerfile-client-trust-store-debian-13">Dockerfile (client trust store, Debian 13)</h3>
+<pre><code class="language-dockerfile"># Dockerfile - add the private ML-DSA and ECDSA roots to the system trust store
+FROM debian:trixie-slim
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends ca-certificates openssl \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+COPY pki/mldsa-root.crt /usr/local/share/ca-certificates/example-mldsa-root.crt
+COPY pki/ec-root.crt    /usr/local/share/ca-certificates/example-ecdsa-root.crt
+RUN update-ca-certificates
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/example-mldsa-root.crt</code></pre>
+<h3 id="templateyaml-sam-excerpt-lambda-trust">template.yaml (SAM excerpt: Lambda trust)</h3>
+<pre><code class="language-yaml"># template.yaml (excerpt) - private roots shipped in the function package under pki/
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          SSL_CERT_FILE: /var/task/pki/roots.pem          # Python, Go
+          NODE_EXTRA_CA_CERTS: /var/task/pki/roots.pem    # Node.js</code></pre>
+<p>The test clients (Go, Python, Java, Node, .NET) and runner scripts are kept with the outputs in the data work directory.</p>

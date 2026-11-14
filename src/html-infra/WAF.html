@@ -1,0 +1,262 @@
+<h1 id="web-application-firewalls-waf">Web application firewalls (WAF)</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>AWS WAF never terminates TLS. The resource it is attached to does: CloudFront, ALB, API Gateway REST, AppSync, Cognito, App Runner, Verified Access, Amplify or Bedrock AgentCore Gateway. So PQ for an AWS WAF-protected app is set on that resource (<a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>, <a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>). Shield Advanced and Firewall Manager have no TLS role. Third-party WAFs that run as a reverse proxy (appliance, virtual appliance, SaaS/CDN) terminate TLS themselves, so their own TLS stack and profile decide both the client leg and the origin leg. Software WAF modules (ModSecurity, Coraza) inherit TLS from the host proxy.</p>
+<h2 id="status-matrix">Status matrix</h2>
+<table><thead><tr><th>WAF</th><th>Deployment type</th><th>Terminates TLS</th><th>Client leg PQ</th><th>Origin leg PQ</th><th>How to enable</th><th>Evidence</th></tr></thead><tbody><tr><td>AWS WAF</td><td>Managed, attached to a resource</td><td>No</td><td>The resource&#39;s policy</td><td>The resource&#39;s</td><td>Set the resource policy</td><td>Documented (<a href="https://docs.aws.amazon.com/waf/latest/developerguide/how-aws-waf-works-resources.html">protected resources</a>)</td></tr><tr><td>AWS Shield Advanced</td><td>Managed DDoS service</td><td>No</td><td>n/a</td><td>n/a</td><td>n/a</td><td>Documented</td></tr><tr><td>AWS Firewall Manager</td><td>Org-wide policy service</td><td>No; policy types are WAF, Shield Advanced, security groups, network ACLs, Network Firewall, third-party firewalls; none for TLS policies</td><td>n/a</td><td>n/a</td><td>Use it to force WAF everywhere; enforce TLS policies elsewhere</td><td>Documented (<a href="https://docs.aws.amazon.com/waf/latest/developerguide/working-with-policies.html">FMS policies</a>)</td></tr><tr><td>F5 BIG-IP Advanced WAF / LTM</td><td>Hardware appliance, VE on EC2</td><td>Yes</td><td>X25519MLKEM768 in TLS 1.3 from 17.5.1; SecP256r/384r hybrids from 21.1</td><td>Yes, server-ssl profile</td><td>Cipher rule with <code>dh-groups</code>, cipher group, client-ssl / server-ssl profile</td><td>Documented (<a href="https://techdocs.f5.com/en-us/bigip-21-1-0/big-ip-system-ssl-administration/integrating-pqc-on-the-client-side.html">F5 PQC</a>)</td></tr><tr><td>NetScaler ADC (WAF)</td><td>MPX, SDX, VPX on EC2, CPX</td><td>Yes</td><td>X25519_MLKEM768, enhanced SSL profile only</td><td>Not documented (page is &quot;on the front end&quot;)</td><td><code>bind ssl profile</code> <code>-eccCurveName X25519_MLKEM768</code></td><td>Documented (<a href="https://docs.netscaler.com/en-us/citrix-adc/current-release/ssl/hybrid-pqc.html">NetScaler hybrid PQC</a>)</td></tr><tr><td>Fortinet FortiWeb</td><td>Appliance, VM on EC2</td><td>Yes</td><td>8.0.3+: x25519mlkem768, secp256r1mlkem768, secp384r1mlkem1024, pure ML-KEM; TLS 1.3</td><td>Yes, server pool</td><td><code>set tls-pqc-support enable</code> and <code>tls-pqc-groups</code></td><td>Documented (<a href="https://docs.fortinet.com/document/fortiweb/8.0.3/administration-guide/426552/post-quantum-cryptography-pqc-support-8-0-3">FortiWeb 8.0.3</a>)</td></tr><tr><td>Imperva WAF Gateway</td><td>On-prem / virtual appliance</td><td>Depends on mode (reverse proxy vs sniffing)</td><td>No PQ statement found</td><td>Not found</td><td>none</td><td>Unverified</td></tr><tr><td>Barracuda WAF / WAF-as-a-Service</td><td>Appliance, VM, SaaS</td><td>Yes</td><td>No PQ statement found</td><td>Not found</td><td>none</td><td>Unverified</td></tr><tr><td>Cloudflare WAF</td><td>SaaS / CDN</td><td>Yes</td><td>PQ to visitors by default</td><td>Automatic key exchange, on for all zones: prefers X25519MLKEM768 when the origin supports it</td><td>On by default; check the zone&#39;s Automatic key exchange</td><td>Documented (<a href="https://developers.cloudflare.com/ssl/post-quantum-cryptography/pqc-to-origin/">Cloudflare origin PQ</a>)</td></tr><tr><td>Akamai App &amp; API Protector</td><td>SaaS / CDN</td><td>Yes</td><td>GA August 2026 on Enhanced TLS; Delivery Manager docs say on by default; needs TLS 1.3</td><td>GA June 2026, opt-in rule behavior, origin needs TLS 1.3 + X25519MLKEM768</td><td>Property behaviors &quot;PQC Client to Edge&quot; and &quot;PQC to Origin&quot;</td><td>Documented (<a href="https://techdocs.akamai.com/delivery-mgr-rules/docs/pqc-client-to-edge">client to edge</a>, <a href="https://techdocs.akamai.com/property-mgr/docs/pqc-origin">to origin</a>); default state disputed between pages</td></tr><tr><td>Imperva Cloud WAF</td><td>SaaS / CDN</td><td>Yes</td><td>X25519MLKEM768 to Imperva PoPs</td><td>Not stated</td><td>Not stated</td><td>Claimed (<a href="https://www.imperva.com/blog/post-quantum-cryptography/">Imperva blog</a>)</td></tr><tr><td>Fastly Next-Gen WAF / edge</td><td>SaaS / CDN</td><td>Yes (edge)</td><td>ML-KEM rollout from April 2025; scope not stated</td><td>Not stated</td><td>Not stated</td><td>Claimed (<a href="https://www.fastly.com/blog/future-proofing-tls-encryption-against-quantum-threats">Fastly blog</a>)</td></tr><tr><td>ModSecurity v3 / Coraza</td><td>Software module in nginx, Apache, Envoy, Caddy</td><td>The host does</td><td>Host&#39;s TLS stack: owasp/modsecurity-crs:nginx (Debian 13, nginx 1.30.6, OpenSSL 3.5.7) negotiated X25519MLKEM768</td><td>Same image reached a PQ-only upstream (HTTP 200)</td><td>Nothing beyond the host config, see <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a></td><td>Tested</td></tr></tbody></table>
+<p>Network firewalls that do TLS inspection (AWS Network Firewall, Palo Alto, FortiGate) are in <a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a>.</p>
+<h2 id="client-side-the-wafs-connection-to-the-origin">Client side: the WAF&#39;s connection to the origin</h2>
+<table><thead><tr><th>WAF</th><th>Origin-leg setting</th><th>Notes</th></tr></thead><tbody><tr><td>AWS WAF</td><td>None of its own</td><td>CloudFront origin leg is classical; ALB backend uses <code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> when the listener is PQ</td></tr><tr><td>F5 BIG-IP</td><td>server-ssl profile with the PQ cipher group</td><td>Same tmsh as the client side, <code>profile server-ssl</code></td></tr><tr><td>FortiWeb</td><td><code>config server-policy server-pool</code> &gt; <code>config pserver-list</code> &gt; <code>set tls-v13 enable</code>, <code>set tls-pqc-support enable</code>, <code>set tls-pqc-groups ...</code></td><td>Documented</td></tr><tr><td>NetScaler</td><td>Back-end PQ not documented</td><td>Treat the back end as classical until NetScaler documents it</td></tr><tr><td>Cloudflare</td><td>Automatic key exchange (zone)</td><td>A strict post-quantum mode fails TLS 1.3 to origins without ML-KEM; HelloRetryRequest costs one round trip when the origin wants another key share</td></tr><tr><td>Akamai</td><td>&quot;PQC to Origin&quot; behavior</td><td>The origin makes the final key-exchange choice</td></tr><tr><td>ModSecurity on nginx</td><td><code>proxy_ssl_*</code> of the host nginx; OpenSSL 3.5 defaults already offer ML-KEM</td><td>Tested</td></tr></tbody></table>
+<h2 id="server-side-configuration-to-enable">Server side: configuration to enable</h2>
+<p>F5 BIG-IP (17.5.1+; tmsh from F5&#39;s PQC chapter; F5&#39;s sample output has naming inconsistencies, so check <code>tmsh list</code> after creating):</p>
+<pre><code class="language-bash">tmsh create ltm cipher rule PQC_RULE cipher DEFAULT dh-groups X25519MLKEM768:DEFAULT signature-algorithms DEFAULT
+tmsh create ltm cipher group PQC_GROUP allow add { PQC_RULE }
+tmsh create ltm profile client-ssl clientssl-pq cipher-group PQC_GROUP ciphers none options { dont-insert-empty-fragments }
+tmsh create ltm profile server-ssl serverssl-pq cipher-group PQC_GROUP ciphers none</code></pre>
+<p>NetScaler ADC (enhanced SSL profile):</p>
+<pre><code class="language-bash">bind ssl profile pq_fe_profile -eccCurveName X25519_MLKEM768
+# or rebind all curves with the hybrid first
+bind ssl profile pq_fe_profile -eccCurveName ALL</code></pre>
+<p>FortiWeb 8.0.3+:</p>
+<pre><code class="language-bash">config server-policy policy
+  edit &quot;app-policy&quot;
+    set tls-v13 enable
+    set tls-pqc-support enable
+    set tls-pqc-groups x25519mlkem768 secp256r1mlkem768 secp384r1mlkem1024
+  next
+end</code></pre>
+<p>Cloudflare: nothing to set for visitors; for origins, keep Automatic key exchange on and make the origin offer X25519MLKEM768. Akamai: enable the PQC behaviors in Property Manager or Delivery Manager; TLS 1.3 must be on. AWS WAF: set the PQ policy on the protected resource.</p>
+<h2 id="verify">Verify</h2>
+<p><strong>AWS WAF logs carry no TLS version, cipher or key-exchange field.</strong> Fields include <code>ja3Fingerprint</code> (32 hex) and <code>ja4Fingerprint</code> (36 characters), computed only for CloudFront and ALB (<a href="https://docs.aws.amazon.com/waf/latest/developerguide/logging-fields.html">log fields</a>, Documented).</p>
+<p>Can fingerprints find non-PQ clients? Not directly:</p>
+<ul><li><p>JA4 hashes the sorted extension type codes and signature algorithms. It includes the fact that <code>supported_groups</code> and <code>key_share</code> extensions exist, not their values, so a PQ and a classical build of the same client can share a JA4 (<a href="https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md">JA4 spec</a>, Documented).</p></li><li><p>JA3&#39;s input string does include the supported groups list, but AWS WAF logs only the MD5 hash, so you cannot read the groups back.</p></li><li><p>Use them only as a lookup: find a classical client in the ALB connection log (<code>tls_keyexchange</code>), note its JA4 from the WAF log, then count or label that JA4 in WAF (the <code>label-known-classical-client</code> rule below, Count action). Correlation is by client IP and time, so treat it as a hint.</p></li></ul>
+<p>Use the resource&#39;s own logs for the real signal: ALB connection logs and NLB access logs (<a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>), the CloudFront <code>CloudFront-Viewer-TLS-Details</code> header (<a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>). F5 has an open community request for logging the negotiated PQ group; no BIG-IP log field was found.</p>
+<p>Live test for any WAF that terminates TLS (OpenSSL 3.5 client):</p>
+<pre><code class="language-bash">echo | openssl s_client -connect waf.example.com:443 -servername waf.example.com -tls1_3 -groups X25519MLKEM768 2&gt;&amp;1 | grep &#39;Negotiated TLS1.3 group&#39;
+echo | openssl s_client -connect waf.example.com:443 -servername waf.example.com -groups X25519 2&gt;&amp;1 | grep Protocol</code></pre>
+<p>Tested here (2026-11-14): ModSecurity CRS nginx image, digest <code>sha256:9a386aa4a9ee...</code>: PQ client negotiated X25519MLKEM768; classical TLS 1.3 and TLS 1.2 clients connected; the WAF proxied to an <code>openssl s_server -groups X25519MLKEM768 -tls1_3</code> upstream with HTTP 200. 4 of 4 checks passed. Script and output: <code>deep/edge/tests/run-modsec-pq.sh</code>.</p>
+<h2 id="pitfalls-enforcement-and-rollback">Pitfalls, enforcement and rollback</h2>
+<ul><li><p>An AWS WAF rule cannot require PQ: no request component exposes the key exchange.</p></li><li><p>Firewall Manager can force a web ACL onto every ALB or CloudFront distribution, but not a TLS policy. Use the SCP and Config rules in <a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a> and <a data-atom="ref" data-ref="file/0803191b-9855">Enforcement and guardrails</a>.</p></li><li><p>Appliances: PQ needs TLS 1.3 on the profile; older code (BIG-IP before 17.5.1, FortiWeb before 8.0.3) has no ML-KEM, and BIG-IP 17.5.0 only had the draft X25519Kyber768.</p></li><li><p>Passive (out-of-band) WAFs that decrypt from a copied private key cannot read any (EC)DHE session, PQ or not. Move them inline.</p></li><li><p>SaaS WAFs: the client leg can be PQ while the origin leg is not; check both.</p></li><li><p>Rollback: remove the PQ group from the cipher rule or curve binding (appliances), turn off the PQC behavior (Akamai), or revert the resource policy (AWS).</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>Terraform and CloudFormation below passed <code>terraform validate</code> (Terraform 1.13.5, aws provider 6.73.0) and <code>cfn-lint</code> 1.60.1. The JA4 value is FoxIO&#39;s example string; replace it with one you have tied to a classical client.</p>
+<p><code>iac/waf/main.tf</code></p>
+<pre><code class="language-hcl">terraform {
+  required_version = &quot;&gt;= 1.6&quot;
+  required_providers {
+    aws = { source = &quot;hashicorp/aws&quot;, version = &quot;~&gt; 6.0&quot; }
+  }
+}
+
+provider &quot;aws&quot; {
+  region = &quot;us-east-1&quot;
+}
+
+variable &quot;alb_arn&quot; { type = string }
+
+resource &quot;aws_wafv2_web_acl&quot; &quot;app&quot; {
+  name  = &quot;app-regional&quot;
+  scope = &quot;REGIONAL&quot;
+
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = &quot;aws-common&quot;
+    priority = 10
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        vendor_name = &quot;AWS&quot;
+        name        = &quot;AWSManagedRulesCommonRuleSet&quot;
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = &quot;aws-common&quot;
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Count (never block) a client fingerprint you have confirmed is classical.
+  rule {
+    name     = &quot;label-known-classical-client&quot;
+    priority = 20
+    action {
+      count {}
+    }
+    statement {
+      byte_match_statement {
+        search_string         = &quot;t13d1516h2_8daaf6152771_02713d6af862&quot;
+        positional_constraint = &quot;EXACTLY&quot;
+        field_to_match {
+          ja4_fingerprint {
+            fallback_behavior = &quot;NO_MATCH&quot;
+          }
+        }
+        text_transformation {
+          priority = 0
+          type     = &quot;NONE&quot;
+        }
+      }
+    }
+    rule_label {
+      name = &quot;pq:classical-client&quot;
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = &quot;classical-client&quot;
+      sampled_requests_enabled   = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = &quot;app-regional&quot;
+    sampled_requests_enabled   = true
+  }
+}
+
+resource &quot;aws_wafv2_web_acl_association&quot; &quot;alb&quot; {
+  resource_arn = var.alb_arn
+  web_acl_arn  = aws_wafv2_web_acl.app.arn
+}
+
+resource &quot;aws_cloudwatch_log_group&quot; &quot;waf&quot; {
+  name              = &quot;aws-waf-logs-app-regional&quot; # must start with aws-waf-logs-
+  retention_in_days = 90
+}
+
+resource &quot;aws_wafv2_web_acl_logging_configuration&quot; &quot;app&quot; {
+  resource_arn            = aws_wafv2_web_acl.app.arn
+  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
+}
+
+# Firewall Manager: a WAF web ACL on every ALB in the organisation (no TLS policy type exists).
+resource &quot;aws_fms_policy&quot; &quot;waf_on_albs&quot; {
+  name                  = &quot;waf-on-all-albs&quot;
+  exclude_resource_tags = false
+  remediation_enabled   = true
+  resource_type         = &quot;AWS::ElasticLoadBalancingV2::LoadBalancer&quot;
+
+  security_service_policy_data {
+    type = &quot;WAFV2&quot;
+    managed_service_data = jsonencode({
+      type = &quot;WAFV2&quot;
+      preProcessRuleGroups = [{
+        ruleGroupArn   = null
+        overrideAction = { type = &quot;NONE&quot; }
+        managedRuleGroupIdentifier = {
+          vendorName           = &quot;AWS&quot;
+          managedRuleGroupName = &quot;AWSManagedRulesCommonRuleSet&quot;
+        }
+        ruleGroupType = &quot;ManagedRuleGroup&quot;
+        excludeRules  = []
+      }]
+      postProcessRuleGroups             = []
+      defaultAction                     = { type = &quot;ALLOW&quot; }
+      overrideCustomerWebACLAssociation = false
+      loggingConfiguration = {
+        logDestinationConfigs = [&quot;arn:aws:firehose:us-east-1:111122223333:deliverystream/aws-waf-logs-central&quot;]
+      }
+    })
+  }
+}</code></pre>
+<p><code>iac/waf/waf.yaml</code> (CloudFormation)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Description: Regional AWS WAF web ACL on an ALB with logging. TLS (and PQ) is decided by the ALB listener policy, not by WAF.
+
+Parameters:
+  AlbArn:
+    Type: String
+
+Resources:
+  WebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: app-regional
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: app-regional
+        SampledRequestsEnabled: true
+      Rules:
+        - Name: aws-common
+          Priority: 10
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: aws-common
+            SampledRequestsEnabled: true
+        - Name: label-known-classical-client
+          Priority: 20
+          Action:
+            Count: {}
+          RuleLabels:
+            - Name: pq:classical-client
+          Statement:
+            ByteMatchStatement:
+              SearchString: t13d1516h2_8daaf6152771_02713d6af862
+              PositionalConstraint: EXACTLY
+              FieldToMatch:
+                JA4Fingerprint:
+                  FallbackBehavior: NO_MATCH
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: classical-client
+            SampledRequestsEnabled: true
+
+  WebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref AlbArn
+      WebACLArn: !GetAtt WebAcl.Arn
+
+  WafLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: aws-waf-logs-app-regional
+      RetentionInDays: 90
+
+  WafLogging:
+    Type: AWS::WAFv2::LoggingConfiguration
+    Properties:
+      ResourceArn: !GetAtt WebAcl.Arn
+      LogDestinationConfigs:
+        - !GetAtt WafLogGroup.Arn</code></pre>
+<p><code>tests/run-modsec-pq.sh</code> (the software-WAF test; needs Docker)</p>
+<pre><code class="language-bash">#!/bin/bash
+set -u
+L=&quot;--label run=pqc-deep-edge&quot;; NET=pqc-deep-edge-net
+DEB=$(docker image inspect --format &#39;{{index .RepoDigests 0}}&#39; debian:trixie-slim)
+WAF=$(docker image inspect --format &#39;{{index .RepoDigests 0}}&#39; owasp/modsecurity-crs:nginx)
+docker network create $L $NET &gt;/dev/null
+# PQ-only upstream
+docker run -d $L --network $NET --name edge-pqonly $DEB bash -c &#39;
+apt-get -qq update &gt;/dev/null 2&gt;&amp;1; apt-get -qq install -y openssl &gt;/dev/null 2&gt;&amp;1
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -keyout /k.pem -out /c.pem -subj /CN=pqonly -days 2 2&gt;/dev/null
+exec openssl s_server -accept 4433 -cert /c.pem -key /k.pem -tls1_3 -groups X25519MLKEM768 -www&#39; &gt;/dev/null
+for i in $(seq 1 60); do docker logs edge-pqonly 2&gt;&amp;1 | grep -q ACCEPT &amp;&amp; break; sleep 2; done
+# ModSecurity CRS nginx in front of it
+docker run -d $L --network $NET --name edge-modsec -e BACKEND=https://edge-pqonly:4433 -e PROXY_SSL_VERIFY=off $WAF &gt;/dev/null
+sleep 8
+# client leg: PQ-only, classical, TLS 1.2
+docker run --rm $L --network $NET $DEB bash -c &#39;
+apt-get -qq update &gt;/dev/null 2&gt;&amp;1; apt-get -qq install -y openssl &gt;/dev/null 2&gt;&amp;1
+echo | openssl s_client -connect edge-modsec:8443 -groups X25519MLKEM768 -tls1_3 2&gt;&amp;1 | grep &quot;Negotiated TLS1.3 group&quot;
+echo | openssl s_client -connect edge-modsec:8443 -groups X25519 2&gt;&amp;1 | grep &quot;^Protocol&quot;
+echo | openssl s_client -connect edge-modsec:8443 -tls1_2 2&gt;&amp;1 | grep &quot;^Protocol&quot;&#39;
+# origin leg: through the WAF to the PQ-only upstream
+docker run --rm $L --network $NET $DEB bash -c &#39;apt-get -qq update &gt;/dev/null 2&gt;&amp;1; apt-get -qq install -y curl &gt;/dev/null 2&gt;&amp;1; curl -sk -o /dev/null -w &quot;HTTP %{http_code}\n&quot; https://edge-modsec:8443/&#39;
+docker rm -f edge-pqonly edge-modsec &gt;/dev/null; docker network rm $NET &gt;/dev/null</code></pre>

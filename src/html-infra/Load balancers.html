@@ -1,0 +1,608 @@
+<h1 id="load-balancers-alb-nlb-gwlb-classic">Load balancers: ALB, NLB, GWLB, Classic</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>The load balancer&#39;s security policy decides the client-facing leg. Only policies with <code>PQ</code> in the name offer X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024, and only on TLS 1.3. The console defaults to a PQ policy; the CLI, CloudFormation, CDK, Terraform and the AWS Load Balancer Controller default to <code>ELBSecurityPolicy-2016-08</code>, which is classical. On the target leg the load balancer is the TLS client: AWS picks its backend policy from your listener policy, and the target&#39;s own TLS stack decides whether that hop is PQ. Sources: <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html">ALB policies</a>, <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html">NLB policies</a> (Documented, read 2026-11-14).</p>
+<h2 id="status-matrix">Status matrix</h2>
+<table><thead><tr><th>Load balancer / listener</th><th>Device type</th><th>Client leg PQ</th><th>Target leg</th><th>Default from IaC</th><th>Evidence</th></tr></thead><tbody><tr><td>ALB, HTTPS listener</td><td>Managed AWS service</td><td>Opt-in PQ policy</td><td>Backend policy <code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> when any listener is PQ; PQ only if the target offers ML-KEM</td><td><code>ELBSecurityPolicy-2016-08</code> (classical)</td><td>Documented</td></tr><tr><td>NLB, TLS listener</td><td>Managed AWS service</td><td>Opt-in PQ policy</td><td>Same backend rule for TLS target groups; plaintext for TCP target groups</td><td><code>ELBSecurityPolicy-2016-08</code></td><td>Documented</td></tr><tr><td>NLB, TCP or UDP listener</td><td>Managed AWS service</td><td>Pass-through: client and target negotiate end to end</td><td>Same connection</td><td>none</td><td>Documented</td></tr><tr><td>Gateway Load Balancer</td><td>Managed AWS service, GENEVE to appliances</td><td>No TLS listener: end to end between client and server. An inspecting appliance behind it uses its own TLS stack, see <a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a></td><td>none</td><td>none</td><td>Documented (no TLS listener type)</td></tr><tr><td>Classic Load Balancer</td><td>Managed AWS service (legacy)</td><td>No PQ policy; migrate to ALB or NLB</td><td>Classical</td><td>none</td><td>Documented</td></tr><tr><td>ALB or NLB via AWS Load Balancer Controller (EKS)</td><td>Kubernetes controller</td><td>Annotation or <code>IngressClassParams</code></td><td><code>backend-protocol</code> annotation</td><td><code>ELBSecurityPolicy-2016-08</code> unless Helm <code>defaultSSLPolicy</code> is set</td><td>Documented (<a href="https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/ingress/annotations/">LBC annotations</a>)</td></tr><tr><td>Lightsail load balancer</td><td>Managed (Lightsail)</td><td>No: only <code>TLS-2016-08</code> and <code>TLS-FS-1-2-Res-2019-08</code></td><td>Classical</td><td><code>TLS-2016-08</code></td><td>Documented (<a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configure-load-balancer-tls-security-policy.html">Lightsail TLS policies</a>)</td></tr><tr><td>Elastic Beanstalk</td><td>Managed, creates an ALB/NLB</td><td>The policy you set on its listener</td><td>As ALB/NLB</td><td>Platform default</td><td>Unverified</td></tr></tbody></table>
+<p>PQ policy names, each prefixed <code>ELBSecurityPolicy-</code> and suffixed <code>-2025-09</code>: <code>TLS13-1-2-Res-PQ</code> (AWS&#39;s recommendation), <code>TLS13-1-2-PQ</code>, <code>TLS13-1-2-Ext1-PQ</code>, <code>TLS13-1-2-Ext2-PQ</code>, <code>TLS13-1-3-PQ</code>. FIPS: <code>TLS13-1-2-Res-FIPS-PQ</code>, <code>TLS13-1-2-FIPS-PQ</code>, <code>TLS13-1-2-Ext0-FIPS-PQ</code>, <code>TLS13-1-2-Ext1-FIPS-PQ</code>, <code>TLS13-1-2-Ext2-FIPS-PQ</code>, <code>TLS13-1-3-FIPS-PQ</code>. Backend only: <code>TLS13-1-0-PQ</code>, <code>TLS13-1-0-FIPS-PQ</code>. Documented. Confirm in your Region with <code>aws elbv2 describe-ssl-policies</code>.</p>
+<h2 id="client-side-the-load-balancers-connection-to-targets">Client side: the load balancer&#39;s connection to targets</h2>
+<p>The load balancer is the TLS client on the target leg, and you cannot choose its policy. AWS uses <code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> if any listener uses a PQ policy, <code>ELBSecurityPolicy-TLS13-1-0-FIPS-PQ-2025-09</code> for a FIPS PQ listener, and an RFC 9151 listener overrides both (Documented). The backend policy offers ML-KEM groups, so the hop is PQ only when the target accepts one. AWS does not log the group negotiated to the target.</p>
+<table><thead><tr><th>Target type</th><th>What the target must run for a PQ hop</th><th>Evidence</th></tr></thead><tbody><tr><td>ALB HTTPS target group (EC2, ECS, EKS pods)</td><td>A TLS 1.3 server whose library offers X25519MLKEM768: nginx, Apache, HAProxy or Envoy on OpenSSL 3.5+ (Debian 13, Alpine 3.24), Go 1.24+, Java 25, .NET on OpenSSL 3.5. Server configs are in <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>; runtimes in the language tabs</td><td>Documented (policy); servers Tested in other tabs</td></tr><tr><td>ALB HTTP target group</td><td>Plaintext inside the VPC: no TLS on this hop</td><td>Documented</td></tr><tr><td>ALB Lambda target</td><td>Invoked by the service; not a TLS connection you configure</td><td>Documented</td></tr><tr><td>NLB TLS target group</td><td>Same as ALB HTTPS targets</td><td>Documented</td></tr><tr><td>NLB TCP target group behind a TLS listener</td><td>Plaintext to the target</td><td>Documented</td></tr><tr><td>NLB TCP listener (pass-through)</td><td>The target is the TLS server for the client; its stack decides PQ end to end</td><td>Documented</td></tr></tbody></table>
+<p>To see the group on the target leg, log it on the target (for nginx, the <code>$ssl_curve</code> variable; see <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>). The target sees the load balancer as its client, not the end user.</p>
+<h2 id="server-side-the-listener">Server side: the listener</h2>
+<table><thead><tr><th>Tool</th><th>Setting</th><th>Evidence</th></tr></thead><tbody><tr><td>Console</td><td>Security policy; default is already <code>ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code></td><td>Documented</td></tr><tr><td>AWS CLI</td><td><code>aws elbv2 modify-listener --listener-arn ARN --ssl-policy ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code></td><td>Documented</td></tr><tr><td>CloudFormation</td><td><code>AWS::ElasticLoadBalancingV2::Listener</code> property <code>SslPolicy</code></td><td>Tested (cfn-lint 1.60.1)</td></tr><tr><td>Terraform</td><td><code>aws_lb_listener.ssl_policy</code></td><td>Tested (<code>terraform validate</code>, Terraform 1.13.5, aws provider 6.73.0)</td></tr><tr><td>CDK</td><td><code>sslPolicy: elbv2.SslPolicy.TLS13_12_RES_PQ</code>; enum added by <a href="https://github.com/aws/aws-cdk/pull/36297">aws-cdk PR #36297</a>, merged 2026-03-19. Older versions: pass the string</td><td>Documented (source code)</td></tr><tr><td>LBC Ingress (ALB)</td><td><code>alb.ingress.kubernetes.io/ssl-policy</code>, or <code>IngressClassParams.spec.sslPolicy</code>, which wins over the annotation</td><td>Documented</td></tr><tr><td>LBC Service (NLB)</td><td><code>service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy</code></td><td>Documented</td></tr><tr><td>LBC cluster default</td><td>Helm value <code>defaultSSLPolicy</code> (flag <code>--default-ssl-policy</code>)</td><td>Documented</td></tr></tbody></table>
+<p>Terraform:</p>
+<pre><code class="language-hcl">resource &quot;aws_lb_listener&quot; &quot;https&quot; {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 443
+  protocol          = &quot;HTTPS&quot;
+  ssl_policy        = &quot;ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09&quot;
+  certificate_arn   = var.certificate_arn
+  default_action {
+    type             = &quot;forward&quot;
+    target_group_arn = aws_lb_target_group.app_https.arn
+  }
+}</code></pre>
+<p>CloudFormation:</p>
+<pre><code class="language-yaml">HttpsListener:
+  Type: AWS::ElasticLoadBalancingV2::Listener
+  Properties:
+    LoadBalancerArn: !Ref Alb
+    Port: 443
+    Protocol: HTTPS
+    SslPolicy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+    Certificates: [{CertificateArn: !Ref CertificateArn}]
+    DefaultActions: [{Type: forward, TargetGroupArn: !Ref AppTargetGroup}]</code></pre>
+<p>CDK (TypeScript, not compiled here):</p>
+<pre><code class="language-typescript">alb.addListener(&#39;Https&#39;, {
+  port: 443,
+  certificates: [cert],
+  sslPolicy: elbv2.SslPolicy.TLS13_12_RES_PQ,
+  defaultTargetGroups: [tg],
+});</code></pre>
+<p>EKS annotations (ALB Ingress, then NLB Service):</p>
+<pre><code class="language-yaml">alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+alb.ingress.kubernetes.io/backend-protocol: HTTPS
+---
+service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl</code></pre>
+<p><strong>mTLS on ALB.</strong> Mutual authentication (<code>verify</code> or <code>passthrough</code>) is a listener setting next to the policy, so a PQ policy and mTLS sit on the same listener. The client certificate&#39;s signature algorithm is separate from the key exchange. The connection log code <code>ClientCertIncompatible</code> means the client certificate does not fit the chosen policy (<a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-connection-logs.html">connection logs</a>, Documented). A PQ plus mTLS handshake was not tested here.</p>
+<h2 id="packaging-and-rollout-from-tls-1213-to-13-only">Packaging and rollout from TLS 1.2+1.3 to 1.3-only</h2>
+<table><thead><tr><th>Platform</th><th>Where the policy lives</th><th>File (below)</th></tr></thead><tbody><tr><td>Terraform</td><td><code>aws_lb_listener.ssl_policy</code>, connection and access logs on <code>aws_lb</code></td><td><code>iac/lb/main.tf</code></td></tr><tr><td>CloudFormation</td><td><code>SslPolicy</code> parameter with <code>AllowedValues</code> limited to PQ policies</td><td><code>iac/lb/lb.yaml</code></td></tr><tr><td>EKS</td><td><code>IngressClassParams.spec.sslPolicy</code> per ALB class, Service annotation for NLB, Helm <code>defaultSSLPolicy</code> as the cluster default</td><td><code>iac/lb/k8s-lbc.yaml</code></td></tr><tr><td>Organisation guardrail</td><td>SCP on <code>elasticloadbalancing:SecurityPolicy</code></td><td><code>iac/lb/scp-elb-pq.json</code></td></tr><tr><td>Detection</td><td>Athena tables and queries</td><td><code>iac/lb/athena.sql</code></td></tr></tbody></table>
+<ol><li><p>Turn on ALB connection logs and NLB access logs (both off by default) and create the Athena tables.</p></li><li><p>Move every HTTPS and TLS listener of a load balancer to <code>ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code> in one change. Classical and TLS 1.2 clients still connect.</p></li><li><p>Watch Q1 (key-exchange mix) and Q2 (classical client IPs); Q4 adds user agents through <code>conn_trace_id</code>. Hand the client list to app owners (language tabs).</p></li><li><p>When Q3 (TLS 1.2 connections) is zero for the agreed window, move the listener to <code>ELBSecurityPolicy-TLS13-1-3-PQ-2025-09</code>. That ends TLS 1.2 but still allows classical TLS 1.3 key exchange.</p></li><li><p>No ELB policy refuses classical TLS 1.3 key exchange. A PQ-only gate needs a server you control (<a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>).</p></li><li><p>Put remaining TLS 1.2 callers on a separate load balancer or hostname and record them as exceptions.</p></li></ol>
+<h2 id="verify">Verify</h2>
+<p><strong>Posture</strong> (no traffic needed):</p>
+<pre><code class="language-bash">aws elbv2 describe-load-balancers --query &#39;LoadBalancers[].LoadBalancerArn&#39; --output text | tr &#39;\t&#39; &#39;\n&#39; |
+while read lb; do
+  aws elbv2 describe-listeners --load-balancer-arn &quot;$lb&quot; \
+    --query &#39;Listeners[?Protocol==`HTTPS`||Protocol==`TLS`].[ListenerArn,Protocol,SslPolicy]&#39; --output text
+done | awk &#39;$3 !~ /PQ-2025-09$/ {print &quot;NOT PQ:&quot;, $0}&#39;
+aws elb describe-load-balancers --query &#39;LoadBalancerDescriptions[].LoadBalancerName&#39;  # Classic: each one is a migration item
+aws elbv2 describe-ssl-policies --query &#39;SslPolicies[?contains(Name, `PQ`)].Name&#39;     # names in your Region</code></pre>
+<p><strong>Config rule.</strong> <code>ELBV2_PREDEFINED_SECURITY_POLICY_SSL_CHECK</code> (<code>elbv2-predefined-security-policy-ssl-check</code>), resource type <code>AWS::ElasticLoadBalancingV2::Listener</code>, parameter <code>sslPolicies</code> = comma-separated PQ policy names. It covers ALB HTTPS and NLB TLS listeners. It is not available in me-central-1, ap-south-2, ap-southeast-4, ca-west-1, eu-south-2 and eu-central-2 (<a href="https://docs.aws.amazon.com/config/latest/developerguide/elbv2-predefined-security-policy-ssl-check.html">rule page</a>, Documented). AWS also published a PQ-readiness conformance pack (blog, 2026-05-14) with custom ELB rules.</p>
+<p><strong>Live test</strong> from a container with OpenSSL 3.5 (<code>debian:trixie-slim</code> plus <code>apt-get install openssl</code>; the slim image has no <code>openssl</code> binary):</p>
+<pre><code class="language-bash"># PQ client must negotiate the hybrid group
+echo | openssl s_client -connect app.example.com:443 -servername app.example.com -tls1_3 -groups X25519MLKEM768 2&gt;&amp;1 | grep &#39;Negotiated TLS1.3 group&#39;
+# expected: Negotiated TLS1.3 group: X25519MLKEM768
+# classical client must still connect on the Res policy (fallback)
+echo | openssl s_client -connect app.example.com:443 -servername app.example.com -groups X25519 2&gt;&amp;1 | grep -E &#39;Protocol|group&#39;
+# after the 1.3-only move this must fail
+echo | openssl s_client -connect app.example.com:443 -servername app.example.com -tls1_2 2&gt;&amp;1 | grep -E &#39;alert|Protocol&#39;</code></pre>
+<p><strong>Observed signal in logs</strong> (field names Documented):</p>
+<table><thead><tr><th>Log</th><th>Where</th><th>Fields</th></tr></thead><tbody><tr><td><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-connection-logs.html">ALB connection log</a> (file prefix <code>conn_log_</code>)</td><td>S3, 5-minute files per node</td><td><code>tls_protocol</code> (5), <code>tls_cipher</code> (6), <code>conn_trace_id</code> (12), <code>tls_keyexchange</code> (13), <code>elb</code> (14), <code>ip_address</code> (15)</td></tr><tr><td>ALB access log</td><td>S3</td><td><code>ssl_protocol</code>, <code>ssl_cipher</code>, <code>conn_trace_id</code>; no key exchange</td></tr><tr><td><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html">NLB access log</a> v2.0, TLS listeners only</td><td>S3</td><td><code>tls_cipher</code> (15), <code>tls_protocol_version</code> (16, <code>tlsv12</code> or <code>tlsv13</code>), <code>tls_keyexchange</code> (17), <code>domain_name</code> (18)</td></tr></tbody></table>
+<p>Two documentation quirks: the NLB policy page says key exchange is &quot;log field position 13&quot;, but the NLB field table puts <code>tls_keyexchange</code> 17th. AWS does not document the spelling of <code>tls_keyexchange</code> values, so the queries match <code>mlkem</code> case-insensitively. The Athena regexes were Tested against AWS&#39;s sample lines and synthetic 15- and 22-field PQ lines (python:3.13-slim, 7 of 7 parsed); Athena itself was not run.</p>
+<h2 id="enforce-pitfalls-and-rollback">Enforce, pitfalls and rollback</h2>
+<p><strong>SCP</strong> (full file below). The condition key <code>elasticloadbalancing:SecurityPolicy</code> applies to <code>CreateListener</code> and <code>ModifyListener</code> (ALB, NLB) and to <code>CreateLoadBalancerPolicy</code> and <code>SetLoadBalancerPoliciesOfListener</code> (Classic). It does not apply to <code>CreateLoadBalancer</code> (<a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/security_iam_service-with-iam.html">ELB IAM page</a>, Documented). This corrects the earlier version of this tab. AWS&#39;s example uses <code>ForAnyValue:StringEquals</code> in an Allow; the Deny below uses <code>ForAnyValue:StringNotEquals</code>, plus a <code>Null</code> check that catches HTTPS/TLS listeners created without an explicit policy (they would get <code>ELBSecurityPolicy-2016-08</code>). The deny logic was not tested against AWS (no credentials here): attach it to a sandbox OU first. Unverified.</p>
+<p><strong>SCP stages.</strong> The two allowlists in this document are stages, not a conflict. The org baseline on <a data-atom="ref" data-ref="file/0803191b-9855">Enforcement and guardrails</a> allows all eleven non-TLS-1.0 PQ ELB policies while teams migrate. The SCP below narrows that to four: <code>ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code>, <code>ELBSecurityPolicy-TLS13-1-3-PQ-2025-09</code> and their FIPS variants. Once a listener&#39;s TLS 1.2 traffic reaches zero, drop the two <code>TLS13-1-2-Res</code> entries so only the TLS 1.3-only PQ policies remain.</p>
+<pre><code class="language-json">{&quot;Sid&quot;: &quot;DenyNonPqElbListenerPolicy&quot;, &quot;Effect&quot;: &quot;Deny&quot;,
+ &quot;Action&quot;: [&quot;elasticloadbalancing:CreateListener&quot;, &quot;elasticloadbalancing:ModifyListener&quot;],
+ &quot;Resource&quot;: &quot;*&quot;,
+ &quot;Condition&quot;: {&quot;ForAnyValue:StringNotEquals&quot;: {&quot;elasticloadbalancing:SecurityPolicy&quot;: [
+   &quot;ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09&quot;, &quot;ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09&quot;,
+   &quot;ELBSecurityPolicy-TLS13-1-3-PQ-2025-09&quot;, &quot;ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09&quot;]}}}</code></pre>
+<p><strong>Pipeline.</strong> cfn-guard, OPA/conftest or Checkov custom rules on <code>SslPolicy</code> / <code>ssl_policy</code> / the LBC annotations. No built-in Checkov, tfsec or Trivy PQ rule was found. <strong>Remediation.</strong> The Config rule above, with SSM Automation calling <code>aws elbv2 modify-listener</code> if you allow fixes outside the pipeline.</p>
+<p><strong>Pitfalls</strong></p>
+<ul><li><p>IaC that omits the policy gets <code>ELBSecurityPolicy-2016-08</code>, although the console shows a PQ default. The Load Balancer Controller behaves the same.</p></li><li><p><code>IngressClassParams.spec.sslPolicy</code> silently overrides an Ingress <code>ssl-policy</code> annotation.</p></li><li><p>The X25519MLKEM768 key share adds about 1.2 KB, so the ClientHello often spans two packets. Old middleboxes in front of clients can drop it. Test partner networks before the 1.3-only move.</p></li><li><p>The backend policy follows &quot;any listener&quot;. A search snippet claims PQ and non-PQ policies are &quot;not compatible&quot; on listeners of one load balancer; this is not on the policy pages read on 2026-11-14, so it is not confirmed. Move all listeners of a load balancer together anyway.</p></li><li><p>Policy changes are online, but clients with pinned cipher lists can fail after a 1.3-only move.</p></li></ul>
+<p><strong>Rollback.</strong> <code>aws elbv2 modify-listener --listener-arn ARN --ssl-policy ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code> (from 1.3-only), or back to the previous policy. Exempt the break-glass role in the SCP so it can do this. Make the same change in IaC so the next deploy does not undo it.</p>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>Terraform and CloudFormation passed <code>terraform validate</code> (Terraform 1.13.5, aws provider 6.73.0) and <code>cfn-lint</code> 1.60.1 in containers on 2026-11-14; the SCP and Kubernetes files were parse-checked only. Replace the placeholders before use.</p>
+<p><code>iac/lb/main.tf</code></p>
+<pre><code class="language-hcl">terraform {
+  required_version = &quot;&gt;= 1.6&quot;
+  required_providers {
+    aws = { source = &quot;hashicorp/aws&quot;, version = &quot;~&gt; 6.0&quot; }
+  }
+}
+
+provider &quot;aws&quot; {
+  region = var.region
+}
+
+variable &quot;region&quot; {
+  type    = string
+  default = &quot;us-east-1&quot;
+}
+variable &quot;vpc_id&quot; { type = string }
+variable &quot;public_subnet_ids&quot; { type = list(string) }
+variable &quot;certificate_arn&quot; { type = string }
+variable &quot;log_bucket&quot; { type = string }
+variable &quot;truststore_bucket&quot; { type = string }
+
+locals {
+  # Phase 1: TLS 1.2 + 1.3, PQ groups offered on TLS 1.3.
+  # Phase 2 (after the TLS 1.2 count is zero): ELBSecurityPolicy-TLS13-1-3-PQ-2025-09
+  pq_policy = &quot;ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09&quot;
+}
+
+resource &quot;aws_security_group&quot; &quot;alb&quot; {
+  name   = &quot;alb-pq&quot;
+  vpc_id = var.vpc_id
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = &quot;tcp&quot;
+    cidr_blocks = [&quot;0.0.0.0/0&quot;]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = &quot;-1&quot;
+    cidr_blocks = [&quot;0.0.0.0/0&quot;]
+  }
+}
+
+resource &quot;aws_lb&quot; &quot;alb&quot; {
+  name               = &quot;app-pq&quot;
+  load_balancer_type = &quot;application&quot;
+  subnets            = var.public_subnet_ids
+  security_groups    = [aws_security_group.alb.id]
+
+  access_logs {
+    bucket  = var.log_bucket
+    prefix  = &quot;alb-access&quot;
+    enabled = true
+  }
+  # Connection logs carry tls_keyexchange (field 13).
+  connection_logs {
+    bucket  = var.log_bucket
+    prefix  = &quot;alb-conn&quot;
+    enabled = true
+  }
+}
+
+# Backend leg: HTTPS to targets. The ALB picks the backend policy itself
+# (ELBSecurityPolicy-TLS13-1-0-PQ-2025-09 when a listener uses a PQ policy).
+resource &quot;aws_lb_target_group&quot; &quot;app_https&quot; {
+  name        = &quot;app-https&quot;
+  port        = 8443
+  protocol    = &quot;HTTPS&quot;
+  target_type = &quot;ip&quot;
+  vpc_id      = var.vpc_id
+  health_check {
+    protocol = &quot;HTTPS&quot;
+    path     = &quot;/healthz&quot;
+    matcher  = &quot;200&quot;
+  }
+}
+
+resource &quot;aws_lb_listener&quot; &quot;https&quot; {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 443
+  protocol          = &quot;HTTPS&quot;
+  ssl_policy        = local.pq_policy
+  certificate_arn   = var.certificate_arn
+
+  default_action {
+    type             = &quot;forward&quot;
+    target_group_arn = aws_lb_target_group.app_https.arn
+  }
+}
+
+# Optional: mutual TLS (verify mode) on a second ALB listener.
+resource &quot;aws_lb_trust_store&quot; &quot;clients&quot; {
+  name                             = &quot;client-ca&quot;
+  ca_certificates_bundle_s3_bucket = var.truststore_bucket
+  ca_certificates_bundle_s3_key    = &quot;ca-bundle.pem&quot;
+}
+
+resource &quot;aws_lb_listener&quot; &quot;https_mtls&quot; {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 8443
+  protocol          = &quot;HTTPS&quot;
+  ssl_policy        = local.pq_policy
+  certificate_arn   = var.certificate_arn
+
+  mutual_authentication {
+    mode            = &quot;verify&quot;
+    trust_store_arn = aws_lb_trust_store.clients.arn
+  }
+
+  default_action {
+    type             = &quot;forward&quot;
+    target_group_arn = aws_lb_target_group.app_https.arn
+  }
+}
+
+# NLB with a TLS listener (terminates TLS) and TLS to targets.
+resource &quot;aws_lb&quot; &quot;nlb&quot; {
+  name               = &quot;svc-pq&quot;
+  load_balancer_type = &quot;network&quot;
+  subnets            = var.public_subnet_ids
+
+  access_logs {
+    bucket  = var.log_bucket
+    prefix  = &quot;nlb-access&quot;
+    enabled = true
+  }
+}
+
+resource &quot;aws_lb_target_group&quot; &quot;svc_tls&quot; {
+  name        = &quot;svc-tls&quot;
+  port        = 8443
+  protocol    = &quot;TLS&quot;
+  target_type = &quot;ip&quot;
+  vpc_id      = var.vpc_id
+}
+
+resource &quot;aws_lb_listener&quot; &quot;tls&quot; {
+  load_balancer_arn = aws_lb.nlb.arn
+  port              = 443
+  protocol          = &quot;TLS&quot;
+  ssl_policy        = local.pq_policy
+  certificate_arn   = var.certificate_arn
+  alpn_policy       = &quot;HTTP2Preferred&quot;
+
+  default_action {
+    type             = &quot;forward&quot;
+    target_group_arn = aws_lb_target_group.svc_tls.arn
+  }
+}
+
+# Posture: flag any HTTPS/TLS listener not on a PQ policy.
+resource &quot;aws_config_config_rule&quot; &quot;elb_pq&quot; {
+  name = &quot;elbv2-pq-security-policy&quot;
+  source {
+    owner             = &quot;AWS&quot;
+    source_identifier = &quot;ELBV2_PREDEFINED_SECURITY_POLICY_SSL_CHECK&quot;
+  }
+  input_parameters = jsonencode({
+    sslPolicies = join(&quot;,&quot;, [
+      &quot;ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09&quot;,
+      &quot;ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09&quot;,
+      &quot;ELBSecurityPolicy-TLS13-1-3-PQ-2025-09&quot;,
+      &quot;ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09&quot;,
+    ])
+  })
+  scope {
+    compliance_resource_types = [&quot;AWS::ElasticLoadBalancingV2::Listener&quot;]
+  }
+}</code></pre>
+<p><code>iac/lb/lb.yaml</code> (CloudFormation)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Description: ALB and NLB with hybrid post-quantum TLS listener policies, HTTPS/TLS targets, logs and a Config rule.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetIds:
+    Type: List&lt;AWS::EC2::Subnet::Id&gt;
+  CertificateArn:
+    Type: String
+  LogBucket:
+    Type: String
+  PqPolicy:
+    Type: String
+    Default: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+    AllowedValues:
+      - ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+      - ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09
+      - ELBSecurityPolicy-TLS13-1-3-PQ-2025-09
+      - ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09
+
+Resources:
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB 443
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups: [!Ref AlbSecurityGroup]
+      LoadBalancerAttributes:
+        - Key: access_logs.s3.enabled
+          Value: &quot;true&quot;
+        - Key: access_logs.s3.bucket
+          Value: !Ref LogBucket
+        - Key: access_logs.s3.prefix
+          Value: alb-access
+        - Key: connection_logs.s3.enabled
+          Value: &quot;true&quot;
+        - Key: connection_logs.s3.bucket
+          Value: !Ref LogBucket
+        - Key: connection_logs.s3.prefix
+          Value: alb-conn
+
+  AppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      TargetType: ip
+      Protocol: HTTPS
+      Port: 8443
+      HealthCheckProtocol: HTTPS
+      HealthCheckPath: /healthz
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: !Ref PqPolicy
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppTargetGroup
+
+  Nlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: network
+      Subnets: !Ref PublicSubnetIds
+      LoadBalancerAttributes:
+        - Key: access_logs.s3.enabled
+          Value: &quot;true&quot;
+        - Key: access_logs.s3.bucket
+          Value: !Ref LogBucket
+        - Key: access_logs.s3.prefix
+          Value: nlb-access
+
+  SvcTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      TargetType: ip
+      Protocol: TLS
+      Port: 8443
+
+  TlsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Nlb
+      Port: 443
+      Protocol: TLS
+      SslPolicy: !Ref PqPolicy
+      AlpnPolicy: [HTTP2Preferred]
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SvcTargetGroup
+
+  ElbPqConfigRule:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: elbv2-pq-security-policy
+      Source:
+        Owner: AWS
+        SourceIdentifier: ELBV2_PREDEFINED_SECURITY_POLICY_SSL_CHECK
+      InputParameters:
+        sslPolicies: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09,ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09,ELBSecurityPolicy-TLS13-1-3-PQ-2025-09,ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::ElasticLoadBalancingV2::Listener
+
+Outputs:
+  AlbDns:
+    Value: !GetAtt Alb.DNSName
+  NlbDns:
+    Value: !GetAtt Nlb.DNSName</code></pre>
+<p><code>iac/lb/scp-elb-pq.json</code></p>
+<pre><code class="language-json">{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;DenyNonPqElbListenerPolicy&quot;,
+      &quot;Effect&quot;: &quot;Deny&quot;,
+      &quot;Action&quot;: [
+        &quot;elasticloadbalancing:CreateListener&quot;,
+        &quot;elasticloadbalancing:ModifyListener&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;ForAnyValue:StringNotEquals&quot;: {
+          &quot;elasticloadbalancing:SecurityPolicy&quot;: [
+            &quot;ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09&quot;,
+            &quot;ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09&quot;,
+            &quot;ELBSecurityPolicy-TLS13-1-3-PQ-2025-09&quot;,
+            &quot;ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09&quot;
+          ]
+        },
+        &quot;ArnNotLike&quot;: {
+          &quot;aws:PrincipalArn&quot;: &quot;arn:aws:iam::*:role/pq-exception-break-glass&quot;
+        }
+      }
+    },
+    {
+      &quot;Sid&quot;: &quot;DenyTlsListenerWithoutExplicitPolicy&quot;,
+      &quot;Effect&quot;: &quot;Deny&quot;,
+      &quot;Action&quot;: &quot;elasticloadbalancing:CreateListener&quot;,
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;ForAnyValue:StringEquals&quot;: {
+          &quot;elasticloadbalancing:ListenerProtocol&quot;: [&quot;HTTPS&quot;, &quot;TLS&quot;]
+        },
+        &quot;Null&quot;: {
+          &quot;elasticloadbalancing:SecurityPolicy&quot;: &quot;true&quot;
+        },
+        &quot;ArnNotLike&quot;: {
+          &quot;aws:PrincipalArn&quot;: &quot;arn:aws:iam::*:role/pq-exception-break-glass&quot;
+        }
+      }
+    },
+    {
+      &quot;Sid&quot;: &quot;DenyClassicLbListenerPolicies&quot;,
+      &quot;Effect&quot;: &quot;Deny&quot;,
+      &quot;Action&quot;: [
+        &quot;elasticloadbalancing:CreateLoadBalancerListeners&quot;,
+        &quot;elasticloadbalancing:CreateLoadBalancerPolicy&quot;,
+        &quot;elasticloadbalancing:SetLoadBalancerPoliciesOfListener&quot;
+      ],
+      &quot;Resource&quot;: &quot;arn:aws:elasticloadbalancing:*:*:loadbalancer/*&quot;,
+      &quot;Condition&quot;: {
+        &quot;ArnNotLike&quot;: {
+          &quot;aws:PrincipalArn&quot;: &quot;arn:aws:iam::*:role/pq-exception-break-glass&quot;
+        }
+      }
+    }
+  ]
+}</code></pre>
+<p><code>iac/lb/k8s-lbc.yaml</code> (AWS Load Balancer Controller)</p>
+<pre><code class="language-yaml"># Controller default when nothing is set: ELBSecurityPolicy-2016-08 (not PQ).
+# Cluster-wide default instead: Helm value defaultSSLPolicy / flag --default-ssl-policy.
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: IngressClassParams
+metadata:
+  name: alb-pq
+spec:
+  # Overrides any alb.ingress.kubernetes.io/ssl-policy annotation on Ingresses of this class.
+  sslPolicy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: alb-pq
+spec:
+  controller: ingress.k8s.aws/alb
+  parameters:
+    apiGroup: elbv2.k8s.aws
+    kind: IngressClassParams
+    name: alb-pq
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: app
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: &#39;[{&quot;HTTPS&quot;:443}]&#39;
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:111122223333:certificate/REPLACE
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+    # Backend leg: TLS to the pods. The pod&#39;s TLS stack must offer ML-KEM for a PQ hop.
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+spec:
+  ingressClassName: alb-pq
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-nlb
+  namespace: app
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:111122223333:certificate/REPLACE
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: &quot;443&quot;
+    service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
+    service.beta.kubernetes.io/aws-load-balancer-alpn-policy: HTTP2Preferred
+spec:
+  type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb
+  selector:
+    app: api
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+      protocol: TCP</code></pre>
+<p><code>iac/lb/athena.sql</code> (DDL and queries Q1 to Q5)</p>
+<pre><code class="language-sql">-- ALB connection logs: 15 fields (tls_keyexchange = field 13). AWS&#39;s published Athena DDL
+-- stops at conn_trace_id; this one adds tls_keyexchange, elb and ip_address, and accepts
+-- an unquoted &quot;-&quot; in leaf_client_cert_subject (listeners without mTLS).
+CREATE EXTERNAL TABLE IF NOT EXISTS alb_connection_logs (
+  time string, client_ip string, client_port int, listener_port int,
+  tls_protocol string, tls_cipher string, tls_handshake_latency double,
+  leaf_client_cert_subject string, leaf_client_cert_validity string,
+  leaf_client_cert_serial_number string, tls_verify_status string,
+  conn_trace_id string, tls_keyexchange string, elb string, ip_address string
+)
+ROW FORMAT SERDE &#39;org.apache.hadoop.hive.serde2.RegexSerDe&#39;
+WITH SERDEPROPERTIES (
+  &#39;serialization.format&#39; = &#39;1&#39;,
+  &#39;input.regex&#39; = &#39;^([^ ]*) ([^ ]*) ([0-9]*) ([0-9]*) ([A-Za-z0-9.-]*) ([^ ]*) ([-.0-9]*) (\&quot;[^\&quot;]*\&quot;|[^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ?([^ ]*)? ?([^ ]*)? ?([^ ]*)?(?: .*)?$&#39;
+)
+LOCATION &#39;s3://LOG_BUCKET/alb-conn/AWSLogs/ACCOUNT_ID/elasticloadbalancing/REGION/&#39;;
+
+-- NLB access logs v2.0: 22 fields (tls_keyexchange = field 17). &quot;ip:port&quot; fields split in two.
+CREATE EXTERNAL TABLE IF NOT EXISTS nlb_tls_logs (
+  type string, version string, time string, elb string, listener_id string,
+  client_ip string, client_port int, destination_ip string, destination_port int,
+  connection_time_ms double, tls_handshake_time_ms double,
+  received_bytes bigint, sent_bytes bigint, incoming_tls_alert string,
+  chosen_cert_arn string, chosen_cert_serial string, tls_cipher string,
+  tls_protocol_version string, tls_keyexchange string, domain_name string,
+  alpn_fe_protocol string, alpn_be_protocol string,
+  alpn_client_preference_list string, tls_connection_creation_time string
+)
+ROW FORMAT SERDE &#39;org.apache.hadoop.hive.serde2.RegexSerDe&#39;
+WITH SERDEPROPERTIES (
+  &#39;serialization.format&#39; = &#39;1&#39;,
+  &#39;input.regex&#39; = &#39;^([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*):([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-0-9]*) ([-0-9]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ?([^ ]*)?(?: .*)?$&#39;
+)
+LOCATION &#39;s3://LOG_BUCKET/nlb-access/AWSLogs/ACCOUNT_ID/elasticloadbalancing/REGION/&#39;;
+
+-- Q1. Key-exchange mix per ALB, last 7 days.
+SELECT elb, tls_protocol, tls_keyexchange, count(*) AS connections,
+       round(100.0 * count(*) / sum(count(*)) OVER (PARTITION BY elb), 2) AS pct
+FROM alb_connection_logs
+WHERE tls_protocol &lt;&gt; &#39;-&#39;
+  AND from_iso8601_timestamp(time) &gt; current_timestamp - interval &#39;7&#39; day
+GROUP BY elb, tls_protocol, tls_keyexchange
+ORDER BY elb, connections DESC;
+
+-- Q2. Classical clients on an ALB: top client IPs without ML-KEM.
+SELECT client_ip, tls_protocol, tls_keyexchange, count(*) AS connections
+FROM alb_connection_logs
+WHERE tls_protocol &lt;&gt; &#39;-&#39;
+  AND lower(tls_keyexchange) NOT LIKE &#39;%mlkem%&#39;
+  AND from_iso8601_timestamp(time) &gt; current_timestamp - interval &#39;7&#39; day
+GROUP BY client_ip, tls_protocol, tls_keyexchange
+ORDER BY connections DESC
+LIMIT 100;
+
+-- Q3. Gate for the TLS 1.3-only move: TLS 1.2 or older per listener port.
+SELECT elb, listener_port, tls_protocol, count(*) AS connections
+FROM alb_connection_logs
+WHERE tls_protocol IN (&#39;TLSv1&#39;, &#39;TLSv1.1&#39;, &#39;TLSv1.2&#39;)
+  AND from_iso8601_timestamp(time) &gt; current_timestamp - interval &#39;30&#39; day
+GROUP BY elb, listener_port, tls_protocol
+ORDER BY connections DESC;
+
+-- Q4. User agents of classical connections (ALB access logs carry the same conn_trace_id).
+-- Assumes an alb_access_logs table with a conn_trace_id column.
+SELECT a.user_agent, c.tls_keyexchange, count(*) AS requests
+FROM alb_connection_logs c
+JOIN alb_access_logs a ON a.conn_trace_id = c.conn_trace_id
+WHERE lower(c.tls_keyexchange) NOT LIKE &#39;%mlkem%&#39; AND c.tls_protocol &lt;&gt; &#39;-&#39;
+GROUP BY a.user_agent, c.tls_keyexchange
+ORDER BY requests DESC
+LIMIT 50;
+
+-- Q5. NLB TLS listeners: key-exchange mix, then classical clients by SNI.
+SELECT elb, domain_name, tls_protocol_version, tls_keyexchange, count(*) AS connections
+FROM nlb_tls_logs
+WHERE tls_protocol_version &lt;&gt; &#39;-&#39;
+GROUP BY elb, domain_name, tls_protocol_version, tls_keyexchange
+ORDER BY connections DESC;
+
+SELECT client_ip, domain_name, tls_protocol_version, tls_keyexchange, count(*) AS connections
+FROM nlb_tls_logs
+WHERE tls_protocol_version &lt;&gt; &#39;-&#39; AND lower(tls_keyexchange) NOT LIKE &#39;%mlkem%&#39;
+GROUP BY client_ip, domain_name, tls_protocol_version, tls_keyexchange
+ORDER BY connections DESC
+LIMIT 100;</code></pre>

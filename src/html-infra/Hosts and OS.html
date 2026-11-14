@@ -1,0 +1,264 @@
+<h1 id="hosts-and-operating-systems">Hosts and operating systems</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>The host OS decides PQ only for programs that use the system TLS library: OpenSSL, GnuTLS or NSS on Linux, Schannel on Windows, Apple&#39;s stack on macOS. On Red Hat-family systems (AL2023, RHEL) the system-wide crypto policy writes the group list for all three Linux libraries and for OpenSSH. Programs that bring their own TLS (Go, Java, the official Node.js binaries, rustls, AWS CLI v2) follow the language tabs whatever the host is.</p>
+<h2 id="status-matrix">Status matrix</h2>
+<p>Tested = run here on 2026-11-14 in containers against a PQ-only <code>openssl s_server</code> (<code>-groups X25519MLKEM768 -tls1_3</code>) and a classical-only one (<code>-groups X25519</code>), plus sshd restricted to one key exchange. Scripts and output: <code>deep/hosts/run-hosts*.sh</code> and <code>run-hosts*.out</code> in the work dir.</p>
+<table><thead><tr><th>OS</th><th>System TLS (OpenSSL / GnuTLS)</th><th>PQ TLS by default</th><th>OpenSSH</th><th>PQ SSH by default</th><th>Evidence</th></tr></thead><tbody><tr><td>Amazon Linux 2023.12 (image 2023.12.20261102)</td><td>OpenSSL 3.5.8, GnuTLS 3.8.10</td><td><strong>No</strong>; yes after <code>DEFAULT:PQ</code> (OpenSSL, GnuTLS, OpenSSH all switch)</td><td>9.9p1</td><td>No; <code>mlkem768x25519-sha256</code> first after <code>DEFAULT:PQ</code></td><td>Tested; <a href="https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html">AWS doc</a></td></tr><tr><td>Amazon Linux 2027 (preview)</td><td>OpenSSL 3.5</td><td>Yes; opt out with <code>DEFAULT:NO-PQ</code></td><td>PQ by default</td><td>Yes</td><td>Documented; preview, not for production</td></tr><tr><td>Amazon Linux 2</td><td>OpenSSL 1.0.2 / 1.1.1</td><td>No, no fix</td><td>7.x (no ML-KEM)</td><td>No</td><td>Tested (Lambda AL2 images). End of support was <strong>2026-06-30</strong> (<a href="https://aws.amazon.com/amazon-linux-2/faqs/">AL2 FAQ</a>)</td></tr><tr><td>Bottlerocket (ECS/EKS nodes)</td><td>Not confirmed</td><td>Not applicable to workloads</td><td>Admin container only</td><td>n/a</td><td>See Bottlerocket below</td></tr><tr><td>RHEL 10.1+</td><td>OpenSSL 3.5, GnuTLS, NSS</td><td><strong>Yes</strong> (DEFAULT changed)</td><td>PQ by default</td><td>Yes</td><td>Documented (<a href="https://www.redhat.com/en/blog/whats-new-post-quantum-cryptography-rhel-101">Red Hat</a>)</td></tr><tr><td>RHEL 10.0</td><td>OpenSSL 3.5</td><td>No; tech preview <code>DEFAULT:TEST-PQ</code></td><td></td><td></td><td>Documented</td></tr><tr><td>RHEL 9.7</td><td>OpenSSL 3.5</td><td>No; <code>DEFAULT:PQ</code> (OpenSSL, NSS)</td><td></td><td></td><td>Documented (<a href="https://access.redhat.com/security/pqc/rhel">Red Hat PQC</a>)</td></tr><tr><td>Ubuntu 26.04.1 LTS</td><td>OpenSSL 3.5.5; GnuTLS 3.8.12 <strong>without</strong> ML-KEM</td><td>Yes for OpenSSL programs; <strong>no</strong> for GnuTLS programs (wget, git)</td><td>10.2p1</td><td>Yes</td><td>Tested</td></tr><tr><td>Ubuntu 24.04.5 LTS</td><td>OpenSSL 3.0.13</td><td>No</td><td>9.6p1</td><td><code>sntrup761x25519-sha512@openssh.com</code> only</td><td>Tested</td></tr><tr><td>Debian 13 (trixie)</td><td>OpenSSL 3.5.7; GnuTLS 3.8.9 <strong>without</strong> ML-KEM</td><td>Yes for OpenSSL; no for GnuTLS</td><td>10.0p2</td><td>Yes</td><td>Tested</td></tr><tr><td>Debian 12 (bookworm)</td><td>OpenSSL 3.0.22</td><td>No</td><td>9.2p1</td><td>sntrup761 only</td><td>Tested</td></tr><tr><td>Alpine 3.24</td><td>OpenSSL 3.5.9</td><td>Yes</td><td>10.3p1</td><td>Yes</td><td>Tested</td></tr><tr><td>Alpine 3.21</td><td>OpenSSL 3.3.7</td><td>No</td><td>9.9p2</td><td>Yes</td><td>Tested</td></tr><tr><td>Windows Server 2025</td><td>Schannel</td><td>No: opt-in after KB5099536 (2026-07-14)</td><td>OpenSSH for Windows not checked</td><td>Not confirmed</td><td>Documented (<a href="https://techcommunity.microsoft.com/t5/post-quantum-crypto-tech-blog/windows-tls-1-3-and-post-quantum-crypto-faq/ba-p/4556389">Microsoft FAQ</a>)</td></tr><tr><td>Windows 11 24H2/25H2 (build agents, jump hosts)</td><td>Schannel</td><td>No: opt-in after KB5089573</td><td></td><td></td><td>Documented (same FAQ)</td></tr><tr><td>Windows Server 2022, 2019</td><td>Schannel</td><td><strong>No PQ update announced</strong></td><td></td><td></td><td>Microsoft&#39;s FAQ names only Server 2025 and Windows 11</td></tr><tr><td>macOS 27.0.1 build agent</td><td><code>/usr/bin/curl</code> on LibreSSL 3.3.6; URLSession</td><td>curl: <strong>No</strong>; URLSession: yes (macOS 26+)</td><td>10.3p1</td><td>Yes (OpenSSH ≥ 10.0 default)</td><td>Tested (curl, <code>ssh -V</code>); URLSession Documented (<a href="https://support.apple.com/en-gb/122756">Apple</a>)</td></tr></tbody></table>
+<h3 id="by-compute-type">By compute type</h3>
+<table><thead><tr><th>Compute</th><th>Who owns the host OS</th><th>What you change</th></tr></thead><tbody><tr><td>EC2 (AL2023, RHEL, Ubuntu, Windows)</td><td>You</td><td>Crypto policy / Schannel group via SSM; OpenSSH config</td></tr><tr><td>ECS/EKS on EC2 with the AL2023 ECS- or EKS-optimized AMI</td><td>You</td><td>Same as EC2. Containers still use their own image&#39;s TLS</td></tr><tr><td>ECS/EKS on Bottlerocket</td><td>You pick the version; no shell or policy tooling</td><td>Nothing on the host; fix the container images</td></tr><tr><td>Fargate</td><td>AWS</td><td>Nothing on the host; fix the container images</td></tr><tr><td>Lambda</td><td>AWS</td><td>Language tabs (<code>OPENSSL_CONF</code>)</td></tr></tbody></table>
+<h3 id="bottlerocket">Bottlerocket</h3>
+<p>Bottlerocket has no package manager and no crypto-policies tool, and I couldn&#39;t confirm which OpenSSL version its core kit ships (searched release notes 2026-11-14). That matters little in practice:</p>
+<ul><li><p>Workload TLS comes from the container image, not the host.</p></li><li><p>Host agents (containerd, kubelet, ecs-agent, the SSM agent in the control container) are Go programs; current Go builds offer X25519MLKEM768 by default. Not confirmed per Bottlerocket version.</p></li><li><p>The admin and control containers can&#39;t be retuned in a supported way. Treat any TLS they make as unknown until Bottlerocket documents it.</p></li></ul>
+<p>Not testable here (needs a Bottlerocket VM).</p>
+<h2 id="client-side-app-level-on-the-host">Client side (app level on the host)</h2>
+<table><thead><tr><th>Program on the host</th><th>TLS library</th><th>How to get PQ</th><th>Evidence</th></tr></thead><tbody><tr><td>curl, Python <code>ssl</code>, Ruby, PHP, .NET (Linux)</td><td>OpenSSL</td><td>AL2023: <code>DEFAULT:PQ</code>, or per service <code>OPENSSL_CONF</code>; Debian 13 / Ubuntu 26.04 / Alpine 3.24: nothing</td><td>Tested</td></tr><tr><td>wget and git on Debian/Ubuntu</td><td>GnuTLS (wget links GnuTLS; git uses <code>libcurl-gnutls</code>)</td><td><strong>No fix on Debian 13 or Ubuntu 26.04</strong>: their GnuTLS has no ML-KEM group. Use curl, or Alpine/AL2023 builds</td><td>Tested: handshake failure on PQ-only</td></tr><tr><td>GnuTLS programs on AL2023 (wget 1.21.3, <code>gnutls-cli</code>)</td><td>GnuTLS 3.8.10</td><td><code>DEFAULT:PQ</code> (negotiated <code>HYBRID-X25519-MLKEM768</code>)</td><td>Tested</td></tr><tr><td>NSS programs (Firefox ESR, some LDAP tools)</td><td>NSS 3.112 on AL2023</td><td><code>DEFAULT:PQ</code></td><td>Documented (AWS doc)</td></tr><tr><td>OpenSSH client</td><td>OpenSSH</td><td>≥ 9.9 for ML-KEM; AL2023 needs <code>DEFAULT:PQ</code></td><td>Tested</td></tr><tr><td>Windows apps on Schannel (.NET Framework, PowerShell 5.1, WinHTTP)</td><td>Schannel</td><td><code>Enable-TlsEccCurve -Name X25519_MLKEM768 -Position 0</code></td><td>Documented</td></tr><tr><td>macOS command-line curl</td><td>LibreSSL 3.3.6</td><td>Use a curl linked to OpenSSL 3.5 (Homebrew, or a container)</td><td>Tested (fails on PQ-only)</td></tr></tbody></table>
+<h3 id="per-service-override-with-systemd">Per-service override with systemd</h3>
+<p>On AL2023, to change one service and not the whole host, point that unit at the PQ config. Tested equivalent: with the policy at <code>DEFAULT</code>, curl run with <code>OPENSSL_CONF=/tmp/openssl-pq.cnf</code> negotiated X25519MLKEM768 and still reached the classical server.</p>
+<pre><code class="language-ini"># /etc/systemd/system/myapp.service.d/pq-tls.conf (excerpt)
+[Service]
+Environment=OPENSSL_CONF=/etc/pki/tls/openssl-pq.cnf</code></pre>
+<p>Then <code>systemctl daemon-reload &amp;&amp; systemctl restart myapp</code>. Only OpenSSL-linked programs read this variable.</p>
+<h3 id="openssh-client">OpenSSH client</h3>
+<p>OpenSSH ≥ 10.0 puts <code>mlkem768x25519-sha256</code> first by default (<a href="https://www.openssh.com/pq.html">OpenSSH PQ</a>); nothing to set. For 9.9 hosts, or to pin the order:</p>
+<pre><code class="language-text"># ~/.ssh/config or /etc/ssh/ssh_config.d/40-pq-kex.conf (excerpt)
+Host *
+    KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org</code></pre>
+<p>OpenSSH before 9.9 rejects the unknown name and exits; on 9.0–9.8 (Ubuntu 24.04, Debian 12) put <code>sntrup761x25519-sha512@openssh.com</code> first instead. sntrup761 is not a NIST algorithm; use it only as an interim step.</p>
+<h2 id="server-side">Server side</h2>
+<h3 id="amazon-linux-2023-crypto-policy">Amazon Linux 2023: crypto policy</h3>
+<ol><li><p>Patch to AL2023.12 or later.</p></li><li><p><code>dnf -y install crypto-policies-scripts &amp;&amp; dnf -y update crypto-policies crypto-policies-scripts</code>.</p></li><li><p><code>update-crypto-policies --set DEFAULT:PQ</code> (<code>FIPS:PQ</code> on FIPS hosts).</p></li><li><p>Restart services, or reboot. Already-running processes keep the old list.</p></li></ol>
+<p><strong>Tested</strong> on AL2023.12.20261102. At <code>DEFAULT</code>, OpenSSL&#39;s Groups line is <code>*X25519:secp256r1:…</code> and both curl and <code>s_client</code> fail on the PQ-only server. At <code>DEFAULT:PQ</code> it becomes <code>*?X25519MLKEM768:?x25519_mlkem768:?SecP256r1MLKEM768:…/*X25519:…</code>; curl reports <code>X25519MLKEM768</code>; the classical server still works; <code>sshd -T</code> and the ssh client list <code>mlkem768x25519-sha256</code> first; GnuTLS lists <code>GROUP-X25519-MLKEM768</code> first.</p>
+<p><code>DEFAULT:PQ</code> also enables ML-DSA signatures and the P-256/P-384 ML-KEM hybrids. For the smallest change, use a custom subpolicy that adds only the X25519 hybrid group:</p>
+<pre><code class="language-text"># /etc/crypto-policies/policies/modules/PQ-HYBRID.pmod
+group = +X25519-MLKEM768</code></pre>
+<p>Apply with <code>update-crypto-policies --set DEFAULT:PQ-HYBRID</code>. Tested: OpenSSL&#39;s Groups line became <code>*?X25519MLKEM768:?x25519_mlkem768/*X25519:…</code> and curl negotiated X25519MLKEM768. (AL2023&#39;s own <code>PQ.pmod</code> spells the group <code>MLKEM768-X25519</code>; the tested spelling above also works.)</p>
+<h3 id="openssh-server">OpenSSH server</h3>
+<table><thead><tr><th>Host</th><th>What to do</th><th>Evidence</th></tr></thead><tbody><tr><td>AL2023</td><td><code>DEFAULT:PQ</code> (the policy writes <code>opensshserver.config</code>)</td><td>Tested (<code>sshd -T</code>)</td></tr><tr><td>Debian 13, Ubuntu 26.04, Alpine 3.24, RHEL 10.1</td><td>Nothing: OpenSSH 10.x prefers ML-KEM by default</td><td>Documented; client side Tested</td></tr><tr><td>Ubuntu 24.04, Debian 12</td><td>Upgrade the OS; sntrup761 meanwhile</td><td>Tested</td></tr></tbody></table>
+<p>To restrict a server to PQ only (a bastion, or an SFTP host for PQ clients):</p>
+<pre><code class="language-text"># /etc/ssh/sshd_config.d/40-pq-kex.conf (excerpt; not on AL2023, where the policy owns this)
+KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com</code></pre>
+<p>Tested on Debian 13 sshd with <code>-o KexAlgorithms=mlkem768x25519-sha256</code>: OpenSSH 9.9+ clients connected with ML-KEM; Ubuntu 24.04, Debian 12 and AL2023-at-<code>DEFAULT</code> clients failed with <code>no matching key exchange method found</code>.</p>
+<h3 id="session-manager-and-ec2-instance-connect">Session Manager and EC2 Instance Connect</h3>
+<ul><li><p><strong>Session Manager</strong> doesn&#39;t use sshd; the SSM agent opens a TLS WebSocket to <code>ssmmessages</code>. The agent is Go 1.26 (offers PQ) but that endpoint isn&#39;t on AWS&#39;s PQ list. Assume classical (<a data-atom="ref" data-ref="file/5a29f676-6958">AWS service endpoints</a>).</p></li><li><p><strong>EC2 Instance Connect</strong> pushes a key through a PQ-capable API, then you SSH to the instance&#39;s sshd: the sshd rules above apply.</p></li></ul>
+<h3 id="web-servers-and-other-daemons-on-the-host">Web servers and other daemons on the host</h3>
+<p>nginx, Apache httpd, HAProxy and Postfix linked to the system OpenSSL follow the crypto policy unless their config sets groups. Server config: <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>.</p>
+<h3 id="windows-server-2025-schannel">Windows Server 2025 (Schannel)</h3>
+<ol><li><p>Install KB5099536 (2026-07-14) or later.</p></li><li><p><code>Enable-TlsEccCurve -Name &quot;X25519_MLKEM768&quot; -Position 0</code> (elevated). Microsoft says position 0 is needed for it to be negotiated.</p></li><li><p>TLS 1.3 must be on. Group Policy overrides the PowerShell setting, so pick one (&quot;don&#39;t mix-n-match&quot;, Microsoft).</p></li><li><p>Restart services that hold TLS contexts. Whether a reboot is needed isn&#39;t stated; not confirmed.</p></li></ol>
+<p>Windows Server 2022 and 2019 have no announced PQ Schannel. For PQ on those hosts, terminate TLS in front of them (<a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>, <a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>) or move to 2025.</p>
+<h2 id="packaging-and-rollout-per-compute-type">Packaging and rollout per compute type</h2>
+<table><thead><tr><th>Compute</th><th>Mechanism</th><th>Files (last section)</th></tr></thead><tbody><tr><td>EC2 Linux fleet</td><td>SSM State Manager association running a Command document, targeted by tag in waves (<code>PQRollout=wave1</code>, <code>wave2</code>…)</td><td><code>PQ-SetCryptoPolicy.json</code>, <code>pq-policy.tf</code>, <code>pq-policy.yaml</code></td></tr><tr><td>New AMIs</td><td>EC2 Image Builder component or user data running the same steps</td><td><code>user-data-pq.sh</code></td></tr><tr><td>Single services</td><td>systemd drop-in with <code>OPENSSL_CONF</code></td><td><code>pq-tls.conf</code>, <code>openssl-pq.cnf</code></td></tr><tr><td>EC2 Windows</td><td>SSM Run Command or association with <code>PQ-WindowsSchannel.json</code>; or GPO, not both</td><td><code>PQ-WindowsSchannel.json</code></td></tr><tr><td>ECS/EKS nodes (AL2023 AMI)</td><td>Same association, targeted by the node group&#39;s tag</td><td></td></tr><tr><td>Bottlerocket, Fargate</td><td>Nothing on the host</td><td>Fix images (language tabs)</td></tr></tbody></table>
+<p>Rollback: retag instances <code>PQRollout=rollback</code>. The rollback association sets <code>DEFAULT</code> and restarts the listed units.</p>
+<h2 id="verify">Verify</h2>
+<ol><li><p><strong>Posture (SSM Run Command or Inventory):</strong> <code>update-crypto-policies --show</code> = <code>DEFAULT:PQ</code>; <code>grep Groups /etc/crypto-policies/back-ends/opensslcnf.config</code> starts with <code>*?X25519MLKEM768</code>; <code>sshd -T | grep ^kexalgorithms</code> starts with <code>mlkem768x25519-sha256</code>; <code>rpm -q openssl-libs openssh-server</code> (≥ 3.5, ≥ 9.9). Windows: <code>Get-TlsEccCurve</code> lists <code>X25519_MLKEM768</code> first.</p></li><li><p><strong>Live:</strong> from the host, <code>openssl s_client -connect pq-test:443 -brief</code> (no <code>-groups</code>, so the policy is what&#39;s tested) must print <code>Negotiated TLS1.3 group: X25519MLKEM768</code>; a classical server must still connect. <code>ssh -v host true 2&gt;&amp;1 | grep &#39;kex: algorithm&#39;</code> must print <code>mlkem768x25519-sha256</code>.</p></li><li><p><strong>Observed:</strong> CloudTrail <code>tlsDetails.keyExchange</code> for the host&#39;s AWS calls made by a system-OpenSSL client; Zeek on VPC Traffic Mirroring for other host traffic; ALB connection logs for calls to your ALBs.</p></li></ol>
+<h3 id="test-results-2026-11-14">Test results (2026-11-14)</h3>
+<table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>AL2023 <code>DEFAULT</code> → PQ-only server (curl, <code>s_client</code>)</td><td>Fail (alert 40), classical OK</td></tr><tr><td>AL2023 <code>DEFAULT:PQ</code> → PQ-only (curl, <code>s_client</code>, wget, <code>gnutls-cli</code>)</td><td>Pass <code>X25519MLKEM768</code>; classical OK</td></tr><tr><td>AL2023 <code>DEFAULT:PQ-HYBRID</code> custom subpolicy</td><td>Pass; classical OK</td></tr><tr><td>AL2023 rollback to <code>DEFAULT</code></td><td>PQ-only fails again</td></tr><tr><td>AL2023 <code>DEFAULT</code> + <code>OPENSSL_CONF=openssl-pq.cnf</code> (curl)</td><td>Pass; classical OK</td></tr><tr><td>ssh to ML-KEM-only sshd from Debian 13, Ubuntu 26.04, Alpine 3.24, Alpine 3.21, AL2023 <code>DEFAULT:PQ</code></td><td>Pass <code>mlkem768x25519-sha256</code></td></tr><tr><td>ssh to ML-KEM-only sshd from Ubuntu 24.04, Debian 12, AL2023 <code>DEFAULT</code></td><td>Fail (no matching kex)</td></tr><tr><td>wget/git on Debian 13, wget on Ubuntu 26.04 (GnuTLS) → PQ-only</td><td>Fail</td></tr><tr><td>macOS 27.0.1 <code>/usr/bin/curl</code> → PQ-only</td><td>Fail (LibreSSL 3.3.6)</td></tr></tbody></table>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p><code>DEFAULT:PQ</code> changes every OpenSSL, GnuTLS, NSS and OpenSSH program at once, including dnf, agent helpers and monitoring agents. Roll out in waves by tag.</p></li><li><p><strong>Rollback:</strong> <code>update-crypto-policies --set DEFAULT</code>, then restart. Tested: the PQ-only server failed again right after rollback.</p></li><li><p><strong>Debian/Ubuntu GnuTLS programs stay classical</strong> even on Debian 13 and Ubuntu 26.04 (Tested). Don&#39;t assume wget or git follow curl.</p></li><li><p><strong>OpenSSH config:</strong> <code>mlkem768x25519-sha256</code> in <code>ssh_config</code> on OpenSSH &lt; 9.9 breaks every ssh call. Gate by version.</p></li><li><p><strong>Middleboxes:</strong> the larger ClientHello can be dropped by old inspection devices. Test each fleet&#39;s egress path before its wave (<a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a>).</p></li><li><p><strong>AL2 hosts</strong> can&#39;t be fixed. They&#39;re past end of support (2026-06-30); migrate to AL2023.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>The policy commands, subpolicy, <code>OPENSSL_CONF</code> file and sshd/ssh settings were Tested in containers. The SSM documents, Terraform and CloudFormation wrap those commands and were not applied to an AWS account.</p>
+<p><strong><code>ssm/PQ-SetCryptoPolicy.json</code></strong> (SSM Command document, AL2023 and RHEL 9.7+)</p>
+<pre><code class="language-json">{
+  &quot;schemaVersion&quot;: &quot;2.2&quot;,
+  &quot;description&quot;: &quot;Set the system-wide crypto policy (PQ rollout or rollback) and report the result.&quot;,
+  &quot;parameters&quot;: {
+    &quot;Policy&quot;: {
+      &quot;type&quot;: &quot;String&quot;,
+      &quot;default&quot;: &quot;DEFAULT:PQ&quot;,
+      &quot;allowedValues&quot;: [&quot;DEFAULT:PQ&quot;, &quot;FIPS:PQ&quot;, &quot;DEFAULT:PQ-HYBRID&quot;, &quot;DEFAULT&quot;, &quot;FIPS&quot;]
+    },
+    &quot;RestartUnits&quot;: {
+      &quot;type&quot;: &quot;String&quot;,
+      &quot;default&quot;: &quot;sshd&quot;,
+      &quot;description&quot;: &quot;Space-separated systemd units to restart after the change&quot;
+    }
+  },
+  &quot;mainSteps&quot;: [
+    {
+      &quot;action&quot;: &quot;aws:runShellScript&quot;,
+      &quot;name&quot;: &quot;setCryptoPolicy&quot;,
+      &quot;precondition&quot;: { &quot;StringEquals&quot;: [&quot;platformType&quot;, &quot;Linux&quot;] },
+      &quot;inputs&quot;: {
+        &quot;timeoutSeconds&quot;: &quot;600&quot;,
+        &quot;runCommand&quot;: [
+          &quot;set -eu&quot;,
+          &quot;command -v dnf &gt;/dev/null || { echo &#39;not a dnf-based host&#39;; exit 0; }&quot;,
+          &quot;dnf -y -q install crypto-policies-scripts&quot;,
+          &quot;dnf -y -q update crypto-policies crypto-policies-scripts&quot;,
+          &quot;if [ &#39;{{ Policy }}&#39; = &#39;DEFAULT:PQ-HYBRID&#39; ]; then printf &#39;group = +X25519-MLKEM768\\n&#39; &gt; /etc/crypto-policies/policies/modules/PQ-HYBRID.pmod; fi&quot;,
+          &quot;current=$(update-crypto-policies --show)&quot;,
+          &quot;if [ \&quot;$current\&quot; != &#39;{{ Policy }}&#39; ]; then update-crypto-policies --set &#39;{{ Policy }}&#39;; for u in {{ RestartUnits }}; do systemctl try-restart \&quot;$u\&quot; || true; done; fi&quot;,
+          &quot;echo \&quot;policy=$(update-crypto-policies --show)\&quot;&quot;,
+          &quot;grep -m1 -i &#39;^Groups&#39; /etc/crypto-policies/back-ends/opensslcnf.config || true&quot;,
+          &quot;sshd -T 2&gt;/dev/null | grep -i &#39;^kexalgorithms&#39; | cut -c1-120 || true&quot;,
+          &quot;rpm -q openssl-libs openssh-server || true&quot;
+        ]
+      }
+    }
+  ]
+}</code></pre>
+<p><strong><code>ssm/pq-policy.tf</code></strong> (Terraform: document, a wave association and a rollback association)</p>
+<pre><code class="language-hcl">resource &quot;aws_ssm_document&quot; &quot;pq_policy&quot; {
+  name            = &quot;PQ-SetCryptoPolicy&quot;
+  document_type   = &quot;Command&quot;
+  document_format = &quot;JSON&quot;
+  content         = file(&quot;${path.module}/PQ-SetCryptoPolicy.json&quot;)
+}
+
+resource &quot;aws_ssm_association&quot; &quot;pq_wave&quot; {
+  name                = aws_ssm_document.pq_policy.name
+  association_name    = &quot;pq-crypto-policy-wave1&quot;
+  schedule_expression = &quot;rate(1 day)&quot;
+  max_concurrency     = &quot;10%&quot;
+  max_errors          = &quot;5%&quot;
+  parameters = {
+    Policy       = &quot;DEFAULT:PQ&quot;
+    RestartUnits = &quot;sshd&quot;
+  }
+  targets {
+    key    = &quot;tag:PQRollout&quot;
+    values = [&quot;wave1&quot;]
+  }
+}
+
+resource &quot;aws_ssm_association&quot; &quot;pq_rollback&quot; {
+  name             = aws_ssm_document.pq_policy.name
+  association_name = &quot;pq-crypto-policy-rollback&quot;
+  max_concurrency  = &quot;25%&quot;
+  max_errors       = &quot;10%&quot;
+  parameters = {
+    Policy       = &quot;DEFAULT&quot;
+    RestartUnits = &quot;sshd&quot;
+  }
+  targets {
+    key    = &quot;tag:PQRollout&quot;
+    values = [&quot;rollback&quot;]
+  }
+}</code></pre>
+<p><strong><code>ssm/pq-policy.yaml</code></strong> (CloudFormation equivalent)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Resources:
+  PqPolicyDoc:
+    Type: AWS::SSM::Document
+    Properties:
+      Name: PQ-SetCryptoPolicy
+      DocumentType: Command
+      DocumentFormat: YAML
+      Content:
+        schemaVersion: &quot;2.2&quot;
+        description: Set the system-wide crypto policy and report the result.
+        parameters:
+          Policy:
+            type: String
+            default: DEFAULT:PQ
+            allowedValues: [DEFAULT:PQ, FIPS:PQ, DEFAULT:PQ-HYBRID, DEFAULT, FIPS]
+          RestartUnits:
+            type: String
+            default: sshd
+        mainSteps:
+          - action: aws:runShellScript
+            name: setCryptoPolicy
+            precondition: { StringEquals: [platformType, Linux] }
+            inputs:
+              timeoutSeconds: &quot;600&quot;
+              runCommand:
+                - set -eu
+                - dnf -y -q install crypto-policies-scripts
+                - dnf -y -q update crypto-policies crypto-policies-scripts
+                - &quot;if [ &#39;{{ Policy }}&#39; = &#39;DEFAULT:PQ-HYBRID&#39; ]; then printf &#39;group = +X25519-MLKEM768\\n&#39; &gt; /etc/crypto-policies/policies/modules/PQ-HYBRID.pmod; fi&quot;
+                - &quot;current=$(update-crypto-policies --show); if [ \&quot;$current\&quot; != &#39;{{ Policy }}&#39; ]; then update-crypto-policies --set &#39;{{ Policy }}&#39;; for u in {{ RestartUnits }}; do systemctl try-restart \&quot;$u\&quot; || true; done; fi&quot;
+                - echo &quot;policy=$(update-crypto-policies --show)&quot;
+                - grep -m1 -i &#39;^Groups&#39; /etc/crypto-policies/back-ends/opensslcnf.config || true
+  PqWave1:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref PqPolicyDoc
+      AssociationName: pq-crypto-policy-wave1
+      ScheduleExpression: rate(1 day)
+      MaxConcurrency: &quot;10%&quot;
+      MaxErrors: &quot;5%&quot;
+      Parameters:
+        Policy: [DEFAULT:PQ]
+        RestartUnits: [sshd]
+      Targets:
+        - Key: tag:PQRollout
+          Values: [wave1]
+  PqRollback:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref PqPolicyDoc
+      AssociationName: pq-crypto-policy-rollback
+      MaxConcurrency: &quot;25%&quot;
+      MaxErrors: &quot;10%&quot;
+      Parameters:
+        Policy: [DEFAULT]
+        RestartUnits: [sshd]
+      Targets:
+        - Key: tag:PQRollout
+          Values: [rollback]</code></pre>
+<p><strong><code>/etc/crypto-policies/policies/modules/PQ-HYBRID.pmod</code></strong></p>
+<pre><code class="language-text"># Custom subpolicy: add the X25519+ML-KEM-768 hybrid group first for TLS and SSH,
+# leave every other algorithm as the base policy has it.
+# Apply: update-crypto-policies --set DEFAULT:PQ-HYBRID
+group = +X25519-MLKEM768</code></pre>
+<p><strong><code>user-data-pq.sh</code></strong> (EC2 user data or Image Builder step for AL2023 AMIs)</p>
+<pre><code class="language-bash">#!/bin/bash
+set -euo pipefail
+dnf -y -q install crypto-policies-scripts
+dnf -y -q update crypto-policies crypto-policies-scripts openssl openssh-server
+update-crypto-policies --set DEFAULT:PQ
+update-crypto-policies --show</code></pre>
+<p><strong><code>/etc/pki/tls/openssl-pq.cnf</code></strong> (per-service override; same file as the Lambda kit)</p>
+<pre><code class="language-ini">openssl_conf = openssl_init
+
+.include /etc/pki/tls/openssl.d
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = pq_system_default
+
+[pq_system_default]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192</code></pre>
+<p><strong><code>/etc/systemd/system/myapp.service.d/pq-tls.conf</code></strong></p>
+<pre><code class="language-ini">[Service]
+Environment=OPENSSL_CONF=/etc/pki/tls/openssl-pq.cnf</code></pre>
+<p><strong><code>/etc/ssh/sshd_config.d/40-pq-kex.conf</code></strong> (Debian/Ubuntu/Alpine servers that must refuse classical SSH; leave out on AL2023 and RHEL)</p>
+<pre><code class="language-text">KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com</code></pre>
+<p><strong><code>/etc/ssh/ssh_config.d/40-pq-kex.conf</code></strong> (clients with OpenSSH ≥ 9.9)</p>
+<pre><code class="language-text">Host *
+    KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org</code></pre>
+<p><strong><code>ssm/PQ-WindowsSchannel.json</code></strong> (SSM Command document, Windows Server 2025 / Windows 11; not run here)</p>
+<pre><code class="language-json">{
+  &quot;schemaVersion&quot;: &quot;2.2&quot;,
+  &quot;description&quot;: &quot;Enable or disable the X25519_MLKEM768 TLS group in Schannel and report the curve order.&quot;,
+  &quot;parameters&quot;: {
+    &quot;Action&quot;: { &quot;type&quot;: &quot;String&quot;, &quot;default&quot;: &quot;Enable&quot;, &quot;allowedValues&quot;: [&quot;Enable&quot;, &quot;Disable&quot;, &quot;Report&quot;] }
+  },
+  &quot;mainSteps&quot;: [
+    {
+      &quot;action&quot;: &quot;aws:runPowerShellScript&quot;,
+      &quot;name&quot;: &quot;schannelPq&quot;,
+      &quot;precondition&quot;: { &quot;StringEquals&quot;: [&quot;platformType&quot;, &quot;Windows&quot;] },
+      &quot;inputs&quot;: {
+        &quot;timeoutSeconds&quot;: &quot;300&quot;,
+        &quot;runCommand&quot;: [
+          &quot;$ErrorActionPreference = &#39;Stop&#39;&quot;,
+          &quot;Write-Output (\&quot;OS build: \&quot; + [System.Environment]::OSVersion.Version)&quot;,
+          &quot;if (&#39;{{ Action }}&#39; -eq &#39;Enable&#39;)  { Enable-TlsEccCurve -Name &#39;X25519_MLKEM768&#39; -Position 0 }&quot;,
+          &quot;if (&#39;{{ Action }}&#39; -eq &#39;Disable&#39;) { Disable-TlsEccCurve -Name &#39;X25519_MLKEM768&#39; }&quot;,
+          &quot;Get-TlsEccCurve | Select-Object -First 5&quot;
+        ]
+      }
+    }
+  ]
+}</code></pre>
+<p>Run it only on hosts that no Group Policy sets the curve order for; GPO wins over this setting.</p>

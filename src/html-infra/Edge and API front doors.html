@@ -1,0 +1,238 @@
+<h1 id="edge-and-api-front-doors">Edge and API front doors</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>Each managed front door terminates TLS with its own stack, so the service and the policy you pick decide the client-facing leg. CloudFront and Cognito custom domains offer PQ on TLS 1.3 already. API Gateway REST needs an opt-in <code>SecurityPolicy_*_PQ_*</code> policy plus an endpoint access mode. HTTP, WebSocket and edge-optimized APIs have no PQ policy. The upstream legs are classical today: CloudFront to origin, and API Gateway to its integrations. Global Accelerator does not terminate TLS, so the client and your endpoint decide.</p>
+<h2 id="status-matrix">Status matrix</h2>
+<table><thead><tr><th>Front door</th><th>Device type</th><th>Client-facing leg</th><th>Upstream leg</th><th>Default</th><th>Evidence</th></tr></thead><tbody><tr><td>CloudFront</td><td>Managed CDN</td><td>PQ on every viewer policy: X25519MLKEM768, SecP256r1MLKEM768, TLS 1.3 only</td><td>Classical: curves prime256v1, secp384r1, X25519; <code>OriginSSLProtocols</code> tops out at <code>TLSv1.2</code></td><td>PQ, nothing to do</td><td>Documented</td></tr><tr><td>API Gateway REST: Regional and private APIs, custom domains</td><td>Managed</td><td>Opt-in <code>SecurityPolicy_TLS13_1_2_PQ_2025_09</code>, <code>SecurityPolicy_TLS13_1_2_PFS_PQ_2025_09</code>, <code>SecurityPolicy_TLS13_1_2_FIPS_PFS_PQ_2025_09</code> (TLS 1.2 and 1.3)</td><td>Integration egress TLS 1.2, never PQ</td><td><code>TLS_1_0</code> on APIs, <code>TLS_1_2</code> on domains: not PQ</td><td>Documented</td></tr><tr><td>API Gateway REST, edge-optimized</td><td>Managed, CloudFront-fronted</td><td>No PQ policy: <code>SecurityPolicy_TLS13_2025_EDGE</code>, <code>SecurityPolicy_TLS12_PFS_2025_EDGE</code>, <code>SecurityPolicy_TLS12_2018_EDGE</code>, <code>TLS_1_2</code></td><td>TLS 1.2</td><td>Not PQ</td><td>Documented (policy list)</td></tr><tr><td>API Gateway HTTP and WebSocket APIs</td><td>Managed</td><td>Only <code>TLS_1_2</code>; no PQ policy</td><td>TLS 1.2</td><td>Not PQ</td><td>Documented</td></tr><tr><td>AppSync custom domains</td><td>Managed</td><td>TLS 1.2 and 1.3; PQ not stated</td><td>none</td><td>Not confirmed</td><td>Documented (versions); PQ Unverified</td></tr><tr><td>Cognito user pool custom domain</td><td>Managed, AWS-owned CloudFront distribution</td><td><code>TLS_V1_2_2021</code> and <code>TLS_V1_3_2025</code> are described as post-quantum-ready; <code>TLS_V1</code> discouraged</td><td>none</td><td><code>CustomDomainConfig.SecurityPolicy</code></td><td>Documented</td></tr><tr><td>Transfer Family SFTP</td><td>Managed</td><td>SSH KEX <code>mlkem768x25519-sha256</code>, <code>mlkem768nistp256-sha256</code>, <code>mlkem1024nistp384-sha384</code> in <code>TransferSecurityPolicy-2025-03</code>, <code>TransferSecurityPolicy-FIPS-2025-03</code>, <code>TransferSecurityPolicy-AS2Restricted-2025-07</code></td><td>none</td><td>Older policies: not PQ</td><td>Documented</td></tr><tr><td>Transfer Family FTPS</td><td>Managed</td><td>Cipher list is ECDHE TLS 1.2 suites; no PQ</td><td>none</td><td>Not PQ</td><td>Documented (absence)</td></tr><tr><td>Transfer Family AS2</td><td>Managed</td><td>No PQ statement found</td><td>none</td><td>Not confirmed</td><td>Unverified</td></tr><tr><td>Global Accelerator</td><td>Managed, layer 4 (TCP/UDP)</td><td>Pass-through: PQ if the client and the endpoint (ALB, NLB, EC2) negotiate it; set the policy on the endpoint, see <a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a></td><td>Same connection</td><td>Follows the endpoint</td><td>Documented (layer-4 service)</td></tr><tr><td>Amplify Hosting, App Runner, Lightsail distributions, Verified Access</td><td>Managed</td><td>No TLS policy setting or PQ statement found</td><td>none</td><td>Not confirmed</td><td>Unverified</td></tr><tr><td>Lightsail load balancer</td><td>Managed</td><td>No: only <code>TLS-2016-08</code> and <code>TLS-FS-1-2-Res-2019-08</code></td><td>none</td><td>Not PQ</td><td>Documented</td></tr></tbody></table>
+<p>Sources (read 2026-11-14): <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-protocols-ciphers.html">CloudFront viewer ciphers</a>, <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-ciphers-cloudfront-to-origin.html">CloudFront origin ciphers</a>, <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-security-policies-list.html">API Gateway policies</a>, <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-add-custom-domain.html">Cognito custom domain</a>, <a href="https://docs.aws.amazon.com/transfer/latest/userguide/security-policies.html">Transfer Family policies</a>, <a href="https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html">AppSync custom domains</a>, <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configure-load-balancer-tls-security-policy.html">Lightsail TLS policies</a>.</p>
+<h2 id="client-side-origin-and-integration-legs">Client side: origin and integration legs</h2>
+<table><thead><tr><th>Leg</th><th>Who is the TLS client</th><th>PQ today</th><th>What you can do</th><th>Evidence</th></tr></thead><tbody><tr><td>CloudFront to custom origin</td><td>CloudFront</td><td>No: X25519, P-256, P-384 only; <code>OriginSSLProtocols</code> max <code>TLSv1.2</code></td><td>Keep origins inside AWS (VPC origins, ALB in the same Region), record as an exception, watch for AWS&#39;s origin PQ release</td><td>Documented</td></tr><tr><td>CloudFront to S3 origin</td><td>CloudFront</td><td>Not stated</td><td>Treat as classical</td><td>Unverified</td></tr><tr><td>API Gateway to HTTP integration</td><td>API Gateway</td><td>No (TLS 1.2)</td><td>Private integration over VPC link to an NLB/ALB; record the hop as an exception</td><td>Documented (already established)</td></tr><tr><td>Lambda@Edge, CloudFront Functions</td><td>None for the viewer: they never touch the viewer handshake</td><td>n/a</td><td>Outbound calls from a Lambda@Edge function use its runtime: see the language tabs</td><td>Unverified (by design they run after TLS termination)</td></tr><tr><td>Global Accelerator to endpoint</td><td>The end client</td><td>End to end</td><td>Configure the endpoint</td><td>Documented</td></tr></tbody></table>
+<p>What origins must run: any server that offers X25519MLKEM768 will be ready when CloudFront&#39;s origin leg gains PQ, and serves PQ directly to clients that bypass CloudFront. See <a data-atom="ref" data-ref="file/f7dff530-a0a0">Web servers and proxies</a>.</p>
+<h2 id="server-side-policies-in-iac">Server side: policies in IaC</h2>
+<table><thead><tr><th>Front door</th><th>Terraform</th><th>CloudFormation</th><th>Evidence</th></tr></thead><tbody><tr><td>CloudFront</td><td><code>viewer_certificate.minimum_protocol_version = &quot;TLSv1.2_2021&quot;</code> (PQ on TLS 1.3); <code>&quot;TLSv1.3_2025&quot;</code> drops TLS 1.2</td><td><code>ViewerCertificate.MinimumProtocolVersion</code></td><td>Tested (validate / cfn-lint)</td></tr><tr><td>API Gateway REST API</td><td><code>aws_api_gateway_rest_api.security_policy</code> + <code>endpoint_access_mode</code></td><td><code>AWS::ApiGateway::RestApi</code> <code>SecurityPolicy</code> + <code>EndpointAccessMode</code></td><td>Tested (validate / cfn-lint)</td></tr><tr><td>API Gateway custom domain</td><td><code>aws_api_gateway_domain_name.security_policy</code> + <code>endpoint_access_mode</code></td><td><code>AWS::ApiGateway::DomainName</code> <code>SecurityPolicy</code> + <code>EndpointAccessMode</code></td><td>Tested (validate / cfn-lint)</td></tr><tr><td>OpenAPI import</td><td><code>x-amazon-apigateway-security-policy</code> extension</td><td>same</td><td>Documented</td></tr><tr><td>Cognito custom domain</td><td>not checked</td><td><code>AWS::Cognito::UserPoolDomain</code> <code>CustomDomainConfig.SecurityPolicy: TLS_V1_2_2021</code></td><td>Tested (cfn-lint)</td></tr><tr><td>Transfer Family</td><td><code>aws_transfer_server.security_policy_name = &quot;TransferSecurityPolicy-2025-03&quot;</code></td><td><code>AWS::Transfer::Server</code> <code>SecurityPolicyName</code></td><td>Tested (validate / cfn-lint)</td></tr></tbody></table>
+<p>&quot;Tested&quot; here means schema-valid in Terraform 1.13.5 with aws provider 6.73.0 and in cfn-lint 1.60.1; nothing was deployed.</p>
+<pre><code class="language-hcl">resource &quot;aws_api_gateway_domain_name&quot; &quot;api&quot; {
+  domain_name              = &quot;api.example.com&quot;
+  regional_certificate_arn = var.api_certificate_arn
+  security_policy          = &quot;SecurityPolicy_TLS13_1_2_PQ_2025_09&quot;
+  endpoint_access_mode     = &quot;BASIC&quot; # STRICT after checking access logs
+  endpoint_configuration {
+    types = [&quot;REGIONAL&quot;]
+  }
+}</code></pre>
+<pre><code class="language-yaml">ApiDomain:
+  Type: AWS::ApiGateway::DomainName
+  Properties:
+    DomainName: api.example.com
+    RegionalCertificateArn: !Ref ApiCertificateArn
+    SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+    EndpointAccessMode: BASIC
+    EndpointConfiguration: {Types: [REGIONAL]}</code></pre>
+<p><strong>Endpoint access mode.</strong> Every <code>SecurityPolicy_*</code> policy needs <code>BASIC</code> or <code>STRICT</code>. <code>STRICT</code> rejects requests whose SNI and Host do not match or that arrive from another endpoint type. Move to the PQ policy with <code>BASIC</code>, check access logs, then switch to <code>STRICT</code>. Changes take about 15 minutes (<a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-security-policies.html">API Gateway security policies</a>, Documented).</p>
+<p><strong>mTLS on API Gateway custom domains.</strong> No statement on combining mTLS with the PQ policies was found. Not confirmed; test before relying on it.</p>
+<p><strong>No TLS 1.3-only PQ policy on API Gateway.</strong> <code>SecurityPolicy_TLS13_1_3_2025_09</code> has no <code>PQ</code> in its name and is not listed as PQ. To force TLS 1.3 with PQ, put CloudFront (<code>TLSv1.3_2025</code>) or an ALB (<code>ELBSecurityPolicy-TLS13-1-3-PQ-2025-09</code>) in front.</p>
+<h2 id="verify">Verify</h2>
+<p><strong>Posture:</strong></p>
+<pre><code class="language-bash">aws apigateway get-rest-apis --query &#39;items[].[id,name,securityPolicy,endpointAccessMode,endpointConfiguration.types[0]]&#39; --output table
+aws apigateway get-domain-names --query &#39;items[].[domainName,securityPolicy,endpointAccessMode]&#39; --output table
+aws apigatewayv2 get-domain-names --query &#39;Items[].[DomainName,DomainNameConfigurations[0].SecurityPolicy]&#39;   # HTTP/WebSocket: TLS_1_2 only
+aws cloudfront list-distributions --query &#39;DistributionList.Items[].[Id,ViewerCertificate.MinimumProtocolVersion]&#39;
+aws transfer list-servers --query &#39;Servers[].ServerId&#39; --output text | xargs -n1 -I{} aws transfer describe-server --server-id {} --query &#39;Server.[ServerId,SecurityPolicyName,Protocols]&#39;</code></pre>
+<p>The <code>securityPolicy</code> and <code>endpointAccessMode</code> output field names follow the API reference naming and were not run here (no credentials). AWS&#39;s PQ-readiness conformance pack (2026-05-14) adds custom Config rules for API Gateway.</p>
+<p><strong>Live tests</strong> (OpenSSL 3.5 client, as in the Load balancers tab):</p>
+<pre><code class="language-bash">echo | openssl s_client -connect api.example.com:443 -servername api.example.com -tls1_3 -groups X25519MLKEM768 2&gt;&amp;1 | grep &#39;Negotiated TLS1.3 group&#39;
+echo | openssl s_client -connect api.example.com:443 -servername api.example.com -groups X25519 2&gt;&amp;1 | grep Protocol   # fallback must work
+sftp -o KexAlgorithms=mlkem768x25519-sha256 user@s-xxxx.server.transfer.us-east-1.amazonaws.com   # OpenSSH 9.9+</code></pre>
+<p><strong>Observed signal:</strong></p>
+<table><thead><tr><th>Service</th><th>Field</th><th>Key exchange logged?</th><th>Evidence</th></tr></thead><tbody><tr><td>CloudFront standard logs (v1, v2) and real-time logs</td><td><code>ssl-protocol</code>, <code>ssl-cipher</code></td><td>No</td><td>Documented</td></tr><tr><td>CloudFront origin request header <code>CloudFront-Viewer-TLS-Details</code></td><td>JSON <code>{&quot;tlsVersion&quot;,&quot;cipherSuite&quot;,&quot;handshakeType&quot;,&quot;keyExchange&quot;,&quot;signatureScheme&quot;,&quot;signaturePublicKeyType&quot;}</code>; <code>keyExchange</code> e.g. <code>X25519MLKEM768</code></td><td>Yes, if you add it to an origin request policy and log it at the origin</td><td>Documented (<a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/adding-cloudfront-headers.html">CloudFront headers</a>)</td></tr><tr><td>API Gateway access logs</td><td><code>$context.tlsVersion</code>, <code>$context.cipherSuite</code></td><td>No</td><td>Documented</td></tr><tr><td>Transfer Family SFTP logs</td><td>cipher and key exchange</td><td>Yes</td><td>Documented</td></tr></tbody></table>
+<p>The <code>CloudFront-Viewer-TLS-Details</code> header replaces the earlier &quot;third-party report&quot; in this tab: AWS now documents it. It can go in an origin request policy, not a cache policy. Log it at the origin, for example nginx:</p>
+<pre><code class="language-nginx">log_format cf_tls &#39;$remote_addr [$time_local] &quot;$request&quot; $status cf_tls=$http_cloudfront_viewer_tls_details&#39;;
+access_log /var/log/nginx/cf_tls.log cf_tls;</code></pre>
+<h2 id="pitfalls-enforcement-and-rollback">Pitfalls, enforcement and rollback</h2>
+<ul><li><p><code>STRICT</code> endpoint access mode breaks VPC-endpoint access to a public custom domain, private APIs called without a custom domain or private DNS, and domain sharding. Use <code>BASIC</code> there.</p></li><li><p>Moving from <code>STRICT</code> back to <code>BASIC</code> makes the endpoint unavailable for about 15 minutes. Moving from an enhanced policy back to a legacy one needs the endpoint access mode set to <code>&quot;&quot;</code>. An API on <code>TLS_1_0</code> cannot be moved to <code>TLS_1_2</code>. (Documented)</p></li><li><p>A custom domain&#39;s policy wins over its mapped API&#39;s policy for calls through that domain. Disable or align the default <code>execute-api</code> endpoint, or clients can bypass the PQ policy.</p></li><li><p>HTTP and WebSocket APIs cannot be made PQ. Front them with CloudFront or a PQ ALB, or migrate to a Regional REST API.</p></li><li><p>CloudFront&#39;s origin leg and API Gateway&#39;s integration leg stay classical: record them as exceptions rather than claiming end-to-end PQ.</p></li><li><p><strong>Enforcement.</strong> No IAM condition key for API Gateway or CloudFront TLS policies was found. Enforce in the pipeline (policy fields in templates) and with Config rules. Prowler has API Gateway PQ checks (its default allowlist looked wrong in review).</p></li><li><p><strong>Rollback.</strong> Set the previous <code>SecurityPolicy</code> in IaC and deploy (about 15 minutes on API Gateway). CloudFront: set the previous <code>MinimumProtocolVersion</code>. Transfer Family: set the previous <code>SecurityPolicyName</code>.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>Both files passed <code>terraform validate</code> (Terraform 1.13.5, aws provider 6.73.0) and <code>cfn-lint</code> 1.60.1 in containers on 2026-11-14. Not deployed.</p>
+<p><code>iac/edge/main.tf</code></p>
+<pre><code class="language-hcl">terraform {
+  required_version = &quot;&gt;= 1.6&quot;
+  required_providers {
+    aws = { source = &quot;hashicorp/aws&quot;, version = &quot;~&gt; 6.0&quot; }
+  }
+}
+
+provider &quot;aws&quot; {
+  region = &quot;us-east-1&quot;
+}
+
+variable &quot;cf_certificate_arn&quot; { type = string }  # ACM cert in us-east-1
+variable &quot;api_certificate_arn&quot; { type = string } # Regional ACM cert
+variable &quot;origin_domain&quot; { type = string }       # e.g. the ALB DNS name
+
+# --- CloudFront: forward the viewer TLS details so the origin can log keyExchange.
+resource &quot;aws_cloudfront_origin_request_policy&quot; &quot;tls_details&quot; {
+  name = &quot;forward-viewer-tls-details&quot;
+  cookies_config { cookie_behavior = &quot;none&quot; }
+  query_strings_config { query_string_behavior = &quot;all&quot; }
+  headers_config {
+    header_behavior = &quot;allViewerAndWhitelistCloudFront&quot;
+    headers {
+      items = [&quot;CloudFront-Viewer-TLS-Details&quot;, &quot;CloudFront-Viewer-JA4-Fingerprint&quot;]
+    }
+  }
+}
+
+data &quot;aws_cloudfront_cache_policy&quot; &quot;optimized&quot; {
+  name = &quot;Managed-CachingOptimized&quot;
+}
+
+resource &quot;aws_cloudfront_distribution&quot; &quot;site&quot; {
+  enabled = true
+  aliases = [&quot;www.example.com&quot;]
+
+  origin {
+    origin_id   = &quot;alb&quot;
+    domain_name = var.origin_domain
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = &quot;https-only&quot;
+      # Highest value CloudFront offers to origins; the origin leg is classical either way.
+      origin_ssl_protocols = [&quot;TLSv1.2&quot;]
+    }
+  }
+
+  default_cache_behavior {
+    target_origin_id         = &quot;alb&quot;
+    viewer_protocol_policy   = &quot;redirect-to-https&quot;
+    allowed_methods          = [&quot;GET&quot;, &quot;HEAD&quot;, &quot;OPTIONS&quot;]
+    cached_methods           = [&quot;GET&quot;, &quot;HEAD&quot;]
+    cache_policy_id          = data.aws_cloudfront_cache_policy.optimized.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.tls_details.id
+  }
+
+  viewer_certificate {
+    acm_certificate_arn = var.cf_certificate_arn
+    ssl_support_method  = &quot;sni-only&quot;
+    # PQ is offered on every policy for TLS 1.3 viewers. Move to TLSv1.3_2025 to drop TLS 1.2.
+    minimum_protocol_version = &quot;TLSv1.2_2021&quot;
+  }
+
+  restrictions {
+    geo_restriction { restriction_type = &quot;none&quot; }
+  }
+}
+
+# --- API Gateway REST (Regional)
+resource &quot;aws_api_gateway_rest_api&quot; &quot;api&quot; {
+  name                 = &quot;orders&quot;
+  security_policy      = &quot;SecurityPolicy_TLS13_1_2_PQ_2025_09&quot;
+  endpoint_access_mode = &quot;BASIC&quot; # move to STRICT after checking access logs
+  endpoint_configuration {
+    types = [&quot;REGIONAL&quot;]
+  }
+}
+
+resource &quot;aws_api_gateway_domain_name&quot; &quot;api&quot; {
+  domain_name              = &quot;api.example.com&quot;
+  regional_certificate_arn = var.api_certificate_arn
+  security_policy          = &quot;SecurityPolicy_TLS13_1_2_PQ_2025_09&quot;
+  endpoint_access_mode     = &quot;BASIC&quot;
+  endpoint_configuration {
+    types = [&quot;REGIONAL&quot;]
+  }
+}
+
+# --- Transfer Family SFTP
+resource &quot;aws_transfer_server&quot; &quot;sftp&quot; {
+  protocols              = [&quot;SFTP&quot;]
+  identity_provider_type = &quot;SERVICE_MANAGED&quot;
+  endpoint_type          = &quot;PUBLIC&quot;
+  # mlkem768x25519-sha256, mlkem768nistp256-sha256, mlkem1024nistp384-sha384
+  security_policy_name = &quot;TransferSecurityPolicy-2025-03&quot;
+}</code></pre>
+<p><code>iac/edge/edge.yaml</code> (CloudFormation)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Description: CloudFront with viewer TLS details forwarded, API Gateway REST with a PQ policy, Cognito custom domain, Transfer Family SFTP with ML-KEM KEX.
+
+Parameters:
+  CfCertificateArn:
+    Type: String
+  ApiCertificateArn:
+    Type: String
+  OriginDomain:
+    Type: String
+  UserPoolId:
+    Type: String
+
+Resources:
+  TlsDetailsOriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: forward-viewer-tls-details
+        CookiesConfig:
+          CookieBehavior: none
+        QueryStringsConfig:
+          QueryStringBehavior: all
+        HeadersConfig:
+          HeaderBehavior: allViewerAndWhitelistCloudFront
+          Headers:
+            - CloudFront-Viewer-TLS-Details
+            - CloudFront-Viewer-JA4-Fingerprint
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Aliases: [www.example.com]
+        Origins:
+          - Id: alb
+            DomainName: !Ref OriginDomain
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+        DefaultCacheBehavior:
+          TargetOriginId: alb
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          OriginRequestPolicyId: !Ref TlsDetailsOriginRequestPolicy
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CfCertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: orders
+      SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+      EndpointAccessMode: BASIC
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  ApiDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: api.example.com
+      RegionalCertificateArn: !Ref ApiCertificateArn
+      SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+      EndpointAccessMode: BASIC
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  CognitoDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPoolId
+      Domain: auth.example.com
+      CustomDomainConfig:
+        CertificateArn: !Ref CfCertificateArn
+        SecurityPolicy: TLS_V1_2_2021
+
+  SftpServer:
+    Type: AWS::Transfer::Server
+    Properties:
+      Protocols: [SFTP]
+      IdentityProviderType: SERVICE_MANAGED
+      EndpointType: PUBLIC
+      SecurityPolicyName: TransferSecurityPolicy-2025-03</code></pre>

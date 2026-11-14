@@ -1,0 +1,328 @@
+<h1 id="databases-and-data-services">Databases and data services</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>Two TLS stacks meet on every database connection. The server engine (its version, its group setting and the TLS library it links) decides which groups it accepts; the client driver&#39;s TLS stack decides which groups it offers. Hybrid X25519MLKEM768 needs both sides to support it, TLS 1.3, and no setting on either side that pins a classical list.</p>
+<p>On managed services AWS owns the server stack, so you change a parameter group or the engine version. On self-managed engines you choose the image and set the engine&#39;s group option, or an OpenSSL config file where the engine has none. Tests in this tab ran on 2026-11-14 (arm64 Docker); scripts and output are kept in the data work directory.</p>
+<h2 id="status-matrix">Status matrix</h2>
+<h3 id="managed-aws-data-services">Managed AWS data services</h3>
+<table><thead><tr><th>Service</th><th>PQ (server side)</th><th>Minimum version / setting</th><th>Evidence</th></tr></thead><tbody><tr><td>RDS for PostgreSQL</td><td>Yes, opt-in</td><td>Engine 18+. <code>ssl_groups</code> in the DB parameter group; the default <code>prime256v1:X25519</code> has no ML-KEM. Allow-list: <code>X25519MLKEM768</code>, <code>SecP256r1MLKEM768</code>, <code>X25519</code>, <code>prime256v1</code>, <code>secp384r1</code>. Dynamic, no reboot. TLS library is AWS-LC.</td><td>Documented (<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.SSL.html">RDS PostgreSQL SSL</a>)</td></tr><tr><td>Aurora PostgreSQL</td><td>Yes, opt-in</td><td>18.x. <code>ssl_groups</code> in the <strong>cluster</strong> parameter group (family <code>aurora-postgresql18</code>). The API rejects colon lists; use commas.</td><td>Claimed (<a href="https://dev.classmethod.jp/articles/aurora-postgresql-pq-tls-terraform/">Classmethod, 2026-10-31</a>); the author did not test a handshake</td></tr><tr><td>RDS for MySQL</td><td>Yes</td><td>8.4.11+. Enabling parameter not documented. RDS MySQL 8.4 links AWS-LC, so upstream <code>tls_kex</code> may not apply.</td><td>Documented (What&#39;s New); parameter not confirmed (<a href="https://ecorpit.com/rds-mysql-8-4-11-post-quantum-tls-claim-release-notes-conflict-2026/">analysis</a>, Claimed)</td></tr><tr><td>Aurora MySQL</td><td>Yes, on by default</td><td>Two engine lines: Aurora MySQL <strong>8.4.8+</strong> (MySQL 8.4-compatible, GA 2026-09-03) and Aurora MySQL <strong>3.14.0+</strong> (MySQL 8.0.46-compatible, 2026-10-26). Groups <code>X25519MLKEM768</code>, <code>SecP256r1MLKEM768</code> for TLS 1.3; no parameter. Status variable <code>Aurora_ssl_named_group</code> (3.14.0 notes) shows the group.</td><td>Documented (<a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraMySQLReleaseNotes/AuroraMySQL.Updates.3140.html">3.14.0 notes</a>, <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraMySQLReleaseNotes/AuroraMySQL.Updates.848.html">8.4.8 notes</a>); JDBC handshake Claimed (<a href="https://dev.classmethod.jp/en/articles/aurora-mysql-314-pq-tls/">Classmethod</a>)</td></tr><tr><td>RDS for MariaDB</td><td>Yes, opt-in</td><td>12.3.3; What&#39;s New also lists 11.4.13 and 11.8.9. Parameter name not confirmed here.</td><td>Documented (versions)</td></tr><tr><td>RDS for Oracle, RDS for SQL Server</td><td>No statement found</td><td>–</td><td>Unverified</td></tr><tr><td>RDS Proxy</td><td>No; the client-to-proxy leg stays classical</td><td>–</td><td>Claimed</td></tr><tr><td>DynamoDB</td><td>Endpoint PQ (non-FIPS); FIPS endpoints and DAX not yet</td><td>Client side only</td><td>Documented</td></tr><tr><td>ElastiCache, MemoryDB (Valkey, Redis OSS)</td><td>Data plane not documented; control-plane API only</td><td>–</td><td>Unverified</td></tr><tr><td>MSK (Kafka)</td><td>TLS 1.3 policies announced 2026-10-30; ML-KEM not documented</td><td>–</td><td>Claimed</td></tr><tr><td>Amazon MQ, OpenSearch, DocumentDB, Neptune, Redshift, Keyspaces, Timestream</td><td>No PQ statement found in service docs (searched 2026-11-14)</td><td>–</td><td>Unverified</td></tr></tbody></table>
+<h3 id="self-managed-engines-ec2-ecsfargate-eks">Self-managed engines (EC2, ECS/Fargate, EKS)</h3>
+<table><thead><tr><th>Engine / image</th><th>TLS library</th><th>Default</th><th>With setting</th><th>Evidence</th></tr></thead><tbody><tr><td>PostgreSQL 18 (<code>postgres:18</code>, Debian 13)</td><td>OpenSSL 3.5.7</td><td>Classical. Default <code>ssl_groups = X25519:prime256v1</code>; a PQ-only client gets <code>handshake failure</code>.</td><td><code>ssl_groups = &#39;X25519MLKEM768:X25519:prime256v1&#39;</code> gives <code>Negotiated TLS1.3 group: X25519MLKEM768</code>; an X25519-only client still connects</td><td>Tested</td></tr><tr><td>PostgreSQL 17 and older</td><td>any</td><td>No: <code>ssl_ecdh_curve</code> takes a single curve</td><td>Upgrade to 18 (some RHEL-family builds carry a patch)</td><td>Documented (PG 18); patch Claimed</td></tr><tr><td>MySQL 8.4.13 and 9.7.4 (<code>mysql:8.4</code>, <code>mysql:9</code>, Oracle Linux 9.8)</td><td>OpenSSL 3.5.8</td><td>No. The server picks P-256 even when the client offers X25519MLKEM768 and X25519; there is no <code>tls_kex</code> variable.</td><td>None</td><td>Tested</td></tr><tr><td>MySQL 26.10 (<code>mysql:26</code>)</td><td>OpenSSL 3.5.8</td><td>Yes: <code>Tls_key_exchange_algorithm = X25519MLKEM768</code>; classical clients still connect</td><td><code>force_pqc=ON</code> rejects classical clients</td><td>Tested</td></tr><tr><td>MariaDB 11.8.9 and 12 (<code>mariadb:11.8</code>, <code>mariadb:12</code>, Ubuntu 24.04)</td><td>OpenSSL 3.0.13</td><td>No</td><td>None (library too old)</td><td>Tested (11.8.9)</td></tr><tr><td>MariaDB 13.0.2 (<code>mariadb:latest</code>, Ubuntu 26.04)</td><td>OpenSSL 3.5.5</td><td>Yes: X25519MLKEM768; an X25519 client still connects</td><td><code>OPENSSL_CONF</code> to change order</td><td>Tested</td></tr><tr><td>Valkey 8.1.11 (<code>valkey/valkey:8</code> Debian 13, <code>:8-alpine</code> Alpine 3.24)</td><td>OpenSSL 3.5.x</td><td>Yes: X25519MLKEM768; an X25519 client still connects</td><td><code>OPENSSL_CONF</code> (Valkey has no group option); PQ-only file rejects X25519 clients</td><td>Tested</td></tr><tr><td>Redis OSS 7.x/8.x</td><td>system OpenSSL</td><td>Expected same as Valkey on OpenSSL 3.5</td><td><code>OPENSSL_CONF</code></td><td>Unverified</td></tr><tr><td>Kafka, Cassandra (JVM)</td><td>JSSE</td><td>Follows the JDK: 25.0.5 PQ, 21 not</td><td>JDK 25, or the Bouncy Castle agent on 8–21</td><td>Unverified for these brokers (JDK behaviour Tested in the Java tab)</td></tr><tr><td>MongoDB 7/8</td><td>system OpenSSL</td><td>PQ only if <code>mongod</code> links OpenSSL 3.5</td><td>Check the OpenSSL line of <code>mongod --version</code></td><td>Unverified</td></tr></tbody></table>
+<h2 id="client-side-app-level">Client side (app level)</h2>
+<p>The driver&#39;s TLS stack decides what the client offers. Runtime rules live in the language tabs: <a data-atom="ref" data-ref="file/f452a156-1a48">Go</a>, <a data-atom="ref" data-ref="file/35b45b8c-c6f8">Python</a>, <a data-atom="ref" data-ref="file/d69fae22-fa1f">Node.js</a>, <a data-atom="ref" data-ref="file/cd465386-557e">Java</a>, <a data-atom="ref" data-ref="file/c09219a7-69d4">.NET</a>. Database-specific points:</p>
+<table><thead><tr><th>Client / driver</th><th>TLS stack</th><th>PQ when</th><th>Require TLS / verify</th><th>Evidence</th></tr></thead><tbody><tr><td><code>psql</code> / libpq, PostgreSQL 18 client on Debian 13</td><td>System OpenSSL 3.5</td><td>By default: connected to a PQ-only server</td><td><code>sslmode=verify-full sslrootcert=...</code>; <code>ssl_min_protocol_version=TLSv1.3</code> forces 1.3</td><td>Tested</td></tr><tr><td>libpq on Debian 12 (OpenSSL 3.0)</td><td>OpenSSL 3.0</td><td>Never: fails against PQ-only (<code>sslv3 alert handshake failure</code>), falls back to X25519 against PQ-first</td><td>Upgrade the base image</td><td>Tested</td></tr><tr><td>psycopg 3 / psycopg2</td><td>libpq; <code>-binary</code> wheels bundle their own libpq and OpenSSL</td><td>System libpq on OpenSSL 3.5. For wheels, check <code>psycopg.pq.version()</code> and the bundled OpenSSL</td><td><code>sslmode=verify-full</code></td><td>Unverified for wheels</td></tr><tr><td>asyncpg, PyMySQL, pure-Python mysql-connector, redis-py</td><td>Python <code>ssl</code></td><td>Python linked to OpenSSL 3.5 (Python tab)</td><td>pass an <code>ssl</code> context</td><td>Follows Python tab</td></tr><tr><td>node-postgres <code>pg</code>, <code>mysql2</code>, <code>ioredis</code>, <code>node-redis</code></td><td>Node <code>tls</code></td><td>Node 22.20+ or 24.9+ (Node.js tab)</td><td><code>ssl: { rejectUnauthorized: true, ca }</code></td><td>Follows Node.js tab</td></tr><tr><td>JDBC (pgjdbc, Connector/J, MariaDB), Lettuce, Jedis, Kafka Java client</td><td>JSSE</td><td>JDK 25.0.5+, or 8–21 with the Bouncy Castle agent (Java tab)</td><td><code>sslmode=verify-full</code> / <code>sslMode=VERIFY_IDENTITY</code></td><td>Follows Java tab</td></tr><tr><td>pgx, <code>go-sql-driver/mysql</code>, go-redis, franz-go, sarama</td><td>Go <code>crypto/tls</code></td><td>Go 1.24+ and <code>go.mod</code> 1.24+; no explicit <code>CurvePreferences</code> (Go tab)</td><td><code>sslmode=verify-full</code> / <code>tls=custom</code></td><td>Follows Go tab</td></tr><tr><td>Npgsql, MySqlConnector, StackExchange.Redis</td><td>.NET <code>SslStream</code>, OS OpenSSL on Linux</td><td>OS OpenSSL 3.5 with ML-KEM allowed (.NET tab)</td><td><code>SSL Mode=VerifyFull</code></td><td>Follows .NET tab</td></tr><tr><td><code>mysql</code> CLI 26.10</td><td>OpenSSL 3.5.8</td><td>By default; <code>--tls-kex</code>, <code>--force-pqc</code> options</td><td><code>--ssl-mode=VERIFY_IDENTITY</code></td><td>Tested</td></tr><tr><td><code>mysql</code> CLI 8.4 / 9.7</td><td>OpenSSL 3.5.8</td><td>Probably offers PQ; the server is the limit</td><td><code>--ssl-mode=VERIFY_IDENTITY</code></td><td>Unverified (offer not traced)</td></tr><tr><td><code>valkey-cli</code> 8.1 on Debian 13</td><td>OpenSSL 3.5.7</td><td>By default: ClientHello lists X25519MLKEM768 first; a PQ-only server negotiates it</td><td><code>--tls --cacert</code></td><td>Tested</td></tr><tr><td>librdkafka (confluent-kafka wheels)</td><td>Bundled OpenSSL</td><td>Depends on the bundled OpenSSL</td><td><code>security.protocol=SSL</code></td><td>Unverified</td></tr></tbody></table>
+<p>No libpq connection parameter for groups was found (not confirmed); use <code>OPENSSL_CONF</code> (see openssl-groups.cnf in Full configuration files) if you must change the client&#39;s list.</p>
+<p>Clients linked to GnuTLS instead of OpenSSL get no ML-KEM, even on Debian 13 or Ubuntu 26.04: <code>wget</code> and <code>libcurl-gnutls</code> fail against a PQ-only server (Tested by another group for this document). Run <code>ldd</code> on any database client or tool before relying on the OS version.</p>
+<h2 id="server-side">Server side</h2>
+<h3 id="rds-for-postgresql-18-and-aurora-postgresql-18">RDS for PostgreSQL 18 and Aurora PostgreSQL 18</h3>
+<ul><li><p>Parameter group family <code>postgres18</code> (RDS instance) or <code>aurora-postgresql18</code> (Aurora, cluster parameter group).</p></li><li><p><code>ssl_groups</code>: hybrid first, classical after for fallback: <code>X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1</code>. Use commas in the API, Terraform and CloudFormation (Claimed: the RDS API rejects colon lists).</p></li><li><p><code>rds.force_ssl = 1</code> (default on 15+).</p></li><li><p>To enforce PQ: <code>ssl_groups = X25519MLKEM768,SecP256r1MLKEM768</code> and <code>ssl_min_protocol_version = TLSv1.3</code>, because ML-KEM needs TLS 1.3 (Documented).</p></li></ul>
+<pre><code class="language-bash">aws rds modify-db-parameter-group --db-parameter-group-name pg18-pq \
+  --parameters &quot;ParameterName=ssl_groups,ParameterValue=&#39;X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1&#39;,ApplyMethod=immediate&quot;</code></pre>
+<p>Full Terraform and CloudFormation are in Full configuration files.</p>
+<h3 id="rds-and-aurora-mysql-rds-for-mariadb">RDS and Aurora MySQL, RDS for MariaDB</h3>
+<ul><li><p>Aurora MySQL: upgrade to 8.4.8+ (8.4-compatible line) or 3.14.0+ (8.0-compatible line); no parameter. Check <code>SHOW STATUS LIKE &#39;Aurora_ssl_named_group&#39;</code>. Keep <code>require_secure_transport = ON</code> and <code>tls_version = TLSv1.2,TLSv1.3</code>; TLS 1.2 clients stay classical.</p></li><li><p>RDS for MySQL 8.4.11 and RDS for MariaDB (12.3.3, 11.4.13, 11.8.9): upgrade the minor version. The enabling parameter is not confirmed here. After the upgrade, list the parameter group for a groups or PQ parameter and probe with <code>s_client</code> (Verify).</p></li></ul>
+<h3 id="self-managed-postgresql-18-tested">Self-managed PostgreSQL 18 (Tested)</h3>
+<pre><code class="language-ini"># postgresql.conf (excerpt)
+ssl = on
+ssl_groups = &#39;X25519MLKEM768:X25519:prime256v1&#39;   # PG 18 name; ssl_ecdh_curve is an alias
+ssl_min_protocol_version = &#39;TLSv1.2&#39;               # &#39;TLSv1.3&#39; to enforce PQ</code></pre>
+<p><code>hostssl</code> lines in <code>pg_hba.conf</code> reject non-TLS clients. <code>SELECT pg_reload_conf();</code> applies TLS settings to new connections.</p>
+<h3 id="self-managed-mysql">Self-managed MySQL</h3>
+<ul><li><p>8.4 LTS and 9.x: no PQ on the server, even linked to OpenSSL 3.5.8 (Tested). Plan for MySQL 26.x.</p></li><li><p>26.x: PQ on by default (Tested). Variables (Documented, <a href="https://dev.mysql.com/doc/refman/26.10/en/post-quantum-crytpography-ssl.html">MySQL 26.10 manual</a>): <code>tls_kex</code> (colon list, case-sensitive names), <code>force_pqc</code>, <code>use_pqc_sign</code>, each with <code>admin_</code>, <code>replication_</code>, <code>group_replication_</code> and <code>mysqlx_</code> variants. Status: <code>Tls_key_exchange_algorithm</code>, <code>Tls_sign_algorithm</code>.</p></li><li><p>Version history: server-side PQC (PQ groups, <code>force_pqc</code>) was added in MySQL 26.7.0 (<a href="https://dev.mysql.com/doc/refman/26.7/en/post-quantum-crytpography-ssl.html">MySQL 26.7 manual</a>, Documented); 26.10 adds the MySQL Shell and client options <code>tls-kex</code> and <code>force-pqc</code>. Any 26.7+ server qualifies; the tests here used 26.10.</p></li></ul>
+<pre><code class="language-ini"># my.cnf (excerpt)
+[mysqld]
+require_secure_transport = ON
+tls_version = TLSv1.2,TLSv1.3
+tls_kex = X25519MLKEM768:secp256r1MLKEM768:X25519:secp256r1
+# force_pqc = ON          # enforcement: classical clients fail (Tested)</code></pre>
+<h3 id="self-managed-mariadb-valkey-redis-oss">Self-managed MariaDB, Valkey, Redis OSS</h3>
+<p>No group option of their own was found. They follow OpenSSL&#39;s defaults, which on OpenSSL 3.5 put X25519MLKEM768 first. To change the order or enforce PQ-only, point <code>OPENSSL_CONF</code> at a file with <code>Groups = ...</code> (Tested on Valkey 8.1.11: the PQ-only file rejected an X25519-only client).</p>
+<pre><code class="language-conf"># valkey.conf (excerpt)
+port 0
+tls-port 6379
+tls-cert-file /etc/valkey/tls/server.crt
+tls-key-file  /etc/valkey/tls/server.key
+tls-ca-cert-file /etc/valkey/tls/ca.crt
+tls-protocols &quot;TLSv1.2 TLSv1.3&quot;</code></pre>
+<h3 id="kafka-and-cassandra-jvm">Kafka and Cassandra (JVM)</h3>
+<p>The broker&#39;s JDK decides. Run JDK 25.0.5+ (PQ by default) or attach the Bouncy Castle JSSE agent from the Java tab. Kafka: <code>ssl.enabled.protocols=TLSv1.3,TLSv1.2</code>. To pin groups, set <code>-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1</code> in <code>KAFKA_OPTS</code>. Not tested on a broker (Unverified).</p>
+<h2 id="packaging-per-compute-type">Packaging per compute type</h2>
+<p>Database servers do not run on Lambda; database clients do, so follow the language tab for each runtime. For engines you run yourself:</p>
+<table><thead><tr><th>Where the engine runs</th><th>What to ship</th><th>Evidence</th></tr></thead><tbody><tr><td>ECS/Fargate or EKS</td><td>An image with OpenSSL 3.5: <code>postgres:18</code> (Debian 13), <code>mysql:26</code>, <code>mariadb:13</code> (Ubuntu 26.04), <code>valkey/valkey:8</code> or <code>:8-alpine</code>. Pin by digest. Config by container args, file mount or baked-in file.</td><td>Tested (images)</td></tr><tr><td>EC2 on AL2023</td><td>OpenSSL 3.5 is present but the crypto policy omits ML-KEM (see <a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>). Set <code>ssl_groups</code> explicitly (PostgreSQL) or <code>OPENSSL_CONF</code> in the service&#39;s systemd drop-in.</td><td>Unverified for database daemons on AL2023</td></tr><tr><td>Client containers</td><td>Debian 13 or Alpine 3.24 bases; avoid <code>-bookworm</code> tags (OpenSSL 3.0)</td><td>Tested</td></tr></tbody></table>
+<p>The EKS StatefulSet, ECS task definition and systemd drop-in are in Full configuration files.</p>
+<h2 id="verify">Verify</h2>
+<ol><li><p>Posture: engine version and parameter values.</p></li></ol>
+<pre><code class="language-bash">aws rds describe-db-parameters --db-parameter-group-name pg18-pq \
+  --query &quot;Parameters[?ParameterName==&#39;ssl_groups&#39;].[ParameterValue]&quot; --output text
+psql &quot;host=$H sslmode=verify-full sslrootcert=global-bundle.pem&quot; -c &quot;SHOW ssl_groups&quot;</code></pre>
+<ol start="2"><li><p>Live test from a host with OpenSSL 3.5, for example a <code>debian:trixie-slim</code> task in the same VPC. PQ must succeed; classical must still work (fallback).</p></li></ol>
+<pre><code class="language-bash"># PostgreSQL
+openssl s_client -connect $H:5432 -starttls postgres -tls1_3 -groups X25519MLKEM768 -brief &lt;/dev/null
+openssl s_client -connect $H:5432 -starttls postgres -groups X25519 -brief &lt;/dev/null
+# MySQL / MariaDB
+openssl s_client -connect $H:3306 -starttls mysql -groups X25519MLKEM768 -brief &lt;/dev/null
+# Valkey / Redis (direct TLS)
+openssl s_client -connect $H:6379 -groups X25519MLKEM768 -brief &lt;/dev/null</code></pre>
+<p>Expect <code>Negotiated TLS1.3 group: X25519MLKEM768</code> for the PQ run and <code>Peer Temp Key: X25519</code> for the classical one (Tested on every self-managed engine above).</p>
+<ol start="3"><li><p>Observed signal on the server:</p></li></ol>
+<ul><li><p>PostgreSQL: <code>log_connections</code> prints protocol, cipher and bits, not the group (Tested); <code>pg_stat_ssl</code> has no group column. Use the probe.</p></li><li><p>MySQL 26: <code>SHOW SESSION STATUS LIKE &#39;Tls_key_exchange_algorithm&#39;</code> (Tested). Aurora MySQL: <code>Aurora_ssl_named_group</code> (Documented in the 3.14.0 notes).</p></li><li><p>Valkey, MariaDB: no server-side field; use the probe.</p></li></ul>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p>Fallback is silent. A Debian 12 libpq client still connects to a PQ-first server using X25519 (Tested). Only enforcement (PQ-only groups, <code>force_pqc</code>) exposes it, by breaking it.</p></li><li><p>Server order is not always obeyed. With OpenSSL 3.5, a client that sent only an X25519 key share got X25519 although the server listed ML-KEM first (Tested on Valkey); OpenSSL avoids a HelloRetryRequest. Fix the client, or enforce.</p></li><li><p>Self-managed MySQL 8.4 and 9.x cannot be fixed with OpenSSL 3.5 alone; the server sticks to P-256 (Tested).</p></li><li><p>Official MariaDB images before 13 run on Ubuntu 24.04 with OpenSSL 3.0: no PQ (Tested).</p></li><li><p>RDS Proxy terminates TLS; that leg stays classical. Bypass it for sensitive data or record an exception.</p></li><li><p>ML-KEM needs TLS 1.3. Clients or servers pinned to TLS 1.2 stay classical.</p></li><li><p>Rollback: set <code>ssl_groups</code> back to <code>prime256v1:X25519</code> (dynamic, new connections only), set <code>force_pqc=OFF</code>, or remove <code>OPENSSL_CONF</code> and restart. Existing sessions are not dropped.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<h3 id="postgresqlconf-tls-section">postgresql.conf (TLS section)</h3>
+<pre><code class="language-ini"># /var/lib/postgresql/data/postgresql.conf  (PostgreSQL 18, OpenSSL 3.5) - TLS section
+listen_addresses = &#39;*&#39;
+ssl = on
+ssl_cert_file = &#39;/etc/postgresql/tls/server.crt&#39;
+ssl_key_file  = &#39;/etc/postgresql/tls/server.key&#39;        # mode 0600, owner postgres
+ssl_ca_file   = &#39;/etc/postgresql/tls/ca.crt&#39;            # only for client-certificate auth
+ssl_min_protocol_version = &#39;TLSv1.2&#39;                    # &#39;TLSv1.3&#39; to enforce PQ
+ssl_groups = &#39;X25519MLKEM768:X25519:prime256v1&#39;         # PQ-only: &#39;X25519MLKEM768&#39;
+log_connections = on</code></pre>
+<h3 id="pghbaconf">pg_hba.conf</h3>
+<pre><code class="language-conf"># /var/lib/postgresql/data/pg_hba.conf - TLS required for remote clients
+# TYPE    DATABASE  USER  ADDRESS       METHOD
+local     all       all                 peer
+hostssl   all       all   10.0.0.0/8    scram-sha-256
+hostnossl all       all   0.0.0.0/0     reject</code></pre>
+<h3 id="rds-pg-pqtf-terraform-rds-instance-and-aurora-cluster-parameter-groups">rds-pg-pq.tf (Terraform: RDS instance and Aurora cluster parameter groups)</h3>
+<pre><code class="language-hcl"># rds-pg-pq.tf - hybrid PQ key exchange for RDS for PostgreSQL 18 and Aurora PostgreSQL 18
+variable &quot;enforce_pq&quot; {
+  type    = bool
+  default = false
+}
+
+locals {
+  ssl_groups = var.enforce_pq ? &quot;X25519MLKEM768,SecP256r1MLKEM768&quot; : &quot;X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1&quot;
+  min_tls    = var.enforce_pq ? &quot;TLSv1.3&quot; : &quot;TLSv1.2&quot;
+}
+
+resource &quot;aws_db_parameter_group&quot; &quot;pg18_pq&quot; {
+  name   = &quot;pg18-pq&quot;
+  family = &quot;postgres18&quot;
+
+  parameter {
+    name         = &quot;ssl_groups&quot;
+    value        = local.ssl_groups
+    apply_method = &quot;immediate&quot;
+  }
+  parameter {
+    name         = &quot;ssl_min_protocol_version&quot;
+    value        = local.min_tls
+    apply_method = &quot;immediate&quot;
+  }
+  parameter {
+    name         = &quot;rds.force_ssl&quot;
+    value        = &quot;1&quot;
+    apply_method = &quot;immediate&quot;
+  }
+}
+
+resource &quot;aws_rds_cluster_parameter_group&quot; &quot;aurora_pg18_pq&quot; {
+  name   = &quot;aurora-pg18-pq&quot;
+  family = &quot;aurora-postgresql18&quot;
+
+  parameter {
+    name         = &quot;ssl_groups&quot;
+    value        = local.ssl_groups
+    apply_method = &quot;immediate&quot;
+  }
+  parameter {
+    name         = &quot;ssl_min_protocol_version&quot;
+    value        = local.min_tls
+    apply_method = &quot;immediate&quot;
+  }
+  parameter {
+    name         = &quot;rds.force_ssl&quot;
+    value        = &quot;1&quot;
+    apply_method = &quot;immediate&quot;
+  }
+}
+
+# Attach: aws_db_instance.parameter_group_name = aws_db_parameter_group.pg18_pq.name
+#         aws_rds_cluster.db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.aurora_pg18_pq.name</code></pre>
+<h3 id="rds-pg-pqyaml-cloudformation">rds-pg-pq.yaml (CloudFormation)</h3>
+<pre><code class="language-yaml"># rds-pg-pq.yaml - hybrid PQ key exchange parameter groups for PostgreSQL 18
+AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Parameters:
+  EnforcePq:
+    Type: String
+    AllowedValues: [&quot;true&quot;, &quot;false&quot;]
+    Default: &quot;false&quot;
+Conditions:
+  Enforce: !Equals [!Ref EnforcePq, &quot;true&quot;]
+Resources:
+  Pg18PqParams:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: postgres18
+      Description: RDS PostgreSQL 18 hybrid ML-KEM key exchange
+      Parameters:
+        ssl_groups: !If [Enforce, &quot;X25519MLKEM768,SecP256r1MLKEM768&quot;, &quot;X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1&quot;]
+        ssl_min_protocol_version: !If [Enforce, &quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;]
+        rds.force_ssl: &quot;1&quot;
+  AuroraPg18PqParams:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Family: aurora-postgresql18
+      Description: Aurora PostgreSQL 18 hybrid ML-KEM key exchange
+      Parameters:
+        ssl_groups: !If [Enforce, &quot;X25519MLKEM768,SecP256r1MLKEM768&quot;, &quot;X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1&quot;]
+        ssl_min_protocol_version: !If [Enforce, &quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;]
+        rds.force_ssl: &quot;1&quot;
+Outputs:
+  InstanceParameterGroup:
+    Value: !Ref Pg18PqParams
+  ClusterParameterGroup:
+    Value: !Ref AuroraPg18PqParams</code></pre>
+<h3 id="tls-pqcnf-mysql-26x">tls-pq.cnf (MySQL 26.x)</h3>
+<pre><code class="language-ini"># /etc/my.cnf.d/tls-pq.cnf - MySQL 26.x built with OpenSSL 3.5
+[mysqld]
+ssl_ca   = /etc/mysql/tls/ca.crt
+ssl_cert = /etc/mysql/tls/server.crt
+ssl_key  = /etc/mysql/tls/server.key
+require_secure_transport = ON
+tls_version = TLSv1.2,TLSv1.3
+tls_kex = X25519MLKEM768:secp256r1MLKEM768:X25519:secp256r1
+replication_tls_kex = X25519MLKEM768:X25519
+# Enforcement (classical clients fail; TLS 1.2-only configs are rejected):
+# force_pqc = ON
+# replication_force_pqc = ON
+
+[client]
+ssl-mode = VERIFY_IDENTITY
+ssl-ca   = /etc/mysql/tls/ca.crt
+tls-kex  = X25519MLKEM768:X25519</code></pre>
+<h3 id="90-tlscnf-mariadb-13-on-openssl-35">90-tls.cnf (MariaDB 13 on OpenSSL 3.5)</h3>
+<pre><code class="language-ini"># /etc/mysql/mariadb.conf.d/90-tls.cnf
+[mariadbd]
+ssl_ca   = /etc/mysql/tls/ca.crt
+ssl_cert = /etc/mysql/tls/server.crt
+ssl_key  = /etc/mysql/tls/server.key
+require_secure_transport = ON
+tls_version = TLSv1.2,TLSv1.3
+# Groups come from OpenSSL: X25519MLKEM768 first by default on OpenSSL 3.5.
+# To change order or enforce PQ-only, set OPENSSL_CONF (see openssl-groups.cnf).</code></pre>
+<h3 id="valkeyconf-tls-section">valkey.conf (TLS section)</h3>
+<pre><code class="language-conf"># /etc/valkey/valkey.conf - TLS section (Valkey 8.x on OpenSSL 3.5)
+port 0
+tls-port 6379
+tls-cert-file /etc/valkey/tls/server.crt
+tls-key-file  /etc/valkey/tls/server.key
+tls-ca-cert-file /etc/valkey/tls/ca.crt
+tls-auth-clients optional
+tls-protocols &quot;TLSv1.2 TLSv1.3&quot;
+tls-replication yes
+tls-cluster yes
+# Group order: OPENSSL_CONF=/etc/ssl/openssl-groups.cnf in the service environment</code></pre>
+<h3 id="openssl-groupscnf-process-wide-groups-for-daemons-without-a-group-option">openssl-groups.cnf (process-wide groups for daemons without a group option)</h3>
+<pre><code class="language-ini"># /etc/ssl/openssl-groups.cnf - use with OPENSSL_CONF=/etc/ssl/openssl-groups.cnf
+# OpenSSL 3.5+ (Debian 13, Alpine 3.22+, Ubuntu 26.04). Tested with Valkey 8.1.11.
+openssl_conf = openssl_init
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = tls_defaults
+
+[tls_defaults]
+MinProtocol = TLSv1.2
+Groups = X25519MLKEM768:X25519:secp256r1:secp384r1
+# PQ-only enforcement variant (openssl-pq-only.cnf, Tested):
+#   MinProtocol = TLSv1.3
+#   Groups = X25519MLKEM768</code></pre>
+<h3 id="serverproperties-kafka-tls-listener-unverified">server.properties (Kafka TLS listener; Unverified)</h3>
+<pre><code class="language-properties"># /opt/kafka/config/server.properties - TLS listener (broker on JDK 25.0.5+)
+listeners=SSL://:9093
+security.inter.broker.protocol=SSL
+ssl.enabled.protocols=TLSv1.3,TLSv1.2
+ssl.protocol=TLSv1.3
+ssl.keystore.type=PKCS12
+ssl.keystore.location=/opt/kafka/tls/broker.p12
+ssl.keystore.password=${file:/opt/kafka/tls/secrets.properties:keystore.password}
+ssl.truststore.type=PKCS12
+ssl.truststore.location=/opt/kafka/tls/truststore.p12
+ssl.truststore.password=${file:/opt/kafka/tls/secrets.properties:truststore.password}
+ssl.client.auth=required
+# Environment: KAFKA_OPTS=&quot;-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1&quot;
+# JDK 8-21: add the -javaagent from the Java tab instead.</code></pre>
+<h3 id="postgres-pqyaml-eks-statefulset">postgres-pq.yaml (EKS StatefulSet)</h3>
+<pre><code class="language-yaml"># postgres-pq.yaml - PostgreSQL 18 on EKS with hybrid PQ groups (same -c flags as the tests)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:18   # Debian 13, OpenSSL 3.5.x; pin by digest for your architecture
+          args:
+            - &quot;-c&quot;
+            - &quot;ssl=on&quot;
+            - &quot;-c&quot;
+            - &quot;ssl_cert_file=/etc/postgresql/tls/tls.crt&quot;
+            - &quot;-c&quot;
+            - &quot;ssl_key_file=/etc/postgresql/tls/tls.key&quot;
+            - &quot;-c&quot;
+            - &quot;ssl_min_protocol_version=TLSv1.2&quot;
+            - &quot;-c&quot;
+            - &quot;ssl_groups=X25519MLKEM768:X25519:prime256v1&quot;
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-auth, key: password } }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports: [{ containerPort: 5432 }]
+          volumeMounts:
+            - { name: tls, mountPath: /etc/postgresql/tls, readOnly: true }
+            - { name: data, mountPath: /var/lib/postgresql/data }
+      volumes:
+        - name: tls
+          secret: { secretName: postgres-tls-cert, defaultMode: 0640 }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [&quot;ReadWriteOnce&quot;]
+        resources: { requests: { storage: 20Gi } }</code></pre>
+<h3 id="valkey-pq-task-definition-ecsfargate">valkey-pq task definition (ECS/Fargate)</h3>
+<pre><code class="language-json">{
+  &quot;family&quot;: &quot;valkey-pq&quot;,
+  &quot;requiresCompatibilities&quot;: [&quot;FARGATE&quot;],
+  &quot;networkMode&quot;: &quot;awsvpc&quot;,
+  &quot;cpu&quot;: &quot;512&quot;,
+  &quot;memory&quot;: &quot;1024&quot;,
+  &quot;containerDefinitions&quot;: [
+    {
+      &quot;name&quot;: &quot;valkey&quot;,
+      &quot;image&quot;: &quot;valkey/valkey:8-alpine&quot;,
+      &quot;command&quot;: [&quot;valkey-server&quot;, &quot;/etc/valkey/valkey.conf&quot;],
+      &quot;environment&quot;: [
+        { &quot;name&quot;: &quot;OPENSSL_CONF&quot;, &quot;value&quot;: &quot;/etc/ssl/openssl-groups.cnf&quot; }
+      ],
+      &quot;portMappings&quot;: [{ &quot;containerPort&quot;: 6379 }]
+    }
+  ]
+}</code></pre>
+<p>Bake <code>valkey.conf</code>, <code>openssl-groups.cnf</code> and the certificates into the image and pin it by digest.</p>
+<h3 id="10-pq-groupsconf-systemd-drop-in-ec2">10-pq-groups.conf (systemd drop-in, EC2)</h3>
+<pre><code class="language-ini"># /etc/systemd/system/valkey.service.d/10-pq-groups.conf
+[Service]
+Environment=OPENSSL_CONF=/etc/ssl/openssl-groups.cnf</code></pre>
+<p>Then <code>systemctl daemon-reload &amp;&amp; systemctl restart valkey</code>.</p>

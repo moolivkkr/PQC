@@ -1,0 +1,237 @@
+<h1 id="aws-service-endpoints-kms-ssm-secrets-manager-and-others">AWS service endpoints: KMS, SSM, Secrets Manager and others</h1>
+<h2 id="what-decides-pq-here">What decides PQ here</h2>
+<p>AWS owns the server side of every AWS API endpoint. On the listed services, the endpoint prefers X25519MLKEM768 whenever the client offers it (&quot;transparent&quot;), so the work is on the client: the SDK, the AWS CLI, or the AWS agent that makes the call. Services AWS has not listed (Systems Manager, Lambda Invoke, CloudWatch, Step Functions, ECS, EKS, the EC2 API) should be treated as classical even from a PQ client. Source: <a href="https://aws.amazon.com/security/post-quantum-cryptography/aws-pq-readiness-confidentiality/">AWS PQ readiness (confidentiality)</a>, re-read 2026-11-14 (the page has no date; footer © 2026).</p>
+<h2 id="status-by-service">Status by service</h2>
+<p>Re-read 2026-11-14. &quot;Transparent&quot; means nothing to configure on the AWS side.</p>
+<table><thead><tr><th>Service</th><th>PQ on the endpoint</th><th>CloudTrail <code>tlsDetails.keyExchange</code></th><th>Evidence</th></tr></thead><tbody><tr><td>KMS</td><td>Yes, FIPS and non-FIPS, all Regions</td><td>Yes</td><td>Documented (<a href="https://docs.aws.amazon.com/kms/latest/developerguide/pqtls.html">KMS PQ TLS</a>)</td></tr><tr><td>Secrets Manager</td><td>Yes, FIPS and non-FIPS (not China Regions)</td><td>Yes</td><td>Documented (<a href="https://aws.amazon.com/security/post-quantum-cryptography/aws-pq-readiness-confidentiality/">readiness</a>, <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/pqtls.html">SM PQ TLS</a>)</td></tr><tr><td>STS</td><td>Yes, FIPS and non-FIPS</td><td>Yes</td><td>Documented (readiness)</td></tr><tr><td>IAM, IAM Roles Anywhere</td><td>Yes, FIPS and non-FIPS</td><td>Yes</td><td>Documented (readiness)</td></tr><tr><td>ACM</td><td>Yes, FIPS and non-FIPS</td><td>Yes</td><td>Documented (readiness)</td></tr><tr><td>Payment Cryptography</td><td>Yes</td><td>Yes</td><td>Documented (readiness)</td></tr><tr><td>S3 (all bucket types)</td><td>Yes, FIPS and non-FIPS</td><td>No: data events show TLS version and cipher; key exchange &quot;coming soon&quot;</td><td>Documented (readiness)</td></tr><tr><td>DynamoDB</td><td>Non-FIPS only; FIPS endpoints and DAX &quot;coming soon&quot;</td><td>No</td><td>Documented (readiness)</td></tr><tr><td>CodeBuild, CodePipeline, Firewall Manager, IAM Identity Center, Network Firewall (API)</td><td>Yes, FIPS and non-FIPS</td><td>&quot;Coming soon&quot;</td><td>Documented (readiness)</td></tr><tr><td>SQS, SNS, EventBridge, ECR, Kinesis Data Streams, CloudFormation, EBS, EFS, ElastiCache, DocumentDB, Keyspaces, Glacier, Config, EC2 Auto Scaling, EC2 Instance Connect, AppSync, DMS, SWF and others</td><td>Control plane only (the page does not define &quot;control plane&quot;)</td><td>Mostly &quot;coming soon&quot;</td><td>Documented (readiness)</td></tr><tr><td>Direct Connect</td><td>API endpoints</td><td>&quot;Coming soon&quot;</td><td>Documented (readiness)</td></tr><tr><td>Cognito custom user pool domains</td><td>Opt-in TLS policy</td><td>Not stated</td><td>Documented (readiness)</td></tr><tr><td>API Gateway (REST), ALB, NLB, RDS, Aurora, Transfer Family SFTP</td><td>Opt-in (customer resource)</td><td>ALB/NLB logs carry <code>keyExchange</code></td><td><a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>, <a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>, <a data-atom="ref" data-ref="file/d9065243-9ab3">Databases and data services</a></td></tr><tr><td>Classic Load Balancer</td><td>&quot;No PQC plan&quot;</td><td>n/a</td><td>Documented (readiness)</td></tr><tr><td><strong>Systems Manager</strong> (SSM API, Parameter Store, ssmmessages, ec2messages)</td><td><strong>Not listed</strong></td><td>Unknown</td><td>Absent from the page on 2026-11-14</td></tr><tr><td>Lambda (Invoke), Step Functions, CloudWatch (Logs, metrics), ECS, EKS, Fargate, EC2 API, Kinesis Firehose, Route 53, Organizations, SES, Athena, Glue, Bedrock, SageMaker, IoT Core, VPN</td><td><strong>Not listed</strong></td><td>Unknown</td><td>Absent from the page on 2026-11-14</td></tr></tbody></table>
+<p>Read &quot;control plane only&quot; as the management APIs. Data-plane calls (SendMessage/ReceiveMessage, Publish, PutEvents, PutRecord, image layer pulls) may still be classical. I&#39;m not sure which ECR calls count as control plane; layer downloads go to S3-backed URLs, which are PQ-capable.</p>
+<h3 id="client-posture-by-compute-type">Client posture by compute type</h3>
+<p>The endpoint only negotiates PQ if the client offers it. What the client is depends on where the code runs.</p>
+<table><thead><tr><th>Caller</th><th>Lambda zip</th><th>Lambda image</th><th>Fargate / ECS / EKS</th><th>EC2</th></tr></thead><tbody><tr><td>AWS SDK in your code</td><td>Language tab rules (Python/.NET need <code>OPENSSL_CONF</code>; nodejs22/24 need the Node conf; Java 8–21 need the agent)</td><td>Same as the base image&#39;s TLS library</td><td>Base image&#39;s TLS library (Debian 13, Alpine 3.24, node:22/24 images are PQ by default)</td><td>Host OS rules (Hosts and OS tab) unless the runtime bundles its TLS</td></tr><tr><td>AWS CLI v2 ≥ 2.34.54</td><td>n/a</td><td>PQ (bundled OpenSSL)</td><td>PQ (bundled OpenSSL)</td><td>PQ on Linux; macOS/Windows depend on the OS library</td></tr><tr><td>Parameters and Secrets Lambda Extension ≥ v19</td><td>PQ to Secrets Manager (Documented); SSM endpoint not listed</td><td>Same</td><td>n/a</td><td>n/a</td></tr><tr><td>Workload Credentials Provider (formerly Secrets Manager Agent) ≥ 2.0.0</td><td>PQ to Secrets Manager</td><td>Same</td><td>Same</td><td>Same</td></tr><tr><td>SSM Agent</td><td>n/a</td><td>n/a</td><td>n/a (ECS Exec uses it)</td><td>Offers PQ (Go 1.26), endpoint not listed</td></tr></tbody></table>
+<h2 id="client-side-app-level">Client side (app level)</h2>
+<h3 id="aws-sdks">AWS SDKs</h3>
+<p>From the AWS <a href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">SDKs and Tools reference: Enabling hybrid post-quantum TLS</a> (read 2026-11-14). The language tabs give the full per-runtime fix: <a data-atom="ref" data-ref="file/f452a156-1a48">Go</a>, <a data-atom="ref" data-ref="file/35b45b8c-c6f8">Python</a>, <a data-atom="ref" data-ref="file/d69fae22-fa1f">Node.js</a>, <a data-atom="ref" data-ref="file/cd465386-557e">Java</a>, <a data-atom="ref" data-ref="file/c09219a7-69d4">.NET</a>.</p>
+<table><thead><tr><th>SDK</th><th>PQ by default?</th><th>What to do</th><th>Evidence</th></tr></thead><tbody><tr><td>Go v2</td><td>Yes with Go ≥ 1.24 and go.mod <code>go</code> ≥ 1.24</td><td>Upgrade the toolchain; don&#39;t set <code>CurvePreferences</code></td><td>Documented; Tested (Go tab)</td></tr><tr><td>JavaScript v3 (Node.js)</td><td>Yes on Node ≥ 22.20 / 24.9 (bundled OpenSSL 3.5)</td><td>Lambda nodejs22/24: override the runtime&#39;s <code>OPENSSL_CONF</code></td><td>Documented; Tested</td></tr><tr><td>JavaScript v3 (browser)</td><td>Follows the browser</td><td>Nothing (<a data-atom="ref" data-ref="file/89d3721c-f2a1">Mobile, desktop and CLI clients</a>)</td><td>Documented</td></tr><tr><td>Java v2, CRT HTTP client</td><td>Yes from 2.35.11</td><td>Use <code>AwsCrtHttpClient</code> / <code>AwsCrtAsyncHttpClient</code> (older: <code>.postQuantumTlsEnabled(true)</code>, from 2.30.22)</td><td>Documented</td></tr><tr><td>Java v1/v2, default (Apache/URLConnection) client</td><td>Only on a PQ JDK (Corretto/Temurin 25.0.5 tested; JDK 27 per AWS)</td><td>BC JSSE agent for 8–21</td><td>Documented; Tested</td></tr><tr><td>Python (boto3) and AWS CLI v1</td><td>Yes if the linked OpenSSL is ≥ 3.5 <strong>and</strong> the OS policy offers ML-KEM</td><td>AL2023: <code>DEFAULT:PQ</code> or <code>OPENSSL_CONF</code>; python.org 3.14.6+ on Windows/macOS bundles OpenSSL 3.5.7</td><td>Documented; Tested</td></tr><tr><td>.NET</td><td>Linux: OS OpenSSL ≥ 3.5; Windows/macOS: .NET 10 + OS support</td><td>.NET tab</td><td>Documented; Tested on Linux</td></tr><tr><td>Rust</td><td>Yes for service crates published after 2025-08-29</td><td>Update crates</td><td>Documented</td></tr><tr><td>Kotlin</td><td>Yes on Linux from 1.5.78; macOS/Windows follow the OS</td><td>Update</td><td>Documented</td></tr><tr><td>C++</td><td>Only with system OpenSSL ≥ 3.5, or opt in to the CRT client (1.11.673+)</td><td>Build with <code>-DUSE_CRT_HTTP_CLIENT=ON</code></td><td>Documented</td></tr><tr><td>PHP, Ruby</td><td>System OpenSSL ≥ 3.5</td><td>Run on an OpenSSL 3.5 distro or image</td><td>Documented</td></tr><tr><td>Swift SDK, SAP SDK, AWS Tools for Windows PowerShell</td><td><strong>No plans</strong></td><td>Call these services from another client if PQ is required</td><td>Documented</td></tr></tbody></table>
+<h3 id="aws-cli">AWS CLI</h3>
+<ul><li><p><strong>v2:</strong> Linux installers from <strong>2.34.54</strong> bundle OpenSSL 3.5.6 and prefer PQ (<a href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">sdkref</a>). Rule for pipelines: <code>aws --version</code> ≥ 2.34.54 on Linux. <strong>Tested:</strong> <code>amazon/aws-cli</code> 2.40.3 completed TLS to a PQ-only server and to a classical-only server.</p></li><li><p><strong>v2 on macOS:</strong> install through Homebrew with Homebrew OpenSSL ≥ 3.5 (AWS doc). The macOS <code>.pkg</code> installer isn&#39;t covered by that statement; not confirmed.</p></li><li><p><strong>v1:</strong> uses Python&#39;s <code>ssl</code>. <strong>Tested:</strong> aws-cli 1.46.3 on <code>python:3.13-slim</code> (Debian 13, OpenSSL 3.5.7) worked against PQ-only; on <code>python:3.12-slim-bookworm</code> (OpenSSL 3.0.22) it failed with <code>SSLV3_ALERT_HANDSHAKE_FAILURE</code>.</p></li></ul>
+<h3 id="parameters-and-secrets-lambda-extension">Parameters and Secrets Lambda Extension</h3>
+<ul><li><p>The function calls the extension over plain HTTP on <code>localhost:2773</code>; there&#39;s no TLS on that hop.</p></li><li><p>Extension <strong>version 19 or later</strong> uses hybrid PQ TLS to Secrets Manager automatically (<a href="https://aws.amazon.com/about-aws/whats-new/2026/04/aws-secrets-manager-post-quantum-tls/">announcement, 2026-04-14</a>). Documented.</p></li><li><p>Its Parameter Store calls go to the SSM endpoint, which isn&#39;t on the PQ list: assume classical.</p></li></ul>
+<h3 id="workload-credentials-provider-formerly-secrets-manager-agent-and-ascp">Workload Credentials Provider (formerly Secrets Manager Agent) and ASCP</h3>
+<ul><li><p>The Secrets Manager Agent was renamed AWS Workload Credentials Provider in June 2026 (<a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/workload-credentials-provider.html">docs</a>). Version <strong>2.0.0+</strong> uses ML-KEM as its highest-priority group by default (<a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/pqtls.html">SM PQ TLS</a>).</p></li><li><p>AWS Secrets and Configuration Provider (ASCP, the EKS CSI provider) <strong>2.0.0+</strong>: PQ by default (announcement). Documented.</p></li><li><p>The language caching libraries (Java, Python, .NET, Go) aren&#39;t named in the announcement. They use your SDK client, so the SDK row above decides.</p></li></ul>
+<h3 id="ssm-agent-session-manager-ec2-instance-connect">SSM Agent, Session Manager, EC2 Instance Connect</h3>
+<ul><li><p>The SSM Agent is Go. Its <code>mainline</code> go.mod says <code>go 1.26</code> (<a href="https://raw.githubusercontent.com/aws/amazon-ssm-agent/mainline/go.mod">go.mod</a>, read 2026-11-14), so current builds offer X25519MLKEM768. The SSM, ssmmessages and ec2messages endpoints aren&#39;t on the PQ list, so Session Manager and Run Command traffic should be assumed classical. Unverified (needs a capture against a real endpoint).</p></li><li><p>EC2 Instance Connect&#39;s API is on the control-plane list. The SSH session itself is your instance&#39;s sshd (<a data-atom="ref" data-ref="file/99613846-4046">Hosts and OS</a>).</p></li></ul>
+<h2 id="server-side">Server side</h2>
+<p>There is nothing to configure on AWS-owned endpoints. Server-side work exists only where you own the TLS policy: ALB/NLB listeners (<a data-atom="ref" data-ref="file/bb21387b-4f66">Load balancers</a>); API Gateway, CloudFront, Cognito custom domains and Transfer Family (<a data-atom="ref" data-ref="file/6d11c1c8-dcc8">Edge and API front doors</a>); RDS and Aurora (<a data-atom="ref" data-ref="file/d9065243-9ab3">Databases and data services</a>).</p>
+<h3 id="fips-endpoints">FIPS endpoints</h3>
+<p>KMS, Secrets Manager, STS, IAM, ACM and S3 FIPS endpoints support PQ. DynamoDB FIPS doesn&#39;t yet. Turn FIPS endpoints on per client with <code>use_fips_endpoint = true</code> in <code>~/.aws/config</code> or <code>AWS_USE_FIPS_ENDPOINT=true</code>. A workload that needs both DynamoDB PQ and FIPS can&#39;t have both today.</p>
+<h3 id="vpc-interface-endpoints-privatelink">VPC interface endpoints (PrivateLink)</h3>
+<p>An interface endpoint carries the TLS session to the same service front end, so the same rules should apply. AWS doesn&#39;t state this on the readiness page, and a third-party report says S3 through PrivateLink differs. Unverified: confirm with CloudTrail <code>keyExchange</code> for a KMS call made through the endpoint (<code>vpcEndpointId</code> is set in the record).</p>
+<h2 id="packaging-per-compute-type">Packaging per compute type</h2>
+<table><thead><tr><th>Compute</th><th>What to ship</th><th>IaC (full files below)</th></tr></thead><tbody><tr><td>Lambda zip</td><td>Runtime fix from the language tab; Parameters and Secrets extension layer ≥ v19</td><td>SAM <code>template.yaml</code> (<code>Layers:</code> + <code>OPENSSL_CONF</code>); Terraform <code>main.tf</code> (<code>layers</code>, <code>environment</code>)</td></tr><tr><td>Lambda image</td><td>Base image with OpenSSL 3.5 or the language conf; AWS CLI v2 ≥ 2.34.54 if the function shells out</td><td><code>images/awscli/Dockerfile</code></td></tr><tr><td>ECS / Fargate / EKS</td><td>PQ-capable base image; Workload Credentials Provider ≥ 2.0.0 or ASCP ≥ 2.0.0 for secrets</td><td>Task definition / pod spec (language tabs)</td></tr><tr><td>EC2</td><td>AWS CLI v2 ≥ 2.34.54; OS policy (Hosts and OS tab)</td><td>SSM Command document <code>PQ-UpgradeAwsCliV2.json</code></td></tr></tbody></table>
+<h2 id="verify-and-detect">Verify and detect</h2>
+<ol><li><p><strong>Posture:</strong> <code>aws --version</code> ≥ 2.34.54 (Linux). SDK versions per language tab. Extension layer version ≥ 19.</p></li><li><p><strong>Live (lab):</strong> point the client at a PQ-only test server with <code>--endpoint-url</code> (as done here) and at a classical-only server; both must complete TLS.</p></li><li><p><strong>Observed (production):</strong> CloudTrail <code>tlsDetails.keyExchange</code> for KMS, Secrets Manager, STS, IAM, Roles Anywhere, ACM and Payment Cryptography. Skip records with <code>userIdentity.invokedBy</code> set: AWS-service calls carry no <code>tlsDetails</code> (<a href="https://docs.aws.amazon.com/kms/latest/developerguide/pqtls.html">KMS doc</a>).</p></li></ol>
+<h3 id="cloudtrail-lake-classical-calls-by-role-and-account">CloudTrail Lake: classical calls by role and account</h3>
+<p>Not run (no AWS account here); Unverified. The <code>keyExchange</code> column name is assumed to match the JSON field.</p>
+<pre><code class="language-sql">SELECT recipientAccountId, eventSource, userIdentity.arn AS caller,
+       tlsDetails.keyExchange AS kx, count(*) AS calls
+FROM &lt;event-data-store-id&gt;
+WHERE eventTime &gt; timestamp &#39;2026-11-07 00:00:00&#39;
+  AND eventSource IN (&#39;kms.amazonaws.com&#39;,&#39;secretsmanager.amazonaws.com&#39;,&#39;sts.amazonaws.com&#39;,
+                      &#39;iam.amazonaws.com&#39;,&#39;acm.amazonaws.com&#39;,&#39;rolesanywhere.amazonaws.com&#39;,
+                      &#39;payment-cryptography.amazonaws.com&#39;)
+  AND userIdentity.invokedBy IS NULL
+GROUP BY 1,2,3,4
+ORDER BY calls DESC</code></pre>
+<p>Add <code>AND (tlsDetails.keyExchange IS NULL OR tlsDetails.keyExchange NOT LIKE &#39;%MLKEM%&#39;)</code> to get only the to-do list.</p>
+<h3 id="athena-over-the-cloudtrail-s3-bucket">Athena over the CloudTrail S3 bucket</h3>
+<p>The AWS sample DDL declares <code>tlsDetails</code> as <code>struct&lt;tlsVersion,cipherSuite,clientProvidedHostHeader&gt;</code>. Add <code>keyExchange:string</code> or the column reads null. Full DDL and query in the last section. Unverified (not run).</p>
+<h3 id="alert">Alert</h3>
+<p>A CloudWatch Logs metric filter on the trail&#39;s log group is AWS&#39;s documented pattern (KMS doc), extended here to all services that log <code>keyExchange</code>:</p>
+<pre><code class="language-text">{ ($.eventSource = &quot;kms.amazonaws.com&quot; || $.eventSource = &quot;secretsmanager.amazonaws.com&quot; || $.eventSource = &quot;sts.amazonaws.com&quot; || $.eventSource = &quot;iam.amazonaws.com&quot; || $.eventSource = &quot;acm.amazonaws.com&quot;) &amp;&amp; ($.userIdentity.invokedBy NOT EXISTS) &amp;&amp; (($.tlsDetails.keyExchange != &quot;*MLKEM*&quot;) || ($.tlsDetails.keyExchange NOT EXISTS)) }</code></pre>
+<p>An EventBridge rule on &quot;AWS API Call via CloudTrail&quot; can do the same per call. I&#39;m not sure EventBridge receives read-only calls such as <code>Decrypt</code> and <code>GetSecretValue</code> without extra trail settings, so the metric filter is the primary alert.</p>
+<h2 id="pitfalls-and-rollback">Pitfalls and rollback</h2>
+<ul><li><p><strong>No server-side enforcement.</strong> There&#39;s no IAM condition key for key exchange, so you can&#39;t deny classical calls by policy. Enforcement is client posture plus the alert (<a data-atom="ref" data-ref="file/0803191b-9855">Enforcement and guardrails</a>).</p></li><li><p><strong>Missing <code>tlsDetails</code></strong> on service-made calls is normal; don&#39;t alarm on them.</p></li><li><p><strong>Unlisted services look fine and aren&#39;t.</strong> SSM, Lambda Invoke, CloudWatch and Step Functions produce no <code>keyExchange</code>; don&#39;t read silence as PQ.</p></li><li><p><strong>Middleboxes:</strong> the hybrid ClientHello is bigger (AWS says roughly 1,600 extra handshake bytes). Egress proxies and inspection firewalls may drop it (<a data-atom="ref" data-ref="file/c2c97bfd-040d">Network devices and egress</a>).</p></li><li><p><strong>Rollback</strong> is client-side: pin the previous CLI version, or remove <code>OPENSSL_CONF</code>. The endpoints still accept classical clients.</p></li></ul>
+<h2 id="full-configuration-files">Full configuration files</h2>
+<p>None of these were applied to an AWS account (no credentials here). The patterns follow AWS docs; the CLI image version is Tested.</p>
+<p><strong><code>monitoring/pq-metric-filter.tf</code></strong></p>
+<pre><code class="language-hcl">variable &quot;trail_log_group&quot; { type = string }   # CloudTrail -&gt; CloudWatch Logs group
+variable &quot;alarm_topic_arn&quot; { type = string }
+
+resource &quot;aws_cloudwatch_log_metric_filter&quot; &quot;non_pq_api_calls&quot; {
+  name           = &quot;non-pq-aws-api-calls&quot;
+  log_group_name = var.trail_log_group
+  pattern        = &quot;{ ($.eventSource = \&quot;kms.amazonaws.com\&quot; || $.eventSource = \&quot;secretsmanager.amazonaws.com\&quot; || $.eventSource = \&quot;sts.amazonaws.com\&quot; || $.eventSource = \&quot;iam.amazonaws.com\&quot; || $.eventSource = \&quot;acm.amazonaws.com\&quot;) &amp;&amp; ($.userIdentity.invokedBy NOT EXISTS) &amp;&amp; (($.tlsDetails.keyExchange != \&quot;*MLKEM*\&quot;) || ($.tlsDetails.keyExchange NOT EXISTS)) }&quot;
+  metric_transformation {
+    name      = &quot;NonPqApiCalls&quot;
+    namespace = &quot;Security/PQC&quot;
+    value     = &quot;1&quot;
+  }
+}
+
+resource &quot;aws_cloudwatch_metric_alarm&quot; &quot;non_pq_api_calls&quot; {
+  alarm_name          = &quot;non-pq-aws-api-calls&quot;
+  namespace           = &quot;Security/PQC&quot;
+  metric_name         = &quot;NonPqApiCalls&quot;
+  statistic           = &quot;Sum&quot;
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = &quot;GreaterThanOrEqualToThreshold&quot;
+  treat_missing_data  = &quot;notBreaching&quot;
+  alarm_actions       = [var.alarm_topic_arn]
+}</code></pre>
+<p><strong><code>monitoring/pq-metric-filter.yaml</code></strong> (CloudFormation)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Parameters:
+  TrailLogGroup: { Type: String }
+  AlarmTopicArn: { Type: String }
+Resources:
+  NonPqFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref TrailLogGroup
+      FilterName: non-pq-aws-api-calls
+      FilterPattern: &#39;{ ($.eventSource = &quot;kms.amazonaws.com&quot; || $.eventSource = &quot;secretsmanager.amazonaws.com&quot; || $.eventSource = &quot;sts.amazonaws.com&quot; || $.eventSource = &quot;iam.amazonaws.com&quot; || $.eventSource = &quot;acm.amazonaws.com&quot;) &amp;&amp; ($.userIdentity.invokedBy NOT EXISTS) &amp;&amp; (($.tlsDetails.keyExchange != &quot;*MLKEM*&quot;) || ($.tlsDetails.keyExchange NOT EXISTS)) }&#39;
+      MetricTransformations:
+        - MetricNamespace: Security/PQC
+          MetricName: NonPqApiCalls
+          MetricValue: &quot;1&quot;
+  NonPqAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: non-pq-aws-api-calls
+      Namespace: Security/PQC
+      MetricName: NonPqApiCalls
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]</code></pre>
+<p><strong><code>monitoring/pq-eventbridge.tf</code></strong> (per-call events for write APIs; see the read-only caveat above; untested)</p>
+<pre><code class="language-hcl">resource &quot;aws_cloudwatch_event_rule&quot; &quot;non_pq_calls&quot; {
+  name = &quot;non-pq-aws-api-calls&quot;
+  event_pattern = jsonencode({
+    &quot;detail-type&quot; = [&quot;AWS API Call via CloudTrail&quot;]
+    detail = {
+      eventSource  = [&quot;kms.amazonaws.com&quot;, &quot;secretsmanager.amazonaws.com&quot;, &quot;sts.amazonaws.com&quot;, &quot;iam.amazonaws.com&quot;, &quot;acm.amazonaws.com&quot;]
+      userIdentity = { invokedBy = [{ exists = false }] }
+      tlsDetails   = { keyExchange = [{ &quot;anything-but&quot; = { wildcard = &quot;*MLKEM*&quot; } }] }
+    }
+  })
+}
+
+resource &quot;aws_cloudwatch_event_target&quot; &quot;to_sns&quot; {
+  rule = aws_cloudwatch_event_rule.non_pq_calls.name
+  arn  = var.alarm_topic_arn
+}</code></pre>
+<p><strong><code>athena/cloudtrail_pq.sql</code></strong></p>
+<pre><code class="language-sql">-- Add keyExchange to the tlsDetails struct of the AWS sample CloudTrail table.
+CREATE EXTERNAL TABLE cloudtrail_pq (
+  eventVersion STRING,
+  userIdentity STRUCT&lt;type:STRING, principalId:STRING, arn:STRING, accountId:STRING, invokedBy:STRING&gt;,
+  eventTime STRING,
+  eventSource STRING,
+  eventName STRING,
+  awsRegion STRING,
+  sourceIpAddress STRING,
+  userAgent STRING,
+  recipientAccountId STRING,
+  vpcEndpointId STRING,
+  tlsDetails STRUCT&lt;tlsVersion:STRING, cipherSuite:STRING, keyExchange:STRING, clientProvidedHostHeader:STRING&gt;
+)
+PARTITIONED BY (account STRING, region STRING, day STRING)
+ROW FORMAT SERDE &#39;org.apache.hive.hcatalog.data.JsonSerDe&#39;
+STORED AS INPUTFORMAT &#39;com.amazon.emr.cloudtrail.CloudTrailInputFormat&#39;
+OUTPUTFORMAT &#39;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&#39;
+LOCATION &#39;s3://&lt;trail-bucket&gt;/AWSLogs/&lt;org-id&gt;/&#39;
+TBLPROPERTIES (
+  &#39;projection.enabled&#39;=&#39;true&#39;,
+  &#39;projection.account.type&#39;=&#39;enum&#39;, &#39;projection.account.values&#39;=&#39;&lt;acct1&gt;,&lt;acct2&gt;&#39;,
+  &#39;projection.region.type&#39;=&#39;enum&#39;,  &#39;projection.region.values&#39;=&#39;us-east-1,us-west-2&#39;,
+  &#39;projection.day.type&#39;=&#39;date&#39;, &#39;projection.day.range&#39;=&#39;2026/01/01,NOW&#39;, &#39;projection.day.format&#39;=&#39;yyyy/MM/dd&#39;,
+  &#39;storage.location.template&#39;=&#39;s3://&lt;trail-bucket&gt;/AWSLogs/&lt;org-id&gt;/${account}/CloudTrail/${region}/${day}&#39;
+);
+
+-- Non-PQ calls by account, service and role, last 7 days.
+SELECT recipientAccountId, eventSource, userIdentity.arn AS caller,
+       coalesce(tlsDetails.keyExchange, &#39;(none)&#39;) AS kx, count(*) AS calls
+FROM cloudtrail_pq
+WHERE day &gt;= date_format(current_date - interval &#39;7&#39; day, &#39;%Y/%m/%d&#39;)
+  AND eventSource IN (&#39;kms.amazonaws.com&#39;,&#39;secretsmanager.amazonaws.com&#39;,&#39;sts.amazonaws.com&#39;,
+                      &#39;iam.amazonaws.com&#39;,&#39;acm.amazonaws.com&#39;,&#39;rolesanywhere.amazonaws.com&#39;)
+  AND userIdentity.invokedBy IS NULL
+  AND (tlsDetails.keyExchange IS NULL OR tlsDetails.keyExchange NOT LIKE &#39;%MLKEM%&#39;)
+GROUP BY 1,2,3,4
+ORDER BY calls DESC;</code></pre>
+<p><strong><code>lambda/template.yaml</code></strong> (SAM: extension layer ≥ v19 plus the Python PQ conf; look up the layer ARN for your Region in the extension docs)</p>
+<pre><code class="language-yaml">AWSTemplateFormatVersion: &quot;2010-09-09&quot;
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  SecretsExtensionLayerArn:
+    Type: String
+    Description: AWS-Parameters-and-Secrets-Lambda-Extension layer ARN for this Region, version 19 or later
+  PqTlsLayerArn: { Type: String }
+Resources:
+  Fn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.13
+      Handler: app.handler
+      CodeUri: src/
+      Layers: [!Ref SecretsExtensionLayerArn, !Ref PqTlsLayerArn]
+      Environment:
+        Variables:
+          OPENSSL_CONF: /opt/pq-tls/openssl-pq.cnf
+          PARAMETERS_SECRETS_EXTENSION_HTTP_PORT: &quot;2773&quot;
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy: { SecretArn: &quot;*&quot; }</code></pre>
+<p><strong><code>lambda/main.tf</code></strong> (Terraform equivalent)</p>
+<pre><code class="language-hcl">resource &quot;aws_lambda_function&quot; &quot;fn&quot; {
+  function_name = &quot;pq-fn&quot;
+  runtime       = &quot;python3.13&quot;
+  handler       = &quot;app.handler&quot;
+  filename      = &quot;build/fn.zip&quot;
+  role          = aws_iam_role.fn.arn
+  layers        = [var.secrets_extension_layer_arn, var.pq_tls_layer_arn] # extension &gt;= v19
+  environment {
+    variables = {
+      OPENSSL_CONF                           = &quot;/opt/pq-tls/openssl-pq.cnf&quot;
+      PARAMETERS_SECRETS_EXTENSION_HTTP_PORT = &quot;2773&quot;
+    }
+  }
+}</code></pre>
+<p><strong><code>images/awscli/Dockerfile</code></strong> (container or Lambda image step that needs the CLI; <code>amazon/aws-cli</code> 2.40.3 is the Tested version)</p>
+<pre><code class="language-dockerfile">FROM amazon/aws-cli:2.40.3 AS cli
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+COPY --from=cli /usr/local/aws-cli /usr/local/aws-cli
+RUN ln -s /usr/local/aws-cli/v2/current/bin/aws /usr/local/bin/aws \
+ &amp;&amp; aws --version | awk &#39;{split($1,v,&quot;/&quot;); split(v[2],n,&quot;.&quot;); if (n[1]&lt;2 || (n[1]==2 &amp;&amp; (n[2]&lt;34 || (n[2]==34 &amp;&amp; n[3]&lt;54)))) {print &quot;AWS CLI too old for PQ&quot;; exit 1}}&#39;</code></pre>
+<p><strong><code>ssm/PQ-UpgradeAwsCliV2.json</code></strong> (SSM Command document for EC2 Linux)</p>
+<pre><code class="language-json">{
+  &quot;schemaVersion&quot;: &quot;2.2&quot;,
+  &quot;description&quot;: &quot;Install or upgrade AWS CLI v2 (bundles OpenSSL 3.5 from 2.34.54) and report the version.&quot;,
+  &quot;mainSteps&quot;: [
+    {
+      &quot;action&quot;: &quot;aws:runShellScript&quot;,
+      &quot;name&quot;: &quot;upgradeAwsCli&quot;,
+      &quot;precondition&quot;: { &quot;StringEquals&quot;: [&quot;platformType&quot;, &quot;Linux&quot;] },
+      &quot;inputs&quot;: {
+        &quot;timeoutSeconds&quot;: &quot;600&quot;,
+        &quot;runCommand&quot;: [
+          &quot;set -eu&quot;,
+          &quot;arch=$(uname -m)&quot;,
+          &quot;cd /tmp &amp;&amp; curl -fsSL \&quot;https://awscli.amazonaws.com/awscli-exe-linux-${arch}.zip\&quot; -o awscliv2.zip&quot;,
+          &quot;rm -rf /tmp/aws &amp;&amp; unzip -q awscliv2.zip&quot;,
+          &quot;/tmp/aws/install --update&quot;,
+          &quot;/usr/local/bin/aws --version&quot;
+        ]
+      }
+    }
+  ]
+}</code></pre>
+<p><strong><code>~/.aws/config</code></strong> (FIPS endpoints, optional)</p>
+<pre><code class="language-ini">[default]
+region = us-east-1
+use_fips_endpoint = true</code></pre>
