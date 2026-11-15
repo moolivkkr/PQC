@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- PQ TLS probe - .NET. One assembly: Lambda handler (probe::Probe.Function::Handler) and console app (dotnet probe.dll).
+       Built per target framework: -f net8.0 or -f net10.0. PublishAot=true (net10.0) gives the provided.al2023
+       bootstrap. No TLS group or protocol setting in code: the OS OpenSSL (and OPENSSL_CONF / crypto policy) decides. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <AssemblyName>probe</AssemblyName>
+    <RootNamespace>Probe</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AWSProjectType>Lambda</AWSProjectType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PublishAot)' == 'true'">
+    <DefineConstants>$(DefineConstants);PQC_AOT</DefineConstants>
+    <AssemblyName>bootstrap</AssemblyName>
+    <StripSymbols>true</StripSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.8.1" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PublishAot)' == 'true'">
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.14.3" />
+  </ItemGroup>
+</Project>

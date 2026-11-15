@@ -1,0 +1,3632 @@
+{
+ "lang": "dotnet",
+ "generated_by": "cases/dotnet.py",
+ "default_targets": [
+  "hybrid",
+  "pqonly",
+  "mtls",
+  "eccert",
+  "tls12"
+ ],
+ "cases": [
+  {
+   "id": "dotnet-lambda-dotnet8-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "dotnet8 zip, no change: AL2023 crypto policy omits ML-KEM -> classical",
+   "doc": "src/07-dotnet.md By compute type: Lambda zip (line 41)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet8 + pq-tls/openssl-pq.cnf in package + OPENSSL_CONF=/var/task/... (tab fix)",
+   "doc": "src/07-dotnet.md By compute type: Lambda zip (line 41)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-layer-wrapper",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "dotnet8 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER: wrapper's dotnet branch sets OPENSSL_CONF (enforcement tab PQ-L2)",
+   "doc": "src/21-enforcement.md lines 73, 90 (Guard rule, PQ-L2)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-layer-conf",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "dotnet8 + pq-tls layer + OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf (no wrapper)",
+   "doc": "src/21-enforcement.md lines 73, 90 (OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/opt/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "dotnet8 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "dotnet8 + ONE combined layer (wrapper + extension), app talks to the extension",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-combined-conf",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "dotnet8 + combined layer, direct TLS with OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf",
+   "doc": "src/21-enforcement.md lines 73, 90",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/opt/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-store-clientcert",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet8 fixed + X509Store CurrentUser/My, exec wrapper in package exports HOME=/tmp (tab E3)",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/var/task/home-wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-store-clientcert-nohome",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet8 fixed + X509Store, HOME=/tmp as a function variable: LocalStack drops HOME (AWS's own image under RIE honours it; AWS does not reserve HOME), so this records the emulator, not AWS",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286); X509Store on Linux note (line 202)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "could not be added to the store.*Access to the path '/home/sbx_user"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "HOME": "/tmp"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet8-ssl-cert-file",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet8 fixed + no trust code, SSL_CERT_FILE=ca.crt (tab D1)",
+   "doc": "src/07-dotnet.md case D, row D1 (line 221)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet8",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net8-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_TRUST": "system",
+     "SSL_CERT_FILE": "/var/task/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "dotnet10 zip, no change: AL2023 crypto policy omits ML-KEM -> classical",
+   "doc": "src/07-dotnet.md By compute type: Lambda zip (line 41)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 + pq-tls/openssl-pq.cnf in package + OPENSSL_CONF=/var/task/... (tab fix)",
+   "doc": "src/07-dotnet.md By compute type: Lambda zip (line 41)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-layer-wrapper",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "dotnet10 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER: wrapper's dotnet branch sets OPENSSL_CONF (enforcement tab PQ-L2)",
+   "doc": "src/21-enforcement.md lines 73, 90 (Guard rule, PQ-L2)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-layer-conf",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "dotnet10 + pq-tls layer + OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf (no wrapper)",
+   "doc": "src/21-enforcement.md lines 73, 90 (OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/opt/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "dotnet10 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "dotnet10 + ONE combined layer (wrapper + extension), app talks to the extension",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-combined-conf",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "dotnet10 + combined layer, direct TLS with OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf",
+   "doc": "src/21-enforcement.md lines 73, 90",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/opt/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-store-clientcert",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + X509Store CurrentUser/My, exec wrapper in package exports HOME=/tmp (tab E3)",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/var/task/home-wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-store-clientcert-nohome",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + X509Store, HOME=/tmp as a function variable: LocalStack drops HOME (AWS's own image under RIE honours it; AWS does not reserve HOME), so this records the emulator, not AWS",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286); X509Store on Linux note (line 202)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "could not be added to the store.*Access to the path '/home/sbx_user"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "HOME": "/tmp"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-ssl-cert-file",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + no trust code, SSL_CERT_FILE=ca.crt (tab D1)",
+   "doc": "src/07-dotnet.md case D, row D1 (line 221)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_TRUST": "system",
+     "SSL_CERT_FILE": "/var/task/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-callback-trust",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + HttpClientHandler validation callback (tab D3)",
+   "doc": "src/07-dotnet.md case D, row D3 (line 223)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_TRUST": "callback"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-ssl-cert-dir",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + no trust code, SSL_CERT_DIR=hashed dir (tab D2)",
+   "doc": "src/07-dotnet.md case D, row D2 (line 222)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_TRUST": "system",
+     "SSL_CERT_DIR": "/var/task/certs/hashdir"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-no-ca",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed, private CA nowhere (tab D0 control): every target UntrustedRoot",
+   "doc": "src/07-dotnet.md case D, row D0 (line 220)",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "UntrustedRoot|RemoteCertificateChainErrors|PartialChain"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "UntrustedRoot|RemoteCertificateChainErrors|PartialChain"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "UntrustedRoot|RemoteCertificateChainErrors|PartialChain"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "UntrustedRoot|RemoteCertificateChainErrors|PartialChain"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "UntrustedRoot|RemoteCertificateChainErrors|PartialChain"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_TRUST": "system"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-pem-clientcert",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + client cert from PEM pair CreateFromPemFile (tab E2)",
+   "doc": "src/07-dotnet.md case E, row E2 (line 285)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_CLIENTCERT": "pem"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-hch-p12-clientcert",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + HttpClientHandler.ClientCertificates from PFX (tab E1)",
+   "doc": "src/07-dotnet.md case E, row E1 (line 284)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_HANDLER": "httpclienthandler",
+     "PQC_DOTNET_TRUST": "callback"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-tls12-pin",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed but SslOptions.EnabledSslProtocols=Tls12 (tab F1): never PQ",
+   "doc": "src/07-dotnet.md case F, row F1 (line 319)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_PROTOCOLS": "Tls12"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-dotnet10-tls12-tls13",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "dotnet10 fixed + EnabledSslProtocols=Tls12|Tls13 (tab: allowed form)",
+   "doc": "src/07-dotnet.md case F 'What to change' (line 327)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "dotnet10",
+    "handler": "probe::Probe.Function::Handler",
+    "zip": "dotnet/probe-net10-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_PROTOCOLS": "Tls12,Tls13"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-aot-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "Native AOT .NET 10 on provided.al2023, no change",
+   "doc": "src/07-dotnet.md By compute type: Lambda Native AOT (line 43)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "dotnet/probe-aot.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-aot-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "Native AOT + openssl-pq.cnf + OPENSSL_CONF",
+   "doc": "src/07-dotnet.md By compute type: Lambda Native AOT (line 43)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "dotnet/probe-aot-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-image-dotnet8-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda container image lambda/dotnet:8 ",
+   "doc": "src/07-dotnet.md By compute type: Lambda image (line 42); configs/dotnet/Dockerfile.lambda",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-dotnet-lambda:dotnet8-baseline",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-image-dotnet8-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda container image lambda/dotnet:8 + Dockerfile.lambda COPY/ENV OPENSSL_CONF",
+   "doc": "src/07-dotnet.md By compute type: Lambda image (line 42); configs/dotnet/Dockerfile.lambda",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-dotnet-lambda:dotnet8-fixed",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-image-dotnet10-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda container image lambda/dotnet:10 ",
+   "doc": "src/07-dotnet.md By compute type: Lambda image (line 42); configs/dotnet/Dockerfile.lambda",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-dotnet-lambda:dotnet10-baseline",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-lambda-image-dotnet10-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda container image lambda/dotnet:10 + Dockerfile.lambda COPY/ENV OPENSSL_CONF",
+   "doc": "src/07-dotnet.md By compute type: Lambda image (line 42); configs/dotnet/Dockerfile.lambda",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-dotnet-lambda:dotnet10-fixed",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-runtime-80",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/runtime:8.0 - Debian 12, OpenSSL 3.0: no ML-KEM, change image",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-8.0 net8",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-8.0",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-runtime-80-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/runtime:8.0-alpine - Alpine 3.24, OpenSSL 3.5: PQ out of the box",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-8.0-alpine net8",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-8.0-alpine",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-runtime-80-noble",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/runtime:8.0-noble - Ubuntu 24.04, OpenSSL 3.0: no ML-KEM",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-8.0-noble net8",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-8.0-noble",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-runtime-100",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/runtime:10.0 - default 10.0 = Ubuntu 24.04, OpenSSL 3.0.13: change image",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-10.0 net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-10.0",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-runtime-100-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/runtime:10.0-alpine - Alpine 3.24, OpenSSL 3.5: PQ out of the box",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-10.0-alpine net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-10.0-alpine",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-runtime-100-azurelinux30",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/runtime:10.0-azurelinux3.0 - Azure Linux 3.0, OpenSSL 3.3: no ML-KEM",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-10.0-azurelinux3.0 net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-10.0-azurelinux3.0",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-aspnet-100-noble-chiseled",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled - Ubuntu 24.04 chiseled, OpenSSL 3.0",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-noble-chiseled net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-noble-chiseled",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-aspnet-100-resolute",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/aspnet:10.0-resolute - Ubuntu 26.04, OpenSSL 3.5.5: PQ out of the box",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-aspnet-100-resolute-chiseled",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled - Ubuntu 26.04 chiseled, OpenSSL 3.5: PQ out of the box",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute-chiseled net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute-chiseled",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-resolute-sysca",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 10.0-resolute, CA via update-ca-certificates, no trust code (tab D5)",
+   "doc": "src/07-dotnet.md case D, row D5 (line 225)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute-sysca net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute-sysca",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_TRUST": "system"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-alpine-sysca",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 10.0-alpine, apk add ca-certificates + update-ca-certificates, no trust code (tab D5)",
+   "doc": "src/07-dotnet.md case D, row D5 (line 225) and Alpine CA pitfall",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-10.0-alpine-sysca net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-10.0-alpine-sysca",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_TRUST": "system"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-resolute-ssl-cert-file",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 10.0-resolute, SSL_CERT_FILE=/app/certs/ca.crt, no trust code (tab D1)",
+   "doc": "src/07-dotnet.md case D, row D1 (line 221)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_TRUST": "system",
+     "SSL_CERT_FILE": "/app/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-resolute-store-clientcert",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 10.0-resolute, client cert from X509Store CurrentUser/My (tab E3)",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "HOME": "/tmp"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-resolute-pem-clientcert",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 10.0-resolute, client cert PEM pair (tab E2)",
+   "doc": "src/07-dotnet.md case E, row E2 (line 285)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_CLIENTCERT": "pem"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-resolute-tls12-pin",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 10.0-resolute (PQ image) but EnabledSslProtocols=Tls12 (tab F1): never PQ",
+   "doc": "src/07-dotnet.md case F, row F1 (line 319)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_PROTOCOLS": "Tls12"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-alpine8-callback-trust",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 8.0-alpine, HttpClientHandler validation callback + PFX client cert (tab D3/E1)",
+   "doc": "src/07-dotnet.md case D row D3, case E row E1",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-8.0-alpine net8",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-8.0-alpine",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_TRUST": "callback",
+     "PQC_DOTNET_HANDLER": "httpclienthandler"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-debian8-store-clientcert",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate 8.0 (Debian 12), X509Store client cert: works, classical only (tab E3, Debian column)",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-8.0 net8",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-8.0",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "HOME": "/tmp"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-net8-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 + dnf aspnetcore-runtime (net8): crypto policy omits ML-KEM",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023 net8",
+   "ecs": {
+    "image": "pqc-dotnet:al2023",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-net8-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 net8 + task-def OPENSSL_CONF (configs/dotnet/taskdef.json)",
+   "doc": "src/07-dotnet.md container images table (line 62); configs/dotnet/taskdef.json",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023 net8",
+   "ecs": {
+    "image": "pqc-dotnet:al2023",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-net8-policy",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 net8 image with update-crypto-policies --set DEFAULT:PQ",
+   "doc": "src/07-dotnet.md container images table (line 63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023-policy net8",
+   "ecs": {
+    "image": "pqc-dotnet:al2023-policy",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-net10-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 + dnf aspnetcore-runtime (net10): crypto policy omits ML-KEM",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023 net10",
+   "ecs": {
+    "image": "pqc-dotnet:al2023",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-net10-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 net10 + task-def OPENSSL_CONF (configs/dotnet/taskdef.json)",
+   "doc": "src/07-dotnet.md container images table (line 62); configs/dotnet/taskdef.json",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023 net10",
+   "ecs": {
+    "image": "pqc-dotnet:al2023",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-net10-policy",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 net10 image with update-crypto-policies --set DEFAULT:PQ",
+   "doc": "src/07-dotnet.md container images table (line 63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023-policy net10",
+   "ecs": {
+    "image": "pqc-dotnet:al2023-policy",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-fixed-net8",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate: configs/dotnet/Dockerfile.al2023 as published (COPY + ENV OPENSSL_CONF baked in)",
+   "doc": "src/07-dotnet.md Full configuration files: Dockerfile.al2023",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023-fixed net8",
+   "ecs": {
+    "image": "pqc-dotnet:al2023-fixed",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-fargate-al2023-sysca-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023, CA via update-ca-trust, no trust code, + OPENSSL_CONF: kit file keeps CA locations (tab D5)",
+   "doc": "src/07-dotnet.md case D 'What to change' (line 213), row D5",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023-sysca net10",
+   "ecs": {
+    "image": "pqc-dotnet:al2023-sysca",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf",
+     "PQC_DOTNET_TRUST": "system"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ecsec2-debian8-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, runtime:8.0 (Debian 12)",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-8.0 net8",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-8.0",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ecsec2-alpine10-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, runtime:10.0-alpine",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-runtime-10.0-alpine net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-runtime-10.0-alpine",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ecsec2-resolute-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, aspnet:10.0-resolute",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
+   "ecs": {
+    "image": "pqc-dotnet:mcr-aspnet-10.0-resolute",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ecsec2-al2023-net10-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, AL2023 net10",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023 net10",
+   "ecs": {
+    "image": "pqc-dotnet:al2023",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ecsec2-al2023-net8-conf",
+   "compute": "ecs-ec2",
+   "mode": "config",
+   "title": "ECS EC2 launch type, AL2023 net8 + OPENSSL_CONF",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023 net8",
+   "ecs": {
+    "image": "pqc-dotnet:al2023",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net8/probe.dll"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ecsec2-al2023-net10-policy",
+   "compute": "ecs-ec2",
+   "mode": "crypto-policy",
+   "title": "ECS EC2 launch type, AL2023 net10 + DEFAULT:PQ image",
+   "doc": "src/07-dotnet.md container images table (lines 52-63)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-dotnet:al2023-policy net10",
+   "ecs": {
+    "image": "pqc-dotnet:al2023-policy",
+    "entrypoint": [
+     "dotnet"
+    ],
+    "command": [
+     "/app/net10/probe.dll"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net8-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 dnf .NET (net8), default policy",
+   "doc": "src/07-dotnet.md By compute type: EC2 AL2023 (line 45)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net8/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net8/probe.dll",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net8-service-conf",
+   "compute": "ec2",
+   "mode": "config",
+   "title": "EC2 AL2023 net8: one service with OPENSSL_CONF (systemd Environment= equivalent)",
+   "doc": "src/07-dotnet.md By compute type: EC2 AL2023 (line 45)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net8/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net8/probe.dll",
+    "setup": [],
+    "env": {
+     "OPENSSL_CONF": "/opt/pqc/dotnet/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net8-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 net8: host-wide update-crypto-policies --set DEFAULT:PQ (configs/dotnet/ssm-al2023-pq-policy.yaml)",
+   "doc": "src/07-dotnet.md By compute type: EC2 AL2023 (line 45)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net8/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net8/probe.dll",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ",
+     "update-crypto-policies --show"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net10-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 dnf .NET (net10), default policy",
+   "doc": "src/07-dotnet.md By compute type: EC2 AL2023 (line 45)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net10/probe.dll",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net10-service-conf",
+   "compute": "ec2",
+   "mode": "config",
+   "title": "EC2 AL2023 net10: one service with OPENSSL_CONF (systemd Environment= equivalent)",
+   "doc": "src/07-dotnet.md By compute type: EC2 AL2023 (line 45)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net10/probe.dll",
+    "setup": [],
+    "env": {
+     "OPENSSL_CONF": "/opt/pqc/dotnet/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net10-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 net10: host-wide update-crypto-policies --set DEFAULT:PQ (configs/dotnet/ssm-al2023-pq-policy.yaml)",
+   "doc": "src/07-dotnet.md By compute type: EC2 AL2023 (line 45)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net10/probe.dll",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ",
+     "update-crypto-policies --show"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "dotnet-ec2-al2023-net10-policy-store-clientcert",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 DEFAULT:PQ + client cert from X509Store CurrentUser/My (tab E3)",
+   "doc": "src/07-dotnet.md case E, row E3 (line 286)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "dotnet /opt/pqc/dotnet/net10/probe.dll",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {
+     "PQC_DOTNET_CLIENTCERT": "store",
+     "HOME": "/root"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  }
+ ]
+}

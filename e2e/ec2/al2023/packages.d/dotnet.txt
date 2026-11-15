@@ -1,0 +1,3 @@
+# .NET 8 and 10 runtimes from the AL2023 repos (framework-dependent probe at /opt/pqc/dotnet/net8|net10)
+dotnet-runtime-8.0
+dotnet-runtime-10.0
