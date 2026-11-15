@@ -1380,6 +1380,7 @@
      "PQC_PY_STRICT": "1"
     }
    },
+   "finding": "Bridge step installs only pyopenssl + cryptography; urllib3.contrib.pyopenssl also imports idna, which the Lambda runtime lacks, so every urllib3/boto3 request raises ImportError. Add idna to the pip line (and build per Python version: the 3.11 abi3 cryptography wheel fails on 3.9/3.10).",
    "targets": [
     "hybrid",
     "pqonly",

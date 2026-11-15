@@ -60,6 +60,12 @@ def write(out_dir, run_id, results, meta):
                 *(_cell(r, t) for t in ("hybrid", "pqonly", "mtls", "eccert", "tls12")),
                 r["verdict"] if r["verdict"] == "PASS" else "**%s**" % r["verdict"]))
         md.append("")
+    fnd = [r for r in results if r.get("finding")]
+    if fnd:
+        md += ["## Findings (observed behaviour differs from the document or a kit file)", ""]
+        for r in fnd:
+            md.append("- `%s` (%s, %s): %s" % (r["id"], r["verdict"], r.get("doc", ""), r["finding"]))
+        md.append("")
     bad = [r for r in results if r["verdict"] != "PASS"]
     if bad:
         md += ["## Failures and errors", ""]

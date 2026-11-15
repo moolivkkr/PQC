@@ -298,7 +298,7 @@ def run_case(env, case):
            "title": case.get("title", ""), "doc": case.get("doc", ""), "full_id": full_id, "file": case["_file"],
            "runtime_label": case.get("runtime_label") or case.get("lambda", {}).get("runtime")
            or case.get("ecs", {}).get("image") or case.get("ec2", {}).get("ami"),
-           "expect": case.get("expect", {})}
+           "expect": case.get("expect", {}), "finding": case.get("finding")}
     try:
         client, extra = EXEC[case["compute"]](env, case, full_id)
         out.update(extra=extra, client=client)

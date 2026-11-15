@@ -47,6 +47,9 @@ lam("py-lambda-py311-shim-noidna", "python3.11", "bundled",
     "PITFALL: bridge built with only 'pyopenssl cryptography' (as the tab says): urllib3 needs idna -> requests FAIL",
     {t: {"ok": False, "error_match": "idna"} for t in ALL}, zip="probe-shim-noidna-py311.zip",
     env={"PYTHONPATH": "/var/task/pq-tls/pyshim", "PQC_PY_STRICT": "1"}, doc=DOC + " Bridge (pip install line)")
+cases[-1]["finding"] = ("Bridge step installs only pyopenssl + cryptography; urllib3.contrib.pyopenssl also imports idna, "
+                        "which the Lambda runtime lacks, so every urllib3/boto3 request raises ImportError. Add idna to "
+                        "the pip line (and build per Python version: the 3.11 abi3 cryptography wheel fails on 3.9/3.10).")
 lam("py-lambda-py313-combined-wrapper", "python3.13", "layer",
     "python3.13 + ONE combined layer, wrapper path only", PQ, layers=["pq-tls-combined"], env=WRAP)
 lam("py-lambda-py312-layer-ownconf", "python3.12", "layer",
