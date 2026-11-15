@@ -269,7 +269,7 @@ LocalStack's API is also on the host at `http://localhost:4600`, for example wit
 | `docker: command not found` | Use `source e2e/env.sh`; it adds Docker Desktop's bin directory to `PATH` |
 | Port 4600 in use | Something else is on it. Set `PQC_LS_PORT` in `env.sh` to a free port |
 | LocalStack shows `unhealthy` but answers | Check `curl -s localhost:4600/_localstack/info`; `is_license_activated` must be `true` |
-| Many `ERROR` cases with `RepositoryNotFoundException` | The language wasn't built in this LocalStack session (state isn't persisted). Run without `--skip-build` |
+| Many `ERROR` cases with `RepositoryNotFoundException` | LocalStack lost its ECR after a Docker or LocalStack restart (state isn't persisted). Run `bash e2e/build/repush.sh` to push the already-built images back, or run without `--skip-build` |
 | EC2 cases time out | The AMI lacks that language's files, or the instance didn't boot. Run `bash e2e/build/ami.sh` and rerun with `--compute ec2` |
 | Java layer cases classical or failing after a Python-only build | `common.sh` rebuilt the layer without the Java jars. Run `e2e/run.sh --lang java` |
 | First Lambda case of a runtime is slow | LocalStack is pulling that runtime image; later cases reuse it |
