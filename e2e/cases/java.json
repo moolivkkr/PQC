@@ -1,0 +1,4869 @@
+{
+ "lang": "java",
+ "generated_by": "cases/java.py",
+ "default_targets": [
+  "hybrid",
+  "pqonly",
+  "mtls",
+  "eccert",
+  "tls12"
+ ],
+ "cases": [
+  {
+   "id": "java-lambda-j8-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java8.al2 zip, no change: JDK 8 client defaults to TLS 1.2",
+   "doc": "src/06-java.md By JDK and compute type (Lambda zip column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java8.al2 + pq-tls layer v2 + AWS_LAMBDA_EXEC_WRAPPER (wrapper adds TLSv1.3) -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md Packaging table: Lambda layer; wrapper java branch",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java8.al2 + kit v2 in the zip (pq-tls/) + JAVA_TOOL_OPTIONS (+ TLSv1.3 flag) -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md Lambda: template.yaml (zip, kit v2)",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2"
+    },
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "java8.al2 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-combined",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java8.al2 + ONE combined layer (wrapper + extension), JVM path via wrapper -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md Packaging table: Lambda layer",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j11-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java11 zip, no change: classical, fails PQ-only server",
+   "doc": "src/06-java.md By JDK and compute type (Lambda zip column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java11",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j11-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java11 + pq-tls layer v2 + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/06-java.md Packaging table: Lambda layer; wrapper java branch",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java11",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j11-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java11 + kit v2 in the zip (pq-tls/) + JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md Lambda: template.yaml (zip, kit v2)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java11",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j11-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "java11 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java11",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j11-combined",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java11 + ONE combined layer (wrapper + extension), JVM path via wrapper",
+   "doc": "src/06-java.md Packaging table: Lambda layer",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java11",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java17 zip, no change: classical, fails PQ-only server",
+   "doc": "src/06-java.md By JDK and compute type (Lambda zip column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java17 + pq-tls layer v2 + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/06-java.md Packaging table: Lambda layer; wrapper java branch",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java17 + kit v2 in the zip (pq-tls/) + JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md Lambda: template.yaml (zip, kit v2)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "java17 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-combined",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java17 + ONE combined layer (wrapper + extension), JVM path via wrapper",
+   "doc": "src/06-java.md Packaging table: Lambda layer",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java21 zip, no change: classical, fails PQ-only server",
+   "doc": "src/06-java.md By JDK and compute type (Lambda zip column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java21 + pq-tls layer v2 + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/06-java.md Packaging table: Lambda layer; wrapper java branch",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java21 + kit v2 in the zip (pq-tls/) + JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md Lambda: template.yaml (zip, kit v2)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "java21 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-combined",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java21 + ONE combined layer (wrapper + extension), JVM path via wrapper",
+   "doc": "src/06-java.md Packaging table: Lambda layer",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java25 zip, no change: JDK 25.0.5 PQ by default",
+   "doc": "src/06-java.md By JDK and compute type (Lambda zip column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java25 + pq-tls layer v2 + AWS_LAMBDA_EXEC_WRAPPER (wrapper: no change on 25)",
+   "doc": "src/06-java.md Packaging table: Lambda layer; wrapper java branch",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "java25 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-combined",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java25 + ONE combined layer (wrapper + extension), JVM path via wrapper",
+   "doc": "src/06-java.md Packaging table: Lambda layer",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-combined-ext",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "java17 + combined layer, wrapper AND extension env: extension carries the call",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-bundled-hostfix",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java8 + kit v2 + TLSv1.3 flag + -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true: PQ",
+   "doc": "src/06-java.md JDK 8 row (remedy for FINDING_J8)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    },
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-bundled-noproto",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java8 + kit v2 WITHOUT -Djdk.tls.client.protocols (host-name fix on): Lambda's TLS 1.2 setting also binds BCJSSE",
+   "doc": "src/06-java.md JVM flags: jdk.tls.client.protocols (Java 8 only); Rules: 'On Java 8 add -Djdk.tls.client.protocols'",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j8-layer-hostfix",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java8 + layer v2 + function adds assumeOriginalHostName to JAVA_TOOL_OPTIONS: PQ",
+   "doc": "src/06-java.md Lambda layer (remedy for FINDING_J8)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java8.al2",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "JAVA_TOOL_OPTIONS": "-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    },
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-ks-ec-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java21, own SSLContext with EC client keystore, no kit: classical, mTLS works",
+   "doc": "src/06-java.md C/E: keystore situations",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-ks-ec-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java21 + kit v2, own SSLContext, EC client cert, KeyManagerFactory default (PKIX)",
+   "doc": "src/06-java.md E: BCJSSE client with client-ec.p12 connects",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-ks-ec-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java21 + layer v2, own SSLContext, EC client cert",
+   "doc": "src/06-java.md E + Lambda layer",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-ks-ec-sunx509",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java17 + kit v2, code hard-codes KeyManagerFactory.getInstance(\"SunX509\"), EC client cert: mTLS still fails",
+   "doc": "src/06-java.md C: 'Code hard-codes KeyManagerFactory.getInstance(\"SunX509\")' -> Still fails",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "(?i)certificate|handshake|SSL|Connection reset|closed|Error writing to server|failed TLS connection"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "PQC_JAVA_KMF": "SunX509",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-ks-rsa-sunx509",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java17 + kit v2, hard-coded SunX509 with the RSA client cert: works (RSA never needed the fix)",
+   "doc": "src/06-java.md C: 'RSA vs EC' note",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_KMF": "SunX509",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j17-ks-ec-pkix",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java17 + kit v2, code names \"PKIX\" explicitly, EC client cert",
+   "doc": "src/06-java.md C: use getDefaultAlgorithm() or PKIX",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java17",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "PQC_JAVA_KMF": "PKIX",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-ks-ec-v1",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java21 + agent only, PKIX step switched off (= kit v1 behaviour): EC client cert silently not sent",
+   "doc": "src/06-java.md E: 'What happens today (kit v1)': EC client cert -> certificate_required",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "(?i)certificate|handshake|SSL|Connection reset|closed|Error writing to server|failed TLS connection"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "JAVA_TOOL_OPTIONS": "-javaagent:/var/task/pq-tls/pq-tls-agent.jar -Dpq.tls.keyManagerAlgorithm=keep"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-layer-ownsec",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java21 + layer, function passes its own -Djava.security.properties (no PKIX line): wrapper leaves it, agent v2 sets PKIX; EC mTLS works",
+   "doc": "src/06-java.md C: 'App passes its own -Djava.security.properties' -> PQ (agent v2 fallback); wrapper v2 comment",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-ownsec.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/conf/app.security",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j11-layer-ownsec",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java11 + layer, own security file, EC client cert",
+   "doc": "src/06-java.md C: own -Djava.security.properties",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java11",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-ownsec.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/conf/app.security",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-sysprops-ec-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java21, no TLS code: stores given by -Djavax.net.ssl.keyStore/trustStore (EC client cert)",
+   "doc": "src/06-java.md C: 'Store given by -Djavax.net.ssl.keyStore'; D: trustStore row",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_TLS": "sysprops",
+     "JAVA_TOOL_OPTIONS": "-Djavax.net.ssl.keyStore=/var/task/certs/client-ec.p12 -Djavax.net.ssl.keyStorePassword=changeit -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.trustStore=/var/task/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-sysprops-ec-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java21 + kit v2, no TLS code: stores given by -Djavax.net.ssl.keyStore/trustStore (EC client cert)",
+   "doc": "src/06-java.md C: 'Store given by -Djavax.net.ssl.keyStore'; D: trustStore row",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_TLS": "sysprops",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djavax.net.ssl.keyStore=/var/task/certs/client-ec.p12 -Djavax.net.ssl.keyStorePassword=changeit -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.trustStore=/var/task/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-sysprops-ec-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java25, no TLS code: stores given by -Djavax.net.ssl.keyStore/trustStore (EC client cert)",
+   "doc": "src/06-java.md C: 'Store given by -Djavax.net.ssl.keyStore'; D: trustStore row",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_TLS": "sysprops",
+     "JAVA_TOOL_OPTIONS": "-Djavax.net.ssl.keyStore=/var/task/certs/client-ec.p12 -Djavax.net.ssl.keyStorePassword=changeit -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.trustStore=/var/task/certs/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-sysprops-notrust-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "java21 + kit v2, no private CA configured: every handshake refused (correct)",
+   "doc": "src/06-java.md D: 'No private CA configured' -> fails",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "(?i)certif|PKIX|trust"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "(?i)certif|PKIX|trust"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "(?i)certif|PKIX|trust"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "(?i)certif|PKIX|trust"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "(?i)certif|PKIX|trust"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-agent.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_TLS": "sysprops",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-ks-ec-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java25, own SSLContext, EC client cert, no kit",
+   "doc": "src/06-java.md C/E: JDK 25.0.5 no kit column",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j25-pin",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "java25 with -Djdk.tls.namedGroups pinned without X25519MLKEM768: classical",
+   "doc": "src/06-java.md F: jdk.tls.namedGroups without X25519MLKEM768",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java25",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djdk.tls.namedGroups=x25519,secp256r1,secp384r1"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-layer-pin",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "java21 + layer, app pins jdk.tls.namedGroups: agent leaves it alone -> classical",
+   "doc": "src/06-java.md Pitfalls: 'A pinned group list wins'",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "JAVA_TOOL_OPTIONS": "-Djdk.tls.namedGroups=x25519,secp256r1,secp384r1"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-layer-disabled",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "rollback switch PQ_TLS_DISABLE=1 with layer still attached: classical",
+   "doc": "src/06-java.md Pitfalls and rollback",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "PQ_TLS_DISABLE": "1"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-j21-static",
+   "compute": "lambda",
+   "mode": "static",
+   "title": "java21 zip, static BC registration via bc-static.security: doesn't work on Lambda",
+   "doc": "src/06-java.md Packaging table: Lambda zip, static java.security -> 'Doesn't work'",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "java21",
+    "handler": "Probe::handleRequest",
+    "zip": "java/probe-static.zip",
+    "layers": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/var/task/pq-tls/bc-static.security -Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1"
+    },
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j8-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda image lambda/java:8.al2023, no change",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java8-baseline",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j8-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda image lambda/java:8.al2023 + Dockerfile.lambda COPY pq-tls/ + ENV JAVA_TOOL_OPTIONS (+ TLSv1.3 flag) -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java8-fixed",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j11-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda image lambda/java:11, no change",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java11-baseline",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j11-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda image lambda/java:11 + Dockerfile.lambda COPY pq-tls/ + ENV JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java11-fixed",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j17-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda image lambda/java:17, no change",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java17-baseline",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j17-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda image lambda/java:17 + Dockerfile.lambda COPY pq-tls/ + ENV JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java17-fixed",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j21-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda image lambda/java:21, no change",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java21-baseline",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j21-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda image lambda/java:21 + Dockerfile.lambda COPY pq-tls/ + ENV JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java21-fixed",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j25-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda image lambda/java:25 (25.0.5), no change",
+   "doc": "src/06-java.md Packaging table: Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java25-baseline",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j8-layer",
+   "compute": "lambda",
+   "mode": "image-layer",
+   "title": "lambda/java:8.al2023 + pq-tls layer contents in /opt + AWS_LAMBDA_EXEC_WRAPPER (wrapper adds agent + TLSv1.3) -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md Packaging table: Lambda layer (java8.al2023)",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java8-layer",
+    "runtime": "image",
+    "env": {},
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-lambda-image-j8-layer-hostfix",
+   "compute": "lambda",
+   "mode": "image-layer",
+   "title": "lambda/java:8.al2023 + layer in /opt + wrapper, function adds assumeOriginalHostName",
+   "doc": "src/06-java.md Packaging table: Lambda layer (java8.al2023), remedy for FINDING_J8",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-java-lambda:java8-layer",
+    "runtime": "image",
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    },
+    "memory": 1024
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto8-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate amazoncorretto:8, no change (8u512 offers TLS 1.3, classical)",
+   "doc": "src/06-java.md By JDK and compute type (Fargate column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto8 java",
+   "ecs": {
+    "image": "pqc-java:corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "finding": "src/06-java.md:30 ('SunJSSE, TLS 1.2 client default'), :376 ('8 defaults clients to TLS 1.2') and :445 state it for JDK 8 generally. Observed: only the Lambda Java 8 runtime sets jdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1 (java8.al2 zip and the lambda/java:8.al2023 image, also under the image's own RIE without LocalStack); a plain Corretto 8u512 (amazoncorretto:8, and /var/lang/bin/java in the Lambda image started directly) offers TLS 1.3 by default (classical P-256 here). BCJSSE honours the same property, so on Lambda the flag is required with the kit; in containers and EC2 with 8u512 it is not (java-fargate-corretto8-agent-noproto is PQ without it). The flag in JAVA_TOOL_OPTIONS overrides Lambda's value.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto8-agent",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate amazoncorretto:8 + kit v2 via task-definition JAVA_TOOL_OPTIONS (taskdef.json) + TLSv1.3 flag -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md taskdef.json",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "runtime_label": "pqc-java:corretto8 java",
+   "ecs": {
+    "image": "pqc-java:corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2"
+    }
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto8-agent-hostfix",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate amazoncorretto:8 + kit v2 + TLSv1.3 flag + assumeOriginalHostName",
+   "doc": "src/06-java.md taskdef.json (remedy for FINDING_J8)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto8 java",
+   "ecs": {
+    "image": "pqc-java:corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    }
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto8-agent-noproto",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate amazoncorretto:8 + kit v2 + assumeOriginalHostName, WITHOUT the TLSv1.3 flag",
+   "doc": "src/06-java.md JVM flags: jdk.tls.client.protocols",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto8 java",
+   "ecs": {
+    "image": "pqc-java:corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    }
+   },
+   "finding": "src/06-java.md:30 ('SunJSSE, TLS 1.2 client default'), :376 ('8 defaults clients to TLS 1.2') and :445 state it for JDK 8 generally. Observed: only the Lambda Java 8 runtime sets jdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1 (java8.al2 zip and the lambda/java:8.al2023 image, also under the image's own RIE without LocalStack); a plain Corretto 8u512 (amazoncorretto:8, and /var/lang/bin/java in the Lambda image started directly) offers TLS 1.3 by default (classical P-256 here). BCJSSE honours the same property, so on Lambda the flag is required with the kit; in containers and EC2 with 8u512 it is not (java-fargate-corretto8-agent-noproto is PQ without it). The flag in JAVA_TOOL_OPTIONS overrides Lambda's value.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto11-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate amazoncorretto:11, no change",
+   "doc": "src/06-java.md By JDK and compute type (Fargate column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto11 java",
+   "ecs": {
+    "image": "pqc-java:corretto11",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto11-agent",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate amazoncorretto:11 + kit v2 via task-definition JAVA_TOOL_OPTIONS (taskdef.json)",
+   "doc": "src/06-java.md taskdef.json",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto11 java",
+   "ecs": {
+    "image": "pqc-java:corretto11",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto17-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate amazoncorretto:17, no change",
+   "doc": "src/06-java.md By JDK and compute type (Fargate column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto17 java",
+   "ecs": {
+    "image": "pqc-java:corretto17",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto17-agent",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate amazoncorretto:17 + kit v2 via task-definition JAVA_TOOL_OPTIONS (taskdef.json)",
+   "doc": "src/06-java.md taskdef.json",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto17 java",
+   "ecs": {
+    "image": "pqc-java:corretto17",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto21-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate amazoncorretto:21, no change",
+   "doc": "src/06-java.md By JDK and compute type (Fargate column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21 java",
+   "ecs": {
+    "image": "pqc-java:corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto21-agent",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate amazoncorretto:21 + kit v2 via task-definition JAVA_TOOL_OPTIONS (taskdef.json)",
+   "doc": "src/06-java.md taskdef.json",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21 java",
+   "ecs": {
+    "image": "pqc-java:corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto25-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate amazoncorretto:25, no change",
+   "doc": "src/06-java.md By JDK and compute type (Fargate column)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto25 java",
+   "ecs": {
+    "image": "pqc-java:corretto25",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto21-agent-ec",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate corretto 21 + kit v2, EC client keystore",
+   "doc": "src/06-java.md E",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21 java",
+   "ecs": {
+    "image": "pqc-java:corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12",
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto21-agent-image",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate image built from Dockerfile.jdk21-agent (ENV JAVA_TOOL_OPTIONS, USER 1000)",
+   "doc": "src/06-java.md Dockerfile.jdk21-agent",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21-agent-image java",
+   "ecs": {
+    "image": "pqc-java:corretto21-agent-image",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-temurin21-static",
+   "compute": "ecs-fargate",
+   "mode": "static",
+   "title": "Fargate temurin21 + Dockerfile.static (bc-static.security + BC jars on -cp)",
+   "doc": "src/06-java.md Dockerfile.static",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:temurin21-static java",
+   "ecs": {
+    "image": "pqc-java:temurin21-static",
+    "command": [
+     "java",
+     "-cp",
+     "/app:/opt/pq-tls/*",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto17-static",
+   "compute": "ecs-fargate",
+   "mode": "static",
+   "title": "Fargate corretto17 + Dockerfile.static (bc-static.security + BC jars on -cp)",
+   "doc": "src/06-java.md Dockerfile.static",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto17-static java",
+   "ecs": {
+    "image": "pqc-java:corretto17-static",
+    "command": [
+     "java",
+     "-cp",
+     "/app:/opt/pq-tls/*",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto21-static",
+   "compute": "ecs-fargate",
+   "mode": "static",
+   "title": "Fargate corretto21 + Dockerfile.static (bc-static.security + BC jars on -cp)",
+   "doc": "src/06-java.md Dockerfile.static",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21-static java",
+   "ecs": {
+    "image": "pqc-java:corretto21-static",
+    "command": [
+     "java",
+     "-cp",
+     "/app:/opt/pq-tls/*",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-corretto21-static-ec",
+   "compute": "ecs-fargate",
+   "mode": "static",
+   "title": "Fargate corretto21 static registration, EC client cert (PKIX line in bc-static.security)",
+   "doc": "src/06-java.md Packaging table: 'the PKIX line in this file was not run separately'",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21-static java",
+   "ecs": {
+    "image": "pqc-java:corretto21-static",
+    "command": [
+     "java",
+     "-cp",
+     "/app:/opt/pq-tls/*",
+     "Probe"
+    ],
+    "env": {
+     "PQC_JAVA_CLIENT_KS": "client-ec.p12"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-al2023-j17-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 + dnf java-17-amazon-corretto-headless",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-17/bin/java",
+   "ecs": {
+    "image": "pqc-java:al2023",
+    "command": [
+     "/usr/lib/jvm/jre-17/bin/java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-al2023-j21-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 + dnf java-21-amazon-corretto-headless",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-21/bin/java",
+   "ecs": {
+    "image": "pqc-java:al2023",
+    "command": [
+     "/usr/lib/jvm/jre-21/bin/java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-al2023-j25-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 + dnf java-25-amazon-corretto-headless",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-25/bin/java",
+   "ecs": {
+    "image": "pqc-java:al2023",
+    "command": [
+     "/usr/lib/jvm/jre-25/bin/java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-fargate-al2023-j21-agent",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Fargate AL2023 dnf Corretto 21 + kit v2 (task env)",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-21/bin/java",
+   "ecs": {
+    "image": "pqc-java:al2023",
+    "command": [
+     "/usr/lib/jvm/jre-21/bin/java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ecsec2-corretto21-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, corretto 21",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21 java",
+   "ecs": {
+    "image": "pqc-java:corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ecsec2-corretto21-agent",
+   "compute": "ecs-ec2",
+   "mode": "agent",
+   "title": "ECS EC2 launch type, corretto 21 + kit v2",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto21 java",
+   "ecs": {
+    "image": "pqc-java:corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ecsec2-corretto25-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, corretto 25",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto25 java",
+   "ecs": {
+    "image": "pqc-java:corretto25",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ecsec2-corretto17-static",
+   "compute": "ecs-ec2",
+   "mode": "static",
+   "title": "ECS EC2 launch type, corretto 17 static registration",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-java:corretto17-static java",
+   "ecs": {
+    "image": "pqc-java:corretto17-static",
+    "command": [
+     "java",
+     "-cp",
+     "/app:/opt/pq-tls/*",
+     "Probe"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ecsec2-corretto8-agent",
+   "compute": "ecs-ec2",
+   "mode": "agent",
+   "title": "ECS EC2 launch type, corretto 8 + kit v2 + TLSv1.3 flag -> HttpsURLConnection fails on JDK 8 (host name)",
+   "doc": "src/06-java.md Packaging table: Fargate, ECS, EKS",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "No hostname specified for HTTPS endpoint ID check"
+    }
+   },
+   "runtime_label": "pqc-java:corretto8 java",
+   "ecs": {
+    "image": "pqc-java:corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/app",
+     "Probe"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2"
+    }
+   },
+   "finding": "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID check'. JDK 8's HttpsURLConnection creates the socket without a host name; BCJSSE 1.78+ fails endpoint identification by default then (bc-java issue #1656). Adding -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not HttpsURLConnection. JDK 11+ is not affected.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j11-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 Corretto 11 (dnf), no change",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-11/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-11/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j11-agent",
+   "compute": "ec2",
+   "mode": "agent",
+   "title": "EC2 AL2023 Corretto 11 + kit v2 (systemd Environment= equivalent)",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-11/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-11/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pqc/java/pq-tls/pq-tls.security -javaagent:/opt/pqc/java/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j17-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 Corretto 17 (dnf), no change",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-17/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-17/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j17-agent",
+   "compute": "ec2",
+   "mode": "agent",
+   "title": "EC2 AL2023 Corretto 17 + kit v2 (systemd Environment= equivalent)",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-17/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-17/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pqc/java/pq-tls/pq-tls.security -javaagent:/opt/pqc/java/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j21-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 Corretto 21 (dnf), no change",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-21/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-21/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j21-agent",
+   "compute": "ec2",
+   "mode": "agent",
+   "title": "EC2 AL2023 Corretto 21 + kit v2 (systemd Environment= equivalent)",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-21/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-21/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pqc/java/pq-tls/pq-tls.security -javaagent:/opt/pqc/java/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j25-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 Corretto 25 package",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-25/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-25/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-default-java",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 'java' on PATH with 11/17/21/25 installed (alternatives picks the highest: 25)",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2023-j21-agent-ec",
+   "compute": "ec2",
+   "mode": "agent",
+   "title": "EC2 AL2023 Corretto 21 + kit v2, EC client keystore",
+   "doc": "src/06-java.md E",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-21/bin/java",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/usr/lib/jvm/jre-21/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pqc/java/pq-tls/pq-tls.security -javaagent:/opt/pqc/java/pq-tls/pq-tls-agent.jar",
+     "PQC_JAVA_CLIENT_KS": "/opt/pqc/java/client-ec.p12"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2-j11-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 Amazon Linux 2 Corretto 11, no change",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 /usr/lib/jvm/jre-11/bin/java",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/usr/lib/jvm/jre-11/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2-j11-agent",
+   "compute": "ec2",
+   "mode": "agent",
+   "title": "EC2 Amazon Linux 2 Corretto 11 + kit v2",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 /usr/lib/jvm/jre-11/bin/java",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/usr/lib/jvm/jre-11/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pqc/java/pq-tls/pq-tls.security -javaagent:/opt/pqc/java/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2-j17-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 Amazon Linux 2 Corretto 17, no change",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 /usr/lib/jvm/jre-17/bin/java",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/usr/lib/jvm/jre-17/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "java-ec2-al2-j17-agent",
+   "compute": "ec2",
+   "mode": "agent",
+   "title": "EC2 Amazon Linux 2 Corretto 17 + kit v2",
+   "doc": "src/06-java.md Packaging table: EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 /usr/lib/jvm/jre-17/bin/java",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/usr/lib/jvm/jre-17/bin/java -cp /opt/pqc/java Probe",
+    "setup": [],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pqc/java/pq-tls/pq-tls.security -javaagent:/opt/pqc/java/pq-tls/pq-tls-agent.jar"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  }
+ ]
+}
