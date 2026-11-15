@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ALB and NLB with hybrid post-quantum TLS listener policies, HTTPS/TLS targets, logs and a Config rule.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  CertificateArn:
+    Type: String
+  LogBucket:
+    Type: String
+  PqPolicy:
+    Type: String
+    Default: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+    AllowedValues:
+      - ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+      - ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09
+      - ELBSecurityPolicy-TLS13-1-3-PQ-2025-09
+      - ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09
+
+Resources:
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB 443
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups: [!Ref AlbSecurityGroup]
+      LoadBalancerAttributes:
+        - Key: access_logs.s3.enabled
+          Value: "true"
+        - Key: access_logs.s3.bucket
+          Value: !Ref LogBucket
+        - Key: access_logs.s3.prefix
+          Value: alb-access
+        - Key: connection_logs.s3.enabled
+          Value: "true"
+        - Key: connection_logs.s3.bucket
+          Value: !Ref LogBucket
+        - Key: connection_logs.s3.prefix
+          Value: alb-conn
+
+  AppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      TargetType: ip
+      Protocol: HTTPS
+      Port: 8443
+      HealthCheckProtocol: HTTPS
+      HealthCheckPath: /healthz
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: !Ref PqPolicy
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppTargetGroup
+
+  Nlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: network
+      Subnets: !Ref PublicSubnetIds
+      LoadBalancerAttributes:
+        - Key: access_logs.s3.enabled
+          Value: "true"
+        - Key: access_logs.s3.bucket
+          Value: !Ref LogBucket
+        - Key: access_logs.s3.prefix
+          Value: nlb-access
+
+  SvcTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      TargetType: ip
+      Protocol: TLS
+      Port: 8443
+
+  TlsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Nlb
+      Port: 443
+      Protocol: TLS
+      SslPolicy: !Ref PqPolicy
+      AlpnPolicy: [HTTP2Preferred]
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SvcTargetGroup
+
+  ElbPqConfigRule:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: elbv2-pq-security-policy
+      Source:
+        Owner: AWS
+        SourceIdentifier: ELBV2_PREDEFINED_SECURITY_POLICY_SSL_CHECK
+      InputParameters:
+        sslPolicies: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09,ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09,ELBSecurityPolicy-TLS13-1-3-PQ-2025-09,ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::ElasticLoadBalancingV2::Listener
+
+Outputs:
+  AlbDns:
+    Value: !GetAtt Alb.DNSName
+  NlbDns:
+    Value: !GetAtt Nlb.DNSName

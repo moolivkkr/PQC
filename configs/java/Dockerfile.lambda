@@ -1,0 +1,6 @@
+FROM public.ecr.aws/lambda/java:21
+COPY build/classes/ ${LAMBDA_TASK_ROOT}/
+COPY build/dependency/ ${LAMBDA_TASK_ROOT}/lib/
+COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/
+ENV JAVA_TOOL_OPTIONS="-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar"
+CMD ["com.example.Handler::handleRequest"]

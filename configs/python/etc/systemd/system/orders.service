@@ -1,0 +1,14 @@
+[Unit]
+Description=orders API (gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=orders
+WorkingDirectory=/opt/orders
+Environment=OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf
+ExecStart=/opt/orders/venv/bin/gunicorn -c /opt/orders/gunicorn.conf.py app:wsgi
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

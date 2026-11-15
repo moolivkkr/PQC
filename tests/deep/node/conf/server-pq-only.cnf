@@ -1,0 +1,11 @@
+# TEST HARNESS ONLY: forces every OpenSSL user in the process to offer/accept only X25519MLKEM768.
+# Both section names, so it applies to Node (nodejs_conf) and to C servers (openssl_conf).
+openssl_conf = init
+nodejs_conf = init
+[init]
+ssl_conf = ssl_sect
+[ssl_sect]
+system_default = sd
+[sd]
+MinProtocol = TLSv1.3
+Groups = X25519MLKEM768

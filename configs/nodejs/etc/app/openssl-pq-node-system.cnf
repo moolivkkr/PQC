@@ -1,0 +1,12 @@
+# Node reads nodejs_conf by default and openssl_conf with --openssl-shared-config; both point here.
+openssl_conf = pq_init
+nodejs_conf = pq_init
+
+[pq_init]
+ssl_conf = pq_ssl
+
+[pq_ssl]
+system_default = pq_system_default
+
+[pq_system_default]
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192

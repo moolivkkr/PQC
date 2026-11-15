@@ -1,0 +1,117 @@
+# TAB: databases  node=4939fb11-df6b  rev=14
+
+## 1. H1 and lead paragraphs
+H1: Databases and data services
+
+Two TLS stacks meet on every database connection. The server engine (its version, its group setting and the TLS library it links) decides which groups it accepts; the client driver's TLS stack decides which groups it offers. Hybrid X25519MLKEM768 needs both sides to support it, TLS 1.3, and no setting on either side that pins a classical list.
+
+On managed services AWS owns the server stack, so you change a parameter group or the engine version. On self-managed engines you choose the image and set the engine's group option, or an OpenSSL config file where the engine has none. Tests in this tab ran on 2026-11-14 (arm64 Docker); scripts and output are kept in the data work directory.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+  H3: Managed AWS data services
+  H3: Self-managed engines (EC2, ECS/Fargate, EKS)
+H2: Client side (app level)
+H2: Server side
+  H3: RDS for PostgreSQL 18 and Aurora PostgreSQL 18
+  H3: RDS and Aurora MySQL, RDS for MariaDB
+  H3: Self-managed PostgreSQL 18 (Tested)
+  H3: Self-managed MySQL
+  H3: Self-managed MariaDB, Valkey, Redis OSS
+  H3: Kafka and Cassandra (JVM)
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+  H3: postgresql.conf (TLS section)
+  H3: pg_hba.conf
+  H3: rds-pg-pq.tf (Terraform: RDS instance and Aurora cluster parameter groups)
+  H3: rds-pg-pq.yaml (CloudFormation)
+  H3: tls-pq.cnf (MySQL 26.x)
+  H3: 90-tls.cnf (MariaDB 13 on OpenSSL 3.5)
+  H3: valkey.conf (TLS section)
+  H3: openssl-groups.cnf (process-wide groups for daemons without a group option)
+  H3: server.properties (Kafka TLS listener; Unverified)
+  H3: postgres-pq.yaml (EKS StatefulSet)
+  H3: valkey-pq task definition (ECS/Fargate)
+  H3: 10-pq-groups.conf (systemd drop-in, EC2)
+
+## 3. Status matrix (first table)
+| Service | PQ (server side) | Minimum version / setting | Evidence |
+| RDS for PostgreSQL | Yes, opt-in | Engine 18+. ssl_groups in the DB parameter group; the default prime256v1:X25519 has no ML-KEM. Allow-list: X25519MLKEM768, SecP256r1MLKEM768, X25519, prime256v1, secp384r1. Dynamic, no reboot. TLS library is AWS-LC. | Documented (RDS PostgreSQL SSL) |
+| Aurora PostgreSQL | Yes, opt-in | 18.x. ssl_groups in the cluster parameter group (family aurora-postgresql18). The API rejects colon lists; use commas. | Claimed (Classmethod, 2026-10-31); the author did not test a handshake |
+| RDS for MySQL | Yes | 8.4.11+. Enabling parameter not documented. RDS MySQL 8.4 links AWS-LC, so upstream tls_kex may not apply. | Documented (What's New); parameter not confirmed (analysis, Claimed) |
+| Aurora MySQL | Yes, on by default | Two engine lines: Aurora MySQL 8.4.8+ (MySQL 8.4-compatible, GA 2026-09-03) and Aurora MySQL 3.14.0+ (MySQL 8.0.46-compatible, 2026-10-26). Groups X25519MLKEM768, SecP256r1MLKEM768 for TLS 1.3; no parameter. Status variable Aurora_ssl_named_group (3.14.0 notes) shows the group. | Documented (3.14.0 notes, 8.4.8 notes); JDBC handshake Claimed (Classmethod) |
+| RDS for MariaDB | Yes, opt-in | 12.3.3; What's New also lists 11.4.13 and 11.8.9. Parameter name not confirmed here. | Documented (versions) |
+| RDS for Oracle, RDS for SQL Server | No statement found | – | Unverified |
+| RDS Proxy | No; the client-to-proxy leg stays classical | – | Claimed |
+| DynamoDB | Endpoint PQ (non-FIPS); FIPS endpoints and DAX not yet | Client side only | Documented |
+| ElastiCache, MemoryDB (Valkey, Redis OSS) | Data plane not documented; control-plane API only | – | Unverified |
+| MSK (Kafka) | TLS 1.3 policies announced 2026-10-30; ML-KEM not documented | – | Claimed |
+| Amazon MQ, OpenSearch, DocumentDB, Neptune, Redshift, Keyspaces, Timestream | No PQ statement found in service docs (searched 2026-11-14) | – | Unverified |
+
+## 4. Full configuration files section
+H2: Full configuration files
+H3: postgresql.conf (TLS section)
+```ini
+# /var/lib/postgresql/data/postgresql.conf  (PostgreSQL 18, OpenSSL 3.5) - TLS section
+listen_addresses = '*'
+```
+H3: pg_hba.conf
+```conf
+# /var/lib/postgresql/data/pg_hba.conf - TLS required for remote clients
+# TYPE    DATABASE  USER  ADDRESS       METHOD
+```
+H3: rds-pg-pq.tf (Terraform: RDS instance and Aurora cluster parameter groups)
+```hcl
+# rds-pg-pq.tf - hybrid PQ key exchange for RDS for PostgreSQL 18 and Aurora PostgreSQL 18
+variable "enforce_pq" {
+```
+H3: rds-pg-pq.yaml (CloudFormation)
+```yaml
+# rds-pg-pq.yaml - hybrid PQ key exchange parameter groups for PostgreSQL 18
+AWSTemplateFormatVersion: "2010-09-09"
+```
+H3: tls-pq.cnf (MySQL 26.x)
+```ini
+# /etc/my.cnf.d/tls-pq.cnf - MySQL 26.x built with OpenSSL 3.5
+[mysqld]
+```
+H3: 90-tls.cnf (MariaDB 13 on OpenSSL 3.5)
+```ini
+# /etc/mysql/mariadb.conf.d/90-tls.cnf
+[mariadbd]
+```
+H3: valkey.conf (TLS section)
+```conf
+# /etc/valkey/valkey.conf - TLS section (Valkey 8.x on OpenSSL 3.5)
+port 0
+```
+H3: openssl-groups.cnf (process-wide groups for daemons without a group option)
+```ini
+# /etc/ssl/openssl-groups.cnf - use with OPENSSL_CONF=/etc/ssl/openssl-groups.cnf
+# OpenSSL 3.5+ (Debian 13, Alpine 3.22+, Ubuntu 26.04). Tested with Valkey 8.1.11.
+```
+H3: server.properties (Kafka TLS listener; Unverified)
+```properties
+# /opt/kafka/config/server.properties - TLS listener (broker on JDK 25.0.5+)
+listeners=SSL://:9093
+```
+H3: postgres-pq.yaml (EKS StatefulSet)
+```yaml
+# postgres-pq.yaml - PostgreSQL 18 on EKS with hybrid PQ groups (same -c flags as the tests)
+apiVersion: apps/v1
+```
+H3: valkey-pq task definition (ECS/Fargate)
+```json
+{
+  "family": "valkey-pq",
+```
+Bake valkey.conf, openssl-groups.cnf and the certificates into the image and pin it by digest.
+H3: 10-pq-groups.conf (systemd drop-in, EC2)
+```ini
+# /etc/systemd/system/valkey.service.d/10-pq-groups.conf
+[Service]
+```
+Then systemctl daemon-reload && systemctl restart valkey.

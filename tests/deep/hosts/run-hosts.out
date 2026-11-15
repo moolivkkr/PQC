@@ -1,0 +1,233 @@
+srv image debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.7 9 Jun 2026
+READY
+##### amazonlinux:2023 (amazonlinux@sha256:3ccfbe800f864982b0a4e124a614b2382518cbd04b3c1cd35202bd46f392675b) profile=al2023
+system-release-2023.12.20261102-0.amzn2023.noarch
+openssl-libs-3.5.8-1.amzn2023.0.3.aarch64
+crypto-policies-20260224-1.gitea0f072.amzn2023.0.6.noarch
+openssh-clients-9.9p1-16.amzn2023.0.1.aarch64
+curl-minimal-8.21.0-5.amzn2023.0.3.aarch64
+package gnutls is not installed
+package nss is not installed
+policy: DEFAULT
+--- modules:
+AD-SUPPORT-LEGACY.pmod
+AD-SUPPORT.pmod
+ECDHE-ONLY.pmod
+NO-ENFORCE-EMS.pmod
+NO-SHA1.pmod
+OSPP.pmod
+PQ.pmod
+SHA1.pmod
+--- PQ.pmod:
+# An subpolicy enabling some of the
+# post-quantum and hybrid algorithms
+# currently available in RHEL-9.
+# Note that not all the backends support all the algorithms.
+
+group = +MLKEM1024-X448
+group = +P384-MLKEM1024
+group = +P256-MLKEM768
+group = +MLKEM768-X25519
+
+sign = +MLDSA87-ED448
+sign = +MLDSA65-ED25519
+sign = +MLDSA87
+sign = +MLDSA65
+sign = +MLDSA44
+
+key_exchange = +KEM-ECDH
+=== DEFAULT
+s_client port=4433 :: A01B3287FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:ssl/record/rec_layer_s3.c:918:SSL alert number 40
+s_client port=4434 :: 
+curl port=4433 rc=0 :: * TLSv1.3 (IN), TLS alert, handshake failure (552): * TLS connect error: error:0A000410:SSL routines::ssl/tls alert handshake failure 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: (no match)
+ssh port=2222 :: debug1: kex: algorithm: (no match)
+Groups = *X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192
+to fully take place.
+=== DEFAULT:PQ policy: DEFAULT:PQ
+s_client port=4433 :: Negotiated TLS1.3 group: X25519MLKEM768
+s_client port=4434 :: 
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: mlkem768x25519-sha256
+ssh port=2222 :: debug1: kex: algorithm: (no match)
+Groups = *?X25519MLKEM768:?x25519_mlkem768:?SecP256r1MLKEM768:?p256_mlkem768:?SecP384r1MLKEM1024:?p384_mlkem1024/*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192
+GSSAPIKexAlgorithms gss-curve25519-sha256-,gss-nistp256-sha256-,gss-group14-sha256-,gss-group16-sha512-
+KexAlgorithms mlkem768x25519-sha256,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+tls-enabled-group = GROUP-X25519-MLKEM768
+tls-enabled-group = GROUP-SECP256R1-MLKEM768
+tls-enabled-group = GROUP-SECP384R1-MLKEM1024
+tls-enabled-group = GROUP-X25519
+tls-enabled-group = GROUP-SECP256R1
+=== custom subpolicy PQ-HYBRID (X25519MLKEM768 first, nothing else changed)
+to fully take place.
+policy: DEFAULT:PQ-HYBRID
+s_client port=4433 :: Negotiated TLS1.3 group: X25519MLKEM768
+s_client port=4434 :: 
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+Groups = *?X25519MLKEM768:?x25519_mlkem768/*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192
+=== rollback to DEFAULT
+to fully take place.
+policy: DEFAULT
+s_client port=4433 :: A00BAD8BFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:ssl/record/rec_layer_s3.c:918:SSL alert number 40
+s_client port=4434 :: 
+=== OPENSSL_CONF per-process (policy DEFAULT)
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+##### debian:trixie-slim (debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2) profile=ssh-curl-wget
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.7 9 Jun 2026
+curl 8.14.1 (aarch64-unknown-linux-gnu) libcurl/8.14.1 OpenSSL/3.5.7 zlib/1.3.1 brotli/1.1.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.2 libssh2/1.11.1 nghttp2/1.64.0 nghttp3/1.8.0 librtmp/2.3 OpenLDAP/2.6.10
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+GNU Wget 1.25.0 built on linux-gnu.
+s_client port=4433 :: Negotiated TLS1.3 group: X25519MLKEM768
+s_client port=4434 :: 
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: mlkem768x25519-sha256
+ssh port=2222 :: debug1: kex: algorithm: sntrup761x25519-sha512@openssh.com
+wget port=4433 rc=4 :: GnuTLS: received alert [40]: Handshake failed Unable to establish SSL connection. 
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:42:29 (587 MB/s) - '/dev/null' saved [4772] 
+##### debian:bookworm-slim (debian@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc) profile=ssh-curl-wget
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+OpenSSH_9.2p1 Debian-2+deb12u10, OpenSSL 3.0.22 25 Aug 2026
+curl 7.88.1 (aarch64-unknown-linux-gnu) libcurl/7.88.1 OpenSSL/3.0.22 zlib/1.2.13 brotli/1.0.9 zstd/1.5.4 libidn2/2.3.3 libpsl/0.21.2 (+libidn2/2.3.3) libssh2/1.10.0 nghttp2/1.52.0 librtmp/2.3 OpenLDAP/2.5.13
+OpenSSL 3.0.22 25 Aug 2026 (Library: OpenSSL 3.0.22 25 Aug 2026)
+GNU Wget 1.21.3 built on linux-gnu.
+s_client port=4433 :: 20B0A7A9FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../ssl/record/rec_layer_s3.c:1602:SSL alert number 40
+s_client port=4434 :: Server Temp Key: X25519, 253 bits
+curl port=4433 rc=0 :: * TLSv1.3 (IN), TLS alert, handshake failure (552): * OpenSSL/3.0.22: error:0A000410:SSL routines::sslv3 alert handshake failure 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: (no match)
+ssh port=2222 :: debug1: kex: algorithm: sntrup761x25519-sha512@openssh.com
+wget port=4433 rc=4 :: GnuTLS: received alert [40]: Handshake failed Unable to establish SSL connection. 
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:42:36 (1.23 GB/s) - '/dev/null' saved [4772] 
+##### ubuntu:24.04 (ubuntu@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5) profile=ssh-curl-wget
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024
+curl 8.5.0 (aarch64-unknown-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10
+OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)
+GNU Wget 1.21.4 built on linux-gnu.
+s_client port=4433 :: 20107B81FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../ssl/record/rec_layer_s3.c:1599:SSL alert number 40
+s_client port=4434 :: Server Temp Key: X25519, 253 bits
+curl port=4433 rc=0 :: * TLSv1.3 (IN), TLS alert, handshake failure (552): * OpenSSL/3.0.13: error:0A000410:SSL routines::sslv3 alert handshake failure 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: (no match)
+ssh port=2222 :: debug1: kex: algorithm: sntrup761x25519-sha512@openssh.com
+wget port=4433 rc=4 :: OpenSSL: error:0A000410:SSL routines::sslv3 alert handshake failure Unable to establish SSL connection. 
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:42:49 (6.65 GB/s) - '/dev/null' saved [5052] 
+##### ubuntu:26.04 (ubuntu@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96) profile=ssh-curl-wget
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026
+curl 8.18.0 (aarch64-unknown-linux-gnu) libcurl/8.18.0 OpenSSL/3.5.5 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.2 libssh2/1.11.1 nghttp2/1.68.0 librtmp/2.3 mit-krb5/1.22.1 OpenLDAP/2.6.10
+OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+GNU Wget 1.25.0 built on linux-gnu.
+s_client port=4433 :: Negotiated TLS1.3 group: X25519MLKEM768
+s_client port=4434 :: 
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: mlkem768x25519-sha256
+ssh port=2222 :: debug1: kex: algorithm: sntrup761x25519-sha512@openssh.com
+wget port=4433 rc=4 :: GnuTLS: received alert [40]: Handshake failed Unable to establish SSL connection. 
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:42:59 (1.15 GB/s) - '/dev/null' saved [4850] 
+##### alpine:3.24 (alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf) profile=ssh-curl-wget
+PRETTY_NAME="Alpine Linux v3.24"
+OpenSSH_10.3p1, OpenSSL 3.5.9 29 Sep 2026
+curl 8.23.0 (aarch64-alpine-linux-musl) libcurl/8.23.0 OpenSSL/3.5.9 zlib/1.3.2 brotli/1.2.1 zstd/1.5.7 c-ares/1.34.9 libidn2/2.3.8 libpsl/0.21.5 nghttp2/1.70.0
+OpenSSL 3.5.9 29 Sep 2026 (Library: OpenSSL 3.5.9 29 Sep 2026)
+GNU Wget 1.25.0 built on linux-musl.
+s_client port=4433 :: Negotiated TLS1.3 group: X25519MLKEM768
+s_client port=4434 :: 
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: mlkem768x25519-sha256
+ssh port=2222 :: debug1: kex: algorithm: sntrup761x25519-sha512@openssh.com
+wget port=4433 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:43:02 (3.83 GB/s) - '/dev/null' saved [5313] 
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:43:02 (890 MB/s) - '/dev/null' saved [5289] 
+##### alpine:3.21 (alpine@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab) profile=ssh-curl-wget
+PRETTY_NAME="Alpine Linux v3.21"
+OpenSSH_9.9p2, OpenSSL 3.3.7 7 Apr 2026
+curl 8.14.1 (aarch64-alpine-linux-musl) libcurl/8.14.1 OpenSSL/3.3.7 zlib/1.3.2 brotli/1.1.1 zstd/1.5.6 c-ares/1.34.9 libidn2/2.3.7 libpsl/0.21.5 nghttp2/1.69.0
+OpenSSL 3.3.7 7 Apr 2026 (Library: OpenSSL 3.3.7 7 Apr 2026)
+GNU Wget 1.25.0 built on linux-musl.
+s_client port=4433 :: 205DDBBDFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:ssl/record/rec_layer_s3.c:914:SSL alert number 40
+s_client port=4434 :: Server Temp Key: X25519, 253 bits
+curl port=4433 rc=0 :: * TLSv1.3 (IN), TLS alert, handshake failure (552): * TLS connect error: error:0A000410:SSL routines::ssl/tls alert handshake failure 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+ssh port=22 :: debug1: kex: algorithm: mlkem768x25519-sha256
+ssh port=2222 :: debug1: kex: algorithm: sntrup761x25519-sha512@openssh.com
+wget port=4433 rc=4 :: OpenSSL: error:0A000410:SSL routines::ssl/tls alert handshake failure Unable to establish SSL connection. 
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok 2026-11-14 17:43:05 (578 MB/s) - '/dev/null' saved [5226] 
+##### alpine:3.24 (alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf) profile=busybox-wget
+BusyBox v1.37.0 (2026-01-10 15:38:28 UTC) multi-call binary.
+wget port=4433 rc=0 :: '/dev/null' saved 
+wget port=4434 rc=0 :: '/dev/null' saved 
+##### curlimages/curl:latest (curlimages/curl@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93) profile=curlimage
+curl 8.23.0 (aarch64-unknown-linux-musl) libcurl/8.23.0 OpenSSL/3.5.9 zlib/1.3.2 brotli/1.2.1 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 libssh2/1.11.1 nghttp2/1.70.0 mit-krb5/1.22.2
+Release-Date: 2026-10-14
+curl port=4433 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+curl port=4434 rc=0 :: * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey * TLSv1.3 (IN), TLS alert, close notify (256): 
+##### debian:trixie-slim (debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2) profile=git
+git version 2.47.3
+	libcurl-gnutls.so.4 => /lib/aarch64-linux-gnu/libcurl-gnutls.so.4 (0x0000ffffaeab0000)
+	libngtcp2_crypto_gnutls.so.8 => /lib/aarch64-linux-gnu/libngtcp2_crypto_gnutls.so.8 (0x0000ffffae770000)
+	libgnutls.so.30 => /lib/aarch64-linux-gnu/libgnutls.so.30 (0x0000ffffae2a0000)
+git port=4433 :: fatal: unable to access 'https://srv:4433/r.git/': GnuTLS, handshake failed: Handshake failed 
+git port=4434 :: fatal: https://srv:4434/r.git/info/refs not valid: is this a git repository? 
+##### alpine:3.24 (alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf) profile=git
+git version 2.54.1
+	libcurl.so.4 => /usr/lib/libcurl.so.4 (0xffff91d9a000)
+	libssl.so.3 => /usr/lib/libssl.so.3 (0xffff91ad0000)
+git port=4433 :: fatal: https://srv:4433/r.git/info/refs not valid: is this a git repository? 
+git port=4434 :: fatal: https://srv:4434/r.git/info/refs not valid: is this a git repository? 
+##### amazon/aws-cli:latest (amazon/aws-cli@sha256:33a16c53ea442e918b58df67301ad76a8fb57082c39f7e78753b898c3f3e87c2) profile=awscli2
+aws-cli/2.40.3 Python/3.14.8 Linux/7.0.14-linuxkit docker/aarch64.amzn.2023
+aws port=4433 :: 
+aws port=4434 :: 
+##### python:3.13-slim (python@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90) profile=awscli1
+[notice] To update, run: pip install --upgrade pip
+aws-cli/1.46.3 Python/3.13.18 Linux/7.0.14-linuxkit botocore/1.43.62
+OpenSSL 3.5.7 9 Jun 2026
+aws1 port=4433 ::   warnings.warn( 
+aws1 port=4434 ::   warnings.warn( 
+##### python:3.12-slim-bookworm (python@sha256:935c3c5b12357a7e10caa9c1e6ca5692344d97cf229832ef584be2cec9fc03df) profile=awscli1
+[notice] To update, run: pip install --upgrade pip
+aws-cli/1.46.3 Python/3.12.16 Linux/7.0.14-linuxkit botocore/1.43.62
+OpenSSL 3.0.22 25 Aug 2026
+aws1 port=4433 ::  SSL validation failed for https://srv:4433/ [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1011) 
+aws1 port=4434 ::   warnings.warn( 
+##### alpine/k8s:1.34.1 (alpine/k8s@sha256:ec714df3813b5405292860f8a1c55c5727bf8c33c88992f1e981efad8065547f) profile=kubectl
+Client Version: v1.34.1
+Kustomize Version: v5.7.1
+kubectl port=4433 :: Please enter Username: error: EOF 
+kubectl port=4434 :: Please enter Username: error: EOF 
+##### alpine/helm:latest (alpine/helm@sha256:a3b9d617c0c30a6c488cebb429c4ba83995a26dc2184599af5fd408a361b2e67) profile=helm
+version.BuildInfo{Version:"v4.3.2", GitCommit:"8346aaa55e7161f7c547212d0a87f01367976727", GitTreeState:"clean", GoVersion:"go1.27.4", KubeClientVersion:"v1.37"}
+helm port=4433 :: 
+helm port=4434 :: 
+##### go version -m (Go toolchain and DefaultGODEBUG of CLI binaries)
+kubectl from alpine/k8s@sha256:ec714df3813b5405292860f8a1c55c5727bf8c33c88992f1e981efad8065547f
+helm from alpine/helm@sha256:a3b9d617c0c30a6c488cebb429c4ba83995a26dc2184599af5fd408a361b2e67
+terraform from hashicorp/terraform@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+== kubectl
+/b/kubectl: go1.24.6
+== helm
+/b/helm: go1.27.4
+	build	DefaultGODEBUG=tracebacklabels=0,x509sslcertoverrideplatform=0
+== terraform
+/b/terraform: go1.26.10
+	build	DefaultGODEBUG=winsymlink=0
+##### server logs
+Unable to negotiate with 172.29.0.3 port 42758: no matching key exchange method found. Their offer: sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,ext-info-c,kex-strict-c-v00@openssh.com [preauth]
+Unable to negotiate with 172.29.0.3 port 47658: no matching key exchange method found. Their offer: sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,ext-info-c,kex-strict-c-v00@openssh.com [preauth]
+Connection closed by authenticating user nobody 172.29.0.3 port 55682 [preauth]
+Connection closed by authenticating user nobody 172.29.0.3 port 55688 [preauth]
+Connection closed by authenticating user nobody 172.29.0.3 port 55700 [preauth]
+Connection closed by authenticating user nobody 172.29.0.3 port 39408 [preauth]
+Connection closed by authenticating user nobody 172.29.0.3 port 39420 [preauth]
+Connection closed by authenticating user nobody 172.29.0.3 port 39426 [preauth]
+DONE

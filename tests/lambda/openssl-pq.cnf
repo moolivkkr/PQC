@@ -1,0 +1,23 @@
+# Candidate Lambda fix for runtimes that use the system OpenSSL config (Python):
+# ship this file in the deployment package or a layer and set OPENSSL_CONF to its path.
+# Keeps the AL2023 defaults and only changes the key-exchange group list, PQ hybrid first.
+openssl_conf = openssl_init
+
+.include /etc/pki/tls/openssl.d
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = pq_system_default
+
+[pq_system_default]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1

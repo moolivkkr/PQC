@@ -1,0 +1,10 @@
+== resp: 6.0.1-6+deb13u7
+libstrongswan-openssl.so 
+  XOF_SHAKE128[openssl]
+loaded ike secret 'ike-pq'
+no authorities found, 0 unloaded
+no pools found, 0 unloaded
+loaded connection 'pq'
+successfully loaded 1 connections, 0 unloaded
+== responder log
+06[CFG]    proposals = ESP:AES_GCM_16_256/CURVE_25519/NO_EXT_SEQ/KE1_ML_KEM_768/KE1_KE_NONE

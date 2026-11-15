@@ -1,0 +1,5 @@
+# Test base: Amazon Linux 2023 + ASP.NET Core runtime 8 from dnf, PQ config file present but NOT enabled
+# (each test turns it on with -e OPENSSL_CONF=... or update-crypto-policies).
+FROM amazonlinux:2023
+RUN dnf install -y -q aspnetcore-runtime-8.0 crypto-policies-scripts openssl && dnf clean all
+COPY openssl-pq.cnf /etc/pq-tls/openssl-pq.cnf

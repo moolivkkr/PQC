@@ -1,0 +1,19 @@
+# Appended to $JAVA_HOME/conf/security/java.security with -Djava.security.properties=<this file>
+# (or merged into that file in the image). Bouncy Castle JSSE goes before SunJSSE; the BC JCA
+# provider goes last so all other crypto keeps resolving to the JDK providers.
+# The BC jars must be on the application class path (or in an image-wide location on it).
+# JDK 11/17/21 provider list, with BCJSSE inserted at position 4.
+security.provider.1=SUN
+security.provider.2=SunRsaSign
+security.provider.3=SunEC
+security.provider.4=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider BC
+security.provider.5=SunJSSE
+security.provider.6=SunJCE
+security.provider.7=SunJGSS
+security.provider.8=SunSASL
+security.provider.9=XMLDSig
+security.provider.10=SunPCSC
+security.provider.11=JdkLDAP
+security.provider.12=JdkSASL
+security.provider.13=SunPKCS11
+security.provider.14=org.bouncycastle.jce.provider.BouncyCastleProvider

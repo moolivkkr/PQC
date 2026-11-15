@@ -1,0 +1,33 @@
+# rds-pg-pq.yaml - hybrid PQ key exchange parameter groups for PostgreSQL 18
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  EnforcePq:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+Conditions:
+  Enforce: !Equals [!Ref EnforcePq, "true"]
+Resources:
+  Pg18PqParams:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: postgres18
+      Description: RDS PostgreSQL 18 hybrid ML-KEM key exchange
+      Parameters:
+        ssl_groups: !If [Enforce, "X25519MLKEM768,SecP256r1MLKEM768", "X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1"]
+        ssl_min_protocol_version: !If [Enforce, "TLSv1.3", "TLSv1.2"]
+        rds.force_ssl: "1"
+  AuroraPg18PqParams:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Family: aurora-postgresql18
+      Description: Aurora PostgreSQL 18 hybrid ML-KEM key exchange
+      Parameters:
+        ssl_groups: !If [Enforce, "X25519MLKEM768,SecP256r1MLKEM768", "X25519MLKEM768,SecP256r1MLKEM768,X25519,prime256v1"]
+        ssl_min_protocol_version: !If [Enforce, "TLSv1.3", "TLSv1.2"]
+        rds.force_ssl: "1"
+Outputs:
+  InstanceParameterGroup:
+    Value: !Ref Pg18PqParams
+  ClusterParameterGroup:
+    Value: !Ref AuroraPg18PqParams

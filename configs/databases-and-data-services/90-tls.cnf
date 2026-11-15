@@ -1,0 +1,9 @@
+# /etc/mysql/mariadb.conf.d/90-tls.cnf
+[mariadbd]
+ssl_ca   = /etc/mysql/tls/ca.crt
+ssl_cert = /etc/mysql/tls/server.crt
+ssl_key  = /etc/mysql/tls/server.key
+require_secure_transport = ON
+tls_version = TLSv1.2,TLSv1.3
+# Groups come from OpenSSL: X25519MLKEM768 first by default on OpenSSL 3.5.
+# To change order or enforce PQ-only, set OPENSSL_CONF (see openssl-groups.cnf).

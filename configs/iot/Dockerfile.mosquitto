@@ -1,0 +1,11 @@
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends mosquitto openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+COPY mosquitto.conf /etc/mosquitto/mosquitto.conf
+COPY openssl-pq-only.cnf /etc/mosquitto/openssl-pq-only.cnf
+# Certificates are mounted at /etc/mosquitto/certs (ECS secrets / EKS Secret volume).
+# Set OPENSSL_CONF=/etc/mosquitto/openssl-pq-only.cnf in the task/pod env to enforce PQ.
+USER mosquitto
+EXPOSE 8883
+ENTRYPOINT ["mosquitto", "-c", "/etc/mosquitto/mosquitto.conf"]

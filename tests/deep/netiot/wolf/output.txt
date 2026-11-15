@@ -1,0 +1,16 @@
+== versions
+openssl-3.5.9-r0
+wolfssl-5.9.4-r0
+wolfssl-dev-5.9.4-r0
+#undef  WOLFSSL_HAVE_MLKEM
+#define WOLFSSL_HAVE_MLKEM
+#undef  WOLFSSL_TLS13
+#define WOLFSSL_TLS13
+#undef  HAVE_CURVE25519
+#define HAVE_CURVE25519
+-- PQ client -> PQ-only server
+HANDSHAKE_OK version=TLSv1.3 group=X25519MLKEM768
+-- PQ client -> classical-only server
+HANDSHAKE_OK version=TLSv1.3 group=X25519
+-- classic client -> PQ-only server (must fail)
+HANDSHAKE_FAIL received alert fatal error

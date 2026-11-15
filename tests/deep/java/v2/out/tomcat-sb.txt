@@ -1,0 +1,24 @@
+== images: eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+== build Spring Boot 3.x app
+spring boot 3.5.16
+target/sbtls-1.jar
+jar: BOOT-INF/lib/spring-boot-3.5.16.jar
+org.springframework.boot.ssl.SslManagerBundle:       1 KeyManagerFactory.getDefaultAlgorithm       1 KeyManagerFactory.getInstance       1 TrustManagerFactory.getDefaultAlgorithm 
+org.springframework.boot.ssl.DefaultSslManagerBundle:       1 KeyManagerFactory.getDefaultAlgorithm       1 KeyManagerFactory.getInstance       1 TrustManagerFactory.getDefaultAlgorithm 
+== Tomcat 11.0.29 embedded, EC P-256 PKCS#12, JDK 21 + kit v2
+  9020 keyManagerAlgorithm not set (kit sets default PKIX)       | group: X25519MLKEM768  | CN=ec-main 
+  9020 same, classical-only client                               |                        | CN=ec-main 
+  9021 keyManagerAlgorithm=SunX509                               |                        |  alert handshake failure
+  9022 keyManagerAlgorithm=PKIX, kit fix switched off            | group: X25519MLKEM768  | CN=ec-main 
+== Spring Boot SSL bundle (jks bundle, PKCS#12 EC), JDK 21
+  9443 kit v2 (agent + pq-tls.security)                          | group: X25519MLKEM768  | CN=ec-main 
+  9443 kit v2, classical-only client                             |                        | CN=ec-main 
+  9444 agent with fix switched off (keep = SunX509)              |                        |  alert handshake failure
+  9020: pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX | keyManagerAlgorithm=PKIX
+  9021: pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX | keyManagerAlgorithm=SunX509
+  9022: pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=SunX509 | keyManagerAlgorithm=keep
+  9443: pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX | getDefaultAlgorithm()=PKIX
+  9444: pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=SunX509 | keyManagerAlgorithm=keep
+ :: Spring Boot ::               (v3.5.16)
+2026-11-14T21:30:39.918Z  INFO 73 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 9443 (https) with context path '/'
+left: 0

@@ -1,0 +1,10 @@
+# TEST HARNESS ONLY: classical-only control (X25519), TLS 1.3.
+openssl_conf = init
+nodejs_conf = init
+[init]
+ssl_conf = ssl_sect
+[ssl_sect]
+system_default = sd
+[sd]
+MinProtocol = TLSv1.3
+Groups = X25519

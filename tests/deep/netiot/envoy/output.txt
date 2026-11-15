@@ -1,0 +1,9 @@
+== envoy-egress
+http=200
+[2026-11-14T18:09:50.624Z] netiot-envoy-egress:10000 200 upstream_tls=TLSv1.3 upstream_group=X25519MLKEM768
+== envoy-egress-classic
+http=200
+[2026-11-14T18:09:50.691Z] netiot-envoy-egress-classic:10000 200 upstream_tls=TLSv1.3 upstream_group=X25519
+
+envoy  version: b2d89e0ae53916f28770771fbdd49c5c99c5c5a2/1.40.2/Clean/RELEASE/BoringSSL
+

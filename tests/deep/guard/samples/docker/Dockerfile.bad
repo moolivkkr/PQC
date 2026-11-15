@@ -1,0 +1,6 @@
+FROM node:20-bookworm-slim
+RUN dnf -y install crypto-policies-scripts && update-crypto-policies --set DEFAULT
+ENV GODEBUG=tlsmlkem=0 OPENSSL_CONF=/dev/null
+ENV JAVA_TOOL_OPTIONS="-Djdk.tls.namedGroups=x25519,secp256r1"
+COPY . /app
+CMD ["node","/app/index.js"]

@@ -1,0 +1,150 @@
+# TAB: dotnet  node=88a41389-c93f  rev=14
+
+## 1. H1 and lead paragraphs
+H1: .NET runbook
+
+.NET has no TLS library of its own. SslStream does every handshake (HttpClient, gRPC, Kestrel, Npgsql, MySqlConnector, StackExchange.Redis, the AWS SDK). On Linux it calls the OS OpenSSL (libssl.so.3); on Windows it calls Schannel. So the OS image or host decides, not the .NET version. The one exception is Confluent.Kafka: librdkafka ships its own OpenSSL.
+
+Tested 2026-11-14 on arm64: a .NET client (SslStream and HttpClient) against a PQ-only server and a classical-only server, and a Kestrel server probed with OpenSSL 3.5 s_client. Every row that says "No" still connected to the classical-only server, so the fix only adds PQ. Scripts and output: deep/dotnet/run-tests.sh, results.txt, results2.txt.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+H2: Client side (app level)
+H2: Server side
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Compute | OS TLS library | PQ by default | Fix | Evidence |
+| Lambda zip, dotnet8 / dotnet10 | AL2023, OpenSSL 3.5, crypto policy without ML-KEM | No | Ship pq-tls/openssl-pq.cnf, set OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf | Tested (Lambda images, 2026-11-12) |
+| Lambda image public.ecr.aws/lambda/dotnet:8 / :10 | Same | No | Same file and ENV in the Dockerfile | Tested |
+| Lambda Native AOT on provided.al2023 | Same; the AOT binary still loads the system libssl.so.3 | No | Same file and env var | Tested (AOT build of .NET 8.0.33 run in provided:al2023) |
+| Fargate, ECS, EKS (Linux) | Whatever the image ships | Depends on image (next table) | Use an -alpine or -resolute tag, or AL2023 + config file | Tested |
+| EC2 Amazon Linux 2023.12+ | OpenSSL 3.5.8 | No | update-crypto-policies --set DEFAULT:PQ, or OPENSSL_CONF in the systemd unit | Tested in an AL2023 container; policy route Documented |
+| EC2 Amazon Linux 2, Ubuntu 22.04/24.04 | OpenSSL 1.0.2 to 3.0 | No | Migrate the OS or containerise on a PQ image | Documented (OpenSSL 3.5 is the first with ML-KEM) |
+| EC2 Windows Server 2025, Windows containers ltsc2025 | Schannel | No (groups disabled by default) | July 2026 update or later, then enable X25519_MLKEM768 | Documented; not tested here |
+| EC2 Windows Server 2022 and older | Schannel | No | No Microsoft statement of support found; plan to move to 2025 | Not confirmed |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Every file the sections above refer to, complete. Files marked tested were run here on 2026-11-14 (scripts and output in deep/dotnet/). The IaC files follow the documented resource schemas but were not deployed (no AWS credentials here).
+pq-tls/openssl-pq.cnf (Amazon Linux 2023 family only: Lambda dotnet8/dotnet10, provided.al2023, AL2023 containers and EC2; tested). It includes AL2023's crypto-policy file, so don't use it on Debian, Ubuntu or Alpine.
+```ini
+# Keeps the AL2023 defaults and only changes the key-exchange group list, PQ hybrid first.
+openssl_conf = openssl_init
+```
+Program.cs (Kestrel server; tested on every image in the status matrix)
+```csharp
+// Kestrel HTTPS server. Endpoint, certificate and TLS protocols come from appsettings.json.
+// Kestrel has no key-exchange-group setting: OpenSSL (Linux) or Schannel (Windows) picks the group.
+```
+appsettings.json (tested)
+```json
+{
+  "Logging": {
+```
+In production read the certificate password from Secrets Manager or a mounted secret, not from the file.
+App.csproj (Kestrel service; tested)
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+```
+The tested build targeted net8.0 with <RollForward>Major</RollForward> so one binary ran on .NET 8 and 10.
+Function.csproj (Lambda zip on the dotnet8 or dotnet10 managed runtime; puts the config file at /var/task/pq-tls/openssl-pq.cnf)
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+```
+FunctionAot.csproj (Native AOT on provided.al2023; an AOT binary was tested in the provided:al2023 image)
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+```
+Build AOT on Amazon Linux 2023 so the binary links against the same glibc as provided.al2023.
+Dockerfile (Fargate/ECS/EKS on Alpine: PQ with no config; tested with aspnet:8.0-alpine and aspnet:10.0-alpine)
+```dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+WORKDIR /src
+```
+Dockerfile.resolute (glibc alternative: Ubuntu 26.04, PQ with no config; tested with aspnet:10.0-resolute and 10.0-resolute-chiseled)
+```dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:10.0-resolute AS build
+WORKDIR /src
+```
+Dockerfile.al2023 (glibc on Amazon Linux 2023 with the config file; tested)
+```dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+```
+Dockerfile.lambda (Lambda container image; tested with public.ecr.aws/lambda/dotnet:8 and :10)
+```dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+```
+template.yaml (SAM: zip on the managed runtime, and Native AOT)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+```
+lambda.cfn.yaml (plain CloudFormation)
+```yaml
+Resources:
+  DotnetFn:
+```
+lambda.tf (Terraform)
+```hcl
+resource "aws_lambda_function" "dotnet" {
+  function_name    = "orders-api"
+```
+taskdef.json (ECS/Fargate; the env var is only needed for the AL2023 image and can be left out for Alpine or resolute)
+```json
+{
+  "family": "orders-api",
+```
+ecs.tf (Terraform for the same task definition)
+```hcl
+resource "aws_ecs_task_definition" "api" {
+  family                   = "orders-api"
+```
+ecs.cfn.yaml (CloudFormation for the same task definition)
+```yaml
+Resources:
+  ApiTaskDef:
+```
+deployment.yaml (EKS)
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+```
+/etc/systemd/system/orders-api.service (EC2 Amazon Linux 2023, one service; the same OPENSSL_CONF setting was tested in an AL2023 container)
+```ini
+[Unit]
+Description=orders-api (.NET)
+```
+ssm-al2023-pq-policy.yaml (SSM Command document, whole host on EC2 AL2023.12+; route Documented, document not run here)
+```yaml
+schemaVersion: "2.2"
+description: Set the AL2023 crypto policy to DEFAULT:PQ and restart .NET services
+```
+Enable-PqTls.ps1 (Windows Server 2025 / Windows 11 24H2+, Schannel; Documented by Microsoft, not run here)
+```powershell
+#Requires -RunAsAdministrator
+# Puts the hybrid ML-KEM group first in the Schannel supported-groups order.
+```
+ssm-windows-pq.json (SSM Command document wrapping the script; exit 3010 asks SSM to reboot the instance)
+```json
+{
+  "schemaVersion": "2.2",
+```
+appsettings.json (Kafka section) and producer setup (Confluent.Kafka; ssl.curves.list is optional because librdkafka 2.14.2+ is PQ by default; tested)
+```json
+{
+  "Kafka": {
+```
+```csharp
+var cfg = new ProducerConfig
+{
+```

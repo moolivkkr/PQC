@@ -1,0 +1,35 @@
+##### amazon/aws-cli:latest (amazon/aws-cli@sha256:33a16c53ea442e918b58df67301ad76a8fb57082c39f7e78753b898c3f3e87c2) profile=awscli
+aws-cli/2.40.3 Python/3.14.8 Linux/7.0.14-linuxkit docker/aarch64.amzn.2023
+aws port=4433 :: 
+aws port=4434 :: 
+##### python:3.13-slim (python@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90) profile=awscli1
+aws-cli/1.46.3 Python/3.13.18 Linux/7.0.14-linuxkit botocore/1.43.62
+OpenSSL 3.5.7 9 Jun 2026
+aws1 port=4433 :: 
+aws1 port=4434 :: 
+##### alpine/k8s:1.34.1 (alpine/k8s@sha256:ec714df3813b5405292860f8a1c55c5727bf8c33c88992f1e981efad8065547f) profile=kubectl
+kubectl port=4433 :: <HTML><BODY BGCOLOR="#ffffff"> <pre>  
+kubectl port=4434 :: <HTML><BODY BGCOLOR="#ffffff"> <pre>  
+##### alpine/helm:latest (alpine/helm@sha256:a3b9d617c0c30a6c488cebb429c4ba83995a26dc2184599af5fd408a361b2e67) profile=helm
+helm port=4433 :: rc=0 
+helm port=4434 :: rc=0 
+##### debian:trixie-slim (debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2) profile=gnutls
+gnutls-cli 3.8.9
+groups with MLKEM: 
+gnutls-cli pri=NORMAL port=4433 :: *** Fatal error: A TLS fatal alert has been received. 
+gnutls-cli pri=NORMAL:-GROUP-ALL:+GROUP-X25519-MLKEM768:+GROUP-X25519 port=4433 :: Syntax error at: +GROUP-X25519-MLKEM768:+GROUP-X25519 
+##### ubuntu:26.04 (ubuntu@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96) profile=gnutls
+gnutls-cli 3.8.12
+groups with MLKEM: 
+gnutls-cli pri=NORMAL port=4433 :: *** Fatal error: A TLS fatal alert has been received. 
+gnutls-cli pri=NORMAL:-GROUP-ALL:+GROUP-X25519-MLKEM768:+GROUP-X25519 port=4433 :: Syntax error at: +GROUP-X25519-MLKEM768:+GROUP-X25519 
+##### amazonlinux:2023 (amazonlinux@sha256:3ccfbe800f864982b0a4e124a614b2382518cbd04b3c1cd35202bd46f392675b) profile=al2023-wget-sshd
+wget-1.21.3-1.amzn2023.0.5.aarch64
+gnutls-3.8.10-4.amzn2023.0.2.aarch64
+openssh-server-9.9p1-16.amzn2023.0.1.aarch64
+policy DEFAULT:PQ
+wget port=4433 rc=0 :: HTTP request sent, awaiting response... 200 ok
+wget port=4434 rc=0 :: HTTP request sent, awaiting response... 200 ok
+gnutls-cli DEFAULT:PQ port=4433 :: - Description: (TLS1.3-X.509)-(HYBRID-X25519-MLKEM768)-(ECDSA-SECP256R1-SHA256)-(AES-256-GCM) - Handshake was completed 
+kexalgorithms mlkem768x25519-sha256,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+DONE

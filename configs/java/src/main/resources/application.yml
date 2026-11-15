@@ -1,0 +1,17 @@
+server:
+  port: 8443
+  http2:
+    enabled: true
+  ssl:
+    bundle: web
+spring:
+  ssl:
+    bundle:
+      jks:
+        web:
+          keystore:
+            location: file:/etc/app/tls/server.p12
+            password: ${KEYSTORE_PASSWORD}
+            type: PKCS12
+          options:
+            enabled-protocols: [TLSv1.3, TLSv1.2]   # keep TLS 1.3 on; ML-KEM exists only in TLS 1.3

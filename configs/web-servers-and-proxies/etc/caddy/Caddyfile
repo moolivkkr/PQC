@@ -1,0 +1,39 @@
+# /etc/caddy/Caddyfile - Caddy 2.10+ (Go 1.24+): X25519MLKEM768 is in Go's default list, so the
+# explicit "curves" lines below only pin the order and make the intent auditable.
+{
+	auto_https off
+	log {
+		output stdout
+	}
+}
+
+# ---- Server side (inbound) ----
+https://:8443 {
+	tls /certs/server.crt /certs/server.key {
+		protocols tls1.3
+		curves x25519mlkem768 x25519 secp256r1
+	}
+	respond "ok"
+}
+
+# ---- Client side (reverse_proxy to TLS backends) ----
+:8080 {
+	handle_path /pq/* {
+		reverse_proxy https://be:8443 {
+			transport http {
+				tls_server_name be
+				tls_insecure_skip_verify   # lab only; production: tls_trust_pool file /etc/ssl/certs/ca.pem
+				tls_curves x25519mlkem768 x25519
+			}
+		}
+	}
+	handle_path /classic/* {
+		reverse_proxy https://be:9443 {
+			transport http {
+				tls_server_name be
+				tls_insecure_skip_verify
+				tls_curves x25519mlkem768 x25519
+			}
+		}
+	}
+}

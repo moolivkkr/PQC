@@ -1,0 +1,36 @@
+== cases-1.24-mod1.24 client-i
+I | VerifyConnection SPKI pin (correct)          | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+I | VerifyConnection SPKI pin (wrong, negative)  | localhost:8443  | FAIL | SPKI pin mismatch
+I | VerifyConnection SPKI pin (correct)          | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+I | VerifyConnection SPKI pin (wrong, negative)  | localhost:8444  | FAIL | SPKI pin mismatch
+== cases-1.24-mod1.24 server-i
+  probe :9456 -groups X25519MLKEM768 -tls1_3 | Protocol version: TLSv1.3 Verification: OK Negotiated TLS1.3 group: X25519MLKEM768 
+  probe :9456 -groups X25519 | Protocol version: TLSv1.3 Verification: OK Peer Temp Key: X25519, 253 bits 
+  probe :9457 -groups X25519MLKEM768 -tls1_3 | Protocol version: TLSv1.3 Verification: OK Negotiated TLS1.3 group: X25519MLKEM768 
+  probe :9457 -groups X25519 | Protocol version: TLSv1.3 Verification: OK Peer Temp Key: X25519, 253 bits 
+  opaqueSigner.Sign call=1 key=*ecdsa.PrivateKey hash=SHA-256
+  port=9456 case="I crypto.Signer wrapper (srv-ec)" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  opaqueSigner.Sign call=2 key=*ecdsa.PrivateKey hash=SHA-256
+  port=9456 case="I crypto.Signer wrapper (srv-ec)" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  opaqueSigner.Sign call=1 key=*rsa.PrivateKey hash=SHA-256
+  port=9457 case="I crypto.Signer wrapper (srv-rsa)" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  opaqueSigner.Sign call=2 key=*rsa.PrivateKey hash=SHA-256
+  port=9457 case="I crypto.Signer wrapper (srv-rsa)" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+== cases-1.26-mod1.26 client-i
+I | VerifyConnection SPKI pin (correct)          | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+I | VerifyConnection SPKI pin (wrong, negative)  | localhost:8443  | FAIL | SPKI pin mismatch
+I | VerifyConnection SPKI pin (correct)          | localhost:8444  | OK   | TLS1.3 group=X25519
+I | VerifyConnection SPKI pin (wrong, negative)  | localhost:8444  | FAIL | SPKI pin mismatch
+== cases-1.26-mod1.26 server-i
+  probe :9456 -groups X25519MLKEM768 -tls1_3 | Protocol version: TLSv1.3 Verification: OK Negotiated TLS1.3 group: X25519MLKEM768 
+  probe :9456 -groups X25519 | Protocol version: TLSv1.3 Verification: OK Peer Temp Key: X25519, 253 bits 
+  probe :9457 -groups X25519MLKEM768 -tls1_3 | Protocol version: TLSv1.3 Verification: OK Negotiated TLS1.3 group: X25519MLKEM768 
+  probe :9457 -groups X25519 | Protocol version: TLSv1.3 Verification: OK Peer Temp Key: X25519, 253 bits 
+  opaqueSigner.Sign call=1 key=*ecdsa.PrivateKey hash=SHA-256
+  port=9456 case="I crypto.Signer wrapper (srv-ec)" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  opaqueSigner.Sign call=2 key=*ecdsa.PrivateKey hash=SHA-256
+  port=9456 case="I crypto.Signer wrapper (srv-ec)" TLS1.3 group=X25519 sni="" client_cn=-
+  opaqueSigner.Sign call=1 key=*rsa.PrivateKey hash=SHA-256
+  port=9457 case="I crypto.Signer wrapper (srv-rsa)" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  opaqueSigner.Sign call=2 key=*rsa.PrivateKey hash=SHA-256
+  port=9457 case="I crypto.Signer wrapper (srv-rsa)" TLS1.3 group=X25519 sni="" client_cn=-

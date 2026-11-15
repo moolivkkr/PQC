@@ -1,0 +1,45 @@
+# private-ca-mldsa.yaml - ML-DSA-65 root CA, its certificate, activation, and a KMS ML-DSA key
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MlDsaRootCA:
+    Type: AWS::ACMPCA::CertificateAuthority
+    Properties:
+      Type: ROOT
+      KeyAlgorithm: ML_DSA_65
+      SigningAlgorithm: ML_DSA_65
+      Subject:
+        CommonName: Example ML-DSA Root
+        Organization: Example
+  MlDsaRootCert:
+    Type: AWS::ACMPCA::Certificate
+    Properties:
+      CertificateAuthorityArn: !Ref MlDsaRootCA
+      CertificateSigningRequest: !GetAtt MlDsaRootCA.CertificateSigningRequest
+      SigningAlgorithm: ML_DSA_65
+      TemplateArn: arn:aws:acm-pca:::template/RootCACertificate/V1
+      Validity:
+        Type: YEARS
+        Value: 10
+  MlDsaRootActivation:
+    Type: AWS::ACMPCA::CertificateAuthorityActivation
+    Properties:
+      CertificateAuthorityArn: !Ref MlDsaRootCA
+      Certificate: !GetAtt MlDsaRootCert.Certificate
+      Status: ACTIVE
+  MlDsaSigningKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: ML-DSA-65 signing key
+      KeySpec: ML_DSA_65
+      KeyUsage: SIGN_VERIFY
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AccountAdmin
+            Effect: Allow
+            Principal: { AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root" }
+            Action: "kms:*"
+            Resource: "*"
+Outputs:
+  CaArn:
+    Value: !Ref MlDsaRootCA

@@ -1,0 +1,11 @@
+<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+           SSLEnabled="true" maxThreads="200">
+  <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+  <SSLHostConfig protocols="TLSv1.3+TLSv1.2"
+                 groups="X25519MLKEM768,x25519,secp256r1,secp384r1">
+    <!-- don't set keyManagerAlgorithm="SunX509": EC certs fail under BCJSSE; omit it or use PKIX -->
+    <Certificate certificateKeystoreFile="conf/tls/server.p12"
+                 certificateKeystorePassword="${keystore.password}"
+                 certificateKeystoreType="PKCS12" />
+  </SSLHostConfig>
+</Connector>

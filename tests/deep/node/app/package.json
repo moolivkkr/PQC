@@ -1,0 +1,20 @@
+{
+  "name": "pq-node-probe",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "*",
+    "@smithy/node-http-handler": "*",
+    "@grpc/grpc-js": "*",
+    "axios": "*",
+    "got": "*",
+    "ioredis": "*",
+    "kafkajs": "*",
+    "mysql2": "*",
+    "node-fetch": "*",
+    "pg": "*",
+    "undici": "*",
+    "fastify": "*",
+    "express": "*"
+  }
+}

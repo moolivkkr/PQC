@@ -1,0 +1,17 @@
+images: eclipse-temurin@sha256:0a3f329821dcadf54b2a3033a15e2e9f007069a9db43d7f51897e6b80e726b07 debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+Note: V2Test.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+compiled
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+ca.crt ca.key ca.srl client-ec.crt client-ec.csr client-ec.ext client-ec.key client-ec.p12 client-rogue.crt client-rogue.csr client-rogue.ext client-rogue.key client-rsa.crt client-rsa.csr client-rsa.ext client-rsa.key client-rsa.p12 ec-alt.p12 ec-main.p12 ec-ossl.crt ec-ossl.key ec.jks mixed.p12 multi.p12 rogue-ca.crt rogue-ca.key rogue-ca.srl rsa-main.p12 trust.p12 /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/kit/pq-tls:
+total 17664
+-rw-r--r--@ 1 kishoremooli  wheel  7337657 Nov 14 15:17 bcprov-jdk18on-1.87.jar
+-rw-r--r--@ 1 kishoremooli  wheel   886169 Nov 14 15:17 bctls-jdk18on-1.87.jar
+-rw-r--r--@ 1 kishoremooli  wheel   804361 Nov 14 15:17 bcutil-jdk18on-1.87.jar
+-rw-r--r--  1 kishoremooli  wheel     1422 Nov 14 15:17 pq-tls-agent.jar
+-rw-r--r--@ 1 kishoremooli  wheel      448 Nov 14 15:16 pq-tls.security
+
+/private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/kit/pq-tls-layer:
+total 16
+-rw-r--r--  1 kishoremooli  wheel  1432 Nov 14 15:17 pq-tls-agent.jar
+-rw-r--r--@ 1 kishoremooli  wheel   448 Nov 14 15:17 pq-tls.security

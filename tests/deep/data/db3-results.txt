@@ -1,0 +1,5 @@
+=== valkey-cli (trixie) vs s_server -groups X25519 -trace
+=== valkey-cli (trixie) vs s_server -groups X25519MLKEM768 -trace
+=== mysql 8.4 full s_client PQ-first
+Peer Temp Key: ECDH, prime256v1, 256 bits
+Protocol: TLSv1.3

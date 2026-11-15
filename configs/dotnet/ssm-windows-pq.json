@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Enable X25519_MLKEM768 in Schannel and reboot",
+  "mainSteps": [
+    {
+      "action": "aws:runPowerShellScript",
+      "name": "enablePqGroup",
+      "precondition": { "StringEquals": ["platformType", "Windows"] },
+      "inputs": {
+        "runCommand": [
+          "Enable-TlsEccCurve -Name 'X25519_MLKEM768' -Position 0",
+          "Get-TlsEccCurve",
+          "exit 3010"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Architectures: [arm64]
+    Environment:
+      Variables:
+        OPENSSL_CONF: /var/task/pq-tls/openssl-pq.cnf
+Resources:
+  ManagedFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: dotnet10
+      Handler: Function::Function.Handler::FunctionHandler
+      CodeUri: ./src/Function/
+  AotFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: provided.al2023
+      Handler: bootstrap
+      CodeUri: ./src/FunctionAot/
+    Metadata:
+      BuildMethod: dotnet7

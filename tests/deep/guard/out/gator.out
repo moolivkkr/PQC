@@ -1,0 +1,7 @@
+gator openpolicyagent/gator@sha256:1ff30f7cf7bb3a5171af1fc1d69c3ee0de6bc7bb9c1fd58cb393156a07b4daac
+--- gator test good
+exit=0
+--- gator test bad
+networking.k8s.io/v1/Ingress app/web-bad: ["pq-tls-elb-policy"] Message: "PQ-K1: alb.ingress.kubernetes.io/ssl-policy \"\" is not a -PQ-2025-09 policy"
+v1/Service app/nlb-bad: ["pq-tls-elb-policy"] Message: "PQ-K2: aws-load-balancer-ssl-negotiation-policy \"ELBSecurityPolicy-TLS13-1-2-2021-06\" is not a -PQ-2025-09 policy"
+exit=0

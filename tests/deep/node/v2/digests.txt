@@ -1,0 +1,4 @@
+node:22 node@sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb
+node:24 node@sha256:9d266751ca3d7fdbe651c878ffd5ad0a42fed49a18c283509267c97f025b7496
+lambda/nodejs:22 public.ecr.aws/lambda/nodejs@sha256:d95b861c8139eb5229f9703ff217e3cf0ca040430bfa090fee47fac5096a530f
+lambda/nodejs:24 public.ecr.aws/lambda/nodejs@sha256:eb0de3ee81b4638149f0b1bcab2c657603a23a0c221a4b5678be29b48265bd31

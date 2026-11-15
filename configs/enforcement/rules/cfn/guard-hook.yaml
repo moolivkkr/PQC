@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudFormation Guard Hook that runs pq-tls.guard on every stack and resource operation in this
+  account and Region. Start with FailureMode WARN; switch to FAIL after the warn window.
+  Deploy to all accounts with a service-managed StackSet.
+Parameters:
+  RulesBucket: { Type: String }
+  RulesKey: { Type: String, Default: guard/pq-tls.guard }
+  LogBucket: { Type: String }
+  Mode:
+    Type: String
+    Default: WARN
+    AllowedValues: [ WARN, FAIL ]
+Resources:
+  GuardHookRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: hooks.cloudformation.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: read-rules-write-logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [ s3:GetObject, s3:GetObjectVersion, s3:ListBucket ]
+                Resource:
+                  - !Sub arn:aws:s3:::${RulesBucket}
+                  - !Sub arn:aws:s3:::${RulesBucket}/*
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub arn:aws:s3:::${LogBucket}/*
+  PqTlsGuardHook:
+    Type: AWS::CloudFormation::GuardHook
+    Properties:
+      Alias: Private::Guard::PqTls
+      ExecutionRole: !GetAtt GuardHookRole.Arn
+      FailureMode: !Ref Mode
+      HookStatus: ENABLED
+      LogBucket: !Ref LogBucket
+      RuleLocation:
+        Uri: !Sub s3://${RulesBucket}/${RulesKey}
+      TargetOperations: [ RESOURCE, STACK ]
+      TargetFilters:
+        Actions: [ CREATE, UPDATE ]

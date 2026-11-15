@@ -1,0 +1,14 @@
+# ingress-nginx-values.yaml - helm upgrade ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f ingress-nginx-values.yaml
+# Controller v1.14.0 links OpenSSL 3.5.4 (checked 2026-11-14). The project was retired 2026-03-24: plan a Gateway API move.
+controller:
+  image:
+    # pin by digest
+    digest: sha256:e4127065d0317bd11dc64c4dd38dcf7fb1c3d72e468110b4086e636dbaac943d
+  config:
+    # rendered into nginx.conf as ssl_ecdh_curve / ssl_protocols for every TLS server block
+    ssl-ecdh-curve: "X25519MLKEM768:X25519:prime256v1"
+    ssl-protocols: "TLSv1.3"            # "TLSv1.2 TLSv1.3" if 1.2-only clients remain
+    # Upstream (backend-protocol: HTTPS) uses OpenSSL's default list, X25519MLKEM768 first on 3.5.
+    # For an explicit upstream list, add to the http block via a snippet (needs allow-snippet-annotations / snippets enabled):
+    # http-snippet: |
+    #   proxy_ssl_conf_command Groups X25519MLKEM768:X25519;

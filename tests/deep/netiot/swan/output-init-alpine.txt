@@ -1,0 +1,32 @@
+== init: strongswan-6.0.7-r2 /usr/lib/strongswan/charon
+libstrongswan-openssl.so 
+  ML_KEM_512[openssl]
+  ML_KEM_768[openssl]
+  ML_KEM_1024[openssl]
+loaded ike secret 'ike-pq'
+no authorities found, 0 unloaded
+no pools found, 0 unloaded
+loaded connection 'pq'
+successfully loaded 1 connections, 0 unloaded
+[IKE] initiating IKE_SA pq[1] to 10.250.77.2
+[ENC] generating IKE_SA_INIT request 0 [ SA KE No N(NATD_S_IP) N(NATD_D_IP) N(FRAG_SUP) N(HASH_ALG) N(REDIR_SUP) N(IKE_INT_SUP) ]
+[ENC] parsed IKE_SA_INIT response 0 [ SA KE No N(NATD_S_IP) N(NATD_D_IP) N(FRAG_SUP) N(HASH_ALG) N(CHDLESS_SUP) N(IKE_INT_SUP) N(MULT_AUTH) ]
+[ENC] generating IKE_INTERMEDIATE request 1 [ KE ]
+[ENC] generating IKE_INTERMEDIATE request 1 [ EF(1/2) ]
+[ENC] generating IKE_INTERMEDIATE request 1 [ EF(2/2) ]
+[ENC] parsed IKE_INTERMEDIATE response 1 [ KE ]
+[IKE] establishing CHILD_SA net{1}
+== list-sas
+pq: #1, ESTABLISHED, IKEv2, 54170126a533c71c_i* 412b8bd11f8de9d1_r
+  local  '10.250.77.3' @ 10.250.77.3[4500]
+  remote '10.250.77.2' @ 10.250.77.2[4500]
+  AES_GCM_16-256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768
+  established 0s ago, rekeying in 13462s
+  net: #1, reqid 1, INSTALLED, TRANSPORT, ESP:AES_GCM_16-256
+== log
+07[CFG]    proposals = ESP:AES_GCM_16_256/CURVE_25519/NO_EXT_SEQ/KE1_ML_KEM_768/KE1_KE_NONE
+07[CFG]   proposals = IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768/KE1_KE_NONE
+09[CFG] configured proposals: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768/KE1_KE_NONE
+06[CFG] received proposals: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768
+06[CFG] configured proposals: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768/KE1_KE_NONE
+06[CFG] selected proposal: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768

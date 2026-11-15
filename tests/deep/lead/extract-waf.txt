@@ -1,0 +1,52 @@
+# TAB: waf  node=ea8fb0bb-ef44  rev=2
+
+## 1. H1 and lead paragraphs
+H1: Web application firewalls (WAF)
+
+AWS WAF never terminates TLS. The resource it is attached to does: CloudFront, ALB, API Gateway REST, AppSync, Cognito, App Runner, Verified Access, Amplify or Bedrock AgentCore Gateway. So PQ for an AWS WAF-protected app is set on that resource ([Load balancers], [Edge and API front doors]). Shield Advanced and Firewall Manager have no TLS role. Third-party WAFs that run as a reverse proxy (appliance, virtual appliance, SaaS/CDN) terminate TLS themselves, so their own TLS stack and profile decide both the client leg and the origin leg. Software WAF modules (ModSecurity, Coraza) inherit TLS from the host proxy.
+
+Network firewalls that do TLS inspection (AWS Network Firewall, Palo Alto, FortiGate) are in [Network devices and egress].
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+H2: Client side: the WAF's connection to the origin
+H2: Server side: configuration to enable
+H2: Verify
+H2: Pitfalls, enforcement and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| WAF | Deployment type | Terminates TLS | Client leg PQ | Origin leg PQ | How to enable | Evidence |
+| AWS WAF | Managed, attached to a resource | No | The resource's policy | The resource's | Set the resource policy | Documented (protected resources) |
+| AWS Shield Advanced | Managed DDoS service | No | n/a | n/a | n/a | Documented |
+| AWS Firewall Manager | Org-wide policy service | No; policy types are WAF, Shield Advanced, security groups, network ACLs, Network Firewall, third-party firewalls; none for TLS policies | n/a | n/a | Use it to force WAF everywhere; enforce TLS policies elsewhere | Documented (FMS policies) |
+| F5 BIG-IP Advanced WAF / LTM | Hardware appliance, VE on EC2 | Yes | X25519MLKEM768 in TLS 1.3 from 17.5.1; SecP256r/384r hybrids from 21.1 | Yes, server-ssl profile | Cipher rule with dh-groups, cipher group, client-ssl / server-ssl profile | Documented (F5 PQC) |
+| NetScaler ADC (WAF) | MPX, SDX, VPX on EC2, CPX | Yes | X25519_MLKEM768, enhanced SSL profile only | Not documented (page is "on the front end") | bind ssl profile -eccCurveName X25519_MLKEM768 | Documented (NetScaler hybrid PQC) |
+| Fortinet FortiWeb | Appliance, VM on EC2 | Yes | 8.0.3+: x25519mlkem768, secp256r1mlkem768, secp384r1mlkem1024, pure ML-KEM; TLS 1.3 | Yes, server pool | set tls-pqc-support enable and tls-pqc-groups | Documented (FortiWeb 8.0.3) |
+| Imperva WAF Gateway | On-prem / virtual appliance | Depends on mode (reverse proxy vs sniffing) | No PQ statement found | Not found | none | Unverified |
+| Barracuda WAF / WAF-as-a-Service | Appliance, VM, SaaS | Yes | No PQ statement found | Not found | none | Unverified |
+| Cloudflare WAF | SaaS / CDN | Yes | PQ to visitors by default | Automatic key exchange, on for all zones: prefers X25519MLKEM768 when the origin supports it | On by default; check the zone's Automatic key exchange | Documented (Cloudflare origin PQ) |
+| Akamai App & API Protector | SaaS / CDN | Yes | GA August 2026 on Enhanced TLS; Delivery Manager docs say on by default; needs TLS 1.3 | GA June 2026, opt-in rule behavior, origin needs TLS 1.3 + X25519MLKEM768 | Property behaviors "PQC Client to Edge" and "PQC to Origin" | Documented (client to edge, to origin); default state disputed between pages |
+| Imperva Cloud WAF | SaaS / CDN | Yes | X25519MLKEM768 to Imperva PoPs | Not stated | Not stated | Claimed (Imperva blog) |
+| Fastly Next-Gen WAF / edge | SaaS / CDN | Yes (edge) | ML-KEM rollout from April 2025; scope not stated | Not stated | Not stated | Claimed (Fastly blog) |
+| ModSecurity v3 / Coraza | Software module in nginx, Apache, Envoy, Caddy | The host does | Host's TLS stack: owasp/modsecurity-crs:nginx (Debian 13, nginx 1.30.6, OpenSSL 3.5.7) negotiated X25519MLKEM768 | Same image reached a PQ-only upstream (HTTP 200) | Nothing beyond the host config, see [Web servers and proxies] | Tested |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Terraform and CloudFormation below passed terraform validate (Terraform 1.13.5, aws provider 6.73.0) and cfn-lint 1.60.1. The JA4 value is FoxIO's example string; replace it with one you have tied to a classical client.
+iac/waf/main.tf
+```hcl
+terraform {
+  required_version = ">= 1.6"
+```
+iac/waf/waf.yaml (CloudFormation)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Regional AWS WAF web ACL on an ALB with logging. TLS (and PQ) is decided by the ALB listener policy, not by WAF.
+```
+tests/run-modsec-pq.sh (the software-WAF test; needs Docker)
+```bash
+#!/bin/bash
+set -u
+```

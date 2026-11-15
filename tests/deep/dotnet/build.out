@@ -1,0 +1,14 @@
+sdk=mcr.microsoft.com/dotnet/sdk@sha256:1b955f179b02df4f0eb5fadedaa898cbe44d620a64aab52eec72c8e91d1355b5 trixie=debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2 al2023=amazonlinux@sha256:3ccfbe800f864982b0a4e124a614b2382518cbd04b3c1cd35202bd46f392675b
+client-built
+kestrel-built
+kafka-built
+aot-built
+total 17948
+drwxr-xr-x 4 root root      128 Nov 14 17:43 .
+drwxr-xr-x 7 root root      224 Nov 14 17:42 ..
+-rwxr-xr-x 1 root root  7229936 Nov 14 17:43 bootstrap
+-rwxr-xr-x 1 root root 11144544 Nov 14 17:43 bootstrap.dbg
+	linux-vdso.so.1 (0x0000ffff8845c000)
+	libm.so.6 => /lib64/libm.so.6 (0x0000ffff8835f000)
+	libc.so.6 => /lib64/libc.so.6 (0x0000ffff87832000)
+	/lib/ld-linux-aarch64.so.1 (0x0000ffff88410000)

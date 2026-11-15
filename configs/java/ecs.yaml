@@ -1,0 +1,22 @@
+Parameters:
+  ExecutionRoleArn: {Type: String}
+  Image: {Type: String}
+Resources:
+  TaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: orders-java
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: '1024'
+      Memory: '2048'
+      ExecutionRoleArn: !Ref ExecutionRoleArn
+      RuntimePlatform: {CpuArchitecture: ARM64, OperatingSystemFamily: LINUX}
+      ContainerDefinitions:
+        - Name: app
+          Image: !Ref Image
+          Essential: true
+          PortMappings: [{ContainerPort: 8443, Protocol: tcp}]
+          Environment:
+            - Name: JAVA_TOOL_OPTIONS
+              Value: -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar

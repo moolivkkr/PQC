@@ -1,0 +1,25 @@
+== golang:1.23 -> golang@sha256:60deed95d3888cc5e4d9ff8a10c54e5edc008c6ae3fba6187be6fb592e19e8c0
+built cases-1.23-mod1.23: /out/cases-1.23-mod1.23: go1.23.12
+        (no DefaultGODEBUG line)
+== golang:1.24 -> golang@sha256:d2d2bc1c84f7e60d7d2438a3836ae7d0c847f4888464e7ec9ba3a1339a1ee804
+built cases-1.24-mod1.22: /out/cases-1.24-mod1.22: go1.24.13
+	build	DefaultGODEBUG=asynctimerchan=1,gotestjsonbuildtext=1,gotypesalias=0,httpcookiemaxnum=0,httpservecontentkeepheaders=1,multipathtcp=0,randseednop=0,rsa1024min=0,tls3des=1,tlsmlkem=0,urlmaxqueryparams=0,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1,x509rsacrt=0,x509usepolicies=0
+== golang:1.24 -> golang@sha256:d2d2bc1c84f7e60d7d2438a3836ae7d0c847f4888464e7ec9ba3a1339a1ee804
+built cases-1.24-mod1.24: /out/cases-1.24-mod1.24: go1.24.13
+        (no DefaultGODEBUG line)
+== golang:1.25 -> golang@sha256:699337d620559a59b4a2bb298ad59611e535d2ee755a34cf2d2a98f37578dc80
+built cases-1.25-mod1.25: /out/cases-1.25-mod1.25: go1.25.14
+        (no DefaultGODEBUG line)
+== golang:1.26 -> golang@sha256:978e0a4e3d953662577d784471db27742f543ab09eead06839a838188c73314b
+built cases-1.26-mod1.26: /out/cases-1.26-mod1.26: go1.26.11
+        (no DefaultGODEBUG line)
+built deps-1.26-mod1.26
+go 1.26.11
+	github.com/aws/aws-sdk-go-v2 v1.48.0
+	github.com/aws/aws-sdk-go-v2/config v1.33.18
+	github.com/jackc/pgx/v5 v5.13.0
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
+	golang.org/x/crypto v0.59.0
+	google.golang.org/grpc v1.85.0
+	software.sslmate.com/src/go-pkcs12 v0.7.4
+        (no DefaultGODEBUG line)

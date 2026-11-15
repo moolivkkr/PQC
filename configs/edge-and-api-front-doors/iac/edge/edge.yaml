@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFront with viewer TLS details forwarded, API Gateway REST with a PQ policy, Cognito custom domain, Transfer Family SFTP with ML-KEM KEX.
+
+Parameters:
+  CfCertificateArn:
+    Type: String
+  ApiCertificateArn:
+    Type: String
+  OriginDomain:
+    Type: String
+  UserPoolId:
+    Type: String
+
+Resources:
+  TlsDetailsOriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: forward-viewer-tls-details
+        CookiesConfig:
+          CookieBehavior: none
+        QueryStringsConfig:
+          QueryStringBehavior: all
+        HeadersConfig:
+          HeaderBehavior: allViewerAndWhitelistCloudFront
+          Headers:
+            - CloudFront-Viewer-TLS-Details
+            - CloudFront-Viewer-JA4-Fingerprint
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Aliases: [www.example.com]
+        Origins:
+          - Id: alb
+            DomainName: !Ref OriginDomain
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+        DefaultCacheBehavior:
+          TargetOriginId: alb
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          OriginRequestPolicyId: !Ref TlsDetailsOriginRequestPolicy
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CfCertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: orders
+      SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+      EndpointAccessMode: BASIC
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  ApiDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: api.example.com
+      RegionalCertificateArn: !Ref ApiCertificateArn
+      SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+      EndpointAccessMode: BASIC
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  CognitoDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPoolId
+      Domain: auth.example.com
+      CustomDomainConfig:
+        CertificateArn: !Ref CfCertificateArn
+        SecurityPolicy: TLS_V1_2_2021
+
+  SftpServer:
+    Type: AWS::Transfer::Server
+    Properties:
+      Protocols: [SFTP]
+      IdentityProviderType: SERVICE_MANAGED
+      EndpointType: PUBLIC
+      SecurityPolicyName: TransferSecurityPolicy-2025-03

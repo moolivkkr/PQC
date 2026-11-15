@@ -1,0 +1,11 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+RUN dnf -y install nodejs22 crypto-policies-scripts shadow-utils \
+ && update-crypto-policies --set DEFAULT:PQ \
+ && dnf clean all && useradd -r app
+WORKDIR /app
+COPY --chown=app package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --chown=app . .
+RUN node pq-check.js
+USER app
+CMD ["node", "server.js"]

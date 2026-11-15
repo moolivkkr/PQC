@@ -1,0 +1,59 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyNonPqElbListenerPolicy",
+      "Effect": "Deny",
+      "Action": [
+        "elasticloadbalancing:CreateListener",
+        "elasticloadbalancing:ModifyListener"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ForAnyValue:StringNotEquals": {
+          "elasticloadbalancing:SecurityPolicy": [
+            "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-3-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09"
+          ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    },
+    {
+      "Sid": "DenyTlsListenerWithoutExplicitPolicy",
+      "Effect": "Deny",
+      "Action": "elasticloadbalancing:CreateListener",
+      "Resource": "*",
+      "Condition": {
+        "ForAnyValue:StringEquals": {
+          "elasticloadbalancing:ListenerProtocol": ["HTTPS", "TLS"]
+        },
+        "Null": {
+          "elasticloadbalancing:SecurityPolicy": "true"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    },
+    {
+      "Sid": "DenyClassicLbListenerPolicies",
+      "Effect": "Deny",
+      "Action": [
+        "elasticloadbalancing:CreateLoadBalancerListeners",
+        "elasticloadbalancing:CreateLoadBalancerPolicy",
+        "elasticloadbalancing:SetLoadBalancerPoliciesOfListener"
+      ],
+      "Resource": "arn:aws:elasticloadbalancing:*:*:loadbalancer/*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    }
+  ]
+}

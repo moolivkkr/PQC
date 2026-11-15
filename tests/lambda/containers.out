@@ -1,0 +1,21 @@
+python:3.12-slim-bookworm                OpenSSL: OpenSSL 3.0.22 25 Aug 2026 py: PQ-only: FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1011) py: classical-only: OK TLSv1.3 
+python:3.12-slim-trixie                  OpenSSL: OpenSSL 3.5.7 9 Jun 2026 py: PQ-only: OK TLSv1.3 py: classical-only: OK TLSv1.3 
+python:3.11-slim-trixie                  OpenSSL: OpenSSL 3.5.7 9 Jun 2026 py: PQ-only: OK TLSv1.3 py: classical-only: OK TLSv1.3 
+python:3.12-alpine                       OpenSSL: OpenSSL 3.5.9 29 Sep 2026 py: PQ-only: OK TLSv1.3 py: classical-only: OK TLSv1.3 
+amazonlinux:2023 python3 default         OpenSSL: OpenSSL 3.5.8 25 Aug 2026 py: PQ-only: FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert handshake failure (_ssl.c:1152) py: classical-only: OK TLSv1.3 
+amazonlinux:2023 python3 +OPENSSL_CONF   py: PQ-only: OK TLSv1.3 py: classical-only: OK TLSv1.3 
+amazonlinux:2023 python3 +DEFAULT:PQ     py: PQ-only: OK TLSv1.3 py: classical-only: OK TLSv1.3 
+node:20-slim                             OpenSSL: v20.20.2 3.0.19 node: PQ-only: FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE node: classical-only: OK TLSv1.3 
+node:22-slim                             OpenSSL: v22.23.5 3.5.9 node: PQ-only: OK TLSv1.3 node: classical-only: OK TLSv1.3 
+node:24-slim                             OpenSSL: v24.22.3 3.5.9 node: PQ-only: OK TLSv1.3 node: classical-only: OK TLSv1.3 
+node:22-alpine                           OpenSSL: v22.23.5 3.5.9 node: PQ-only: OK TLSv1.3 node: classical-only: OK TLSv1.3 
+eclipse-temurin:21-jre                   version: openjdk version "21.0.13" 2026-10-20 LTS 
+eclipse-temurin:25-jre                   version: openjdk version "25.0.5" 2026-10-20 LTS 
+amazoncorretto:21                        version: openjdk version "21.0.13" 2026-10-20 LTS java: PQ-only: FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure java: classical-only: OK TLSv1.3 
+amazoncorretto:25                        version: openjdk version "25.0.5" 2026-10-20 LTS java: PQ-only: OK TLSv1.3 java: classical-only: OK TLSv1.3 
+amazoncorretto:21 +agent                 java: PQ-only: OK TLSv1.3 java: classical-only: OK TLSv1.3 
+mcr.microsoft.com/dotnet/runtime:8.0     version: Debian GNU/Linux 12 (bookworm) OpenSSL: /usr/lib/aarch64-linux-gnu/libssl.so.3 {"dotnet":"8.0.34","PQ-only":"FAIL SslException","classical_only":"OK Tls13"} 
+mcr.microsoft.com/dotnet/runtime:8.0-alpine version: Alpine Linux v3.24 OpenSSL: /usr/lib/libssl.so.3 {"dotnet":"8.0.34","PQ-only":"OK Tls13","classical_only":"OK Tls13"} 
+mcr.microsoft.com/dotnet/runtime:10.0    version: Ubuntu 24.04.5 LTS OpenSSL: /usr/lib/aarch64-linux-gnu/libssl.so.3 {"dotnet":"10.0.15","PQ-only":"FAIL SslException","classical_only":"OK Tls13"} 
+mcr.microsoft.com/dotnet/runtime:10.0-alpine version: Alpine Linux v3.24 OpenSSL: /usr/lib/libssl.so.3 {"dotnet":"10.0.15","PQ-only":"OK Tls13","classical_only":"OK Tls13"} 
+DONE

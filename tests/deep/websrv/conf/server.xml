@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- /usr/local/tomcat/conf/server.xml - Tomcat 11, JSSE connector (Java's own TLS stack).
+     PQ comes from the JDK: JDK 25.0.5+ (Temurin/Corretto) offers X25519MLKEM768 by default.
+     On Java 8-21 use the Bouncy Castle JSSE agent from the Java tab instead. -->
+<Server port="-1" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Service name="Catalina">
+    <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+               SSLEnabled="true" maxThreads="50"
+               sslImplementationName="org.apache.tomcat.util.net.jsse.JSSEImplementation">
+      <!-- groups = named groups in preference order (JSSE names). Omit it to use jdk.tls.namedGroups / JDK default. -->
+      <SSLHostConfig protocols="TLSv1.3" groups="X25519MLKEM768,x25519,secp256r1">
+        <Certificate certificateKeystoreFile="/certs/server.p12"
+                     certificateKeystoreType="PKCS12"
+                     certificateKeystorePassword="changeit" />
+      </SSLHostConfig>
+    </Connector>
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" unpackWARs="false" autoDeploy="false" />
+    </Engine>
+  </Service>
+</Server>

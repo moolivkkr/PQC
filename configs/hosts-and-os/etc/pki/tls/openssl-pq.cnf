@@ -1,0 +1,20 @@
+openssl_conf = openssl_init
+
+.include /etc/pki/tls/openssl.d
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = pq_system_default
+
+[pq_system_default]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192

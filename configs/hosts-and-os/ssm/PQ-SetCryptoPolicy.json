@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Set the system-wide crypto policy (PQ rollout or rollback) and report the result.",
+  "parameters": {
+    "Policy": {
+      "type": "String",
+      "default": "DEFAULT:PQ",
+      "allowedValues": ["DEFAULT:PQ", "FIPS:PQ", "DEFAULT:PQ-HYBRID", "DEFAULT", "FIPS"]
+    },
+    "RestartUnits": {
+      "type": "String",
+      "default": "sshd",
+      "description": "Space-separated systemd units to restart after the change"
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "setCryptoPolicy",
+      "precondition": { "StringEquals": ["platformType", "Linux"] },
+      "inputs": {
+        "timeoutSeconds": "600",
+        "runCommand": [
+          "set -eu",
+          "command -v dnf >/dev/null || { echo 'not a dnf-based host'; exit 0; }",
+          "dnf -y -q install crypto-policies-scripts",
+          "dnf -y -q update crypto-policies crypto-policies-scripts",
+          "if [ '{{ Policy }}' = 'DEFAULT:PQ-HYBRID' ]; then printf 'group = +X25519-MLKEM768\\n' > /etc/crypto-policies/policies/modules/PQ-HYBRID.pmod; fi",
+          "current=$(update-crypto-policies --show)",
+          "if [ \"$current\" != '{{ Policy }}' ]; then update-crypto-policies --set '{{ Policy }}'; for u in {{ RestartUnits }}; do systemctl try-restart \"$u\" || true; done; fi",
+          "echo \"policy=$(update-crypto-policies --show)\"",
+          "grep -m1 -i '^Groups' /etc/crypto-policies/back-ends/opensslcnf.config || true",
+          "sshd -T 2>/dev/null | grep -i '^kexalgorithms' | cut -c1-120 || true",
+          "rpm -q openssl-libs openssh-server || true"
+        ]
+      }
+    }
+  ]
+}

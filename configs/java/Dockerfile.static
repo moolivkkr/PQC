@@ -1,0 +1,7 @@
+FROM eclipse-temurin:21-jre
+COPY pq-tls/bcprov-jdk18on-1.87.jar pq-tls/bctls-jdk18on-1.87.jar pq-tls/bcutil-jdk18on-1.87.jar /opt/pq-tls/
+COPY pq-tls/bc-static.security /opt/pq-tls/bc-static.security
+COPY build/libs/app.jar /app/app.jar
+ENV JAVA_TOOL_OPTIONS="-Djava.security.properties=/opt/pq-tls/bc-static.security -Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1"
+# -jar ignores -cp, so put the BC jars in the jar manifest Class-Path, or run with -cp and the main class:
+ENTRYPOINT ["java", "-cp", "/app/app.jar:/opt/pq-tls/*", "com.example.Main"]

@@ -1,0 +1,105 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyElbListenerWithoutPqPolicy",
+      "Effect": "Deny",
+      "Action": [
+        "elasticloadbalancing:CreateListener",
+        "elasticloadbalancing:ModifyListener"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "elasticloadbalancing:SecurityPolicy": "false"
+        },
+        "StringNotEquals": {
+          "elasticloadbalancing:SecurityPolicy": [
+            "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-FIPS-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Ext0-FIPS-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Ext1-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Ext1-FIPS-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Ext2-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-2-Ext2-FIPS-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-3-PQ-2025-09",
+            "ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09"
+          ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    },
+    {
+      "Sid": "DenyHttpsListenerWithoutExplicitPolicy",
+      "Effect": "Deny",
+      "Action": "elasticloadbalancing:CreateListener",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "elasticloadbalancing:ListenerProtocol": [
+            "HTTPS",
+            "TLS"
+          ]
+        },
+        "Null": {
+          "elasticloadbalancing:SecurityPolicy": "true"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    },
+    {
+      "Sid": "DenyClassicLbListenerPolicies",
+      "Effect": "Deny",
+      "Action": [
+        "elasticloadbalancing:CreateLoadBalancerListeners",
+        "elasticloadbalancing:CreateLoadBalancerPolicy",
+        "elasticloadbalancing:SetLoadBalancerPoliciesOfListener"
+      ],
+      "Resource": "arn:aws:elasticloadbalancing:*:*:loadbalancer/*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    },
+    {
+      "Sid": "DenyRestApiAndDomainWithoutPqPolicy",
+      "Effect": "Deny",
+      "Action": [
+        "apigateway:POST",
+        "apigateway:PATCH",
+        "apigateway:PUT"
+      ],
+      "Resource": [
+        "arn:aws:apigateway:*::/domainnames",
+        "arn:aws:apigateway:*::/domainnames/*",
+        "arn:aws:apigateway:*::/restapis",
+        "arn:aws:apigateway:*::/restapis/*"
+      ],
+      "Condition": {
+        "Null": {
+          "apigateway:Request/SecurityPolicy": "false"
+        },
+        "ForAnyValue:StringNotEquals": {
+          "apigateway:Request/SecurityPolicy": [
+            "SecurityPolicy_TLS13_1_2_PQ_2025_09",
+            "SecurityPolicy_TLS13_1_2_PFS_PQ_2025_09",
+            "SecurityPolicy_TLS13_1_2_FIPS_PQ_2025_09",
+            "SecurityPolicy_TLS13_1_2_FIPS_PFS_PQ_2025_09",
+            "SecurityPolicy_TLS13_2025_EDGE",
+            "SecurityPolicy_TLS12_PFS_2025_EDGE"
+          ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/pq-exception-break-glass"
+        }
+      }
+    }
+  ]
+}

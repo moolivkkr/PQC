@@ -1,0 +1,151 @@
+# TAB: enforcement  node=ab9fe1da-cf13  rev=12
+
+## 1. H1 and lead paragraphs
+H1: Enforcement and guardrails
+
+No single AWS control can force ML-KEM. Policy can only force the server-side setting (ELB / API Gateway security policy, runtime, env var, image) and then measure what clients actually negotiate. So enforcement is layered: the organisation blocks non-PQ settings at the API, the pipeline blocks them before deploy, the cluster blocks them at admission, and runtime logs catch the clients that still connect classically.
+
+Rule IDs are shared across tools (PQ-L Lambda, PQ-E ECS, PQ-B ELB, PQ-A API Gateway, PQ-I image, PQ-D Dockerfile, PQ-K Kubernetes), so one exception ID covers every layer.
+
+## 2. Headings
+H2: What decides enforcement here
+H2: Enforcement matrix
+H2: Organisation level
+H2: Pipeline
+H2: Kubernetes
+H2: Runtime detection and alerting
+H2: Warn-then-fail rollout
+H2: Exception register
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+  H3: Organisation
+  H3: Pipeline
+  H3: Kubernetes
+  H3: Runtime
+
+## 3. Status matrix (first table)
+| Layer | Runs where | Blocks or detects | Tools on this tab |
+| Organisation | AWS Organizations (all accounts) | Blocks API calls | SCP, RCP |
+| Account (detective) | AWS Config, Security Hub, every account/Region | Detects drift | Config managed + Guard custom rules, AWS PQC Readiness Scanner pack, ELB.17, APIGateway.11, CloudFront.15 |
+| Pipeline | CI (PR and deploy job), CloudFormation service | Blocks merge / deploy | cfn-guard, Guard Hook, conftest (Terraform plan, Dockerfile, SBOM), Checkov, image scripts |
+| Cluster | EKS admission | Blocks or audits objects | Kyverno (1.20+ CEL and legacy), Gatekeeper |
+| Runtime | CloudTrail, ELB logs, network | Detects classical handshakes | CloudTrail Lake/Athena, metric filter alarm, EventBridge, ELB log Athena, Zeek |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Every file below is complete. Paths are relative to the rules folder. config/lambda-pq-tls.guard is identical to the PolicyText inside org-config-rules.yaml.
+H3: Organisation
+rules/scp-pq-tls.json
+```json
+{
+  "Version": "2012-10-17",
+```
+rules/rcp-s3-tls13.json
+```json
+{
+  "Version": "2012-10-17",
+```
+rules/config/org-config-rules.yaml
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+```
+H3: Pipeline
+rules/cfn/pq-tls.guard
+```text
+#
+# pq-tls.guard - CloudFormation Guard 3.x rules for hybrid post-quantum TLS (X25519MLKEM768).
+```
+rules/cfn/guard-hook.yaml
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+```
+rules/opa/terraform/pq_tls.rego
+```text
+# Conftest / OPA policy for `terraform show -json plan.out` output.
+# Usage: conftest test --policy rules/opa/terraform --namespace terraform.pq_tls plan.json
+```
+rules/opa/terraform/pq_tls_test.rego
+```text
+package terraform.pq_tls_test
+
+```
+rules/checkov/pq_tls_1.yaml
+```yaml
+metadata:
+  id: "CKV2_PQTLS_1"
+```
+rules/checkov/pq_tls_2.yaml
+```yaml
+metadata:
+  id: "CKV2_PQTLS_2"
+```
+rules/checkov/pq_tls_3.yaml
+```yaml
+metadata:
+  id: "CKV2_PQTLS_3"
+```
+rules/checkov/pq_tls_4.yaml
+```yaml
+metadata:
+  id: "CKV2_PQTLS_4"
+```
+rules/opa/image/openssl_sbom.rego
+```text
+# Conftest policy for a Syft JSON SBOM (syft <image> -o syft-json).
+# Fails when the image's system OpenSSL is older than 3.5 (no ML-KEM).
+```
+rules/image/check-go-pq.sh
+```bash
+#!/bin/sh
+# check-go-pq.sh <go-binary>...  - fail if a Go binary will not offer X25519MLKEM768 by default.
+```
+rules/image/check-jdk-pq.sh
+```bash
+#!/bin/sh
+# check-jdk-pq.sh <image>  - read the JDK `release` file from a container image without running it.
+```
+rules/opa/dockerfile/pq_dockerfile.rego
+```text
+# Conftest policy for Dockerfiles (conftest parses Dockerfile natively).
+# Usage: conftest test --policy rules/opa/dockerfile --namespace dockerfile.pq_tls Dockerfile
+```
+H3: Kubernetes
+rules/k8s/kyverno-pq-tls-cel.yaml
+```yaml
+# Kyverno 1.20+ (CEL ValidatingPolicy). Kyverno 1.20 no longer executes kyverno.io/v1 ClusterPolicy.
+# Start with validationActions [Audit]; switch to [Deny] after the warn window.
+```
+rules/k8s/kyverno-pq-tls.yaml (Kyverno 1.19 and earlier)
+```yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+```
+rules/k8s/gatekeeper-pq-tls.yaml
+```yaml
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+```
+H3: Runtime
+rules/runtime/cloudtrail-alarm.yaml
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+```
+rules/runtime/cloudtrail-non-pq.sql
+```sql
+-- cloudtrail-non-pq.sql
+-- Callers that reached a PQ-capable AWS endpoint WITHOUT hybrid PQ key exchange.
+```
+rules/runtime/eventbridge-rules.json
+```json
+{
+  "pq-tls-listener-changed-to-classical": {
+```
+rules/runtime/elb-logs-athena.sql
+```sql
+-- elb-logs-athena.sql: classical vs PQ handshakes at ALB (connection logs) and NLB (TLS access logs).
+
+```

@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyS3BelowTls13ForTaggedBuckets",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::example-pq-only-bucket",
+        "arn:aws:s3:::example-pq-only-bucket/*"
+      ],
+      "Condition": {
+        "NumericLessThan": {
+          "s3:TlsVersion": "1.3"
+        },
+        "BoolIfExists": {
+          "aws:PrincipalIsAWSService": "false"
+        }
+      }
+    }
+  ]
+}

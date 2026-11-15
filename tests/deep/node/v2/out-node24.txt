@@ -1,0 +1,204 @@
+######## node24  image=node@sha256:9d266751ca3d7fdbe651c878ffd5ad0a42fed49a18c283509267c97f025b7496  OPENSSL_CONF=-
+#### server side (C, E, F): node2-srv probed by openssl s_client 3.5
+failed 9108 C pfx legacy RC2/3DES + passphrase :: ERR_CRYPTO_UNSUPPORTED_OPERATION Unsupported PKCS12 PFX data
+node v24.22.3 openssl 3.5.9 OPENSSL_CONF=
+-- 9101  C RSA PEM key/cert
+   PQ client:        cert=rsa verify=OK group=X25519MLKEM768 
+   classical client: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9102  C EC P-256 PEM key/cert
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9103  C RSA+EC in one context (key/cert arrays)
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   RSA-only sigalgs: cert=rsa verify=OK group=X25519MLKEM768 
+   ECDSA-only:       cert=ec verify=OK group=X25519MLKEM768 
+-- 9104  C encrypted PKCS#8 EC key + passphrase
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9105  C encrypted traditional RSA key + passphrase
+   PQ client:        cert=rsa verify=OK group=X25519MLKEM768 
+   classical client: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9106  C pfx RSA (AES/PBKDF2) + passphrase
+   PQ client:        cert=rsa verify=OK group=X25519MLKEM768 
+   classical client: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9107  C pfx EC + passphrase
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9109  C SNICallback a=RSA b=EC c=EC384 default=RSA
+   SNI a.test PQ: cert=rsa verify=OK group=X25519MLKEM768  | classical: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI b.test PQ: cert=ec verify=OK group=X25519MLKEM768  | classical: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI c.test PQ: cert=ec384 verify=OK group=X25519MLKEM768  | classical: cert=ec384 verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI node2srv PQ: cert=rsa verify=OK group=X25519MLKEM768  | classical: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9110  C addContext b.test=EC pfx, default RSA
+   SNI a.test PQ: cert=rsa verify=OK group=X25519MLKEM768  | classical: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI b.test PQ: cert=ec verify=OK group=X25519MLKEM768  | classical: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI c.test PQ: cert=rsa verify=OK group=X25519MLKEM768  | classical: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI node2srv PQ: cert=rsa verify=OK group=X25519MLKEM768  | classical: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9111  C Express 5 on https EC
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9113  C http2.createSecureServer EC + SNICallback
+   SNI a.test PQ: cert=rsa verify=OK group=X25519MLKEM768  | classical: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI b.test PQ: cert=ec verify=OK group=X25519MLKEM768  | classical: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI c.test PQ: cert=ec384 verify=OK group=X25519MLKEM768  | classical: cert=ec384 verify=OK group=X25519 (TLS1.2 or classical) 
+   SNI node2srv PQ: cert=ec verify=OK group=X25519MLKEM768  | classical: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9114  E https requestCert+rejectUnauthorized, ca=private CA
+   PQ + client cert: cert=ec verify=OK group=X25519MLKEM768  app reply: cn=client
+   PQ, no cert:      app reply: alert certificate required
+   classical + cert: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9121  F ecdhCurve X25519:P-256
+   PQ client:        207071B6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9122  F ecdhCurve auto
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9123  F ecdhCurve PQ-first
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9124  F ciphers TLS1.2-only list
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9125  F maxVersion TLSv1.2
+   PQ client:        2000A4A3FFFF0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:../ssl/record/rec_layer_s3.c:918:SSL alert number 70 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9126  F secureProtocol TLSv1_2_method
+   PQ client:        20801FB1FFFF0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:../ssl/record/rec_layer_s3.c:918:SSL alert number 70 
+   classical client: cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=ec verify=OK group=X25519 (TLS1.2 or classical) 
+-- 9127  F ecdhCurve X25519MLKEM768 only (PQ-only server)
+   PQ client:        cert=ec verify=OK group=X25519MLKEM768 
+   classical client: 20F0ABB8FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+   TLS1.2 client:    20503B9FFFFF0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:../ssl/record/rec_layer_s3.c:918:SSL alert number 70 
+-- 9112  C Fastify 5 https pfx + passphrase
+   PQ client:        cert=rsa verify=OK group=X25519MLKEM768 
+   classical client: cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+   TLS1.2 client:    cert=rsa verify=OK group=X25519 (TLS1.2 or classical) 
+#### client side (D, E, F) against s_server PQ-only/classical
+{"group":"trust-none","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D0 no CA","port":4431,"ok":false,"error":"UNABLE_TO_VERIFY_LEAF_SIGNATURE"}
+{"group":"trust-ca-option","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D2 tls ca option","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D2 https.Agent ca option","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D2 undici connect.ca","port":4431,"ok":true,"status":200}
+{"case":"D2 classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":"/w/certs/ca.pem","SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":"/w/certs/bundle-with-private.pem","SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":"/w/certs/bundle-with-private.pem","NODE_OPTIONS":null,"execArgv":["--use-openssl-ca"]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":"/w/certs/bundle-with-private.pem","NODE_OPTIONS":null,"execArgv":["--use-system-ca"]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":"/w/certs/bundle-with-private.pem","NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":"/w/certs/bundle-with-private.pem","NODE_OPTIONS":"--use-openssl-ca","execArgv":[]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"systemStore":"debian"}
+## --use-system-ca
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":["--use-system-ca"]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+## --use-openssl-ca
+{"group":"trust-env","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":["--use-openssl-ca"]}
+{"case":"D tls default","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D https.get default agent","port":4431,"ok":true,"status":200,"group":"X25519MLKEM768"}
+{"case":"D global fetch","port":4431,"ok":true,"status":200}
+{"case":"D undici Agent","port":4431,"ok":true,"status":200}
+{"case":"D classical fallback","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+## bundled (default)
+{"group":"trust-none","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D0 no CA","port":4431,"ok":false,"error":"UNABLE_TO_VERIFY_LEAF_SIGNATURE"}
+{"group":"trust-api","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"D tls.setDefaultCACertificates","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"D fetch after setDefaultCACertificates","port":4431,"ok":true,"status":200}
+{"group":"mtls","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"E tls.connect key/cert","port":4433,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"E tls.connect encrypted key + passphrase","port":4433,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"E tls.connect pfx + passphrase","port":4433,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"E tls.connect RSA client cert","port":4433,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"E https.Agent key/cert","port":4433,"ok":true,"status":200,"group":"X25519MLKEM768","clientCertSeenByServer":true}
+{"case":"E undici Agent connect key/cert","port":4433,"ok":true,"status":200}
+{"case":"E global fetch + npm undici dispatcher","port":4433,"ok":false,"error":"UND_ERR_INVALID_ARG: invalid onRequestStart method"}
+{"case":"E npm undici.fetch + its own Agent","port":4433,"ok":true,"status":200}
+{"case":"E AWS SDK v3 NodeHttpHandler httpsAgent key/cert","port":4433,"ok":true,"status":200}
+{"case":"E classical mTLS fallback","port":4434,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"E negative: no client cert","port":4433,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"E negative: no client cert","port":4433,"ok":false,"error":"ERR_SSL_TLSV13_ALERT_CERTIFICATE_REQUIRED"}
+{"case":"E negative: SDK without client cert","port":4433,"ok":false,"tlsOk":false,"error":"ERR_SSL_TLSV13_ALERT_CERTIFICATE_REQUIRED"}
+{"group":"block","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"F ecdhCurve X25519:P-256 -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE"}
+{"case":"F ecdhCurve X25519:P-256 -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F ecdhCurve auto -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F ecdhCurve auto -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F ecdhCurve PQ-first -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F ecdhCurve PQ-first -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F ciphers TLS1.2-only list -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F ciphers TLS1.2-only list -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F ciphers TLS1.3 suite only -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F ciphers TLS1.3 suite only -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F maxVersion TLSv1.2 -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION"}
+{"case":"F maxVersion TLSv1.2 -> classical","port":4432,"ok":true,"protocol":"TLSv1.2","group":"X25519"}
+{"case":"F secureProtocol TLSv1_2_method -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION"}
+{"case":"F secureProtocol TLSv1_2_method -> classical","port":4432,"ok":true,"protocol":"TLSv1.2","group":"X25519"}
+{"case":"F secureProtocol TLS_method -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F secureProtocol TLS_method -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F secureProtocol TLSv1_3_method -> PQ-only","port":4431,"ok":false,"threw":"ERR_TLS_INVALID_PROTOCOL_METHOD"}
+{"case":"F secureProtocol TLSv1_3_method -> classical","port":4432,"ok":false,"threw":"ERR_TLS_INVALID_PROTOCOL_METHOD"}
+{"case":"F minVersion TLSv1.3 -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F minVersion TLSv1.3 -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"case":"F sigalgs ECDSA+SHA256:RSA-PSS+SHA256 -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F sigalgs ECDSA+SHA256:RSA-PSS+SHA256 -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"block-defaults","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":null,"execArgv":[]}
+{"case":"F tls.DEFAULT_MAX_VERSION=TLSv1.2 -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION"}
+{"case":"F tls.DEFAULT_ECDH_CURVE=X25519:P-256 -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE"}
+{"case":"F DEFAULT_ECDH_CURVE classical, global fetch -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE"}
+{"group":"flags","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":"--tls-max-v1.2","execArgv":[]}
+{"case":"F flags --tls-max-v1.2 -> PQ-only","port":4431,"ok":false,"error":"ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION"}
+{"case":"F flags --tls-max-v1.2 -> classical","port":4432,"ok":true,"protocol":"TLSv1.2","group":"X25519"}
+{"group":"flags","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":"--tls-cipher-list=ECDHE-RSA-AES128-GCM-SHA256","execArgv":[]}
+{"case":"F flags --tls-cipher-list=ECDHE-RSA-AES128-GCM-SHA256 -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F flags --tls-cipher-list=ECDHE-RSA-AES128-GCM-SHA256 -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+{"group":"flags","node":"v24.22.3","openssl":"3.5.9","OPENSSL_CONF":null,"NODE_EXTRA_CA_CERTS":null,"SSL_CERT_FILE":null,"NODE_OPTIONS":"--tls-min-v1.3","execArgv":[]}
+{"case":"F flags --tls-min-v1.3 -> PQ-only","port":4431,"ok":true,"protocol":"TLSv1.3","group":"X25519MLKEM768"}
+{"case":"F flags --tls-min-v1.3 -> classical","port":4432,"ok":true,"protocol":"TLSv1.3","group":"X25519"}
+######## end node24

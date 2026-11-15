@@ -1,0 +1,19 @@
+Conftest: v0.71.1
+OPA: 1.21.1
+--- conftest verify
+
+10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+exit=0
+--- conftest test tf-good
+
+8 tests, 8 passed, 0 warnings, 0 failures, 0 exceptions
+exit=0
+--- conftest test tf-bad
+FAIL - samples/tf-bad/plan.json - terraform.pq_tls - PQ-A1 aws_api_gateway_domain_name.api: security_policy TLS_1_2 is not a *_PQ_2025_09 policy
+FAIL - samples/tf-bad/plan.json - terraform.pq_tls - PQ-B2 aws_lb_listener.nlb_classic: ssl_policy ELBSecurityPolicy-TLS13-1-2-2021-06 is not a -PQ-2025-09 policy (default choice ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09)
+FAIL - samples/tf-bad/plan.json - terraform.pq_tls - PQ-E1 aws_ecs_task_definition.go container api: GODEBUG tlsmlkem=0 disables PQ
+FAIL - samples/tf-bad/plan.json - terraform.pq_tls - PQ-L1 aws_lambda_function.node20: runtime nodejs20.x has no PQ path; upgrade
+FAIL - samples/tf-bad/plan.json - terraform.pq_tls - PQ-L2 aws_lambda_function.py_no_conf: python3.12 needs OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper
+
+8 tests, 3 passed, 0 warnings, 5 failures, 0 exceptions
+exit=1

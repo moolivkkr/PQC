@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  OrdersFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.13
+      Architectures: [arm64]
+      Handler: app.handler
+      CodeUri: build/            # contains app.py, your deps and pq-tls/openssl-pq.cnf
+      Timeout: 30
+      Environment:
+        Variables:
+          OPENSSL_CONF: /var/task/pq-tls/openssl-pq.cnf

@@ -1,0 +1,10 @@
+== GODEBUG=fips140=on AWSFIX=0
+gosrv:9448 aws-sdk-go-v2 TLS-FAIL: operation error STS: GetC
+gosrv:9449 aws-sdk-go-v2 TLS-FAIL: operation error STS: GetC
+raw addr=:9449 handshake_error=tls: no key exchanges supported by both client and server
+raw addr=:9449 handshake_error=tls: no key exchanges supported by both client and server
+== GODEBUG=fips140=on AWSFIX=1
+gosrv:9448 aws-sdk-go-v2 TLS-OK, then protocol error: operat
+gosrv:9449 aws-sdk-go-v2 TLS-FAIL: operation error STS: GetC
+raw addr=:9449 handshake_error=tls: no key exchanges supported by both client and server
+raw addr=:9449 handshake_error=tls: no key exchanges supported by both client and server

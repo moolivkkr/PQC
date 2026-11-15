@@ -1,0 +1,15 @@
+Resources:
+  DotnetFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: orders-api
+      Runtime: dotnet10
+      Handler: Function::Function.Handler::FunctionHandler
+      Architectures: [arm64]
+      Role: !GetAtt FnRole.Arn
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: orders-api.zip
+      Environment:
+        Variables:
+          OPENSSL_CONF: /var/task/pq-tls/openssl-pq.cnf

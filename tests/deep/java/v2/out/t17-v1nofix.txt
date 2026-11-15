@@ -1,0 +1,38 @@
+== eclipse-temurin:17-jre (eclipse-temurin@sha256:0b6521287f850ec1c4b31c9074c5a1ae1d67c5922c3fefd21065c7c32e244d4a) mode=v1nofix JAVA_TOOL_OPTIONS='-javaagent:/agent1/pq-tls-agent.jar'
+-- C. server keystores (OpenSSL 3.5 s_client -> JVM server)
+  9001 EC P-256 only (PKCS#12)                               | no group               | no cert        | alert handshake failure
+  9001 EC only, classical-only client -groups X25519         | no group               | no cert        | alert handshake failure
+  9009 RSA only (PKCS#12)                                    | group: X25519MLKEM768  | CN=rsa-main    | 
+  9002 RSA+EC in one PKCS#12                                 | group: X25519MLKEM768  | CN=rsa-main    | 
+  9003 RSA(self-signed)+EC, RSA-only client sigalgs          | group: X25519MLKEM768  | CN=rsa-self    | 
+  9004 two EC certs, SNI ks-java                             | no group               | no cert        | alert handshake failure
+  9004 two EC certs, SNI alt-host                            | no group               | no cert        | alert handshake failure
+  9005 EC in JKS                                             | no group               | no cert        | alert handshake failure
+  9006 code hard-codes KeyManagerFactory SunX509             | no group               | no cert        | alert handshake failure
+  9007 -Djavax.net.ssl.keyStore (default context)            | no group               | no cert        | alert handshake failure
+  9012 app's own -Djava.security.properties + keyStore       | no group               | no cert        | alert handshake failure
+-- E1. JVM server requires client cert (needClientAuth, trustStore=private CA)
+  9010 client EC cert, PQ group                              | no group               | no cert        | alert handshake failure
+  9010 client RSA cert, default                              | no group               | no cert        | alert handshake failure
+  9010 no client cert (must fail)                            | no group               | no cert        | alert handshake failure
+  9010 cert from unknown CA (must fail)                      | no group               | no cert        | alert handshake failure
+  9011 PQ-only JVM server, EC client cert                    | no group               | no cert        | alert handshake failure
+  9011 PQ-only JVM server, X25519-only client (must fail)    | no group               | no cert        | alert handshake failure
+   server 9010 log: handshake failed: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40) handshake failed: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40) handshake failed: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40) handshake failed: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40) 
+   server 9011 log: handshake failed: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40) handshake failed: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40) 
+-- D. JVM client trust -> PQ-only OpenSSL server, private-CA cert
+  no private CA configured (must fail)                       | client FAIL provider=BCJSSE: org.bouncycastle.tls.TlsFatalAlert: certificate_unknown(46)
+  -Djavax.net.ssl.trustStore=trust.p12                       | client OK provider=BCJSSE TLSv1.3 server-cert=CN=ec-ossl sent-client-cert=none first-line=HTTP/1.0 200 ok
+-- E2. JVM client presents cert -> OpenSSL 3.5 PQ-only s_server -Verify 1
+  keyStore=client-ec.p12                                     | client FAIL provider=BCJSSE: org.bouncycastle.tls.TlsFatalAlertReceived: certificate_required(116)
+  keyStore=client-rsa.p12                                    | client OK provider=BCJSSE TLSv1.3 server-cert=CN=ec-ossl sent-client-cert=CN=client-rsa first-line=HTTP/1.0 200 ok
+  no keyStore (must fail)                                    | client FAIL provider=BCJSSE: org.bouncycastle.tls.TlsFatalAlertReceived: certificate_required(116)
+   s_server verify log: peer did not return a certificate;depth=0 CN=client-rsa;peer did not return a certificate;
+-- E3. JVM client cert -> PQ-only JVM server (9011, jdk.tls.namedGroups=X25519MLKEM768)
+  keyStore=client-ec.p12                                     | client FAIL provider=BCJSSE: org.bouncycastle.tls.TlsFatalAlertReceived: handshake_failure(40)
+-- server startup lines
+  9001: jdk=17.0.21 kmfDefault=SunX509 secprop=SunX509 kmf=SunX509/SunJSSE pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+  9006: jdk=17.0.21 kmfDefault=SunX509 secprop=SunX509 kmf=SunX509/SunJSSE pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+  9007: jdk=17.0.21 kmfDefault=SunX509 secprop=SunX509  pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+  9012: jdk=17.0.21 kmfDefault=SunX509 secprop=SunX509  pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+left: 0

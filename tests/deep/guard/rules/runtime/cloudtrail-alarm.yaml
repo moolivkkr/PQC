@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Metric filter + alarm on the organisation trail's CloudWatch Logs group: API calls to PQ-capable
+  endpoints that did not negotiate ML-KEM. Pattern extends the one in the AWS KMS developer guide
+  to the six services that record tlsDetails.keyExchange.
+Parameters:
+  TrailLogGroup: { Type: String }
+  AlarmTopicArn: { Type: String }
+Resources:
+  NonPqApiCalls:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref TrailLogGroup
+      FilterName: pq-tls-non-pq-api-calls
+      FilterPattern: >-
+        { (($.eventSource = "kms.amazonaws.com") || ($.eventSource = "sts.amazonaws.com") ||
+        ($.eventSource = "iam.amazonaws.com") || ($.eventSource = "secretsmanager.amazonaws.com") ||
+        ($.eventSource = "acm.amazonaws.com") || ($.eventSource = "payment-cryptography.amazonaws.com")) &&
+        ($.userIdentity.invokedBy NOT EXISTS) &&
+        (($.tlsDetails.keyExchange != "*MLKEM*") || ($.tlsDetails.keyExchange NOT EXISTS)) }
+      MetricTransformations:
+        - MetricNamespace: PqTls
+          MetricName: NonPqApiCalls
+          MetricValue: "1"
+          DefaultValue: 0
+  NonPqApiCallsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: pq-tls-non-pq-api-calls
+      AlarmDescription: Classical (non-ML-KEM) TLS to KMS/STS/IAM/Secrets Manager/ACM/Payment Cryptography. Run cloudtrail-non-pq.sql to find the callers.
+      Namespace: PqTls
+      MetricName: NonPqApiCalls
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [ !Ref AlarmTopicArn ]

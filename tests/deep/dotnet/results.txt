@@ -1,0 +1,58 @@
+al2023 test image built
+pqsrv: OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+
+=== CLIENT (SslStream + HttpClient) ===
+mcr.microsoft.com/dotnet/aspnet:8.0              Debian GNU/Linux 12 (bookworm) | OpenSSL 3.0.22 25 Aug 2026 (Library: OpenSSL 3.0.22 25 Aug 2026) | 
+mcr.microsoft.com/dotnet/aspnet:8.0-alpine       Alpine Linux v3.24 | /usr/lib/libssl.so.3 | 
+mcr.microsoft.com/dotnet/aspnet:10.0             Ubuntu 24.04.5 LTS | OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024) | 
+mcr.microsoft.com/dotnet/aspnet:10.0-alpine      Alpine Linux v3.24 | /usr/lib/libssl.so.3 | 
+mcr.microsoft.com/dotnet/aspnet:10.0-azurelinux3.0 Microsoft Azure Linux 3.0 | OpenSSL 3.3.7 7 Apr 2026 (Library: OpenSSL 3.3.7 7 Apr 2026) | 
+mcr.microsoft.com/dotnet/aspnet:10.0-resolute    Ubuntu 26.04.1 LTS | OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026) | 
+mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled {"dotnet":"10.0.15","sslstream_pq_only":"FAIL SslException","sslstream_classical_only":"OK Tls13","httpclient_pq_only":"FAIL OpenSslCryptographicException","httpclient_classical_only":"OK HTTP 200"}
+mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled {"dotnet":"10.0.15","sslstream_pq_only":"OK Tls13","sslstream_classical_only":"OK Tls13","httpclient_pq_only":"OK HTTP 200","httpclient_classical_only":"OK HTTP 200"}
+AL2023 dnf aspnetcore-8 (default)                Amazon Linux 2023.12.20261102 | OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3.5.8 25 Aug 2026) | 
+AL2023 dnf aspnetcore-8 + OPENSSL_CONF           Amazon Linux 2023.12.20261102 | OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3.5.8 25 Aug 2026) | 
+AL2023 dnf aspnetcore-8 + DEFAULT:PQ policy      DEFAULT:PQ {"dotnet":"8.0.33","sslstream_pq_only":"OK Tls13","sslstream_classical_only":"OK Tls13","httpclient_pq_only":"OK HTTP 200","httpclient_classical_only":"OK HTTP 200"}
+
+=== NATIVE AOT (built on AL2023) in public.ecr.aws/lambda/provided:al2023 ===
+provided.al2023 AOT (default)                    {"dotnet":"8.0.33","sslstream_pq_only":"FAIL SslException","sslstream_classical_only":"OK Tls13","httpclient_pq_only":"FAIL OpenSslCryptographicException","httpclient_classical_only":"OK HTTP 200"}
+provided.al2023 AOT + OPENSSL_CONF               {"dotnet":"8.0.33","sslstream_pq_only":"OK Tls13","sslstream_classical_only":"OK Tls13","httpclient_pq_only":"OK HTTP 200","httpclient_classical_only":"OK HTTP 200"}
+
+=== KESTREL SERVER (appsettings.json endpoint; probed with openssl 3.5 s_client) ===
+mcr.microsoft.com/dotnet/aspnet:8.0              PQ-client: 2010BC97FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:8.0-alpine       PQ-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:10.0             PQ-client: 20107481FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:10.0-alpine      PQ-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:10.0-azurelinux3.0 PQ-client: 2010878EFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:10.0-resolute    PQ-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled PQ-client: 20502BAAFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled PQ-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+AL2023 aspnetcore-8 (default)                    PQ-client: 20E0A494FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+AL2023 aspnetcore-8 + OPENSSL_CONF               PQ-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 || classical-client: verify error:num=18:self-signed certificate Protocol version: TLSv1.3 
+10.0-alpine, SslProtocols=Tls12 only (pitfall)   PQ-client: 20D072BBFFFF0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:../ssl/record/rec_layer_s3.c:918:SSL alert number 70 || classical-client: 2040A494FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+curl through PQ (alpine kestrel): ok protocol=Tls13 cipher=TLS_AES_256_GCM_SHA384
+curl-http=200
+
+=== CONFLUENT.KAFKA (librdkafka bundled OpenSSL) against s_server ===
+write /dev/stdout: broken pipe
+aspnet:8.0             port=8443 curves=default librdkafka 2.16.0 curves= port=8443 LOG [thrd:app]: Using statically linked OpenSSL version OpenSSL 3.5.8 25 Aug 2026 (0x30500080, librdkafka built with 0x30500080) LOG [thrd:app]: librdkafka v2.16.0 (0x21000ff) rdkafka#producer-1 initialized (builtin.features
+write /dev/stdout: broken pipe
+aspnet:8.0             port=8443 curves=X25519  librdkafka 2.16.0 curves=X25519 port=8443 LOG [thrd:app]: Using statically linked OpenSSL version OpenSSL 3.5.8 25 Aug 2026 (0x30500080, librdkafka built with 0x30500080) LOG [thrd:app]: librdkafka v2.16.0 (0x21000ff) rdkafka#producer-1 initialized (builtin.fe
+write /dev/stdout: broken pipe
+aspnet:8.0             port=8444 curves=default librdkafka 2.16.0 curves= port=8444 LOG [thrd:app]: Using statically linked OpenSSL version OpenSSL 3.5.8 25 Aug 2026 (0x30500080, librdkafka built with 0x30500080) LOG [thrd:app]: librdkafka v2.16.0 (0x21000ff) rdkafka#producer-1 initialized (builtin.features
+write /dev/stdout: broken pipe
+aspnet:8.0             port=8444 curves=X25519  librdkafka 2.16.0 curves=X25519 port=8444 LOG [thrd:app]: Using statically linked OpenSSL version OpenSSL 3.5.8 25 Aug 2026 (0x30500080, librdkafka built with 0x30500080) LOG [thrd:app]: librdkafka v2.16.0 (0x21000ff) rdkafka#producer-1 initialized (builtin.fe
+aspnet:10.0-alpine     port=8443 curves=default Unhandled exception. System.DllNotFoundException: Failed to load the librdkafka native library. 
+aspnet:10.0-alpine     port=8443 curves=X25519  Unhandled exception. System.DllNotFoundException: Failed to load the librdkafka native library. 
+aspnet:10.0-alpine     port=8444 curves=default Unhandled exception. System.DllNotFoundException: Failed to load the librdkafka native library. 
+aspnet:10.0-alpine     port=8444 curves=X25519  Unhandled exception. System.DllNotFoundException: Failed to load the librdkafka native library. 
+
+=== NPGSQL against postgres:18 with ssl_groups='X25519MLKEM768' ===
+pg: postgres (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2) ssl_groups=X25519MLKEM768
+mcr.microsoft.com/dotnet/aspnet:10.0-alpine      npgsql OK TLSv1.3 TLS_AES_256_GCM_SHA384 (dotnet 10.0.15)
+mcr.microsoft.com/dotnet/aspnet:10.0             npgsql FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure (dotnet 10.0.15)
+mcr.microsoft.com/dotnet/aspnet:10.0-resolute    npgsql OK TLSv1.3 TLS_AES_256_GCM_SHA384 (dotnet 10.0.15)
+AL2023 aspnetcore-8 + OPENSSL_CONF               npgsql OK TLSv1.3 TLS_AES_256_GCM_SHA384 (dotnet 8.0.33)
+
+=== cleanup (own label only) ===
+removed containers=1 network=pqnet-dotnet

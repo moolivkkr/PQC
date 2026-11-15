@@ -1,0 +1,16 @@
+FAIL: named-group list without X25519MLKEM768
+    /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/ci-fixture/bad/Dockerfile:2:ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.namedGroups=x25519,secp256r1"
+FAIL: TLS 1.2-only protocol pin
+    /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/ci-fixture/bad/A.java:1:class A { void a() throws Exception { javax.net.ssl.KeyManagerFactory.getInstance("SunX509"); javax.net.ssl.SSLContext.getInstance("TLSv1.2"); } }
+FAIL: hard-coded SunX509 key manager (use KeyManagerFactory.getDefaultAlgorithm() or "PKIX")
+    /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/ci-fixture/bad/A.java:1:class A { void a() throws Exception { javax.net.ssl.KeyManagerFactory.getInstance("SunX509"); javax.net.ssl.SSLContext.getInstance("TLSv1.2"); } }
+WARN: JDK below 25 (needs the pq-tls kit or an upgrade to 25.0.5+)
+    /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/ci-fixture/bad/Dockerfile:1:FROM amazoncorretto:21-al2023-headless
+WARN: pq-tls agent without pq-tls.security on the same line (fine only with agent v2)
+    /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/ci-fixture/bad/Dockerfile:2:ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.namedGroups=x25519,secp256r1"
+java-pq-check: 3 failing check(s)
+exit=1
+WARN: JDK below 25 (needs the pq-tls kit or an upgrade to 25.0.5+)
+    /private/tmp/claude-501/-Users-kishoremooli-development-cybersecurity/21fa377a-bc06-46f9-9e49-4588545ba6c2/scratchpad/deep/java/v2/ci-fixture/good/Dockerfile:1:FROM amazoncorretto:21-al2023-headless
+java-pq-check: 0 failing check(s)
+exit=0

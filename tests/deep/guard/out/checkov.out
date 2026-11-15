@@ -1,0 +1,15 @@
+3.4.5
+--- checkov tf-good
+Passed checks: 6, Failed checks: 0, Skipped checks: 0
+exit=
+--- checkov tf-bad
+Passed checks: 2, Failed checks: 4, Skipped checks: 0
+Check: CKV2_PQTLS_4: "API Gateway REST Regional/Private custom domain must use a *_PQ_2025_09 security policy"
+	FAILED for resource: aws_api_gateway_domain_name.api
+Check: CKV2_PQTLS_3: "Lambda python3.12+/nodejs22+/dotnet8+ must set the pq-tls OPENSSL_CONF or exec wrapper"
+	FAILED for resource: aws_lambda_function.py_no_conf
+Check: CKV2_PQTLS_1: "ALB HTTPS / NLB TLS listener must use a -PQ-2025-09 security policy"
+	FAILED for resource: aws_lb_listener.nlb_classic
+Check: CKV2_PQTLS_2: "Lambda runtime must have a PQ path (no nodejs18.x/20.x, python3.8, java8, dotnet6)"
+	FAILED for resource: aws_lambda_function.node20
+exit=

@@ -1,0 +1,19 @@
+[Unit]
+Description=orders API (Node.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=app
+WorkingDirectory=/srv/orders
+# Official binaries 22.20+/24.9+: nothing else needed.
+ExecStart=/opt/node-v24/bin/node /srv/orders/server.js
+Environment=NODE_ENV=production
+Environment=TLS_KEY=/etc/app/tls/server.key
+Environment=TLS_CERT=/etc/app/tls/server.pem
+# AL2023 dnf nodejs22 without the DEFAULT:PQ host policy:
+# Environment=OPENSSL_CONF=/etc/app/openssl-pq-node-system.cnf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

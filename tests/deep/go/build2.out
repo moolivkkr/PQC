@@ -1,0 +1,14 @@
+built extra-1.25
+built fipsonly-boring-1.25
+built extra-1.26
+built fipsonly-boring-1.26
+built srv
+built libs
+SRC github.com/redis/go-redis/v9 v9.23.0 CurvePreferences-hits: 
+SRC github.com/segmentio/kafka-go v0.4.51 CurvePreferences-hits: 
+SRC github.com/IBM/sarama v1.61.1 CurvePreferences-hits: 
+SRC github.com/jackc/pgx/v5 v5.13.0 CurvePreferences-hits: 
+SRC github.com/aws/aws-sdk-go-v2 v1.48.0 CurvePreferences-hits: aws/transport/http/client.go 
+SRC google.golang.org/grpc v1.85.0 CurvePreferences-hits: 
+built extra-1.27
+built fipsonly-boring-1.27

@@ -1,0 +1,64 @@
+# ---- values-istiod-pqc.yaml (helm upgrade istiod istio/istiod -n istio-system -f values-istiod-pqc.yaml) ----
+# Rendered with helm template oci://gcr.io/istio-release/charts/istiod --version 1.28.0: env lands on the
+# discovery container, tlsDefaults lands in the istio ConfigMap (checked 2026-11-14).
+pilot:
+  env:
+    COMPLIANCE_POLICY: pqc          # Istio 1.27+: TLS 1.3 + X25519MLKEM768 only, for mesh mTLS, gateways and xDS
+meshConfig:
+  tlsDefaults:
+    # Non-mesh TLS (gateway listeners, TLS origination). Used on its own when you want PQ-preferred
+    # with classical fallback on gateways instead of the enforcing COMPLIANCE_POLICY.
+    ecdhCurves: [X25519MLKEM768, X25519]
+---
+# ---- values-ztunnel-pqc.yaml (ambient only; helm upgrade ztunnel istio/ztunnel -n istio-system -f ...) ----
+env:
+  COMPLIANCE_POLICY: pqc
+---
+# ---- istio-operator-pqc.yaml (istioctl install -f istio-operator-pqc.yaml) ----
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: pqc
+  namespace: istio-system
+spec:
+  profile: default                  # "ambient" for ambient mode
+  meshConfig:
+    tlsDefaults:
+      ecdhCurves: [X25519MLKEM768, X25519]
+  values:
+    pilot:
+      env:
+        COMPLIANCE_POLICY: pqc
+    ztunnel:                        # ambient profile only
+      env:
+        COMPLIANCE_POLICY: pqc
+---
+# ---- egress-tls-origination.yaml: app sends plain HTTP, the egress gateway / sidecar does PQ TLS to the external host ----
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: partner-api
+  namespace: payments
+spec:
+  hosts: [api.partner.example]
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
+  location: MESH_EXTERNAL
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: partner-api-tls
+  namespace: payments
+spec:
+  host: api.partner.example
+  trafficPolicy:
+    portLevelSettings:
+    - port: { number: 443 }
+      tls:
+        mode: SIMPLE                # TLS origination; key-exchange groups from tlsDefaults / COMPLIANCE_POLICY
+        sni: api.partner.example
+        credentialName: partner-ca  # Secret with ca.crt; or caCertificates: /etc/ssl/certs/ca-certificates.crt

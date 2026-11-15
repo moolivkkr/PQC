@@ -1,0 +1,11 @@
+net/http default        :9443 | client groups=X25519MLKEM768 -tls1_3 | OK | Negotiated TLS1.3 group: X25519MLKEM768 | Protocol: TLSv1.3 | 
+net/http default        :9443 | client groups=X25519  | OK |  | Protocol: TLSv1.3 | 
+net/http default        :9443 | client groups=SecP256r1MLKEM768 -tls1_3 | OK | Negotiated TLS1.3 group: SecP256r1MLKEM768 | Protocol: TLSv1.3 | 
+net/http default        :9443 | client groups=P-256 -tls1_2 | OK |  | Protocol: TLSv1.2 | 
+net/http pitfall curves :9444 | client groups=X25519MLKEM768 -tls1_3 | FAIL | Negotiated TLS1.3 group: <NULL> | Protocol: TLSv1.3 | 
+net/http pitfall curves :9444 | client groups=X25519MLKEM768:X25519  | OK |  | Protocol: TLSv1.3 | 
+net/http PQ-only        :9445 | client groups=X25519MLKEM768 -tls1_3 | OK | Negotiated TLS1.3 group: X25519MLKEM768 | Protocol: TLSv1.3 | 
+net/http PQ-only        :9445 | client groups=X25519  | FAIL | Negotiated TLS1.3 group: <NULL> | Protocol: TLSv1.3 | 
+net/http PQ-only        :9445 | client groups=X25519MLKEM768 -tls1_2 | FAIL |  | Protocol: TLSv1.2 | 
+gRPC default            :9446 | client groups=X25519MLKEM768 -tls1_3 -alpn h2 | OK | Negotiated TLS1.3 group: X25519MLKEM768 | Protocol: TLSv1.3 | ALPN protocol: h2
+gRPC default            :9446 | client groups=X25519 -alpn h2 | OK |  | Protocol: TLSv1.3 | ALPN protocol: h2

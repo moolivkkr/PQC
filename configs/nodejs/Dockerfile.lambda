@@ -1,0 +1,8 @@
+FROM public.ecr.aws/lambda/nodejs:24@sha256:eb0de3ee81b4638149f0b1bcab2c657603a23a0c221a4b5678be29b48265bd31
+COPY package.json package-lock.json ${LAMBDA_TASK_ROOT}/
+RUN npm ci --omit=dev
+COPY index.mjs ${LAMBDA_TASK_ROOT}/
+COPY pq-tls/openssl-pq-node.cnf ${LAMBDA_TASK_ROOT}/pq-tls/openssl-pq-node.cnf
+# The bootstrap only sets its own (classical) file when OPENSSL_CONF is unset.
+ENV OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf
+CMD ["index.handler"]

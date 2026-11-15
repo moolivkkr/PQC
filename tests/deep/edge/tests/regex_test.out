@@ -1,0 +1,8 @@
+OK   alb: groups=15 tls=TLSv1.2 kx='' last=''
+OK   alb: groups=15 tls=TLSv1.3 kx='X25519MLKEM768' last='10.0.1.23'
+OK   alb: groups=15 tls=TLSv1.2 kx='x25519' last='10.0.1.23'
+OK   alb: groups=15 tls=TLSv1.3 kx='X25519MLKEM768' last='10.0.1.23'
+OK   nlb: groups=24 tls=tlsv12 kx='-' last='2018-12-20T02:59:30'
+OK   nlb: groups=24 tls=tlsv12 kx='-' last='2020-04-01T08:51:20'
+OK   nlb: groups=24 tls=tlsv13 kx='X25519MLKEM768' last='2026-11-14T09:59:59'
+FAILURES 0

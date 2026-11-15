@@ -1,0 +1,61 @@
+=== mysql:26
+26.10.0
+admin_tls_kex	
+mysqlx_tls_kex	
+replication_tls_kex	
+tls_kex	
+admin_force_pqc	OFF
+admin_use_pqc_sign	OFF
+force_pqc	OFF
+mysqlx_force_pqc	OFF
+mysqlx_use_pqc_sign	OFF
+replication_force_pqc	OFF
+replication_use_pqc_sign	OFF
+use_pqc_sign	OFF
+--- s_client mydb:3306 groups=X25519MLKEM768 -starttls mysql -tls1_3
+CONNECTED(00000003)
+Negotiated TLS1.3 group: X25519MLKEM768
+Protocol: TLSv1.3
+--- s_client mydb:3306 groups=X25519 -starttls mysql
+CONNECTED(00000003)
+Peer Temp Key: X25519, 253 bits
+Protocol: TLSv1.3
+--- s_client mydb:3306 groups=P-256 -starttls mysql
+CONNECTED(00000003)
+Peer Temp Key: ECDH, prime256v1, 256 bits
+Protocol: TLSv1.3
+--- mysql 26 client (default) status
+Tls_key_exchange_algorithm	X25519MLKEM768
+Tls_sign_algorithm	rsa_pss_rsae_sha256
+Ssl_version	TLSv1.3
+--- force_pqc=ON then classical client
+1
+--- s_client mydb:3306 groups=X25519 -starttls mysql
+20B0CCB0FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+CONNECTED(00000003)
+Negotiated TLS1.3 group: <NULL>
+Protocol: TLSv1.3
+--- s_client mydb:3306 groups=X25519MLKEM768 -starttls mysql
+CONNECTED(00000003)
+Negotiated TLS1.3 group: X25519MLKEM768
+Protocol: TLSv1.3
+ERROR 2026 (HY000): SSL connection error: error:0A000410:SSL routines::ssl/tls alert handshake failure
+  --tls-kex=name      TLS key exchange groups to use.
+  --force-pqc         If set to ON, require a PQC-compatible TLS key exchange.
+  --use-pqc-sign      If set to OFF, advertise only classical TLS handshake
+tls-kex                                                (No default value)
+force-pqc                                              FALSE
+=== mariadb:latest
+13.0.2-MariaDB-ubu2604	YES	TLSv1.2,TLSv1.3	OpenSSL 3.5.5 27 Jan 2026
+--- s_client mdb:3306 groups=X25519MLKEM768 -starttls mysql -tls1_3
+CONNECTED(00000003)
+Negotiated TLS1.3 group: X25519MLKEM768
+Protocol: TLSv1.3
+--- s_client mdb:3306 groups=X25519 -starttls mysql
+CONNECTED(00000003)
+Peer Temp Key: X25519, 253 bits
+Protocol: TLSv1.3
+--- mariadb client
+Ssl_version	TLSv1.3
+Ssl_cipher	TLS_AES_256_GCM_SHA384
+DONE

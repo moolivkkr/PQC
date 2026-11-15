@@ -1,0 +1,201 @@
+# TAB: java  node=4c9d8c6b-f4f3  rev=13
+
+## 1. H1 and lead paragraphs
+H1: Java runbook
+
+The JSSE provider inside the JVM decides, not the OS OpenSSL or the base image. JDK 25.0.5 and later (released 2026-10-20) offer and prefer X25519MLKEM768 by default, as client and as server (Oracle 25.0.5 release note, JDK-8314323). JDK 8 to 21 have no ML-KEM TLS group: put Bouncy Castle's JSSE provider (BCJSSE) first with the pq-tls agent or a java.security override, or upgrade.
+
+Three exceptions bypass JSSE and bring their own TLS library, so the JDK version does not matter for them:
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+  H3: By JDK and compute type
+  H3: By library (client side)
+  H3: By server (server side)
+H2: Client side (app level)
+  H3: What to change, by library
+  H3: JVM flags that matter
+H2: Server side
+  H3: Spring Boot (embedded Tomcat, Jetty or Undertow)
+  H3: Standalone Tomcat (server.xml)
+  H3: Jetty, Undertow, JDK HttpsServer
+  H3: Netty server (gRPC-Java, Reactor Netty, Vert.x)
+  H3: Quarkus and Micronaut
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+  H3: Agent build (pq-tls kit)
+  H3: Dependencies
+  H3: java.security override (static registration: containers and EC2, not Lambda)
+  H3: Spring Boot
+  H3: Standalone Tomcat
+  H3: Netty and AWS SDK code
+  H3: Lambda
+  H3: Containers (Fargate, ECS, EKS)
+  H3: EC2
+
+## 3. Status matrix (first table)
+| JDK | Lambda zip | Lambda image | Fargate / ECS / EKS | EC2 | Evidence |
+| 25.0.5+ (Corretto, Temurin) | PQ: runtime java25 | PQ: lambda/java:25 | PQ: amazoncorretto:25, eclipse-temurin:25 | PQ: Corretto 25 package | Tested (client and server); Documented (25.0.5 release notes) |
+| 21 (21.0.13) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static java.security gives PQ | Same as containers | Tested |
+| 17 (17.0.21) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static gives PQ | Same as containers | Tested |
+| 11 | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Agent gives PQ | Same as containers | Tested on Lambda java11 (kit); containers Unverified |
+| 8 | Agent + jdk.tls.client.protocols=TLSv1.3,TLSv1.2 gives PQ | Same | Same | Same | Tested on Lambda java8.al2023 (kit) |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Every file the sections above excerpt, complete. Paths are suggestions; keep the pq-tls/ directory name so the agent's manifest finds its jars. The agent and the java.security override are for JDK 8 to 21 only; remove them when the JDK reaches 25.0.5 or later. The test scripts and raw output behind every "Tested" label are in the work folder deep/java/ (run-clients.sh, run-servers.sh, run-aws.sh, run-static-pg.sh, out/*.txt).
+H3: Agent build (pq-tls kit)
+pq-tls-agent/src/PqTlsAgent.java
+```java
+import java.security.Provider;
+import java.security.Security;
+```
+pq-tls-agent/MANIFEST.MF (the jar's manifest; the three BC jars sit next to the agent jar)
+```text
+Premain-Class: PqTlsAgent
+Class-Path: bcprov-jdk18on-1.87.jar bctls-jdk18on-1.87.jar bcutil-jdk18on-1.87.jar
+```
+pq-tls-agent/build.sh (Java 8 bytecode, so one jar serves JDK 8 to 21)
+```bash
+#!/bin/bash
+set -euo pipefail
+```
+H3: Dependencies
+pom.xml (excerpt: only the dependencies that matter for PQ; pick the options your service uses)
+```xml
+<dependencyManagement>
+  <dependencies>
+```
+build.gradle.kts (same choices)
+```kotlin
+dependencies {
+    implementation(platform("software.amazon.awssdk:bom:2.59.1"))
+```
+H3: java.security override (static registration: containers and EC2, not Lambda)
+pq-tls/bc-static.security (JDK 11, 17, 21; load with -Djava.security.properties=<path>)
+```properties
+# Appended to $JAVA_HOME/conf/security/java.security. Bouncy Castle JSSE goes before SunJSSE;
+# the BC JCA provider goes last so other crypto keeps resolving to the JDK providers.
+```
+Compare the list with $JAVA_HOME/conf/security/java.security in your exact image first: a vendor that adds or reorders providers needs the same change here. Pair it with -Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1. JDK 8 uses class names (sun.security.provider.Sun, ..., com.sun.net.ssl.internal.ssl.Provider) in $JAVA_HOME/jre/lib/security/java.security; a JDK 8 variant was not tested.
+H3: Spring Boot
+src/main/resources/application.yml
+```yaml
+server:
+  port: 8443
+```
+Spring Boot has no named-group property (checked against the 4.1.2 SSL reference). Set groups with -Djdk.tls.namedGroups in the launch environment (Tomcat's groups defaults to it), or with a connector customizer:
+src/main/java/com/example/PqTomcatGroups.java (Unverified: Tomcat's SSLHostConfig.setGroups was tested; this Spring wiring and the Boot 4 package name were not)
+```java
+package com.example;
+
+```
+H3: Standalone Tomcat
+conf/server.xml (connector; groups needs Tomcat 11.0.12+ or the matching 10.1/9.0 releases)
+```xml
+<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+           SSLEnabled="true" maxThreads="200">
+```
+bin/setenv.sh (JDK 25.0.5+: not needed; JDK 17/21: the agent)
+```bash
+#!/bin/sh
+# JDK 17/21 only. Remove after moving Tomcat to JDK 25.0.5+.
+```
+H3: Netty and AWS SDK code
+NettyPq.java (client and server; the explicit list is optional, the tested default already prefers X25519MLKEM768)
+```java
+import io.netty.handler.ssl.*;
+
+```
+AwsClients.java (AWS SDK for Java v2 CRT client; PQ by default from 2.35.11)
+```java
+import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
+import software.amazon.awssdk.http.crt.AwsCrtHttpClient;
+```
+H3: Lambda
+Zip layout (agent path; java8.al2023, java11, java17, java21):
+```text
+function.zip
+├── com/example/Handler.class
+```
+template.yaml (SAM)
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+```
+lambda.yaml (plain CloudFormation)
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+```
+lambda.tf (Terraform)
+```hcl
+resource "aws_lambda_function" "fn" {
+  function_name    = "orders-java"
+```
+Dockerfile.lambda (Lambda container image on java:21; for java:25 drop the pq-tls COPY and the ENV line)
+```dockerfile
+FROM public.ecr.aws/lambda/java:21
+COPY build/classes/ ${LAMBDA_TASK_ROOT}/
+```
+H3: Containers (Fargate, ECS, EKS)
+Dockerfile (preferred: JDK 25.0.5+, no PQ-specific lines)
+```dockerfile
+FROM amazoncorretto:25-al2023-headless
+# or: FROM eclipse-temurin:25-jre
+```
+Dockerfile.jdk21-agent (JDK 17/21 until the upgrade)
+```dockerfile
+FROM amazoncorretto:21-al2023-headless
+COPY pq-tls/ /opt/pq-tls/
+```
+Dockerfile.distroless-agent (no shell in the image; the JVM reads JAVA_TOOL_OPTIONS itself)
+```dockerfile
+FROM gcr.io/distroless/java21-debian12:nonroot
+COPY pq-tls/ /opt/pq-tls/
+```
+Dockerfile.static (static provider registration instead of the agent)
+```dockerfile
+FROM eclipse-temurin:21-jre
+COPY pq-tls/bcprov-jdk18on-1.87.jar pq-tls/bctls-jdk18on-1.87.jar pq-tls/bcutil-jdk18on-1.87.jar /opt/pq-tls/
+```
+taskdef.json (ECS / Fargate; the variable is only needed on JDK 17/21 when the image does not set it)
+```json
+{
+  "family": "orders-java",
+```
+ecs.tf (Terraform)
+```hcl
+resource "aws_ecs_task_definition" "app" {
+  family                   = "orders-java"
+```
+ecs.yaml (CloudFormation)
+```yaml
+Parameters:
+  ExecutionRoleArn: {Type: String}
+```
+deployment.yaml (EKS)
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+```
+H3: EC2
+/etc/systemd/system/orders-java.service
+```ini
+[Unit]
+Description=orders-java
+```
+/etc/systemd/system/orders-java.service.d/pq-tls.conf (drop-in, when you cannot edit the unit)
+```ini
+[Service]
+Environment="JAVA_TOOL_OPTIONS=-javaagent:/opt/pq-tls/pq-tls-agent.jar"
+```
+pq-tls-ssm.yaml (SSM Command document: install the kit tarball from S3 and add the drop-in)
+```yaml
+schemaVersion: '2.2'
+description: Install the pq-tls Java agent and enable it for one systemd service.
+```
+The IaC and SSM files above were written for this tab and not deployed (no AWS account in the test lab); the JVM flags they set are the Tested part.

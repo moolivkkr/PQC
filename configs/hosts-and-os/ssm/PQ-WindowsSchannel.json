@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Enable or disable the X25519_MLKEM768 TLS group in Schannel and report the curve order.",
+  "parameters": {
+    "Action": { "type": "String", "default": "Enable", "allowedValues": ["Enable", "Disable", "Report"] }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runPowerShellScript",
+      "name": "schannelPq",
+      "precondition": { "StringEquals": ["platformType", "Windows"] },
+      "inputs": {
+        "timeoutSeconds": "300",
+        "runCommand": [
+          "$ErrorActionPreference = 'Stop'",
+          "Write-Output (\"OS build: \" + [System.Environment]::OSVersion.Version)",
+          "if ('{{ Action }}' -eq 'Enable')  { Enable-TlsEccCurve -Name 'X25519_MLKEM768' -Position 0 }",
+          "if ('{{ Action }}' -eq 'Disable') { Disable-TlsEccCurve -Name 'X25519_MLKEM768' }",
+          "Get-TlsEccCurve | Select-Object -First 5"
+        ]
+      }
+    }
+  ]
+}

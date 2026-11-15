@@ -1,0 +1,58 @@
+cfn-guard 3.2.1
+=== template cfn-good
+/w/samples/cfn-good.yaml Status = PASS
+pq-tls.guard/PQ_LAMBDA_PY_LEGACY_SHIM             SKIP
+pq-tls.guard/PQ_SAM_RUNTIME_NOT_BLOCKED           SKIP
+pq-tls.guard/PQ_SAM_GLOBAL_RUNTIME_NOT_BLOCKED    SKIP
+pq-tls.guard/PQ_ECS_OPENSSL_CONF_NOT_CLASSICAL    SKIP
+pq-tls.guard/PQ_APIGW_V2_DOMAIN_EXCEPTION         SKIP
+pq-tls.guard/PQ_LAMBDA_RUNTIME_NOT_BLOCKED        PASS
+pq-tls.guard/PQ_LAMBDA_OPENSSL_CONF               PASS
+pq-tls.guard/PQ_LAMBDA_JAVA_AGENT                 PASS
+pq-tls.guard/PQ_LAMBDA_NO_GODEBUG_OFF             PASS
+pq-tls.guard/PQ_ECS_NO_GODEBUG_OFF                PASS
+pq-tls.guard/PQ_ECS_JAVA_NAMED_GROUPS             PASS
+pq-tls.guard/PQ_ELB_LISTENER_POLICY               PASS
+pq-tls.guard/PQ_APIGW_DOMAIN_POLICY               PASS
+pq-tls.guard/PQ_APIGW_RESTAPI_POLICY              PASS
+exit=0
+=== template cfn-bad
+/w/samples/cfn-bad.yaml Status = FAIL
+pq-tls.guard/PQ_LAMBDA_PY_LEGACY_SHIM             SKIP
+pq-tls.guard/PQ_SAM_RUNTIME_NOT_BLOCKED           SKIP
+pq-tls.guard/PQ_SAM_GLOBAL_RUNTIME_NOT_BLOCKED    SKIP
+pq-tls.guard/PQ_LAMBDA_RUNTIME_NOT_BLOCKED        FAIL
+pq-tls.guard/PQ_LAMBDA_OPENSSL_CONF               FAIL
+pq-tls.guard/PQ_LAMBDA_JAVA_AGENT                 FAIL
+pq-tls.guard/PQ_LAMBDA_NO_GODEBUG_OFF             FAIL
+pq-tls.guard/PQ_ECS_NO_GODEBUG_OFF                FAIL
+pq-tls.guard/PQ_ECS_JAVA_NAMED_GROUPS             FAIL
+pq-tls.guard/PQ_ECS_OPENSSL_CONF_NOT_CLASSICAL    FAIL
+pq-tls.guard/PQ_ELB_LISTENER_POLICY               FAIL
+pq-tls.guard/PQ_APIGW_DOMAIN_POLICY               FAIL
+pq-tls.guard/PQ_APIGW_RESTAPI_POLICY              FAIL
+pq-tls.guard/PQ_APIGW_V2_DOMAIN_EXCEPTION         FAIL
+exit=19
+=== template sam-bad
+/w/samples/sam-bad.yaml Status = FAIL
+pq-tls.guard/PQ_LAMBDA_OPENSSL_CONF               SKIP
+pq-tls.guard/PQ_LAMBDA_JAVA_AGENT                 SKIP
+pq-tls.guard/PQ_ECS_NO_GODEBUG_OFF                SKIP
+pq-tls.guard/PQ_ECS_JAVA_NAMED_GROUPS             SKIP
+pq-tls.guard/PQ_ECS_OPENSSL_CONF_NOT_CLASSICAL    SKIP
+pq-tls.guard/PQ_ELB_LISTENER_POLICY               SKIP
+pq-tls.guard/PQ_APIGW_DOMAIN_POLICY               SKIP
+pq-tls.guard/PQ_APIGW_RESTAPI_POLICY              SKIP
+pq-tls.guard/PQ_APIGW_V2_DOMAIN_EXCEPTION         SKIP
+pq-tls.guard/PQ_LAMBDA_RUNTIME_NOT_BLOCKED        PASS
+pq-tls.guard/PQ_LAMBDA_NO_GODEBUG_OFF             PASS
+pq-tls.guard/PQ_SAM_RUNTIME_NOT_BLOCKED           PASS
+pq-tls.guard/PQ_LAMBDA_PY_LEGACY_SHIM             FAIL
+pq-tls.guard/PQ_SAM_GLOBAL_RUNTIME_NOT_BLOCKED    FAIL
+exit=19
+=== Config custom policy rule: one configuration item per evaluation
+good-py: 
+bad-py: /tmp/ci/bad-py.json Status = FAIL FAILED rules lambda-pq-tls.guard/lambda_openssl_conf_set       FAIL 
+bad-node20: /tmp/ci/bad-node20.json Status = FAIL FAILED rules lambda-pq-tls.guard/lambda_runtime_has_pq_path    FAIL 
+bad-java17: /tmp/ci/bad-java17.json Status = FAIL FAILED rules lambda-pq-tls.guard/lambda_java_agent_set         FAIL 
+bad-go: /tmp/ci/bad-go.json Status = FAIL FAILED rules lambda-pq-tls.guard/lambda_godebug_not_off        FAIL 

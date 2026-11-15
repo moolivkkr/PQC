@@ -1,0 +1,6 @@
+# pq-tls kit: security properties for JDK 8 to 21 with Bouncy Castle JSSE.
+# Load with -Djava.security.properties=<dir>/pq-tls.security (single '=': appended to java.security).
+# BCJSSE needs a key manager that understands key types such as "EC/secp256r1". The JDK default
+# (SunX509) does not, so EC server and client certificates are never selected. PKIX fixes it and
+# is also the better choice for SunJSSE.
+ssl.KeyManagerFactory.algorithm=PKIX

@@ -1,0 +1,26 @@
+{
+  "family": "payments-api",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {"cpuArchitecture": "ARM64", "operatingSystemFamily": "LINUX"},
+  "executionRoleArn": "arn:aws:iam::111122223333:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::111122223333:role/payments-task",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "111122223333.dkr.ecr.us-east-1.amazonaws.com/payments-api@sha256:<digest>",
+      "essential": true,
+      "portMappings": [{"containerPort": 8443, "protocol": "tcp"}, {"containerPort": 9443, "protocol": "tcp"}],
+      "environment": [
+        {"name": "GODEBUG", "value": "tlsmlkem=1,tlssecpmlkem=1"},
+        {"name": "TLS_PQ_ONLY", "value": "0"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {"awslogs-group": "/ecs/payments-api", "awslogs-region": "us-east-1", "awslogs-stream-prefix": "api"}
+      }
+    }
+  ]
+}

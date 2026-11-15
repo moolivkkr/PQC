@@ -1,0 +1,137 @@
+
+[mttvddjsrgd.0 H1] PQC Detection and Remediation by Language and Compute
+[.68 H2] Summary {.76} Outbound TLS becomes post-quantum (PQ) only when the client's TLS library offers the hybrid group X25519MLKEM768 in TLS 1.3. Whether it does depends on the language runtime and its crypto library, not on the compute type. Compute type decides two other things: how you can see non-PQ connections, and how the fix ships.
+
+ {.398} **Detection** differs by compute type. Lambda and Fargate cannot be packet-mirrored, so they rely on AWS logs and app-side telemetry. Containers on EC2 can also use passive sensors.
+ {.577} **Remediation** differs by language and version. Some need only a config file, some a Java agent or library shim, and some a runtime or toolchain upgrade.
+ {.729} **Every change ships through build, package and release.** Configuration changes are released like code here, so the fix rides a shared build template, not per-function edits. {.901} How to read the evidence labels in the tables:
+
+  ROW .949:  |  {.951} Label |  {.958} Meaning
+  ROW .966:  |  {.968} Tested |  {.976} Run on 2026-11-12 in AWS Lambda base images under the local Runtime Interface Emulator, against a server that accepts only X25519MLKEM768
+  ROW .1114:  |  {.1116} Documented |  {.1128} Stated in vendor documentation, not tested here
+  ROW .1176:  |  {.1178} Unverified |  {.1190} Believed true, no source opened or test run; confirm before relying on it
+[.1264 H2] Detection: finding non-PQ connections {.1302} Use two kinds of signal together: **posture** (what a workload will negotiate, predicted from its runtime, versions and config) and **observed** (what a handshake actually negotiated, from logs or sensors). Posture covers everything you can inventory, including Lambda and Fargate, which can't be packet-mirrored. Observed signals confirm the fix and catch what posture misses, such as libraries that pin their own groups.
+[.1717 H3] Observed signals by compute type
+
+  ROW .1751:  |  {.1753} Compute type |  {.1767} Calls to AWS APIs |  {.1786} Calls to other services (internal, SaaS, internet) |  {.1838} Inbound traffic |  {.1855} Packet capture possible?
+  ROW .1880:  |  {.1882} Lambda |  {.1890} CloudTrail `tlsDetails.keyExchange` per call, for KMS, STS, IAM, Secrets Manager and ACM only; other services log version and cipher (Documented) |  {.1947} No AWS log shows the group. Options: route VPC-attached egress through a sensor appliance, or log from the client library |  {.2070} Front door logs (row below) |  {.2099} No
+  ROW .2102:  |  {.2104} Fargate (ECS or EKS) |  {.2126} CloudTrail `tlsDetails.keyExchange` |  {.2161} Same gap as Lambda; an egress proxy or sensor appliance in the VPC path |  {.2234} Front door logs |  {.2251} No. VPC Traffic Mirroring does not support Fargate (Documented)
+  ROW .2315:  |  {.2317} Containers on EC2 (ECS, EKS, self-managed) and plain EC2 |  {.2375} CloudTrail `tlsDetails.keyExchange` |  {.2410} Zeek 7.2+ on VPC Traffic Mirroring logs the negotiated group in `ssl.log` field `curve`. Node-level eBPF agents are possible but young |  {.2542} Front door logs plus mirroring |  {.2574} Yes, Nitro instance ENIs
+  ROW .2599:  |  {.2601} Front doors: ALB, NLB, CloudFront, API Gateway |  {.2649} n/a |  {.2654} n/a |  {.2659} ALB connection logs and NLB access logs record the key exchange (Documented). CloudFront passes `CloudFront-Viewer-TLS-Details` to the origin (third-party report) |  {.2821} n/a
+  ROW .2825:  |  {.2827} IoT devices on AWS IoT Core |  {.2856} n/a |  {.2861} n/a |  {.2866} IoT Core has no PQ security policy, so every device connection is classical today (Documented). Inventory devices by firmware and TLS library |  {.3009} n/a
+[.3013 H3] Posture signals by compute type
+
+  ROW .3046:  |  {.3048} Compute type |  {.3062} Inventory source |  {.3080} What to read
+  ROW .3093:  |  {.3095} Lambda |  {.3103} `lambda list-functions` across accounts, or AWS Config |  {.3157} Runtime identifier, `PackageType` (zip or image), `OPENSSL_CONF`, `JAVA_TOOL_OPTIONS`, `GODEBUG`, attached layers. Classify with the matrix in the next section
+  ROW .3309:  |  {.3311} Fargate and EC2 containers |  {.3339} ECR images, task definitions, pod specs; an SBOM per image (Amazon Inspector SBOM export, Unverified) |  {.3442} OS OpenSSL version, Go toolchain and `go.mod` version (`go version -m &lt;binary&gt;`), JDK version, Node version, Python's linked OpenSSL, env vars in the task definition
+  ROW .3604:  |  {.3606} EC2 hosts |  {.3617} SSM Inventory |  {.3632} OS and OpenSSL version, crypto policy (`update-crypto-policies --show`)
+  ROW .3702:  |  {.3704} Front doors |  {.3717} AWS Config |  {.3729} ELB and API Gateway security policy names; Config rule `elbv2-predefined-security-policy-ssl-check` takes an allowlist of PQ policy names {.3865} One rule holds for every row: a TLS 1.2 connection is always non-PQ, so `tlsDetails.tlsVersion` or the logged protocol is enough to flag it. {.17090} CloudTrail records `keyExchange` only for KMS, STS, IAM, Secrets Manager, ACM and Payment Cryptography so far; AWS lists it as coming soon for S3, DynamoDB, SQS, SNS, EventBridge, ECR and Direct Connect. Systems Manager isn't on AWS's PQ readiness list at all. Details are on the AWS service endpoints page.
+[.4004 H2] Remediation matrix: language by compute type {.4049} The language and version decide the fix; the compute type decides where the fix lives. On Lambda zip functions AWS owns the OS, so the fix is a config file, agent or shim shipped in the package. In containers you own the base image, so the fix is usually the image's OpenSSL, JDK or toolchain version. Lambda container images follow the container column.
+
+  ROW .4405:  |  {.4407} Language and version |  {.4429} Lambda managed runtime (zip) |  {.4459} Containers you build (Fargate, ECS or EKS on EC2, Lambda images) |  {.4525} Evidence
+  ROW .4534:  |  {.4536} Python 3.12, 3.13, 3.14 |  {.4561} Ship `openssl-pq.cnf` in the package and set `OPENSSL_CONF` to it. Keeps the AL2023 crypto policy, adds the PQ group |  {.4675} Base image with OpenSSL 3.5+. On AL2023: `update-crypto-policies --set DEFAULT:PQ` in the Dockerfile, or the same config file |  {.4800} Tested
+  ROW .4807:  |  {.4809} Python 3.9, 3.10, 3.11 |  {.4833} Runtime runs on AL2 with OpenSSL 1.1.1. Upgrade to 3.12+, or ship the urllib3/botocore shim (covers requests and boto3 only) |  {.4959} Not blocked: Python 3.11 on an AL2023 image links OpenSSL 3.5 and works with the config file |  {.5053} Tested
+  ROW .5060:  |  {.5062} Node.js 22.20+, 24.9+ |  {.5085} Ship `openssl-pq-node.cnf` and set `OPENSSL_CONF`. The Lambda bootstrap's own config removes the PQ group, so this override is required |  {.5218} PQ by default with Node's bundled OpenSSL 3.5, unless the image sets `OPENSSL_CONF` |  {.5301} Tested (Lambda); Documented (containers)
+  ROW .5342:  |  {.5344} Node.js 18, 20 |  {.5360} No in-process fix: bundled OpenSSL is older than 3.5. Upgrade the runtime |  {.5435} Upgrade Node. A distro Node built against the system OpenSSL might work (Unverified) |  {.5521} Tested (Lambda)
+  ROW .5537:  |  {.5539} Java 8, 11, 17, 21 |  {.5559} Ship the Bouncy Castle JSSE agent jar and set `JAVA_TOOL_OPTIONS=-javaagent:...`. Java 8 also needs `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` |  {.5701} Same agent, or move to JDK 25 (Corretto 25.0.5+). Oracle plans backports to 21 and 17 in H1 2027 (Claimed) |  {.5809} Tested on java8.al2023, 11, 17, 21
+  ROW .5844:  |  {.5846} Java 25 |  {.5855} Nothing: Corretto 25.0.5 negotiates PQ by default |  {.5906} Corretto 25.0.5+. Other JDK 25 builds depend on whether they took the backport (Unverified) |  {.5999} Tested (Lambda java25)
+  ROW .6022:  |  {.6024} Go |  {.6028} Custom runtime (`provided.al2023`): build with Go 1.24+ and a `go` line of 1.24+ in `go.mod`, or set `GODEBUG=tlsmlkem=1` |  {.6143} Same; the base image doesn't matter, Go has its own TLS |  {.6200} Tested 1.23, 1.24, 1.25
+  ROW .6224:  |  {.6226} .NET 8, 10 |  {.6238} Ship `openssl-pq.cnf` and set `OPENSSL_CONF`; .NET uses the OS OpenSSL 3.5 on Lambda |  {.6320} Linux image with OpenSSL 3.5+ and a PQ policy or config. Windows containers use Schannel, opt-in (Documented) |  {.6431} Tested (Lambda dotnet8, dotnet10)
+  ROW .6465:  |  {.6467} Rust |  {.6473} Custom runtime: rebuild with rustls 0.23.x and the aws-lc-rs provider; AWS SDK for Rust crates published after 2025-08-29 default to PQ |  {.6610} Same |  {.6616} Documented (AWS SDK); rustls default version Claimed
+  ROW .6669:  |  {.6671} Ruby, PHP |  {.6682} Follow the system OpenSSL 3.5+; expected to behave like Python with the config file |  {.6767} Same as Python |  {.6783} Documented (AWS SDK guide); Lambda Unverified {.6829} Alternatives that change code or dependencies, for teams already editing a service:
+
+ {.6915} **AWS SDK for Java v2:** the AWS CRT HTTP client negotiates PQ by default from 2.35.11, for AWS API calls only (Documented).
+ {.7037} **Any language:** explicitly configured group lists (Go `CurvePreferences`, Java `jdk.tls.namedGroups`, nginx `ssl_ecdh_curve`, Envoy `ecdh_curves`) silently stay classical until X25519MLKEM768 is added (Documented). {.16926} Step-by-step instructions per language and component:  {.16988} Load balancers, edge, AWS endpoints, network devices, IoT, mesh, databases, hosts and certificates: 
+[.7242 H2] Per-language detail {.7262} Each entry gives the exact setting, what it covers, and how to check it worked. All Lambda results come from the AL2023.12.20261109 base images.
+[.7407 H3] Python and .NET (system OpenSSL) {.7440} Both use the operating system's OpenSSL, so one config file serves both. It loads the AL2023 crypto policy and replaces only the group list:
+<![CDATA[openssl_conf = openssl_init
+.include /etc/pki/tls/openssl.d
+[openssl_init]
+providers = provider_sect
+ssl_conf = ssl_module
+[provider_sect]
+default = default_sect
+[default_sect]
+activate = 1
+[ssl_module]
+system_default = pq_system_default
+[pq_system_default]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192]]>
+
+ {.8019} **Set:** `OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf`.
+ {.8071} **Baseline check:** with this file, Python 3.12's minimum TLS version, cipher list and options were identical to the default. `OPENSSL_CONF=/dev/null` also enables PQ but drops the crypto policy and changed the cipher list, so don't use it.
+ {.8307} **Python 3.9 to 3.11 on Lambda** (AL2, OpenSSL 1.1.1): a `sitecustomize.py` shim patches urllib3 and botocore to use pyOpenSSL, whose bundled OpenSSL offers PQ. Set `PYTHONPATH` to the shim's directory. It covers `requests` and `boto3`, not `ssl`, `http.client`, aiohttp or httpx. It overrides a deliberate botocore choice and was tested with certificate verification off, so treat it as a bridge until the runtime upgrade.
+[.8715 H3] Node.js (bundled OpenSSL) {.8741} Node compiles in its own OpenSSL; 22.20+ and 24.9+ ship 3.5. On Lambda the bootstrap sets `OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf`, whose only setting is a group list without ML-KEM. The override is the same file with the PQ group added:
+<![CDATA[nodejs_conf = openssl_init
+[openssl_init]
+ssl_conf = ssl_sect
+[ssl_sect]
+system_default = system_default_sect
+[system_default_sect]
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192]]>
+
+ {.9241} **Set:** `OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf`.
+ {.9298} **Watch for drift:** this file replaces AWS's rather than including it. Add a pipeline check that diffs AWS's file against ours, minus the PQ group.
+ {.9444} **Node 18 and 20:** bundled OpenSSL is older than 3.5. No setting helps; upgrade.
+[.9522 H3] Java (JSSE, independent of the OS) {.9557} Java's TLS stack doesn't use OpenSSL, so moving to AL2023 changes nothing for Java. JDKs before 25 have no ML-KEM groups.
+
+ {.9681} **Java 8 to 21:** a Java agent (`pq-tls-agent.jar`, compiled for Java 8) registers Bouncy Castle 1.87 as the first JSSE provider and sets `jdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1` unless already set. Set `JAVA_TOOL_OPTIONS=-javaagent:/var/task/``pq-tls``/pq-tls-agent.jar`.
+ {.9961} **Java 8 only:** also add `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2`, since its client defaults to TLS 1.2.
+ {.10066} **Why an agent:** the Lambda Java bootstrap's system classpath is `/var/runtime/lib` only, so providers registered through `java.security` from other paths are silently ignored.
+ {.10237} **Risk:** Bouncy Castle becomes the TLS provider for the whole process. Test functions that use custom keystores, FIPS mode or mutual TLS first.
+ {.10379} **Java 25:** Corretto 25.0.5 negotiates PQ with the stock SunJSSE provider.
+[.10451 H3] Go (own TLS stack)
+
+ {.10472} **Needs both:** a Go 1.24+ toolchain and a `go` directive of 1.24+ in `go.mod`. A 1.25 build of a module whose `go.mod` says 1.23 stayed classical in testing.
+ {.10622} **No-code override:** `GODEBUG=tlsmlkem=1` turned that build PQ, and can be set in the deployment config.
+ {.10723} **Pitfall:** code that sets `tls.Config.CurvePreferences` gets no PQ.
+[.10787 H3] Rust {.10792} rustls with the aws-lc-rs provider supports X25519MLKEM768. Sources disagree on which 0.23.x release made it the default (0.23.22 or 0.23.27). The AWS SDK for Rust defaults to PQ for crates published after 2025-08-29. Rebuild with current crates; apps on the `openssl` crate follow the system OpenSSL instead.
+[.11100 H2] Inbound: front doors and TLS 1.3 enforcement {.11145} Inbound connections become PQ when the front door's TLS policy offers ML-KEM and the caller supports it. Allow TLS 1.2 and 1.3 first, measure, then move each endpoint to TLS 1.3 only once its TLS 1.2 traffic reaches zero. TLS negotiation already picks 1.3 when both sides support it, and TLS 1.3's downgrade protection stops an attacker forcing 1.2.
+
+  ROW .11496:  |  {.11498} Front door |  {.11510} PQ setting |  {.11522} Notes |  {.11529} Evidence
+  ROW .11538:  |  {.11540} ALB, NLB |  {.11550} `ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09` (allows 1.2 and 1.3), later `ELBSecurityPolicy-TLS13-1-3-PQ-2025-09` (1.3 only); FIPS variants exist |  {.11693} Console default is a PQ policy, but CLI, CloudFormation and CDK default to `ELBSecurityPolicy-2016-08`. The backend leg also becomes PQ-capable. Enforce with the `elasticloadbalancing:SecurityPolicy` condition key |  {.11904} Documented
+  ROW .11915:  |  {.11917} CloudFront |  {.11929} Viewer side PQ by default on all policies |  {.11972} Origin leg is classical; AWS says PQ is coming |  {.12020} Documented
+  ROW .12031:  |  {.12033} API Gateway REST (Regional, private) |  {.12071} `SecurityPolicy_TLS13_1_2_PQ_2025_09` and variants |  {.12121} API Gateway egress to integrations is TLS 1.2 only, so that leg can never be PQ |  {.12202} Documented
+  ROW .12213:  |  {.12215} API Gateway HTTP, WebSocket, edge-optimized |  {.12260} No PQ policy |  {.12274} Front with CloudFront or ALB if PQ is required |  {.12322} Documented (absence)
+  ROW .12343:  |  {.12345} AWS IoT Core |  {.12359} No PQ policy |  {.12373} Every device leg classical until AWS adds one |  {.12420} Documented (absence)
+  ROW .12441:  |  {.12443} Service mesh (EKS) |  {.12463} Linkerd 2.19+ PQ by default; Istio 1.27+ `COMPLIANCE_POLICY=pqc` (enforces PQ, breaks non-PQ peers) |  {.12562} Covers mesh-owned legs only, not app-originated TLS |  {.12615} Documented {.12626} Move legacy callers that can't do TLS 1.3 to a separate listener or hostname that still allows 1.2, tracked as exceptions, rather than holding the main endpoint open for them. Check exact policy names with `aws elbv2 describe-ssl-policies` before putting them in templates.
+[.12898 H2] Rollout through build, package and release {.12941} Every change, including configuration, ships as a release here. So the fix lives in the shared build template, and each workload picks it up on its next release with no per-service code edits. {.13135} The release step is the only one that changes a workload; the others are automation around it.
+
+ {.13232} **Classify.** The posture inventory sorts each workload into a matrix row and records the gap.
+ {.13324} **Change request.** A bot opens a pull request in each repo that bumps the shared module or template. The template ships the right files under `/var/task/pq-tls/` (config file, agent jar or shim) and sets the matching variable. It leaves a workload's own `OPENSSL_CONF` alone and flags it for review. Bundling into the package avoids Lambda's 5-layer limit.
+ {.13675} **Release.** The normal pipeline builds, packages and releases. A guardrail (cfn-guard, OPA/conftest or a CloudFormation Hook) warns, then later fails, on Lambda and task definitions missing the PQ settings, and on non-PQ ELB policies.
+ {.13908} **Verify.** Observed signals confirm the workload's connections moved to PQ; shipping isn't proof. CLM tracks each workload as a campaign item. {.14048} Dormant workloads with no release coming: rank them by observed classical traffic. One making no classical outbound TLS doesn't need forcing; the rest get a no-op rebuild and release. Runtimes past AWS's block-update date can't be changed at all, so schedule those first.
+[.14320 H2] Gaps, risks and open items
+
+  ROW .14348:  |  {.14350} Item |  {.14356} Impact |  {.14364} Next step
+  ROW .14374:  |  {.14376} Node.js 18 and 20 on Lambda |  {.14405} No fix short of a runtime upgrade |  {.14440} Schedule upgrades to nodejs22 or 24; one oqs-provider experiment possible (needs source from GitHub)
+  ROW .14541:  |  {.14543} Runtime deprecation dates |  {.14570} After block-update, no config change or layer can be applied. Third-party sources put python3.9 and nodejs16/18/20 block-create near 2027-02-01; not confirmed on AWS's page |  {.14744} Pull exact dates from the AWS runtimes page; sequence these workloads first
+  ROW .14820:  |  {.14822} Python 3.9 to 3.11 shim |  {.14847} Covers requests and boto3 only; overrides a botocore design choice; tested with certificate verification off |  {.14957} Test against real AWS endpoints with verification on; prefer the runtime upgrade
+  ROW .15038:  |  {.15040} Bouncy Castle agent on Java 8 to 21 |  {.15077} Replaces the TLS provider process-wide |  {.15117} Test FIPS, custom keystore and mutual TLS functions before rollout
+  ROW .15184:  |  {.15186} Lambda and Fargate outbound to non-AWS services |  {.15235} No AWS log records the negotiated group |  {.15276} Rely on posture; add an egress sensor where the traffic matters
+  ROW .15340:  |  {.15342} AWS IoT Core |  {.15356} No PQ policy; device legs stay classical |  {.15398} Track AWS roadmap; new devices choose wolfSSL 5.8+ or OpenSSL 3.5
+  ROW .15464:  |  {.15466} API Gateway egress, CloudFront origin leg |  {.15509} Classical by AWS design today |  {.15540} Accept and record as exceptions
+  ROW .15572:  |  {.15574} Node config drift |  {.15593} Our Node file replaces AWS's |  {.15623} Pipeline diff check against each new runtime image
+  ROW .15674:  |  {.15676} Untested rows |  {.15691} Ruby, PHP, Rust, non-Corretto JDK 25 and container-image rows are Documented or Unverified |  {.15783} Add them to the emulator test matrix
+[.15820 H2] Evidence and sources {.15841} **Tests (2026-11-12).** AWS Lambda base images under the Runtime Interface Emulator, against a Node 24 test server with one port accepting only X25519MLKEM768 and one accepting only X25519. Images: python 3.9 to 3.14, nodejs 18 to 24, java 8.al2023, 11, 17, 21, 25, dotnet 8 and 10, provided.al2023 with Go 1.23 to 1.25. Scripts and files are kept with the pq-tls test kit. {.16211} **Documentation:**
+
+ {.16228} AWS: PQ readiness for AWS services
+ {.16264} AWS: SDK and tool PQ TLS support
+ {.16298} AWS: ALB security policies
+ {.16326} AWS: NLB security policies
+ {.16354} AWS: CloudFront viewer protocols and ciphers
+ {.16400} AWS: API Gateway security policies
+ {.16436} AWS: IoT Core transport security
+ {.16470} AWS: AL2023 PQ crypto policies
+ {.16502} AWS: Secrets Manager post-quantum TLS
+ {.16541} AWS: Lambda quotas
+ {.16561} AWS: Lambda runtimes and deprecation
+ {.16599} AWS: Config rule elbv2-predefined-security-policy-ssl-check
+ {.16660} Go: Go 1.24 release notes
+ {.16687} OpenJDK: JEP 527
+ {.16705} rustls: defaults
+ {.16723} Linkerd: 2.19 announcement
+ {.16751} Istio: 1.27 change notes
+ {.16777} Microsoft: Windows TLS 1.3 and PQ FAQ
+ {.16816} Third party: When an AWS connection uses ML-KEM {.16864} Related: PQC Connection Migration: Tooling Capability Review.

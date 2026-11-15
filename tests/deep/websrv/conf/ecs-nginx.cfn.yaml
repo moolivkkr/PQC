@@ -1,0 +1,43 @@
+# ecs-nginx.yaml - CloudFormation equivalent of ecs-nginx.tf
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  Image:
+    Type: String
+    Description: ECR image by digest (repo@sha256:...)
+  ExecutionRoleArn:
+    Type: String
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/pq-nginx
+      RetentionInDays: 30
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: pq-nginx
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn: !Ref ExecutionRoleArn
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: ARM64
+      ContainerDefinitions:
+        - Name: nginx
+          Image: !Ref Image
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8443
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: nginx
+          HealthCheck:
+            Command: ["CMD-SHELL", "nginx -t || exit 1"]
+            Interval: 30
+            Retries: 3

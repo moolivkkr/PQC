@@ -1,0 +1,135 @@
+# TAB: network  node=5bfb4cc4-ab9a  rev=18
+
+## 1. H1 and lead paragraphs
+H1: Network devices, VPN and egress
+
+A network device sets PQ only where it terminates TLS or IKE itself. A decrypting firewall, ADC or proxy runs two separate handshakes: the client leg (client to device, where the device acts as the server) and the server leg (device to origin, where the device acts as the client). Each leg gets PQ only if that device's TLS stack and profile offer ML-KEM. A device that doesn't decrypt passes the client's handshake through unchanged, so PQ then depends on the two endpoints. It only has to forward the roughly 1.2 KB larger ClientHello without dropping it. For IPsec, both IKEv2 peers must support RFC 9370 additional key exchanges with ML-KEM.
+
+Network devices play two roles here: sensors that show which connections are classical, and converters that terminate classical TLS and re-originate PQ TLS for clients you can't upgrade. All tests on this tab ran on 2026-11-14 in local containers, without AWS access. Scripts and outputs are in the work directory deep/netiot/ (squid/, swan/, zeek/, envoy/).
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix by device type
+H2: Next-generation firewalls (TLS decryption and IPsec)
+  H3: Palo Alto PAN-OS (decryption 12.1.2+, IKEv2 11.2+)
+  H3: Fortinet FortiGate (SSL inspection 8.0, IPsec 7.6.x)
+  H3: Check Point (R82, R82.10)
+  H3: Cisco Secure Firewall (FTD), ASA, Juniper SRX
+H2: ADCs and load balancers
+H2: Forward proxies and secure web gateways (egress)
+  H3: Squid ssl-bump (Tested)
+  H3: Envoy egress gateway (Tested)
+  H3: SaaS SWG and SASE
+H2: VPN
+H2: AWS network services
+H2: Sensors: detect non-PQ connections
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Device type | Product (form) | Client leg PQ | Server leg PQ | IKEv2 ML-KEM | Min version | Evidence |
+| NGFW | Palo Alto PAN-OS (PA hardware, VM-Series on EC2) | Yes (decryption profile, PQC) | Yes | Yes (RFC 9370 rounds) | TLS 12.1.2; IKEv2 11.2 | Documented (decryption, IKEv2); VM-Series parity not confirmed |
+| NGFW | Fortinet FortiGate (hardware, FortiGate-VM) | Yes (automatic in deep inspection) | Yes (legs not separated in docs) | Yes (addke1 36) | SSL 8.0.0; IPsec 7.6.x (7.6.5 guide; 7.6.1 claimed) | Documented (SSL 8.0, IPsec 7.6.5) |
+| NGFW | Check Point Quantum (appliance, CloudGuard) | Yes (X25519MLKEM768 in HTTPS Inspection) | Not stated | Yes (Quantum Safe Key Exchange) | IKEv2 R82 (Kyber768), R82.10 (ML-KEM); HTTPS R82.10 | Documented (R82.10 RN, VPN guide) |
+| NGFW | Cisco Secure Firewall FTD (hardware, FTDv) | No (roadmap FTD 10.5) | No | No (roadmap FTD 10.5) | none today | Claimed (Cisco roadmap) |
+| NGFW | Cisco ASA / ASAv | No | No | RFC 9370 framework since 9.19; ML-KEM roadmap 9.25 | none today | Claimed (same blog) |
+| NGFW | Juniper SRX / vSRX | Not found | Not found | No (RFC 8784 PPK only) | none | Documented PPK (Juniper); ML-KEM not found |
+| ADC | F5 BIG-IP (hardware, VE) | Yes (client-ssl cipher group) | Yes (server-ssl cipher group) | n/a | 17.5.1; more groups 21.1 | Documented (F5 17.5.1) |
+| ADC | NetScaler ADC (MPX, VPX) | Yes (front end) | Not documented | n/a | 14.1 (build not confirmed) | Documented (NetScaler) |
+| ADC | A10 Thunder ACOS (hardware, vThunder) | Yes | Yes | n/a | ACOS 7.0.3 | Claimed (A10 blog) |
+| ADC | HAProxy Enterprise 3.2+ / Community 3.3+ (AWS-LC build) | Yes (curves) | Yes (ssl-default-server-curves) | n/a | 3.2 / 3.3 | Documented (manual), Claimed (blog); config on [Web servers and proxies] |
+| Forward proxy | Squid 6.13 ssl-bump (Debian 13, OpenSSL 3.5.7) | Yes (OpenSSL default) | Yes (OpenSSL default) | n/a | Squid on OpenSSL 3.5 | Tested (4/4) |
+| Egress proxy | Envoy 1.40.2 (BoringSSL) | Yes | Yes (ecdh_curves; default from 1.40) | n/a | 1.40.0 default; log field 1.39.0 | Tested (2/2), Documented (Envoy) |
+| SWG (SaaS) | Zscaler ZIA | Yes | Yes (offers all hybrid groups) | n/a | since Feb 2026 | Claimed (Zscaler blog) |
+| SWG (SaaS) | Netskope NG-SWG | Beta, X25519MLKEM768 | Beta, separate flag | n/a | Release 137, via support | Documented (Netskope) |
+| SASE (SaaS) | Cloudflare One (WARP, Gateway, Tunnel, IPsec) | Yes (WARP, Access) | Yes (Gateway egress, Tunnel) | Yes (ML-KEM-768/1024 + DH20) | GA | Documented (Cloudflare) |
+| SASE (SaaS) | Palo Alto Prisma Access | Not found | Not found | Not found | — | Not found |
+| VPN | strongSwan 6.0.7 (Alpine 3.24, OpenSSL 3.5.9) | n/a | n/a | Yes | 6.0.0 (ml / AWS-LC), 6.0.2 (OpenSSL 3.5) | Tested (KE1_ML_KEM_768) |
+| VPN | strongSwan 6.0.1 (Debian 13 package) | n/a | n/a | No (openssl plugin has no ML-KEM; SA failed) | — | Tested (fail) |
+| VPN | libreswan 5.4 (NSS 3.118.1+) | n/a | n/a | Yes (ML_KEM_768 only) | 5.4 | Documented (CHANGES) |
+| VPN | OpenVPN 2.6 + OpenSSL 3.5 | Yes (tls-groups) | Yes | n/a | 2.6 + OpenSSL 3.5 both ends | Documented (OpenVPN tutorial) |
+| VPN | WireGuard | No (Curve25519); Rosenpass adds a PQ pre-shared key | — | — | — | Documented (Rosenpass) |
+| AWS managed | Site-to-Site VPN | — | — | No (DH groups 2, 14–24) | — | Documented (CGW requirements) |
+| AWS managed | Client VPN (OpenVPN based) | No PQ statement | — | — | — | Not found |
+| AWS managed | Network Firewall TLS inspection | Readiness page says hybrid PQ launched; groups per leg not documented | TLS 1.3 to the server; PQ not stated | — | — | Documented but incomplete (readiness, TLS inspection) |
+| AWS managed | Gateway Load Balancer | No TLS (layer 3, GENEVE 6081); PQ is the appliance's | — | — | — | Documented (GWLB) |
+| AWS managed | Transit Gateway, VPC peering, PrivateLink, Direct Connect | No TLS termination; endpoint handshake passes through | — | — | — | Documented (behaviour) |
+| AWS managed | VPC Lattice HTTPS listener, Verified Access | Not documented | — | — | — | Not found |
+| Sensor | Zeek 8.0.10 (EC2 + Traffic Mirroring) | Logs the negotiated group | — | — | curve = X25519MLKEM768 from 7.1.0 | Tested |
+| Sensor | Suricata 7/8 | Can't log the group | — | — | — | Documented (absence, EVE) |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Each file is complete. The label says whether it was Tested here, comes from vendor docs, or is an untested starting point.
+/etc/squid/squid.conf (Tested, Squid 6.13 / OpenSSL 3.5.7; the localnet ranges were narrowed after the test)
+```text
+# /etc/squid/squid.conf - ssl-bump forward proxy (tested: Debian 13 trixie squid-openssl, OpenSSL 3.5)
+# Squid has no TLS "groups" directive; both legs use the OpenSSL library default
+```
+Dockerfile.squid (not deployed; uses the tested base image)
+```dockerfile
+# Dockerfile.squid - ssl-bump egress proxy on Debian 13 (OpenSSL 3.5: hybrid ML-KEM on both legs by default)
+# Pin the base by digest (docker image inspect --format '{{index .RepoDigests 0}}' debian:trixie-slim)
+```
+squid-entrypoint.sh (not deployed)
+```bash
+#!/bin/sh
+# squid-entrypoint.sh - writes the bump CA from env (ECS "secrets" from Secrets Manager) and starts Squid.
+```
+squid-taskdef.json (ECS Fargate; not deployed)
+```json
+{
+  "family": "egress-squid-pq",
+```
+/etc/envoy/envoy-egress.yaml (Tested, Envoy 1.40.2; change the cluster address, SNI and SAN to your partner host)
+```yaml
+static_resources:
+  listeners:
+```
+/etc/swanctl/conf.d/pq.conf (Tested, strongSwan 6.0.7 / OpenSSL 3.5.9; replace LOCAL and REMOTE on each peer, and use certificates instead of the lab PSK in production)
+```text
+# /etc/swanctl/conf.d/pq.conf - IKEv2 hybrid X25519 + ML-KEM-768 (RFC 9370), strongSwan 6.0.2+ with OpenSSL 3.5
+connections {
+```
+/etc/strongswan.d/zz-log.conf (logs the selected proposal, including KE1_ML_KEM_768)
+```text
+charon {
+  filelog {
+```
+fortigate-ipsec-pq.conf (FortiOS 7.6.5+ CLI. The addke1 and childless-ike lines are from the Fortinet guide; interface, proposal and peer lines are placeholders. Not tested)
+```text
+# addke IDs: 35 = ML-KEM-512, 36 = ML-KEM-768, 37 = ML-KEM-1024 (not available in FIPS-CC mode)
+config vpn ipsec phase1-interface
+```
+f5-pq.tmsh (BIG-IP 17.5.1+, TLS 1.3 only. Steps 1–3 are from the F5 guide; the server-ssl line is our inference from the documented GUI step)
+```text
+# 1. Cipher rule: hybrid first, then the default groups (classical fallback)
+create ltm cipher rule PQ_HYBRID cipher DEFAULT dh-groups X25519MLKEM768:DEFAULT signature-algorithms DEFAULT
+```
+netscaler-pq.cli (NetScaler 14.1, front end only. Only the bind ssl profile … -eccCurveName lines are from the NetScaler page; check the profile setup lines against your build)
+```text
+set ssl parameter -defaultProfile ENABLED
+add ssl profile fe_pq -sslProfileType FrontEnd -tls13 ENABLED
+```
+/etc/openvpn/server/pq.conf (PQ lines) (OpenVPN 2.6 linked to OpenSSL 3.5+ on both ends; Documented in the 2.6 manual and the vendor tutorial; add to your existing server and client configs)
+```text
+tls-version-min 1.3
+# Prefer hybrid, keep classical for peers without OpenSSL 3.5 (drop ":X25519" to require PQ)
+```
+/opt/zeek/share/zeek/site/pq-tls.zeek (Tested, Zeek 8.0.10; add @load ./pq-tls to local.zeek)
+```text
+##! pq-tls.zeek - flag TLS sessions whose negotiated key exchange is not hybrid post-quantum.
+##! Needs Zeek 7.1+ (SSL::ec_curves knows 0x11EC = X25519MLKEM768).
+```
+traffic-mirror.tf (Terraform; not deployed. Mirrored packets arrive at the sensor as VXLAN on UDP 4789, so allow that in the sensor's security group)
+```hcl
+variable "source_eni_id" { type = string } # NAT instance / proxy / app host ENI (Nitro)
+variable "sensor_eni_id" { type = string } # Zeek sensor ENI
+```
+traffic-mirror.yaml (CloudFormation; not deployed)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Mirror TLS (443) from a Nitro EC2 ENI to a Zeek sensor ENI (VXLAN UDP 4789)
+```

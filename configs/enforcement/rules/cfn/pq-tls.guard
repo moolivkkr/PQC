@@ -1,0 +1,199 @@
+#
+# pq-tls.guard - CloudFormation Guard 3.x rules for hybrid post-quantum TLS (X25519MLKEM768).
+# Use: cfn-guard validate --rules pq-tls.guard --data template.yaml
+# Also usable as the rule file of an AWS::CloudFormation::GuardHook (S3 RuleLocation).
+#
+
+# ---------- shared lists ----------
+let pq_elb_policies = [
+  "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-FIPS-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-Ext0-FIPS-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-Ext1-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-Ext1-FIPS-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-Ext2-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-2-Ext2-FIPS-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-3-PQ-2025-09",
+  "ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09"
+]
+
+let pq_apigw_policies = [
+  "SecurityPolicy_TLS13_1_2_PQ_2025_09",
+  "SecurityPolicy_TLS13_1_2_PFS_PQ_2025_09",
+  "SecurityPolicy_TLS13_1_2_FIPS_PQ_2025_09",
+  "SecurityPolicy_TLS13_1_2_FIPS_PFS_PQ_2025_09"
+]
+
+# Runtimes with no in-place PQ fix: upgrade.
+let lambda_runtimes_blocked = [
+  "nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6"
+]
+# OpenSSL 3.5 runtimes: PQ needs the pq-tls layer (OPENSSL_CONF or the exec wrapper).
+let lambda_runtimes_conf = [
+  "python3.12", "python3.13", "python3.14",
+  "nodejs22.x", "nodejs24.x",
+  "dotnet8", "dotnet10"
+]
+# JDK < 25: PQ needs the Bouncy Castle JSSE agent.
+let lambda_runtimes_java_agent = [ "java8.al2", "java11", "java17", "java21" ]
+# OpenSSL 1.1.1 Python: shim covers urllib3/botocore only (partial). Warn-level rule.
+let lambda_runtimes_py_legacy = [ "python3.9", "python3.10", "python3.11" ]
+
+let pq_conf_paths = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+
+let lambda_zip = Resources.*[
+  Type == "AWS::Lambda::Function"
+  Properties.PackageType !exists or Properties.PackageType != "Image"
+]
+let sam_zip = Resources.*[
+  Type == "AWS::Serverless::Function"
+  Properties.PackageType !exists or Properties.PackageType != "Image"
+]
+
+# ---------- Lambda ----------
+rule PQ_LAMBDA_RUNTIME_NOT_BLOCKED when %lambda_zip !empty {
+  %lambda_zip.Properties.Runtime not in %lambda_runtimes_blocked
+  <<
+    PQ-L1: Lambda runtime has no PQ path (Node.js 18/20 bundle OpenSSL 3.0; python3.8, java8 on AL1, dotnet6 are end of life).
+    Fix: move to nodejs22.x/24.x, python3.12+, java21+agent or java25, dotnet8/10.
+  >>
+}
+
+rule PQ_LAMBDA_OPENSSL_CONF when %lambda_zip !empty {
+  let conf_fns = %lambda_zip[ Properties.Runtime in %lambda_runtimes_conf ]
+  when %conf_fns !empty {
+    %conf_fns {
+      Properties.Environment.Variables exists
+      Properties.Environment.Variables.OPENSSL_CONF in %pq_conf_paths or
+      Properties.Environment.Variables.AWS_LAMBDA_EXEC_WRAPPER == "/opt/pq-tls/wrapper"
+      <<
+        PQ-L2: python3.12+/nodejs22+/dotnet8+ on AL2023 omit ML-KEM from the default group list.
+        Fix: attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf)
+        or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
+      >>
+    }
+  }
+}
+
+rule PQ_LAMBDA_JAVA_AGENT when %lambda_zip !empty {
+  let java_fns = %lambda_zip[ Properties.Runtime in %lambda_runtimes_java_agent ]
+  when %java_fns !empty {
+    %java_fns {
+      Properties.Environment.Variables exists
+      Properties.Environment.Variables.JAVA_TOOL_OPTIONS == /pq-tls-agent\.jar/ or
+      Properties.Environment.Variables.AWS_LAMBDA_EXEC_WRAPPER == "/opt/pq-tls/wrapper"
+      <<
+        PQ-L3: JDK 8-21 have no ML-KEM TLS group. Fix: JAVA_TOOL_OPTIONS=-javaagent:/opt/pq-tls/pq-tls-agent.jar
+        (Bouncy Castle JSSE) or the exec wrapper, or move to java25.
+      >>
+    }
+  }
+}
+
+# Warn-level: run with this rule in a separate file/pass whose failures do not block.
+rule PQ_LAMBDA_PY_LEGACY_SHIM when %lambda_zip !empty {
+  let py_fns = %lambda_zip[ Properties.Runtime in %lambda_runtimes_py_legacy ]
+  when %py_fns !empty {
+    %py_fns {
+      Properties.Environment.Variables.AWS_LAMBDA_EXEC_WRAPPER == "/opt/pq-tls/wrapper"
+      <<
+        PQ-L4 (warn): python3.9-3.11 use OpenSSL 1.1.1. The pq-tls shim covers urllib3/botocore only. Plan python3.12+.
+      >>
+    }
+  }
+}
+
+rule PQ_LAMBDA_NO_GODEBUG_OFF when %lambda_zip !empty {
+  %lambda_zip.Properties.Environment.Variables.GODEBUG !exists or
+  %lambda_zip.Properties.Environment.Variables.GODEBUG != /tlsmlkem=0/
+  <<
+    PQ-L5: GODEBUG tlsmlkem=0 turns off X25519MLKEM768 in Go crypto/tls.
+  >>
+}
+
+rule PQ_SAM_RUNTIME_NOT_BLOCKED when %sam_zip !empty {
+  %sam_zip.Properties.Runtime !exists or
+  %sam_zip.Properties.Runtime not in %lambda_runtimes_blocked
+  << PQ-L1 (SAM): see PQ-L1. Runtime may also come from Globals.Function.Runtime; check Globals. >>
+}
+
+rule PQ_SAM_GLOBAL_RUNTIME_NOT_BLOCKED when Globals.Function.Runtime exists {
+  Globals.Function.Runtime not in %lambda_runtimes_blocked
+  << PQ-L1 (SAM Globals): see PQ-L1. >>
+}
+
+# ---------- ECS task definitions ----------
+let ecs_tds = Resources.*[ Type == "AWS::ECS::TaskDefinition" ]
+
+rule PQ_ECS_NO_GODEBUG_OFF when %ecs_tds !empty {
+  let envs = %ecs_tds.Properties.ContainerDefinitions[*].Environment[*]
+  when %envs !empty {
+    %envs[ Name == "GODEBUG" ].Value != /tlsmlkem=0/
+    << PQ-E1: GODEBUG tlsmlkem=0 in a task definition disables PQ in Go. >>
+  }
+}
+
+rule PQ_ECS_JAVA_NAMED_GROUPS when %ecs_tds !empty {
+  let jto = %ecs_tds.Properties.ContainerDefinitions[*].Environment[ Name == "JAVA_TOOL_OPTIONS" ]
+  when %jto !empty {
+    %jto.Value != /jdk\.tls\.namedGroups=/ or %jto.Value == /X25519MLKEM768/
+    << PQ-E2: -Djdk.tls.namedGroups set without X25519MLKEM768 removes PQ on JDK 25. >>
+  }
+}
+
+rule PQ_ECS_OPENSSL_CONF_NOT_CLASSICAL when %ecs_tds !empty {
+  let oc = %ecs_tds.Properties.ContainerDefinitions[*].Environment[ Name == "OPENSSL_CONF" ]
+  when %oc !empty {
+    %oc.Value != "/dev/null"
+    << PQ-E3: OPENSSL_CONF=/dev/null drops the PQ group config. Point it at the pq-tls config instead. >>
+  }
+}
+
+# ---------- Load balancer listeners ----------
+let tls_listeners = Resources.*[
+  Type == "AWS::ElasticLoadBalancingV2::Listener"
+  Properties.Protocol in ["HTTPS", "TLS"]
+]
+
+rule PQ_ELB_LISTENER_POLICY when %tls_listeners !empty {
+  %tls_listeners.Properties.SslPolicy exists
+  <<
+    PQ-B1: HTTPS/TLS listener without SslPolicy gets ELBSecurityPolicy-2016-08 from CloudFormation (no PQ).
+  >>
+  %tls_listeners.Properties.SslPolicy in %pq_elb_policies
+  <<
+    PQ-B2: SslPolicy must be a -PQ-2025-09 policy (TLS 1.0 PQ variants excluded).
+    Default choice: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09.
+  >>
+}
+
+# ---------- API Gateway ----------
+let rest_domains = Resources.*[
+  Type == "AWS::ApiGateway::DomainName"
+  Properties.EndpointConfiguration.Types[0] != "EDGE"
+]
+rule PQ_APIGW_DOMAIN_POLICY when %rest_domains !empty {
+  %rest_domains.Properties.SecurityPolicy in %pq_apigw_policies
+  << PQ-A1: REST custom domain (Regional/Private) must use a *_PQ_2025_09 security policy. >>
+  %rest_domains.Properties.EndpointAccessMode in ["BASIC", "STRICT"]
+  << PQ-A2: enhanced SecurityPolicy_* policies require EndpointAccessMode (start BASIC, move to STRICT). >>
+}
+
+let rest_apis = Resources.*[
+  Type == "AWS::ApiGateway::RestApi"
+  Properties.EndpointConfiguration.Types[0] != "EDGE"
+  Properties.DisableExecuteApiEndpoint !exists or Properties.DisableExecuteApiEndpoint != true
+]
+rule PQ_APIGW_RESTAPI_POLICY when %rest_apis !empty {
+  %rest_apis.Properties.SecurityPolicy in %pq_apigw_policies
+  << PQ-A3: Regional/Private REST API execute-api endpoint must use a *_PQ_2025_09 policy, or disable the default endpoint. >>
+}
+
+let v2_domains = Resources.*[ Type == "AWS::ApiGatewayV2::DomainName" ]
+rule PQ_APIGW_V2_DOMAIN_EXCEPTION when %v2_domains !empty {
+  # HTTP/WebSocket APIs support only TLS_1_2 (no PQ policy). Require a registered exception tag.
+  %v2_domains.Properties.Tags.PqTlsException exists
+  << PQ-A4: HTTP/WebSocket API domains cannot be PQ (TLS_1_2 only). Front with CloudFront or a REST API, or register an exception (tag PqTlsException=EXC-id). >>
+}

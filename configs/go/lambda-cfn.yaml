@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  CodeBucket: {Type: String}
+  CodeKey: {Type: String, Default: payments/function.zip}
+  RoleArn: {Type: String}
+Resources:
+  PaymentsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: payments
+      PackageType: Zip
+      Runtime: provided.al2023
+      Handler: bootstrap
+      Architectures: [arm64]
+      Role: !Ref RoleArn
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      Environment:
+        Variables:
+          GODEBUG: tlsmlkem=1,tlssecpmlkem=1

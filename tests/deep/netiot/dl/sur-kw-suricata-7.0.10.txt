@@ -1,0 +1,457 @@
+
+
+
+
+
+  
+  
+
+  
+  8.15. SSL/TLS Keywords &mdash; Suricata 7.0.10 documentation
+      
+      
+      
+
+  
+      
+      
+      
+      
+      
+    
+    
+    
+    
+    
+     
+
+
+ 
+  
+    
+      
+        
+
+          
+          
+          
+            Suricata
+          
+              
+                
+                
+              
+
+  
+    
+    
+    
+  
+
+        
+              
+1. What is Suricata
+2. Quickstart guide
+3. Installation
+4. Upgrading
+5. Security Considerations
+6. Support Status
+7. Command Line Options
+8. Suricata Rules
+8.1. Rules Format
+8.2. Meta Keywords
+8.3. IP Keywords
+8.4. TCP keywords
+8.5. UDP keywords
+8.6. ICMP keywords
+8.7. Payload Keywords
+8.8. Transformations
+8.9. Prefiltering Keywords
+8.10. Flow Keywords
+8.11. Bypass Keyword
+8.12. HTTP Keywords
+8.13. File Keywords
+8.14. DNS Keywords
+8.15. SSL/TLS Keywords
+8.15.1. tls.cert_subject
+8.15.1.1. tls.subject
+
+
+8.15.2. tls.cert_issuer
+8.15.2.1. tls.issuerdn
+
+
+8.15.3. tls.cert_serial
+8.15.4. tls.cert_fingerprint
+8.15.5. tls.sni
+8.15.6. tls_cert_notbefore
+8.15.7. tls_cert_notafter
+8.15.8. tls_cert_expired
+8.15.9. tls_cert_valid
+8.15.10. tls.certs
+8.15.11. tls.version
+8.15.12. ssl_version
+8.15.13. tls.fingerprint
+8.15.14. tls.store
+8.15.15. ssl_state
+8.15.16. tls.random
+8.15.17. tls.random_time
+8.15.18. tls.random_bytes
+8.15.19. tls.cert_chain_len
+
+
+8.16. SSH Keywords
+8.17. JA3/JA4 Keywords
+8.18. Modbus Keyword
+8.19. DCERPC Keywords
+8.20. DHCP keywords
+8.21. DNP3 Keywords
+8.22. ENIP/CIP Keywords
+8.23. FTP/FTP-DATA Keywords
+8.24. Kerberos Keywords
+8.25. SMB Keywords
+8.26. SNMP keywords
+8.27. Base64 keywords
+8.28. SIP Keywords
+8.29. RFB Keywords
+8.30. MQTT Keywords
+8.31. IKE Keywords
+8.32. HTTP2 Keywords
+8.33. Quic Keywords
+8.34. Generic App Layer Keywords
+8.35. Xbits Keyword
+8.36. Alert Keywords
+8.37. Thresholding Keywords
+8.38. IP Reputation Keyword
+8.39. IP Addresses Match
+8.40. Config Rules
+8.41. Datasets
+8.42. Lua Scripting for Detection
+8.43. Differences From Snort
+8.44. Multiple Buffer Matching
+8.45. Tag
+
+
+9. Rule Management
+10. Making sense out of Alerts
+11. Performance
+12. Configuration
+13. Reputation
+14. Init Scripts
+15. Setting up IPS/inline for Linux
+16. Setting up IPS/inline for Windows
+17. Output
+18. Lua support
+19. File Extraction
+20. Public Data Sets
+21. Using Capture Hardware
+22. Interacting via Unix Socket
+23. 3rd Party Integration
+24. Man Pages
+25. Acknowledgements
+26. Licenses
+27. Suricata Developer Guide
+28. Verifying Suricata Source Distribution Files
+
+
+        
+      
+    
+
+    
+          
+          Suricata
+      
+
+      
+        
+          
+  
+      
+          8. Suricata Rules
+      8.15. SSL/TLS Keywords
+      
+             View page source
+      
+  
+  
+
+          
+           
+             
+  
+8.15. SSL/TLS Keywords
+Suricata comes with several rule keywords to match on various properties of TLS/SSL handshake. Matches are string inclusion matches.
+
+8.15.1. tls.cert_subject
+Match TLS/SSL certificate Subject field.
+Examples:
+tls.cert_subject; content:&quot;CN=*.googleusercontent.com&quot;; isdataat:!1,relative;
+tls.cert_subject; content:&quot;google.com&quot;; nocase; pcre:&quot;/google\.com$/&quot;;
+
+
+tls.cert_subject is a 'sticky buffer'.
+tls.cert_subject can be used as fast_pattern.
+tls.cert_subject supports multiple buffer matching, see Multiple Buffer Matching.
+
+8.15.1.1. tls.subject
+Legacy keyword to match TLS/SSL certificate Subject field.
+example:
+tls.subject:&quot;CN=*.googleusercontent.com&quot;
+
+
+Case sensitive, can't use 'nocase', or other modifiers.
+Note: tls.cert_subject replaces the following legacy keywords: tls_cert_subject and tls.subject.
+It's recommended that rules be converted to use the new one.
+
+
+
+8.15.2. tls.cert_issuer
+Match TLS/SSL certificate Issuer field.
+Examples:
+tls.cert_issuer; content:&quot;WoSign&quot;; nocase; isdataat:!1,relative;
+tls.cert_issuer; content:&quot;StartCom&quot;; nocase; pcre:&quot;/StartCom$/&quot;;
+
+
+tls.cert_issuer is a 'sticky buffer'.
+tls.cert_issuer can be used as fast_pattern.
+
+8.15.2.1. tls.issuerdn
+Legacy keyword to match TLS/SSL certificate IssuerDN field
+example:
+tls.issuerdn:!&quot;CN=Google-Internet-Authority&quot;
+
+
+Case sensitive, can't use 'nocase', or other modifiers.
+Note: tls.cert_issuer replaces the following legacy keywords: tls_cert_issuer and tls.issuerdn.
+It's recommended that rules be converted to use the new one.
+
+
+
+8.15.3. tls.cert_serial
+Match on the serial number in a certificate.
+Example:
+alert tls any any -&gt; any any (msg:&quot;match cert serial&quot;; \
+  tls.cert_serial; content:&quot;5C:19:B7:B1:32:3B:1C:A1&quot;; sid:200012;)
+
+
+tls.cert_serial is a 'sticky buffer'.
+tls.cert_serial can be used as fast_pattern.
+tls.cert_serial replaces the previous keyword name: tls_cert_serial. You may continue
+to use the previous name, but it's recommended that rules be converted to use
+the new name.
+
+
+8.15.4. tls.cert_fingerprint
+Match on the SHA-1 fingerprint of the certificate.
+Example:
+alert tls any any -&gt; any any (msg:&quot;match cert fingerprint&quot;; \
+  tls.cert_fingerprint; \
+  content:&quot;4a:a3:66:76:82:cb:6b:23:bb:c3:58:47:23:a4:63:a7:78:a4:a1:18&quot;; \
+  sid:200023;)
+
+
+tls.cert_fingerprint is a 'sticky buffer'.
+tls.cert_fingerprint can be used as fast_pattern.
+tls.cert_fingerprint replaces the previous keyword name: tls_cert_fingerprint may continue
+to use the previous name, but it's recommended that rules be converted to use
+the new name.
+
+
+8.15.5. tls.sni
+Match TLS/SSL Server Name Indication field.
+Examples:
+tls.sni; content:&quot;oisf.net&quot;; nocase; isdataat:!1,relative;
+tls.sni; content:&quot;oisf.net&quot;; nocase; pcre:&quot;/oisf.net$/&quot;;
+
+
+tls.sni is a 'sticky buffer'.
+tls.sni can be used as fast_pattern.
+tls.sni replaces the previous keyword name: tls_sni. You may continue
+to use the previous name, but it's recommended that rules be converted to use
+the new name.
+
+
+8.15.6. tls_cert_notbefore
+Match on the NotBefore field in a certificate.
+Example:
+alert tls any any -&gt; any any (msg:&quot;match cert NotBefore&quot;; \
+  tls_cert_notbefore:1998-05-01&lt;&gt;2008-05-01; sid:200005;)
+
+
+
+
+8.15.7. tls_cert_notafter
+Match on the NotAfter field in a certificate.
+Example:
+alert tls any any -&gt; any any (msg:&quot;match cert NotAfter&quot;; \
+  tls_cert_notafter:&gt;2015; sid:200006;)
+
+
+
+
+8.15.8. tls_cert_expired
+Match returns true if certificate is expired. It evaluates the validity date
+from the certificate.
+Usage:
+tls_cert_expired;
+
+
+
+
+8.15.9. tls_cert_valid
+Match returns true if certificate is not expired. It only evaluates the
+validity date. It does not do cert chain validation. It is the opposite
+of tls_cert_expired.
+Usage:
+tls_cert_valid;
+
+
+
+
+8.15.10. tls.certs
+Do a &quot;raw&quot; match on each of the certificates in the TLS certificate chain.
+Example:
+alert tls any any -&gt; any any (msg:&quot;match bytes in TLS cert&quot;; tls.certs; \
+  content:&quot;|06 09 2a 86|&quot;; sid:200070;)
+
+
+tls.certs is a 'sticky buffer'.
+tls.certs can be used as fast_pattern.
+tls.certs supports multiple buffer matching, see Multiple Buffer Matching.
+
+
+8.15.11. tls.version
+Match on negotiated TLS/SSL version.
+Supported values: &quot;1.0&quot;, &quot;1.1&quot;, &quot;1.2&quot;, &quot;1.3&quot;
+It is also possible to match versions using a hex string.
+Examples:
+tls.version:1.2;
+tls.version:0x7f12;
+
+
+The first example matches TLSv1.2, whilst the last example matches TLSv1.3
+draft 16.
+
+
+8.15.12. ssl_version
+Match version of SSL/TLS record.
+Supported values &quot;sslv2&quot;, &quot;sslv3&quot;, &quot;tls1.0&quot;, &quot;tls1.1&quot;, &quot;tls1.2&quot;, &quot;tls1.3&quot;
+Example:
+alert tls any any -&gt; any any (msg:&quot;match TLSv1.2&quot;; \
+  ssl_version:tls1.2; sid:200030;)
+
+
+It is also possible to match on several versions at the same time.
+Example:
+alert tls any any -&gt; any any (msg:&quot;match SSLv2 and SSLv3&quot;; \
+  ssl_version:sslv2,sslv3; sid:200031;)
+
+
+
+
+8.15.13. tls.fingerprint
+match TLS/SSL certificate SHA1 fingerprint
+example:
+tls.fingerprint:!&quot;f3:40:21:48:70:2c:31:bc:b5:aa:22:ad:63:d6:bc:2e:b3:46:e2:5a&quot;
+
+
+Case sensitive, can't use 'nocase'.
+The tls.fingerprint buffer is lower case so you must use lower case letters for this to match.
+
+
+8.15.14. tls.store
+store TLS/SSL certificate on disk.
+The location can be specified in the output.tls-store.certs-log-dir parameter of the yaml configuration file, cf TLS parameters and certificates logging (tls.log)..
+
+
+8.15.15. ssl_state
+The ssl_state keyword matches the state of the SSL connection. The possible states
+are client_hello, server_hello, client_keyx, server_keyx and unknown.
+You can specify several states with | (OR) to check for any of the specified states.
+
+
+8.15.16. tls.random
+Matches on the 32 bytes of the TLS random field.
+Example:
+alert tls any any -&gt; any any (msg:&quot;TLS random test&quot;; \
+  tls.random; content:&quot;|9b ce 7a 5e 57 5d 77 02 07 c2 9d be 24 01 cc f0 5d cd e1 d2 a5 86 9c 4a 3e ee 38 db 55 1a d9 bc|&quot;; sid: 200074;)
+
+
+tls.random is a sticky buffer.
+
+
+8.15.17. tls.random_time
+Matches on the first 4 bytes of the TLS random field.
+Example:
+alert tls any any -&gt; any any (msg:&quot;TLS random_time test&quot;; \
+  tls.random_time; content:&quot;|9b ce 7a 5e|&quot;; sid: 200075;)
+
+
+tls.random_time is a sticky buffer.
+
+
+8.15.18. tls.random_bytes
+Matches on the last 28 bytes of the TLS random field.
+Example:
+alert tls any any -&gt; any any (msg:&quot;TLS random_bytes test&quot;; \
+  tls.random_bytes; content:&quot;|57 5d 77 02 07 c2 9d be 24 01 cc f0 5d cd e1 d2 a5 86 9c 4a 3e ee 38 db 55 1a d9 bc|&quot;; sid: 200076;)
+
+
+tls.random_bytes is a sticky buffer.
+
+
+8.15.19. tls.cert_chain_len
+Matches on the TLS certificate chain length.
+tls.cert_chain_len supports &lt;, &gt;, &lt;&gt;, ! and using an exact value.
+Example:
+ alert tls any any -&gt; any any (msg:&quot;cert chain exact value&quot;; \
+tls.cert_chain_len:1; classtype:misc-activity; sid:1; rev:1;)
+
+ alert tls any any -&gt; any any (msg:&quot;cert chain less than value&quot;; \
+tls.cert_chain_len:&lt;2; classtype:misc-activity; sid:2; rev:1;)
+
+ alert tls any any -&gt; any any (msg:&quot;cert chain greater than value&quot;; \
+tls.cert_chain_len:&gt;0; classtype:misc-activity; sid:2; rev:1;)
+
+ alert tls any any -&gt; any any (msg:&quot;cert chain greater than less than value&quot;;\
+tls.cert_chain_len:0&lt;&gt;2; classtype:misc-activity; sid:3; rev:1;)
+
+ alert tls any any -&gt; any any (msg:&quot;cert chain not value&quot;; \
+tls.cert_chain_len:!2; classtype:misc-activity; sid:4; rev:1;)
+
+
+
+
+
+
+           
+          
+          
+         Previous
+        Next 
+    
+
+  
+
+  
+    &#169; Copyright 2016-2025, OISF.
+  
+
+  Built with Sphinx using a
+    theme
+    provided by Read the Docs.
+   
+
+
+        
+      
+    
+  
+  
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+   
+
+

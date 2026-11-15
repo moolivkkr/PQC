@@ -1,0 +1,7 @@
+JSON OK rules/scp-pq-tls.json minified=1996 chars (SCP/RCP limit 5120: OK)
+JSON OK rules/rcp-s3-tls13.json minified=329 chars (SCP/RCP limit 5120: OK)
+JSON OK rules/runtime/eventbridge-rules.json minified=1049 chars (SCP/RCP limit 5120: OK)
+ALB pq match tls_keyexchange= X25519MLKEM768 groups= 15
+ALB classical match tls_keyexchange= secp256r1 groups= 15
+NLB pq match tls_keyexchange= X25519MLKEM768 groups= 22
+JSON valid

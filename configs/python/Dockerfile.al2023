@@ -1,0 +1,12 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+RUN dnf -y install python3.12 python3.12-pip && dnf clean all
+WORKDIR /app
+COPY requirements.txt .
+RUN python3.12 -m pip install --no-cache-dir -r requirements.txt
+COPY . .
+# Option A (image-wide): switch the crypto policy.
+#   RUN dnf -y install crypto-policies-scripts && update-crypto-policies --set DEFAULT:PQ
+# Option B (this process only): ship the config file.
+COPY pq-tls/openssl-pq.cnf /etc/pq-tls/openssl-pq.cnf
+ENV OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf
+CMD ["python3.12", "-m", "gunicorn", "-c", "gunicorn.conf.py", "app:wsgi"]

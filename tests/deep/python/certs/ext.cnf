@@ -1,0 +1,6 @@
+subjectAltName=DNS:pqsrv,DNS:pgsrv,DNS:pyc,DNS:localhost
+basicConstraints=CA:FALSE
+keyUsage=critical,digitalSignature
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid
+extendedKeyUsage=serverAuth

@@ -1,0 +1,33 @@
+{
+  "family": "egress-squid-pq",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "1024",
+  "memory": "2048",
+  "runtimePlatform": { "operatingSystemFamily": "LINUX", "cpuArchitecture": "ARM64" },
+  "executionRoleArn": "arn:aws:iam::111122223333:role/egress-squid-exec",
+  "containerDefinitions": [
+    {
+      "name": "squid",
+      "image": "111122223333.dkr.ecr.us-east-1.amazonaws.com/egress-squid@sha256:<digest>",
+      "essential": true,
+      "portMappings": [{ "containerPort": 3128, "protocol": "tcp" }],
+      "secrets": [
+        { "name": "BUMP_CA_PEM", "valueFrom": "arn:aws:secretsmanager:us-east-1:111122223333:secret:egress/bump-ca:cert::" },
+        { "name": "BUMP_CA_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:111122223333:secret:egress/bump-ca:key::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/egress-squid",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "squid"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/3128' || exit 1"],
+        "interval": 30, "timeout": 5, "retries": 3, "startPeriod": 20
+      }
+    }
+  ]
+}

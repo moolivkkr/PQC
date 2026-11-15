@@ -1,0 +1,60 @@
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>bom</artifactId>
+      <version>2.59.1</version>   <!-- CRT client PQ by default from 2.35.11 -->
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+<dependencies>
+  <!-- Option A: AWS SDK v2 CRT HTTP client (PQ for AWS API calls on any JDK, Linux) -->
+  <dependency>
+    <groupId>software.amazon.awssdk</groupId>
+    <artifactId>aws-crt-client</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>software.amazon.awssdk.crt</groupId>
+    <artifactId>aws-crt</artifactId>
+    <version>0.50.0</version>   <!-- the awscrt.version the SDK release pins -->
+  </dependency>
+
+  <!-- Option B: Netty with BoringSSL (PQ by default in the tested versions) -->
+  <dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-tcnative-boringssl-static</artifactId>
+    <version>2.0.85.Final</version>
+  </dependency>
+  <dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-tcnative-boringssl-static</artifactId>
+    <version>2.0.85.Final</version>
+    <classifier>linux-x86_64</classifier>
+  </dependency>
+  <dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-tcnative-boringssl-static</artifactId>
+    <version>2.0.85.Final</version>
+    <classifier>linux-aarch_64</classifier>
+  </dependency>
+
+  <!-- Option C: Bouncy Castle on the class path for static provider registration
+       (not needed for the agent path: the agent directory brings its own copies) -->
+  <dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bctls-jdk18on</artifactId>
+    <version>1.87</version>
+  </dependency>
+  <dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-jdk18on</artifactId>
+    <version>1.87</version>
+  </dependency>
+  <dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcutil-jdk18on</artifactId>
+    <version>1.87</version>
+  </dependency>
+</dependencies>

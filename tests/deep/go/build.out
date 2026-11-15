@@ -1,0 +1,67 @@
+built go1.23-mod1.23
+built go1.23-mod1.23
+built go1.23-mod1.23-boring
+go1.23-mod1.23: 
+go1.23-mod1.23-boring:  build GOEXPERIMENT=boringcrypto 
+built go1.24-mod1.23
+built go1.24-mod1.24
+built go1.24-mod1.23-godebugdirective
+built go1.24-mod1.23-godebugblock
+built go1.24-mod1.24-fips-latest
+built go1.24-mod1.24-fips-v1.0.0
+built go1.24-mod1.24-boring
+go1.24-mod1.23:  build DefaultGODEBUG=gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=0,urlmaxqueryparams=0,x509rsacrt=0,x509usepolicies=0 
+go1.24-mod1.23-godebugblock:  build DefaultGODEBUG=gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,urlmaxqueryparams=0,x509rsacrt=0,x509usepolicies=0 
+go1.24-mod1.23-godebugdirective:  build DefaultGODEBUG=gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,urlmaxqueryparams=0,x509rsacrt=0,x509usepolicies=0 
+go1.24-mod1.24: 
+go1.24-mod1.24-boring:  build GOEXPERIMENT=boringcrypto 
+go1.24-mod1.24-fips-latest:  build DefaultGODEBUG=fips140=on  build GOFIPS140=latest 
+go1.24-mod1.24-fips-v1.0.0:  build DefaultGODEBUG=fips140=on  build GOFIPS140=v1.0.0-c2097c7c 
+built go1.25-mod1.23
+built go1.25-mod1.25
+built go1.25-mod1.23-godebugdirective
+built go1.25-mod1.23-godebugblock
+built go1.25-mod1.25-fips-latest
+built go1.25-mod1.25-fips-v1.0.0
+built go1.25-mod1.25-boring
+go1.25-mod1.23:  build DefaultGODEBUG=containermaxprocs=0,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 
+go1.25-mod1.23-godebugblock:  build DefaultGODEBUG=containermaxprocs=0,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 
+go1.25-mod1.23-godebugdirective:  build DefaultGODEBUG=containermaxprocs=0,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 
+go1.25-mod1.25: 
+go1.25-mod1.25-boring:  build GOEXPERIMENT=boringcrypto 
+go1.25-mod1.25-fips-latest:  build DefaultGODEBUG=fips140=on  build GOFIPS140=latest 
+go1.25-mod1.25-fips-v1.0.0:  build DefaultGODEBUG=fips140=on  build GOFIPS140=v1.0.0-c2097c7c 
+built go1.26-mod1.23
+built go1.26-mod1.26
+built go1.26-mod1.23-godebugdirective
+built go1.26-mod1.23-godebugblock
+built go1.26-mod1.26-fips-latest
+built go1.26-mod1.26-fips-v1.0.0
+built go1.26-mod1.25
+built go1.26-mod1.26-fips-v1.26.0
+built go1.26-mod1.26-boring
+go1.26-mod1.23:  build DefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,httpservecontentmaxranges=1,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=0,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 
+go1.26-mod1.23-godebugblock:  build DefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,httpservecontentmaxranges=1,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 
+go1.26-mod1.23-godebugdirective:  build DefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,httpservecontentmaxranges=1,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 
+go1.26-mod1.25:  build DefaultGODEBUG=cryptocustomrand=1,httpservecontentmaxranges=1,tlssecpmlkem=0,urlstrictcolons=0 
+go1.26-mod1.26: 
+go1.26-mod1.26-boring:  build GOEXPERIMENT=boringcrypto 
+go1.26-mod1.26-fips-latest:  build DefaultGODEBUG=fips140=on  build GOFIPS140=latest 
+go1.26-mod1.26-fips-v1.0.0:  build DefaultGODEBUG=fips140=on  build GOFIPS140=v1.0.0-c2097c7c 
+go1.26-mod1.26-fips-v1.26.0:  build DefaultGODEBUG=fips140=on  build GOFIPS140=v1.26.0 
+built go1.27-mod1.23
+built go1.27-mod1.27
+built go1.27-mod1.23-godebugdirective
+built go1.27-mod1.23-godebugblock
+built go1.27-mod1.27-fips-latest
+built go1.27-mod1.27-fips-v1.0.0
+built go1.27-mod1.25
+built go1.27-mod1.27-fips-v1.26.0
+built go1.27-mod1.27-boring
+go1.27-mod1.23:  build DefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,httpservecontentmaxranges=1,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=0,tlssecpmlkem=0,tlssha1=1,tracebacklabels=0,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509sslcertoverrideplatform=0,x509usepolicies=0 
+go1.27-mod1.23-godebugblock:  build DefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,httpservecontentmaxranges=1,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,tlssecpmlkem=0,tlssha1=1,tracebacklabels=0,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509sslcertoverrideplatform=0,x509usepolicies=0 
+go1.27-mod1.23-godebugdirective:  build DefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,httpservecontentmaxranges=1,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=1,tlssecpmlkem=0,tlssha1=1,tracebacklabels=0,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509sslcertoverrideplatform=0,x509usepolicies=0 
+go1.27-mod1.25:  build DefaultGODEBUG=cryptocustomrand=1,httpservecontentmaxranges=1,tlssecpmlkem=0,tracebacklabels=0,urlstrictcolons=0,x509sslcertoverrideplatform=0 
+go1.27-mod1.27: 
+go1.27-mod1.27-boring:  build GOEXPERIMENT=boringcrypto 
+go1.27-mod1.27-fips-latest:  build DefaultGODEBUG=fips140=on  build GOFIPS140=latest 

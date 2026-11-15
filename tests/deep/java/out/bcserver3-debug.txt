@@ -1,0 +1,50 @@
+FINE: Boolean system property [jdk.tls.allowLegacyMasterSecret] defaulted to: true
+FINE: Boolean system property [jdk.tls.allowLegacyResumption] defaulted to: false
+FINE: Boolean system property [com.sun.net.ssl.requireCloseNotify] defaulted to: true
+FINE: Boolean system property [jdk.tls.client.useCompatibilityMode] defaulted to: true
+FINE: Boolean system property [jdk.tls.useExtendedMasterSecret] defaulted to: true
+FINE: Integer system property [jdk.tls.maxCertificateChainLength] defaulted to: 0
+FINE: Integer system property [jdk.tls.client.maxInboundCertificateChainLength] defaulted to: 10
+FINE: Integer system property [jdk.tls.server.maxInboundCertificateChainLength] defaulted to: 8
+FINE: Boolean system property [org.bouncycastle.jsse.fips.allowRSAKeyExchange] defaulted to: false
+FINE: Found boolean security property [keystore.type.compat]: true
+FINE: Found string system property [java.home]: /opt/java/openjdk
+FINE: Boolean system property [com.sun.net.ssl.checkRevocation] defaulted to: false
+FINE: Boolean system property [org.bouncycastle.jsse.trustManager.checkEKU] defaulted to: true
+Nov 14, 2026 8:11:34 PM org.bouncycastle.jsse.provider.ProvKeyManagerFactorySpi getDefaultKeyStore
+CONFIG: Initializing default key store as empty
+Nov 14, 2026 8:11:34 PM org.bouncycastle.jsse.provider.X509KeyManagerUtil importX509KeyManager
+FINE: Importing X509KeyManager implementation: sun.security.ssl.SunX509KeyManagerImpl
+FINE: Importing X509TrustManager implementation: org.bouncycastle.jsse.provider.ExportX509TrustManager_7
+FINE: Boolean system property [org.bouncycastle.jsse.client.dh.disableDefaultSuites] defaulted to: false
+FINE: Found string security property [jdk.tls.disabledAlgorithms]: SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, ecdsa_sha1 usage 
+WARNING: Ignoring unsupported entry in 'jdk.tls.disabledAlgorithms': rsa_pkcs1_sha1 usage HandshakeSignature
+WARNING: Ignoring unsupported entry in 'jdk.tls.disabledAlgorithms': ecdsa_sha1 usage HandshakeSignature
+WARNING: Ignoring unsupported entry in 'jdk.tls.disabledAlgorithms': dsa_sha1 usage HandshakeSignature
+FINE: Found string security property [jdk.certpath.disabledAlgorithms]: MD2, MD5, SHA1 jdkCA & usage TLSServer, RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, SHA1 usage SignedJAR & denyAfter 2019-01-01
+WARNING: Ignoring unsupported entry in 'jdk.certpath.disabledAlgorithms': SHA1 jdkCA & usage TLSServer
+WARNING: Ignoring unsupported entry in 'jdk.certpath.disabledAlgorithms': SHA1 usage SignedJAR & denyAfter 2019-01-01
+FINE: Boolean system property [org.bouncycastle.jsse.server.dh.disableDefaultSuites] defaulted to: false
+FINEST: [jdk.tls.disabledAlgorithms] disabled algorithm 'TLSv1.1'
+FINEST: 'jdk.tls.disabledAlgorithms' do not permit 'TLSv1.1' with given parameters
+FINEST: [jdk.tls.disabledAlgorithms] disabled algorithm 'TLSv1'
+FINEST: 'jdk.tls.disabledAlgorithms' do not permit 'TLSv1' with given parameters
+FINEST: [jdk.tls.disabledAlgorithms] disabled algorithm 'TLSv1.1'
+FINEST: 'jdk.tls.disabledAlgorithms' do not permit 'TLSv1.1' with given parameters
+FINEST: [jdk.tls.disabledAlgorithms] disabled algorithm 'TLSv1'
+FINEST: 'jdk.tls.disabledAlgorithms' do not permit 'TLSv1' with given parameters
+FINE: Integer system property [javax.net.ssl.sessionCacheSize] defaulted to: 20480
+FINE: Boolean system property [org.bouncycastle.jsse.ec.disableChar2] defaulted to: false
+FINE: Boolean system property [jsse.enableFFDHE] defaulted to: true
+FINE: Found string system property [jdk.tls.namedGroups]: X25519MLKEM768,x25519,secp256r1,secp384r1
+FINE: Integer system property [jdk.tls.maxHandshakeMessageSize] defaulted to: 32768
+FINE: Integer system property [org.bouncycastle.jsse.handshakeTimeoutMillis] defaulted to: 0
+FINE: Boolean system property [jdk.tls.server.enableStatusRequestExtension] defaulted to: false
+FINE: Boolean system property [org.bouncycastle.jsse.useNamedGroupsOrder] defaulted to: false
+FINE: Boolean system property [org.bouncycastle.jsse.client.enableDelegatedTasks] defaulted to: false
+FINE: Boolean system property [org.bouncycastle.jsse.server.enableDelegatedTasks] defaulted to: false
+Nov 14, 2026 8:11:35 PM org.bouncycastle.jsse.provider.X509KeyManagerUtil importX509KeyManager
+FINE: Importing X509KeyManager implementation: sun.security.ssl.SunX509KeyManagerImpl
+FINE: Found string system property [java.home]: /opt/java/openjdk
+FINE: Importing X509TrustManager implementation: org.bouncycastle.jsse.provider.ExportX509TrustManager_7
+FINE: Boolean system property [org.bouncycastle.jsse.client.dh.disableDefaultSuites] defaulted to: false

@@ -1,0 +1,85 @@
+# kyverno-pq-policies.yaml - Audit first (validationFailureAction: Audit), switch to Enforce per cluster.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pq-ingress-nginx-ecdh-curve
+  annotations:
+    policies.kyverno.io/title: ingress-nginx must offer X25519MLKEM768
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: configmap-ssl-ecdh-curve
+    match:
+      any:
+      - resources:
+          kinds: [ConfigMap]
+          names: ["ingress-nginx-controller"]
+    validate:
+      message: "ingress-nginx ConfigMap must set ssl-ecdh-curve with X25519MLKEM768 first."
+      pattern:
+        data:
+          ssl-ecdh-curve: "X25519MLKEM768:*"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pq-envoy-gateway-client-tls
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: clienttrafficpolicy-ecdh
+    match:
+      any:
+      - resources:
+          kinds: [gateway.envoyproxy.io/v1alpha1/ClientTrafficPolicy]
+    validate:
+      message: "ClientTrafficPolicy.spec.tls.ecdhCurves must list X25519MLKEM768 first (Envoy's default is X25519,P-256)."
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.tls.ecdhCurves[0] || '' }}"
+            operator: NotEquals
+            value: X25519MLKEM768
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pq-istiod-compliance-policy
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: istiod-env
+    match:
+      any:
+      - resources:
+          kinds: [Deployment]
+          namespaces: [istio-system]
+          selector:
+            matchLabels:
+              app: istiod
+    validate:
+      message: "istiod must run with COMPLIANCE_POLICY=pqc (Istio 1.27+)."
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.template.spec.containers[?name=='discovery'].env[] | [?name=='COMPLIANCE_POLICY'].value | [0] || '' }}"
+            operator: NotEquals
+            value: pqc
+  - name: ztunnel-env
+    match:
+      any:
+      - resources:
+          kinds: [DaemonSet]
+          namespaces: [istio-system]
+          names: [ztunnel]
+    validate:
+      message: "ztunnel must run with COMPLIANCE_POLICY=pqc in ambient mode."
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.template.spec.containers[?name=='istio-proxy'].env[] | [?name=='COMPLIANCE_POLICY'].value | [0] || '' }}"
+            operator: NotEquals
+            value: pqc

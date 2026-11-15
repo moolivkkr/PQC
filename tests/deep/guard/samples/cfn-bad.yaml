@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Sample that should FAIL pq-tls.guard (one violation per resource)
+Resources:
+  OldNode:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { ZipFile: "exports.handler=async()=>1" }
+  PyNoConf:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: app.handler
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { ZipFile: "def handler(e, c): return 1" }
+  JavaNoAgent:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: java17
+      Handler: a.B::handle
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { S3Bucket: artifact-bucket, S3Key: fn.zip }
+      Environment:
+        Variables:
+          JAVA_TOOL_OPTIONS: "-Xmx512m"
+  GoFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: provided.al2023
+      Handler: bootstrap
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { S3Bucket: artifact-bucket, S3Key: fn.zip }
+      Environment:
+        Variables:
+          GODEBUG: "tlsmlkem=0"
+  GoTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: api
+          Image: 111122223333.dkr.ecr.eu-west-1.amazonaws.com/api:1
+          Environment:
+            - { Name: GODEBUG, Value: "tlsmlkem=0" }
+            - { Name: JAVA_TOOL_OPTIONS, Value: "-Djdk.tls.namedGroups=x25519,secp256r1" }
+            - { Name: OPENSSL_CONF, Value: /dev/null }
+  ListenerNoPolicy:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: arn:aws:elasticloadbalancing:eu-west-1:111122223333:loadbalancer/app/a/1
+      Port: 443
+      Protocol: HTTPS
+      Certificates: [ { CertificateArn: arn:aws:acm:eu-west-1:111122223333:certificate/x } ]
+      DefaultActions: [ { Type: fixed-response, FixedResponseConfig: { StatusCode: "200" } } ]
+  NlbClassic:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: arn:aws:elasticloadbalancing:eu-west-1:111122223333:loadbalancer/net/n/1
+      Port: 443
+      Protocol: TLS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates: [ { CertificateArn: arn:aws:acm:eu-west-1:111122223333:certificate/x } ]
+      DefaultActions: [ { Type: forward, TargetGroupArn: arn:aws:elasticloadbalancing:eu-west-1:111122223333:targetgroup/t/1 } ]
+  Domain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: api.example.com
+      RegionalCertificateArn: arn:aws:acm:eu-west-1:111122223333:certificate/x
+      EndpointConfiguration: { Types: [ REGIONAL ] }
+      SecurityPolicy: TLS_1_2
+  Api:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: api
+      EndpointConfiguration: { Types: [ REGIONAL ] }
+  HttpApiDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: http.example.com
+      DomainNameConfigurations:
+        - { CertificateArn: arn:aws:acm:eu-west-1:111122223333:certificate/x, SecurityPolicy: TLS_1_2 }

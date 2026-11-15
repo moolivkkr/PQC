@@ -1,0 +1,36 @@
+{
+  "pq-tls-listener-changed-to-classical": {
+    "source": ["aws.elasticloadbalancing"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventSource": ["elasticloadbalancing.amazonaws.com"],
+      "eventName": ["CreateListener", "ModifyListener"],
+      "requestParameters": {
+        "sslPolicy": [{ "anything-but": { "wildcard": "ELBSecurityPolicy-TLS13-1-[23]*PQ-2025-09" } }]
+      }
+    }
+  },
+  "pq-tls-apigw-policy-changed": {
+    "source": ["aws.apigateway"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventSource": ["apigateway.amazonaws.com"],
+      "eventName": ["CreateDomainName", "UpdateDomainName", "CreateRestApi", "UpdateRestApi", "ImportRestApi", "PutRestApi"]
+    }
+  },
+  "pq-tls-config-noncompliant": {
+    "source": ["aws.config"],
+    "detail-type": ["Config Rules Compliance Change"],
+    "detail": {
+      "configRuleName": [{ "prefix": "OrgConfigRule-pq-tls-" }, { "prefix": "pq-tls-" }],
+      "newEvaluationResult": { "complianceType": ["NON_COMPLIANT"] }
+    }
+  },
+  "pq-tls-guard-hook-failed": {
+    "source": ["aws.cloudformation"],
+    "detail-type": ["CloudFormation Hook Invocation Progress"],
+    "detail": {
+      "hook-type": [{ "prefix": "Private::Guard::PqTls" }]
+    }
+  }
+}

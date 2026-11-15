@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Mirror TLS (443) from a Nitro EC2 ENI to a Zeek sensor ENI (VXLAN UDP 4789)
+Parameters:
+  SourceEniId: { Type: String, Description: ENI to mirror (NAT instance, proxy, app host) }
+  SensorEniId: { Type: String, Description: Zeek sensor ENI }
+Resources:
+  ZeekTarget:
+    Type: AWS::EC2::TrafficMirrorTarget
+    Properties:
+      NetworkInterfaceId: !Ref SensorEniId
+      Description: Zeek PQ TLS sensor
+  TlsFilter:
+    Type: AWS::EC2::TrafficMirrorFilter
+    Properties:
+      Description: TLS handshakes only
+  Egress443:
+    Type: AWS::EC2::TrafficMirrorFilterRule
+    Properties:
+      TrafficMirrorFilterId: !Ref TlsFilter
+      TrafficDirection: egress
+      RuleNumber: 100
+      RuleAction: accept
+      Protocol: 6
+      DestinationPortRange: { FromPort: 443, ToPort: 443 }
+      SourceCidrBlock: 0.0.0.0/0
+      DestinationCidrBlock: 0.0.0.0/0
+  Ingress443:
+    Type: AWS::EC2::TrafficMirrorFilterRule
+    Properties:
+      TrafficMirrorFilterId: !Ref TlsFilter
+      TrafficDirection: ingress
+      RuleNumber: 100
+      RuleAction: accept
+      Protocol: 6
+      SourcePortRange: { FromPort: 443, ToPort: 443 }
+      SourceCidrBlock: 0.0.0.0/0
+      DestinationCidrBlock: 0.0.0.0/0
+  Session:
+    Type: AWS::EC2::TrafficMirrorSession
+    Properties:
+      NetworkInterfaceId: !Ref SourceEniId
+      TrafficMirrorTargetId: !Ref ZeekTarget
+      TrafficMirrorFilterId: !Ref TlsFilter
+      SessionNumber: 1
+      VirtualNetworkId: 4242
+      Description: PQ TLS sensor

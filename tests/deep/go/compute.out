@@ -1,0 +1,12 @@
+Unable to find image 'public.ecr.aws/lambda/provided@sha256:cd914ed6de99b46d32744132eb7ba796a1d2ba017eec46e858252b35e63da3fc' locally
+public.ecr.aws/lambda/provided@sha256:cd914ed6de99b46d32744132eb7ba796a1d2ba017eec46e858252b35e63da3fc: Pulling from lambda/provided
+Digest: sha256:cd914ed6de99b46d32744132eb7ba796a1d2ba017eec46e858252b35e63da3fc
+Status: Downloaded newer image for public.ecr.aws/lambda/provided@sha256:cd914ed6de99b46d32744132eb7ba796a1d2ba017eec46e858252b35e63da3fc
+provided.al2023 go1.23-mod1.23 {"go":"go1.23.12","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+distroless/static go1.23-mod1.23 {"go":"go1.23.12","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+provided.al2023 go1.26-mod1.23 {"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+distroless/static go1.26-mod1.23 {"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+provided.al2023 go1.26-mod1.26 {"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+distroless/static go1.26-mod1.26 {"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+provided.al2023 go1.27-mod1.27 {"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+distroless/static go1.27-mod1.27 {"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}

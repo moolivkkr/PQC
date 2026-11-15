@@ -1,0 +1,71 @@
+=== mysql:8.4
+ssl_ca	ca.pem
+        Signature Algorithm: sha256WithRSAEncryption
+            Public Key Algorithm: rsaEncryption
+DEFAULT
+back-ends
+config
+local.d
+policies
+state
+--- s_client mydb:3306 groups=P-256 -starttls mysql
+verify error:num=19:self-signed certificate in certificate chain
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Signature type: rsa_pss_rsae_sha256
+Verification error: self-signed certificate in certificate chain
+--- s_client mydb:3306 groups=X25519:P-256 -starttls mysql -tls1_2
+verify error:num=19:self-signed certificate in certificate chain
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.2
+Signature type: rsa_pss_rsae_sha256
+Verification error: self-signed certificate in certificate chain
+--- s_client mydb:3306 groups=X25519MLKEM768:X25519:P-256:P-384 -starttls mysql
+verify error:num=19:self-signed certificate in certificate chain
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Signature type: rsa_pss_rsae_sha256
+Verification error: self-signed certificate in certificate chain
+--- mysql client status (client from same image)
+Ssl_version	TLSv1.3
+Tls_library_version	OpenSSL 3.5.8 25 Aug 2026
+Tls_sni_server_name	
+=== mysql:9
+ssl_ca	ca.pem
+        Signature Algorithm: sha256WithRSAEncryption
+            Public Key Algorithm: rsaEncryption
+DEFAULT
+back-ends
+config
+local.d
+policies
+state
+--- s_client mydb:3306 groups=P-256 -starttls mysql
+verify error:num=19:self-signed certificate in certificate chain
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Signature type: rsa_pss_rsae_sha256
+Verification error: self-signed certificate in certificate chain
+--- s_client mydb:3306 groups=X25519:P-256 -starttls mysql -tls1_2
+verify error:num=19:self-signed certificate in certificate chain
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.2
+Signature type: rsa_pss_rsae_sha256
+Verification error: self-signed certificate in certificate chain
+--- s_client mydb:3306 groups=X25519MLKEM768:X25519:P-256:P-384 -starttls mysql
+verify error:num=19:self-signed certificate in certificate chain
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Signature type: rsa_pss_rsae_sha256
+Verification error: self-signed certificate in certificate chain
+--- mysql client status (client from same image)
+Ssl_version	TLSv1.3
+Tls_library_version	OpenSSL 3.5.8 25 Aug 2026
+Tls_sni_server_name	
+=== valkey-cli client offering (PQ-only s_server)
+ACCEPT
+   0 server accepts (SSL_accept())
+   0 server renegotiates (SSL_accept())
+   0 server accepts that finished
+shutdown accept socket
+DONE

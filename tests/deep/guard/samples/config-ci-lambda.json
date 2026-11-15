@@ -1,0 +1,7 @@
+[
+  {"resourceType":"AWS::Lambda::Function","resourceName":"good-py","configuration":{"functionName":"good-py","runtime":"python3.13","packageType":"Zip","environment":{"variables":{"OPENSSL_CONF":"/opt/pq-tls/openssl-pq.cnf"}}}},
+  {"resourceType":"AWS::Lambda::Function","resourceName":"bad-py","configuration":{"functionName":"bad-py","runtime":"python3.12","packageType":"Zip","environment":{"variables":{"LOG_LEVEL":"info"}}}},
+  {"resourceType":"AWS::Lambda::Function","resourceName":"bad-node20","configuration":{"functionName":"bad-node20","runtime":"nodejs20.x","packageType":"Zip"}},
+  {"resourceType":"AWS::Lambda::Function","resourceName":"bad-java17","configuration":{"functionName":"bad-java17","runtime":"java17","packageType":"Zip","environment":{"variables":{"JAVA_TOOL_OPTIONS":"-Xmx1g"}}}},
+  {"resourceType":"AWS::Lambda::Function","resourceName":"bad-go","configuration":{"functionName":"bad-go","runtime":"provided.al2023","packageType":"Zip","environment":{"variables":{"GODEBUG":"tlsmlkem=0"}}}}
+]

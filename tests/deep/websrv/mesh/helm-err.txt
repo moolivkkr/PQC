@@ -1,0 +1,4 @@
+Pulled: gcr.io/istio-release/charts/istiod:1.28.0
+Digest: sha256:be0f28cbffcd405b8c6112815d5db9613a1e66d4d285a18a3577ede9670a8d2c
+Pulled: gcr.io/istio-release/charts/ztunnel:1.28.0
+Digest: sha256:7f4add24810b0ad6e1d3d70c45683d099542cc3a30a2ea2fecc40bccab1af32d

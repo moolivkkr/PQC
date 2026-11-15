@@ -1,0 +1,124 @@
+# TAB: go  node=c02d62b2-67e7  rev=13
+
+## 1. H1 and lead paragraphs
+H1: Go runbook
+
+Go's own crypto/tls decides, not OpenSSL, so the base image and OS make no difference. Five inputs set the result: the toolchain version, the go line in go.mod (it sets DefaultGODEBUG), GODEBUG at run time, any tls.Config.CurvePreferences in your code or a library, and FIPS 140-3 mode. Build with Go 1.26 or 1.27, set go 1.26 or later in go.mod, and don't set CurvePreferences. Then clients offer X25519MLKEM768 first and servers accept it, with classical fallback (Tested).
+
+Out of scope here: the Microsoft build of Go and Red Hat's Go toolset, which can route crypto to OpenSSL in FIPS mode. Their PQ behaviour was not tested.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+H2: Client side (app level)
+H2: Server side
+H2: Version rules and FIPS mode
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Toolchain | go line in go.mod | X25519MLKEM768 | SecP256r1MLKEM768, SecP384r1MLKEM1024 | Classical server still works | Evidence |
+| 1.27.4 | 1.27 | Yes | Yes | Yes | Tested |
+| 1.27.4 | 1.23 | No (tlsmlkem=0) | No | Yes | Tested |
+| 1.26.11 | 1.26 | Yes | Yes | Yes | Tested |
+| 1.26.11 | 1.25 | Yes | No (tlssecpmlkem=0) | Yes | Tested |
+| 1.26.11 | 1.23 | No | No | Yes | Tested |
+| 1.25.14 | 1.25 | Yes | No (added in 1.26) | Yes | Tested |
+| 1.25.14 | 1.23 | No | No | Yes | Tested |
+| 1.24.13 | 1.24 | Yes | No | Yes | Tested |
+| 1.24.13 | 1.23 | No | No | Yes | Tested |
+| 1.23.12 | any | No (no ML-KEM in 1.23) | No | Yes | Tested |
+
+## 4. Full configuration files section
+H2: Full configuration files
+These files match the excerpts above. Replace the example account IDs, names and ARNs with your own. The Go sources compile against Go 1.26. Tested parts are marked in the sections above; IaC files follow AWS docs and were not deployed (no AWS access here).
+go.mod (preferred: raise the go line)
+```text
+module example.com/payments
+
+```
+Versions are what go mod tidy resolved on 2026-11-14 (the sources in this section compile and pass go vet with Go 1.26.11). Only the go line matters for PQ.
+go.mod (alternative: keep an old go line, turn PQ on)
+```text
+module example.com/legacy
+
+```
+tlssecpmlkem is only known to Go 1.26+ toolchains. On 1.24 or 1.25 builds, list tlsmlkem=1 only, or the build fails on an unknown setting.
+cmd/client/main.go (HTTP and AWS SDK client, FIPS-safe)
+```go
+//go:debug tlsmlkem=1
+package main
+```
+cmd/server/main.go (HTTPS and gRPC server that logs the group)
+```go
+package main
+
+```
+cmd/lambda/main.go (Lambda handler)
+```go
+package main
+
+```
+Makefile (Lambda zip)
+```makefile
+GO ?= go
+build-lambda:
+```
+Dockerfile (ECS, Fargate, EKS: distroless)
+```dockerfile
+# Pin both images by digest in your registry mirror.
+FROM golang:1.26 AS build
+```
+Dockerfile.lambda (Lambda container image)
+```dockerfile
+FROM golang:1.26 AS build
+WORKDIR /src
+```
+Dockerfile.fips (FIPS 140-3 build)
+```dockerfile
+FROM golang:1.26 AS build
+WORKDIR /src
+```
+template.yaml (SAM, Lambda zip)
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+```
+lambda-cfn.yaml (plain CloudFormation, zip in S3)
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+```
+lambda.tf (Terraform, zip and image)
+```hcl
+resource "aws_lambda_function" "payments" {
+  function_name    = "payments"
+```
+taskdef.json (ECS / Fargate)
+```json
+{
+  "family": "payments-api",
+```
+ecs-task.tf (Terraform for the same task definition)
+```hcl
+resource "aws_ecs_task_definition" "payments_api" {
+  family                   = "payments-api"
+```
+deployment.yaml (EKS)
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+```
+/etc/systemd/system/payments-api.service (EC2)
+```ini
+[Unit]
+Description=payments API (Go)
+```
+go-pq-posture.sh (CI gate and host or image scan)
+```sh
+#!/bin/sh
+# Usage: go-pq-posture.sh <dir-with-go-binaries>   (needs a Go toolchain on PATH)
+```
+To scan an image: docker create --name x <image>; docker cp x:/server ./scan/; docker rm x; ./go-pq-posture.sh ./scan. To scan EC2 hosts, run it through SSM Run Command on the binary folder.

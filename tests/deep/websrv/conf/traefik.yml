@@ -1,0 +1,12 @@
+# /etc/traefik/traefik.yml - static configuration
+entryPoints:
+  websecure:
+    address: ":8443"
+  web:
+    address: ":8080"
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+log:
+  level: INFO
+accessLog: {}

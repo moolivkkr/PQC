@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Install or upgrade AWS CLI v2 (bundles OpenSSL 3.5 from 2.34.54) and report the version.",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "upgradeAwsCli",
+      "precondition": { "StringEquals": ["platformType", "Linux"] },
+      "inputs": {
+        "timeoutSeconds": "600",
+        "runCommand": [
+          "set -eu",
+          "arch=$(uname -m)",
+          "cd /tmp && curl -fsSL \"https://awscli.amazonaws.com/awscli-exe-linux-${arch}.zip\" -o awscliv2.zip",
+          "rm -rf /tmp/aws && unzip -q awscliv2.zip",
+          "/tmp/aws/install --update",
+          "/usr/local/bin/aws --version"
+        ]
+      }
+    }
+  ]
+}

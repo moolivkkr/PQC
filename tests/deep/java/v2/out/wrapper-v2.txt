@@ -1,0 +1,6 @@
+pq-tls: java: Bouncy Castle JSSE agent v2, JAVA_TOOL_OPTIONS= -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar
+Picked up JAVA_TOOL_OPTIONS:  -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar
+pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX
+pq-tls: java: Bouncy Castle JSSE agent v2, JAVA_TOOL_OPTIONS=-Djava.security.properties=/v/app.security -javaagent:/opt/pq-tls/pq-tls-agent.jar
+Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=/v/app.security -javaagent:/opt/pq-tls/pq-tls-agent.jar
+pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX

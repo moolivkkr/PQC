@@ -1,0 +1,17 @@
+selfcheck port=5432 client-groups=X25519MLKEM768 -> 2020D3AAFFFF0000:error:8000006F:system library:BIO_connect:Connection refused:../crypto/bio/bio_sock2.c:183:calling connect()
+selfcheck port=5432 client-groups=X25519 -> 20F0F996FFFF0000:error:8000006F:system library:BIO_connect:Connection refused:../crypto/bio/bio_sock2.c:183:calling connect()
+selfcheck port=5433 client-groups=X25519MLKEM768 -> 20A074AFFFFF0000:error:8000006F:system library:BIO_connect:Connection refused:../crypto/bio/bio_sock2.c:183:calling connect()
+selfcheck port=5433 client-groups=X25519 -> 20F00A90FFFF0000:error:8000006F:system library:BIO_connect:Connection refused:../crypto/bio/bio_sock2.c:183:calling connect()
+selfcheck port=6380 client-groups=X25519MLKEM768 -> verify error:num=20:unable to get local issuer certificate
+selfcheck port=6380 client-groups=X25519 -> 20700F9AFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+selfcheck port=6381 client-groups=X25519MLKEM768 -> 20806E90FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+selfcheck port=6381 client-groups=X25519 -> verify error:num=20:unable to get local issuer certificate
+selfcheck port=3306 client-groups=X25519MLKEM768 -> verify error:num=20:unable to get local issuer certificate
+selfcheck port=3306 client-groups=X25519 -> 20D016BBFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+selfcheck port=3307 client-groups=X25519MLKEM768 -> 2080C685FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+selfcheck port=3307 client-groups=X25519 -> verify error:num=20:unable to get local issuer certificate
+DB-READY
+selfcheck port=5432 client-groups=X25519MLKEM768 -> verify error:num=20:unable to get local issuer certificate
+selfcheck port=5432 client-groups=X25519 -> 20B09DAEFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+selfcheck port=5433 client-groups=X25519MLKEM768 -> 2020D29CFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+selfcheck port=5433 client-groups=X25519 -> verify error:num=20:unable to get local issuer certificate

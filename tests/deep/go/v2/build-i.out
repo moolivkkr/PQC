@@ -1,0 +1,4 @@
+built cases-1.24-mod1.24: /out/cases-1.24-mod1.24: go1.24.13
+        (no DefaultGODEBUG line)
+built cases-1.26-mod1.26: /out/cases-1.26-mod1.26: go1.26.11
+        (no DefaultGODEBUG line)

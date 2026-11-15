@@ -1,0 +1,15 @@
+== init: 6.0.1-6+deb13u7
+libstrongswan-openssl.so 
+  XOF_SHAKE128[openssl]
+loaded ike secret 'ike-pq'
+no authorities found, 0 unloaded
+no pools found, 0 unloaded
+loaded connection 'pq'
+successfully loaded 1 connections, 0 unloaded
+initiate failed: establishing CHILD_SA 'net' failed
+[IKE] initiating IKE_SA pq[1] to 10.250.77.2
+[ENC] generating IKE_SA_INIT request 0 [ SA KE No N(NATD_S_IP) N(NATD_D_IP) N(FRAG_SUP) N(HASH_ALG) N(REDIR_SUP) N(IKE_INT_SUP) ]
+[ENC] parsed IKE_SA_INIT response 0 [ SA KE No N(NATD_S_IP) N(NATD_D_IP) N(FRAG_SUP) N(HASH_ALG) N(CHDLESS_SUP) N(IKE_INT_SUP) N(MULT_AUTH) ]
+== list-sas
+== log
+07[CFG]    proposals = ESP:AES_GCM_16_256/CURVE_25519/NO_EXT_SEQ/KE1_ML_KEM_768/KE1_KE_NONE

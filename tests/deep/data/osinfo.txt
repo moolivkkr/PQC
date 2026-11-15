@@ -1,0 +1,50 @@
+== debian:trixie-slim
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+no-openssl-cli
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== postgres:18
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== postgres:18-bookworm
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+OpenSSL 3.0.22 25 Aug 2026 (Library: OpenSSL 3.0.22 25 Aug 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== mysql:8.4
+PRETTY_NAME="Oracle Linux Server 9.8"
+OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3.5.8 25 Aug 2026)
+/usr/lib64/libssl.so.3
+/usr/lib64/libssl.so.3.5.8
+== mysql:9
+PRETTY_NAME="Oracle Linux Server 9.8"
+OpenSSL 3.5.8 25 Aug 2026 (Library: OpenSSL 3.5.8 25 Aug 2026)
+/usr/lib64/libssl.so.3
+/usr/lib64/libssl.so.3.5.8
+== mariadb:11.8
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== valkey/valkey:8
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+no-openssl-cli
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== valkey/valkey:8-alpine
+PRETTY_NAME="Alpine Linux v3.24"
+OpenSSL 3.5.9 29 Sep 2026 (Library: OpenSSL 3.5.9 29 Sep 2026)
+/usr/lib/libssl.so.3
+== nginx:1.29
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== golang:1.25-trixie
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+OpenSSL 3.5.6 7 Apr 2026 (Library: OpenSSL 3.5.6 7 Apr 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== python:3.13-slim-trixie
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+== eclipse-temurin:25-jdk
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3

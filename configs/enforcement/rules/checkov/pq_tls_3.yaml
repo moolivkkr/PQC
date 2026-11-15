@@ -1,0 +1,22 @@
+metadata:
+  id: "CKV2_PQTLS_3"
+  name: "Lambda python3.12+/nodejs22+/dotnet8+ must set the pq-tls OPENSSL_CONF or exec wrapper"
+  category: "ENCRYPTION"
+  severity: "MEDIUM"
+definition:
+  or:
+    - cond_type: attribute
+      resource_types: [ aws_lambda_function ]
+      attribute: runtime
+      operator: not_within
+      value: [ "python3.12", "python3.13", "python3.14", "nodejs22.x", "nodejs24.x", "dotnet8", "dotnet10" ]
+    - cond_type: attribute
+      resource_types: [ aws_lambda_function ]
+      attribute: environment.variables.OPENSSL_CONF
+      operator: within
+      value: [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+    - cond_type: attribute
+      resource_types: [ aws_lambda_function ]
+      attribute: environment.variables.AWS_LAMBDA_EXEC_WRAPPER
+      operator: equals
+      value: "/opt/pq-tls/wrapper"

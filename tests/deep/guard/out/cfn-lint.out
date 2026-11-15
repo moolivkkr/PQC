@@ -1,0 +1,9 @@
+cfn-lint 1.60.1
+rules/config/org-config-rules.yaml cfn-lint exit=0
+rules/cfn/guard-hook.yaml cfn-lint exit=0
+rules/runtime/cloudtrail-alarm.yaml cfn-lint exit=0
+samples/cfn-good.yaml cfn-lint exit=0
+W2531 Runtime 'nodejs20.x' was deprecated on '2026-04-30'. Creation was disabled on '2027-07-29' and update on '2027-08-31'. Please consider updating to 'nodejs24.x'
+samples/cfn-bad.yaml:7:7
+
+samples/cfn-bad.yaml cfn-lint exit=4

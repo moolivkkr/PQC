@@ -1,0 +1,102 @@
+# TAB: hosts  node=c3d96e94-4f34  rev=12
+
+## 1. H1 and lead paragraphs
+H1: Hosts and operating systems
+
+The host OS decides PQ only for programs that use the system TLS library: OpenSSL, GnuTLS or NSS on Linux, Schannel on Windows, Apple's stack on macOS. On Red Hat-family systems (AL2023, RHEL) the system-wide crypto policy writes the group list for all three Linux libraries and for OpenSSH. Programs that bring their own TLS (Go, Java, the official Node.js binaries, rustls, AWS CLI v2) follow the language tabs whatever the host is.
+
+Tested = run here on 2026-11-14 in containers against a PQ-only openssl s_server (-groups X25519MLKEM768 -tls1_3) and a classical-only one (-groups X25519), plus sshd restricted to one key exchange. Scripts and output: deep/hosts/run-hosts*.sh and run-hosts*.out in the work dir.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+  H3: By compute type
+  H3: Bottlerocket
+H2: Client side (app level on the host)
+  H3: Per-service override with systemd
+  H3: OpenSSH client
+H2: Server side
+  H3: Amazon Linux 2023: crypto policy
+  H3: OpenSSH server
+  H3: Session Manager and EC2 Instance Connect
+  H3: Web servers and other daemons on the host
+  H3: Windows Server 2025 (Schannel)
+H2: Packaging and rollout per compute type
+H2: Verify
+  H3: Test results (2026-11-14)
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| OS | System TLS (OpenSSL / GnuTLS) | PQ TLS by default | OpenSSH | PQ SSH by default | Evidence |
+| Amazon Linux 2023.12 (image 2023.12.20261102) | OpenSSL 3.5.8, GnuTLS 3.8.10 | No; yes after DEFAULT:PQ (OpenSSL, GnuTLS, OpenSSH all switch) | 9.9p1 | No; mlkem768x25519-sha256 first after DEFAULT:PQ | Tested; AWS doc |
+| Amazon Linux 2027 (preview) | OpenSSL 3.5 | Yes; opt out with DEFAULT:NO-PQ | PQ by default | Yes | Documented; preview, not for production |
+| Amazon Linux 2 | OpenSSL 1.0.2 / 1.1.1 | No, no fix | 7.x (no ML-KEM) | No | Tested (Lambda AL2 images). End of support was 2026-06-30 (AL2 FAQ) |
+| Bottlerocket (ECS/EKS nodes) | Not confirmed | Not applicable to workloads | Admin container only | n/a | See Bottlerocket below |
+| RHEL 10.1+ | OpenSSL 3.5, GnuTLS, NSS | Yes (DEFAULT changed) | PQ by default | Yes | Documented (Red Hat) |
+| RHEL 10.0 | OpenSSL 3.5 | No; tech preview DEFAULT:TEST-PQ |  |  | Documented |
+| RHEL 9.7 | OpenSSL 3.5 | No; DEFAULT:PQ (OpenSSL, NSS) |  |  | Documented (Red Hat PQC) |
+| Ubuntu 26.04.1 LTS | OpenSSL 3.5.5; GnuTLS 3.8.12 without ML-KEM | Yes for OpenSSL programs; no for GnuTLS programs (wget, git) | 10.2p1 | Yes | Tested |
+| Ubuntu 24.04.5 LTS | OpenSSL 3.0.13 | No | 9.6p1 | sntrup761x25519-sha512@openssh.com only | Tested |
+| Debian 13 (trixie) | OpenSSL 3.5.7; GnuTLS 3.8.9 without ML-KEM | Yes for OpenSSL; no for GnuTLS | 10.0p2 | Yes | Tested |
+| Debian 12 (bookworm) | OpenSSL 3.0.22 | No | 9.2p1 | sntrup761 only | Tested |
+| Alpine 3.24 | OpenSSL 3.5.9 | Yes | 10.3p1 | Yes | Tested |
+| Alpine 3.21 | OpenSSL 3.3.7 | No | 9.9p2 | Yes | Tested |
+| Windows Server 2025 | Schannel | No: opt-in after KB5099536 (2026-07-14) | OpenSSH for Windows not checked | Not confirmed | Documented (Microsoft FAQ) |
+| Windows 11 24H2/25H2 (build agents, jump hosts) | Schannel | No: opt-in after KB5089573 |  |  | Documented (same FAQ) |
+| Windows Server 2022, 2019 | Schannel | No PQ update announced |  |  | Microsoft's FAQ names only Server 2025 and Windows 11 |
+| macOS 27.0.1 build agent | /usr/bin/curl on LibreSSL 3.3.6; URLSession | curl: No; URLSession: yes (macOS 26+) | 10.3p1 | Yes (OpenSSH ≥ 10.0 default) | Tested (curl, ssh -V); URLSession Documented (Apple) |
+
+## 4. Full configuration files section
+H2: Full configuration files
+The policy commands, subpolicy, OPENSSL_CONF file and sshd/ssh settings were Tested in containers. The SSM documents, Terraform and CloudFormation wrap those commands and were not applied to an AWS account.
+ssm/PQ-SetCryptoPolicy.json (SSM Command document, AL2023 and RHEL 9.7+)
+```json
+{
+  "schemaVersion": "2.2",
+```
+ssm/pq-policy.tf (Terraform: document, a wave association and a rollback association)
+```hcl
+resource "aws_ssm_document" "pq_policy" {
+  name            = "PQ-SetCryptoPolicy"
+```
+ssm/pq-policy.yaml (CloudFormation equivalent)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+```
+/etc/crypto-policies/policies/modules/PQ-HYBRID.pmod
+```text
+# Custom subpolicy: add the X25519+ML-KEM-768 hybrid group first for TLS and SSH,
+# leave every other algorithm as the base policy has it.
+```
+user-data-pq.sh (EC2 user data or Image Builder step for AL2023 AMIs)
+```bash
+#!/bin/bash
+set -euo pipefail
+```
+/etc/pki/tls/openssl-pq.cnf (per-service override; same file as the Lambda kit)
+```ini
+openssl_conf = openssl_init
+
+```
+/etc/systemd/system/myapp.service.d/pq-tls.conf
+```ini
+[Service]
+Environment=OPENSSL_CONF=/etc/pki/tls/openssl-pq.cnf
+```
+/etc/ssh/sshd_config.d/40-pq-kex.conf (Debian/Ubuntu/Alpine servers that must refuse classical SSH; leave out on AL2023 and RHEL)
+```text
+KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com
+```
+/etc/ssh/ssh_config.d/40-pq-kex.conf (clients with OpenSSH ≥ 9.9)
+```text
+Host *
+    KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org
+```
+ssm/PQ-WindowsSchannel.json (SSM Command document, Windows Server 2025 / Windows 11; not run here)
+```json
+{
+  "schemaVersion": "2.2",
+```
+Run it only on hosts that no Group Policy sets the curve order for; GPO wins over this setting.

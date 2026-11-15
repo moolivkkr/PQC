@@ -1,0 +1,21 @@
+schemaVersion: "2.2"
+description: Set the AL2023 crypto policy to DEFAULT:PQ and restart listed services.
+parameters:
+  Services:
+    type: String
+    default: "orders"
+    description: Space-separated systemd units to restart after the change.
+mainSteps:
+  - action: aws:runShellScript
+    name: setPqPolicy
+    precondition:
+      StringEquals: [platformType, Linux]
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - . /etc/os-release
+        - '[ "$ID" = amzn ] && [ "$VERSION_ID" = 2023 ] || { echo "not AL2023, skipping"; exit 0; }'
+        - dnf -y install crypto-policies-scripts
+        - '[ "$(update-crypto-policies --show)" = DEFAULT:PQ ] || update-crypto-policies --set DEFAULT:PQ'
+        - for s in {{ Services }}; do systemctl restart "$s"; done
+        - update-crypto-policies --show

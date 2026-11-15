@@ -1,0 +1,4 @@
+/w/certs/rsa-legacy.pfx FAIL ERR_CRYPTO_UNSUPPORTED_OPERATION
+/w/legacy/converted.pfx loads
+/w/certs/rsa-legacy.pfx FAIL ERR_CRYPTO_UNSUPPORTED_OPERATION
+/w/legacy/converted.pfx loads

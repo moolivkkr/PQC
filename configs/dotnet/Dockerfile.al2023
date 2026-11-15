@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish -c Release -o /app
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+RUN dnf install -y aspnetcore-runtime-8.0 && dnf clean all
+COPY pq-tls/openssl-pq.cnf /etc/pq-tls/openssl-pq.cnf
+ENV OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf
+# Alternative to the two lines above (whole image, all OpenSSL users):
+# RUN dnf install -y crypto-policies-scripts && update-crypto-policies --set DEFAULT:PQ
+WORKDIR /app
+COPY --from=build /app .
+EXPOSE 8443
+ENTRYPOINT ["dotnet", "App.dll"]

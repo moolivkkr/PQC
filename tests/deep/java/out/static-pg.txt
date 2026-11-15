@@ -1,0 +1,209 @@
+### Temurin 21, static BCJSSE, BC default groups (no jdk.tls.namedGroups)  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[-Djava.security.properties=/w/bc-static.security]
+Nov 14, 2026 5:54:43 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:43 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:43 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:43 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:43 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Nov 14, 2026 5:54:44 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:44 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:44 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:44 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:44 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 21.0.13/BCJSSE urlconnection        classical-only  OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Nov 14, 2026 5:54:45 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:45 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:45 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:45 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:45 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE okhttp               PQ-only         OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 21.0.13/BCJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+### Temurin 21, static BCJSSE + jdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[-Djava.security.properties=/w/bc-static.security -Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1]
+Nov 14, 2026 5:54:47 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:47 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:47 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:47 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:47 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Nov 14, 2026 5:54:48 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:48 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:48 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:48 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:48 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 21.0.13/BCJSSE urlconnection        classical-only  OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Nov 14, 2026 5:54:50 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:50 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:50 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:50 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:50 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE okhttp               PQ-only         OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 21.0.13/BCJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+### Temurin 17, static BCJSSE + namedGroups  image=eclipse-temurin@sha256:0b6521287f850ec1c4b31c9074c5a1ae1d67c5922c3fefd21065c7c32e244d4a opts=[-Djava.security.properties=/w/bc-static.security -Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1]
+Nov 14, 2026 5:54:51 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:51 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:51 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:51 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:51 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 17.0.21/BCJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 17.0.21/BCJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Nov 14, 2026 5:54:53 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:53 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:53 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:53 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:53 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 17.0.21/BCJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 17.0.21/BCJSSE urlconnection        classical-only  OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+### Temurin 21 + agent, but service pins jdk.tls.namedGroups=x25519,secp256r1 (pitfall)  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[-javaagent:/agent/pq-tls-agent.jar -Djdk.tls.namedGroups=x25519,secp256r1]
+pq-tls agent: BCJSSE first, groups=x25519,secp256r1
+Nov 14, 2026 5:54:54 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:54 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:54 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:54 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:54 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:54:54 PM org.bouncycastle.jsse.provider.ProvTlsClient notifyAlertReceived
+INFO: [client #1 @219e3add] received fatal(2) handshake_failure(40) alert
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       PQ-only         FAIL TlsFatalAlertReceived: handshake_failure(40)
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+### Temurin 25, jdk.tls.namedGroups=x25519,secp256r1 (pitfall)  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699 opts=[-Djdk.tls.namedGroups=x25519,secp256r1]
+Eclipse Adoptium 25.0.5/SunJSSE jdk-httpclient       PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 25.0.5/SunJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+
+Nov 14, 2026 5:54:56 PM io.netty.handler.ssl.OpenSsl <clinit>
+INFO: Using configured namedGroups -D 'jdk.tls.namedGroup': [x25519, secp256r1] 
+Eclipse Adoptium 25.0.5/SunJSSE netty-tcnative       PQ-only         FAIL OpenSslHandshakeException: error:10000410:SSL routines:OPENSSL_internal:SSLV3_ALERT_HANDSHAKE_FAILURE
+Nov 14, 2026 5:54:56 PM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
+io.netty.handler.codec.DecoderException: io.netty.handler.ssl.ReferenceCountedOpenSslEngine$OpenSslHandshakeException: error:10000410:SSL routines:OPENSSL_internal:SSLV3_ALERT_HANDSHAKE_FAILURE
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:515)
+	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1471)
+	at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:960)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:176)
+	at io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.handle(AbstractNioChannel.java:448)
+	at io.netty.channel.nio.NioIoHandler$DefaultNioRegistration.handle(NioIoHandler.java:388)
+	at io.netty.channel.nio.NioIoHandler.processSelectedKey(NioIoHandler.java:596)
+	at io.netty.channel.nio.NioIoHandler.processSelectedKeysPlain(NioIoHandler.java:541)
+	at io.netty.channel.nio.NioIoHandler.processSelectedKeys(NioIoHandler.java:514)
+	at io.netty.channel.nio.NioIoHandler.run(NioIoHandler.java:484)
+	at io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:274)
+	at io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:210)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1214)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Unknown Source)
+Caused by: io.netty.handler.ssl.ReferenceCountedOpenSslEngine$OpenSslHandshakeException: error:10000410:SSL routines:OPENSSL_internal:SSLV3_ALERT_HANDSHAKE_FAILURE
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.newSSLExceptionForError(ReferenceCountedOpenSslEngine.java:1475)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.shutdownWithError(ReferenceCountedOpenSslEngine.java:1168)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.sslReadErrorResult(ReferenceCountedOpenSslEngine.java:1496)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1417)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1522)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1565)
+	at io.netty.handler.ssl.SslHandler$SslEngineType$1.unwrap(SslHandler.java:231)
+	at io.netty.handler.ssl.SslHandler.unwrap(SslHandler.java:1531)
+	at io.netty.handler.ssl.SslHandler.decodeNonJdkCompatible(SslHandler.java:1435)
+	at io.netty.handler.ssl.SslHandler.decode(SslHandler.java:1475)
+	at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	... 17 more
+	Suppressed: java.util.concurrent.CompletionException: Rethrowing promise failure cause
+		at io.netty.util.concurrent.DefaultPromise.rethrowIfFailed(DefaultPromise.java:686)
+		at io.netty.util.concurrent.DefaultPromise.sync(DefaultPromise.java:420)
+		at io.netty.util.concurrent.DefaultPromise.sync(DefaultPromise.java:37)
+		at Probe.netty(Probe.java:151)
+		at Probe.client(Probe.java:102)
+		at Probe.main(Probe.java:49)
+
+Eclipse Adoptium 25.0.5/SunJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+### Temurin 21, Netty tcnative with jdk.tls.namedGroups=x25519,secp256r1 (does Netty honour it?)  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[-Djdk.tls.namedGroups=x25519,secp256r1]
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+Nov 14, 2026 5:54:57 PM io.netty.handler.ssl.OpenSsl <clinit>
+INFO: Using configured namedGroups -D 'jdk.tls.namedGroup': [x25519, secp256r1] 
+Eclipse Adoptium 21.0.13/SunJSSE netty-tcnative       PQ-only         FAIL OpenSslHandshakeException: error:10000410:SSL routines:OPENSSL_internal:SSLV3_ALERT_HANDSHAKE_FAILURE
+Nov 14, 2026 5:54:57 PM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
+io.netty.handler.codec.DecoderException: io.netty.handler.ssl.ReferenceCountedOpenSslEngine$OpenSslHandshakeException: error:10000410:SSL routines:OPENSSL_internal:SSLV3_ALERT_HANDSHAKE_FAILURE
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:515)
+	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1471)
+	at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:960)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:176)
+	at io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.handle(AbstractNioChannel.java:448)
+	at io.netty.channel.nio.NioIoHandler$DefaultNioRegistration.handle(NioIoHandler.java:388)
+	at io.netty.channel.nio.NioIoHandler.processSelectedKey(NioIoHandler.java:596)
+	at io.netty.channel.nio.NioIoHandler.processSelectedKeysOptimized(NioIoHandler.java:571)
+	at io.netty.channel.nio.NioIoHandler.processSelectedKeys(NioIoHandler.java:512)
+	at io.netty.channel.nio.NioIoHandler.run(NioIoHandler.java:484)
+	at io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:274)
+	at io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:210)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1214)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Unknown Source)
+Caused by: io.netty.handler.ssl.ReferenceCountedOpenSslEngine$OpenSslHandshakeException: error:10000410:SSL routines:OPENSSL_internal:SSLV3_ALERT_HANDSHAKE_FAILURE
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.newSSLExceptionForError(ReferenceCountedOpenSslEngine.java:1475)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.shutdownWithError(ReferenceCountedOpenSslEngine.java:1168)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.sslReadErrorResult(ReferenceCountedOpenSslEngine.java:1496)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1417)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1522)
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1565)
+	at io.netty.handler.ssl.SslHandler$SslEngineType$1.unwrap(SslHandler.java:231)
+	at io.netty.handler.ssl.SslHandler.unwrap(SslHandler.java:1531)
+	at io.netty.handler.ssl.SslHandler.decodeNonJdkCompatible(SslHandler.java:1435)
+	at io.netty.handler.ssl.SslHandler.decode(SslHandler.java:1475)
+	at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	... 17 more
+	Suppressed: java.util.concurrent.CompletionException: Rethrowing promise failure cause
+		at io.netty.util.concurrent.DefaultPromise.rethrowIfFailed(DefaultPromise.java:686)
+		at io.netty.util.concurrent.DefaultPromise.sync(DefaultPromise.java:420)
+		at io.netty.util.concurrent.DefaultPromise.sync(DefaultPromise.java:37)
+		at Probe.netty(Probe.java:151)
+		at Probe.client(Probe.java:102)
+		at Probe.main(Probe.java:49)
+
+Eclipse Adoptium 21.0.13/SunJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+### Tomcat 11.0.29, Temurin 21, static BCJSSE + namedGroups (server)
+   s_client -groups X25519MLKEM768: alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+   s_client -groups X25519: alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+   log: server tomcat on Eclipse Adoptium 21.0.13 provider=BCJSSE groups=null jdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1
+### PostgreSQL 18 (postgres@sha256:b9f6b8ff03b62f3cfd9d9ba3fe56226a9991c79d3fb46fd46536263bf02be553) ssl_groups=X25519MLKEM768; pgjdbc 42.7.14 sslmode=verify-full (both columns hit the same server)
+###   Temurin 21 baseline  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[]
+Eclipse Adoptium 21.0.13/SunJSSE pgjdbc               PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE pgjdbc               classical-only  FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+###   Temurin 21 + BC agent  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[-javaagent:/agent/pq-tls-agent.jar]
+pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+Nov 14, 2026 5:55:07 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:07 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:07 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:07 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:07 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE pgjdbc               PQ-only         OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 21.0.13/BCJSSE pgjdbc               classical-only  OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+###   Temurin 25 baseline  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699 opts=[]
+Eclipse Adoptium 25.0.5/SunJSSE pgjdbc               PQ-only         OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 25.0.5/SunJSSE pgjdbc               classical-only  OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+### PostgreSQL 18 (postgres@sha256:b9f6b8ff03b62f3cfd9d9ba3fe56226a9991c79d3fb46fd46536263bf02be553) ssl_groups=X25519; pgjdbc 42.7.14 sslmode=verify-full (both columns hit the same server)
+###   Temurin 21 baseline  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[]
+Eclipse Adoptium 21.0.13/SunJSSE pgjdbc               PQ-only         OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 21.0.13/SunJSSE pgjdbc               classical-only  OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+###   Temurin 21 + BC agent  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2 opts=[-javaagent:/agent/pq-tls-agent.jar]
+pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+Nov 14, 2026 5:55:14 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:14 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:14 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:14 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Nov 14, 2026 5:55:14 PM org.bouncycastle.jsse.provider.DisabledAlgorithmConstraints create
+Eclipse Adoptium 21.0.13/BCJSSE pgjdbc               PQ-only         OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 21.0.13/BCJSSE pgjdbc               classical-only  OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+###   Temurin 25 baseline  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699 opts=[]
+Eclipse Adoptium 25.0.5/SunJSSE pgjdbc               PQ-only         OK   TLSv1.3 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 25.0.5/SunJSSE pgjdbc               classical-only  OK   TLSv1.3 TLS_AES_256_GCM_SHA384

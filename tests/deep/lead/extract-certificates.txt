@@ -1,0 +1,89 @@
+# TAB: certificates  node=c645e972-553d  rev=8
+
+## 1. H1 and lead paragraphs
+H1: Certificates and signatures (ML-DSA)
+
+ML-DSA (FIPS 204) replaces the signatures in certificates; it is the second step after ML-KEM key exchange. It is less urgent: recorded traffic can be decrypted later, but a signature only has to hold at the moment of the handshake. Today ML-DSA works in private PKI only.
+
+Three parties decide whether a handshake uses an ML-DSA certificate. The CA must sign with ML-DSA. The server must hold an ML-DSA certificate and a TLS library that can sign with it (OpenSSL 3.5+). The client must offer ML-DSA in its signature_algorithms extension and be able to verify the chain. A server that also holds an ECDSA certificate falls back to it for clients that don't offer ML-DSA; that dual-certificate setup is the safe way to start (Tested 2026-11-14).
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+  H3: AWS services
+  H3: Clients and runtimes
+H2: Client side (app level)
+H2: Server side
+  H3: nginx: ML-DSA and ECDSA side by side (Tested)
+  H3: Apache httpd, HAProxy, Envoy
+  H3: AWS Private CA
+  H3: AWS KMS (ML-DSA signing, not TLS)
+  H3: Composite and hybrid certificates
+H2: The CLM product's role
+  H3: Steps
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+  H3: mkchain.sh (OpenSSL 3.5: ML-DSA and ECDSA chains, Tested)
+  H3: ca.ext
+  H3: default.conf (nginx dual-certificate server, Tested)
+  H3: web-ssl.conf (Apache httpd; Unverified with ML-DSA)
+  H3: private-ca-mldsa.tf (Terraform; provider acceptance of ML_DSA values Unverified)
+  H3: private-ca-mldsa.yaml (CloudFormation; schema acceptance of ML_DSA values Unverified)
+  H3: Dockerfile (client trust store, Debian 13)
+  H3: template.yaml (SAM excerpt: Lambda trust)
+
+## 3. Status matrix (first table)
+| Service | ML-DSA | Evidence |
+| AWS Private CA | CA and end-entity certificates. KeyAlgorithm and SigningAlgorithm ML_DSA_44, ML_DSA_65, ML_DSA_87 (the same value in both). All commercial, GovCloud and China regions since November 2025. | Documented (algorithms, API) |
+| AWS KMS | Signing keys ML_DSA_44/65/87, algorithm ML_DSA_SHAKE_256; RAW messages up to 4 KB, EXTERNAL_MU for larger | Documented (KMS ML-DSA) |
+| IAM Roles Anywhere | ML-DSA trust anchors and end-entity certificates (March 2026) | Documented |
+| ACM public certificates; ALB, NLB, CloudFront, API Gateway listeners | RSA and ECDSA only; cannot serve ML-DSA | Claimed (third-party report) |
+| ACM private certificates (from Private CA) | ACM supports "some but not all" Private CA algorithms; ML-DSA through ACM not confirmed | Documented (the caveat); ML-DSA Unverified |
+| AWS CloudHSM | AWS's PQC migration page lists ML-DSA as preview; GA not confirmed | Unverified |
+| Public web PKI and browsers | No public CA issues ML-DSA; browsers don't accept it; Chrome is pursuing Merkle Tree Certificates | Claimed |
+
+## 4. Full configuration files section
+H2: Full configuration files
+H3: mkchain.sh (OpenSSL 3.5: ML-DSA and ECDSA chains, Tested)
+```bash
+#!/bin/sh
+# mkchain.sh - root ML-DSA-87 -> intermediate ML-DSA-65 -> leaf ML-DSA-44, plus an ECDSA P-256 chain.
+```
+H3: ca.ext
+```ini
+# ca.ext - extensions for the intermediate and leaf certificates
+[ v3_int ]
+```
+H3: default.conf (nginx dual-certificate server, Tested)
+```nginx
+# /etc/nginx/conf.d/default.conf - ML-DSA to clients that offer ML-DSA signature algorithms,
+# ECDSA to everyone else. Needs nginx on OpenSSL 3.5+. Tested: nginx 1.29 (Debian 13, OpenSSL 3.5.5).
+```
+H3: web-ssl.conf (Apache httpd; Unverified with ML-DSA)
+```apache
+# /etc/apache2/sites-available/web-ssl.conf - same dual-certificate idea; not tested with ML-DSA
+<VirtualHost *:443>
+```
+H3: private-ca-mldsa.tf (Terraform; provider acceptance of ML_DSA values Unverified)
+```hcl
+# private-ca-mldsa.tf - ML-DSA-65 root CA in AWS Private CA, self-signed and activated, plus a KMS ML-DSA key
+resource "aws_acmpca_certificate_authority" "mldsa_root" {
+```
+H3: private-ca-mldsa.yaml (CloudFormation; schema acceptance of ML_DSA values Unverified)
+```yaml
+# private-ca-mldsa.yaml - ML-DSA-65 root CA, its certificate, activation, and a KMS ML-DSA key
+AWSTemplateFormatVersion: "2010-09-09"
+```
+H3: Dockerfile (client trust store, Debian 13)
+```dockerfile
+# Dockerfile - add the private ML-DSA and ECDSA roots to the system trust store
+FROM debian:trixie-slim
+```
+H3: template.yaml (SAM excerpt: Lambda trust)
+```yaml
+# template.yaml (excerpt) - private roots shipped in the function package under pki/
+  Function:
+```
+The test clients (Go, Python, Java, Node, .NET) and runner scripts are kept with the outputs in the data work directory.

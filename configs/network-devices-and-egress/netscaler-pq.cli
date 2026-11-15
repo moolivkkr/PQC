@@ -1,0 +1,7 @@
+set ssl parameter -defaultProfile ENABLED
+add ssl profile fe_pq -sslProfileType FrontEnd -tls13 ENABLED
+# Either append the hybrid group to the bound curves ...
+bind ssl profile fe_pq -eccCurveName X25519_MLKEM768
+# ... or rebind ALL (puts X25519_MLKEM768 first):  bind ssl profile fe_pq -eccCurveName ALL
+set ssl vserver vs_app_443 -sslProfile fe_pq
+# GUI: Traffic Management > SSL > SSL Profiles > fe_pq > Advanced Settings > ECC Curve > X25519_MLKEM768 > Bind

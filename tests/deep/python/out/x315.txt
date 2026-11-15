@@ -1,0 +1,11 @@
+x315 | server uvicorn+set_groups:PQ-first    | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+x315 | server uvicorn+set_groups:PQ-first    | client offers X25519          | Protocol version: TLSv1.3 
+x315 | server uvicorn+set_groups:PQ-only     | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+x315 | server uvicorn+set_groups:PQ-only     | client offers X25519          | no output
+x315 | pq_probe.py (PQ-only server, then classical-only server):
+python    3.15.2
+openssl   OpenSSL 3.5.7 9 Jun 2026
+OPENSSL_CONF (unset)
+RESULT    pqsrv:8443 TLSv1.3 group=X25519MLKEM768
+RESULT    pqsrv:8444 TLSv1.3 group=x25519
+x315 | pq_probe exit=1

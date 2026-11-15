@@ -1,0 +1,16 @@
+[Unit]
+Description=payments API (Go)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/opt/payments/server
+User=payments
+# Only while the binary's go.mod is < 1.26:
+Environment=GODEBUG=tlsmlkem=1,tlssecpmlkem=1
+Environment=TLS_PQ_ONLY=0
+Restart=on-failure
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

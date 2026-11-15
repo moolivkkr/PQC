@@ -1,0 +1,98 @@
+# TAB: iot  node=e86fe07a-cac9  rev=13
+
+## 1. H1 and lead paragraphs
+H1: IoT devices
+
+The device's TLS library decides the client side, and the broker decides the server side. On microcontrollers that library is the one compiled into the firmware: Mbed TLS (the FreeRTOS, ESP-IDF and Zephyr default) has no ML-KEM, while wolfSSL does. On Linux-class devices it is the system OpenSSL, or the s2n-tls + AWS-LC stack bundled inside the AWS CRT that the AWS IoT Device SDKs v2 use. On the server side, AWS IoT Core offers no PQ security policy, so device-to-IoT Core connections stay classical whatever the device offers. PQ is achievable today only on hops you control: a self-run broker (Mosquitto, EMQX, HiveMQ), a gateway's uplink to your own endpoints, or a PQ tunnel.
+
+The plan therefore has three parts: ship PQ-capable stacks in new and updatable devices now, enforce PQ on brokers and gateways you run, and move IoT Core traffic when AWS adds a PQ policy. All tests on this tab ran on 2026-11-14 in local containers, without AWS access. Scripts and outputs are in the work directory deep/netiot/ (mosq/, wolf/).
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix by device class
+H2: Client side (devices)
+  H3: Microcontrollers: wolfSSL, the only MCU path to ML-KEM today
+  H3: Microcontrollers: Mbed TLS, ESP-IDF, Zephyr
+  H3: Linux-class devices and gateways: OpenSSL 3.5 and Mosquitto clients
+  H3: AWS IoT Device SDK v2 (Python, JavaScript, Java, C++) via the AWS CRT
+  H3: Greengrass v2, Android, OPC UA, LoRaWAN, cellular
+H2: Server side (brokers and endpoints)
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Device class | TLS stack (component) | PQ (X25519MLKEM768) | Default on? | Evidence |
+| MCU, FreeRTOS + coreMQTT | Mbed TLS 3.6 / 4.x (default transport) | No (none through Mbed TLS 4.2.0 / TF-PSA-Crypto 1.2.0) | — | Documented (ChangeLog) |
+| MCU, FreeRTOS + coreMQTT | wolfSSL 5.9.1+ (transport_wolfSSL.c) | Yes | ML-KEM built by default from 5.9.1; set the key share to be sure | Documented (ChangeLog); API Tested (wolfSSL 5.9.4) |
+| MCU, ESP32 (ESP-IDF esp-tls) | Mbed TLS (default) | No | — | Documented (esp-tls) |
+| MCU, ESP32 | wolfSSL managed component (registry 5.8.2) | Possible with ML-KEM enabled in user_settings.h; the X25519MLKEM768 constant in 5.8.2 not confirmed | No | Documented (registry); not tested on hardware |
+| MCU, Zephyr 4.4 | Mbed TLS 4.1 + TF-PSA-Crypto 1.1 | No | — | Claimed (BayLibre) |
+| MCU, Zephyr | wolfSSL (vendor port) | Claimed | — | Claimed (wolfSSL) |
+| MCU, AWS IoT Device SDK for Embedded C | Its transport (Mbed TLS, OpenSSL, wolfSSL) | Same as the transport | — | Documented (source) |
+| Linux device / gateway | OpenSSL 3.5 (Debian 13, Alpine 3.24; AL2023 with policy) | Yes | Yes on Debian 13 / Alpine 3.24 | Tested (Mosquitto client) |
+| Linux device / gateway | OpenSSL 3.0 / 1.1.1 (Debian 12, Ubuntu 24.04, older Yocto) | No | — | See [Hosts and OS] |
+| Linux, AWS IoT Device SDK v2 (Python, JS, Java, C++) | aws-c-io → s2n-tls + AWS-LC | Yes | Yes on Linux (awscrt 0.36.1 DEFAULT negotiated PQ) | Tested (Python), Documented (aws-c-io) |
+| macOS / Windows with Device SDK v2 | Apple Network framework / SChannel | Follows the OS | — | Not confirmed; see [Mobile, desktop and CLI clients] |
+| Linux, PKCS#11 / TPM key with the CRT | s2n with a legacy ELB policy | No (aws-c-io refuses TLS 1.3 with PKCS#11) | — | Documented (aws-c-io source) |
+| Greengrass v2 nucleus (Java) | AWS CRT Java for MQTT; JDK for HTTPS | Likely on Linux (CRT); JDK per [Java] | — | Not confirmed (inferred) |
+| Greengrass nucleus lite (C) | System OpenSSL | As OpenSSL (3.5 → yes) | — | Documented (build deps); PQ inferred |
+| Android / industrial Android gateways | Conscrypt / BoringSSL | Not confirmed | — | See [Mobile, desktop and CLI clients] |
+| OPC UA (UA-SecureConversation) | Its own security policies | No PQ policy (Part 2, 1.05.06) | — | Documented (absence) |
+| LoRaWAN | AES-128 session keys, no public-key exchange | Not affected by ML-KEM; backhaul is ordinary TLS | — | Documented (spec) |
+| Cellular (LTE/5G) | 3GPP | No ML-KEM in NAS/AS yet; study TR 33.703 (Rel-20) | — | Documented (3GPP) |
+| Server: AWS IoT Core | AWS | No PQ policy (IoTSecurityPolicy_* only, same list for custom domains) | — | Documented (transport security) |
+| Server: Mosquitto 2.0.21 on OpenSSL 3.5.7 | OpenSSL | Yes | Yes | Tested |
+| Server: EMQX | Erlang/OTP ssl | Yes with OTP ssl 11.5+ (preferred from 11.7); EMQX key not found | ssl 11.7+ | Documented (OTP ssl notes) / Not found (EMQX) |
+| Server: HiveMQ | JDK JSSE | Follows the JVM ([Java]) | Per JDK | Not found (HiveMQ docs) |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Each file is complete. The label says whether it was Tested here, comes from vendor docs, or is an untested starting point.
+user_settings.h (wolfSSL on an MCU. The PQ defines are from wolfSSL's examples/configs/user_settings_pq.h; the platform lines are a typical FreeRTOS/lwIP client profile. Not built on an MCU here: run wolfcrypt_test() on your port)
+```c
+/* user_settings.h - wolfSSL for an MCU TLS 1.3 client with hybrid ML-KEM (X25519MLKEM768).
+ * Compile with -DWOLFSSL_USER_SETTINGS. */
+```
+pqclient.c (Tested, wolfSSL 5.9.4 on Alpine 3.24 against OpenSSL 3.5 servers. Build: cc pqclient.c -lwolfssl -o pqclient)
+```c
+/* pqclient.c - wolfSSL TLS 1.3 client offering X25519MLKEM768 (hybrid) first.
+ * Run: ./pqclient HOST PORT CAFILE [classic] */
+```
+Output: HANDSHAKE_OK version=TLSv1.3 group=X25519MLKEM768 (PQ-only server), HANDSHAKE_OK version=TLSv1.3 group=X25519 (classical-only server), and HANDSHAKE_FAIL received alert fatal error for the classic variant against the PQ-only server.
+transport_wolfSSL.c addition (FreeRTOS coreMQTT, in TLS_FreeRTOS_Connect() after wolfSSL_new. Uses the same API calls as pqclient.c, but wasn't built in FreeRTOS here)
+```c
+static int pqGroups[] = { WOLFSSL_X25519MLKEM768, WOLFSSL_ECC_X25519, WOLFSSL_ECC_SECP256R1 };
+
+```
+/etc/mosquitto/mosquitto.conf (Tested, Mosquitto 2.0.21 / OpenSSL 3.5.7; complete broker config)
+```text
+# Mosquitto has no "groups" option: key exchange follows OpenSSL. On OpenSSL 3.5 the default
+# list is X25519MLKEM768 first with classical fallback. To restrict groups, set OPENSSL_CONF
+```
+/etc/mosquitto/openssl-pq-only.cnf (Tested; enforces PQ for the broker, or for a client process)
+```ini
+# Use: OPENSSL_CONF=/etc/mosquitto/openssl-pq-only.cnf  (systemd: Environment=OPENSSL_CONF=...)
+# For "prefer PQ, allow classical" use: Groups = X25519MLKEM768:X25519:secp256r1:secp384r1
+```
+/etc/systemd/system/mosquitto.service.d/pq.conf (EC2 broker; enforces PQ. The OPENSSL_CONF mechanism was Tested; the systemd unit wasn't)
+```ini
+# Remove this file (systemctl daemon-reload && systemctl restart mosquitto) to roll back
+# to OpenSSL 3.5 defaults: hybrid preferred, classical accepted.
+```
+Dockerfile.mosquitto (ECS/EKS broker; not deployed)
+```dockerfile
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+RUN apt-get update \
+```
+crt_mqtt_pq.py (Tested, awscrt 0.36.1 / awsiotsdk 1.31.0. Usage: python crt_mqtt_pq.py HOST PORT CA CERT KEY [PQ_DEFAULT|DEFAULT|TLSv1_2_2025_07])
+```python
+"""MQTT over mutual TLS with the AWS CRT (aws-iot-device-sdk-python-v2 / awscrt).
+On Linux, awscrt uses s2n-tls + AWS-LC; cipher_pref selects the s2n security policy."""
+```
+Dockerfile.gateway (Linux gateway with Device SDK v2 and Mosquitto clients on OpenSSL 3.5; the image and package versions are the tested ones, but the Dockerfile wasn't built)
+```dockerfile
+FROM python:3.13-slim-trixie@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+RUN apt-get update \
+```

@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Regional AWS WAF web ACL on an ALB with logging. TLS (and PQ) is decided by the ALB listener policy, not by WAF.
+
+Parameters:
+  AlbArn:
+    Type: String
+
+Resources:
+  WebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: app-regional
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: app-regional
+        SampledRequestsEnabled: true
+      Rules:
+        - Name: aws-common
+          Priority: 10
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: aws-common
+            SampledRequestsEnabled: true
+        - Name: label-known-classical-client
+          Priority: 20
+          Action:
+            Count: {}
+          RuleLabels:
+            - Name: pq:classical-client
+          Statement:
+            ByteMatchStatement:
+              SearchString: t13d1516h2_8daaf6152771_02713d6af862
+              PositionalConstraint: EXACTLY
+              FieldToMatch:
+                JA4Fingerprint:
+                  FallbackBehavior: NO_MATCH
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: classical-client
+            SampledRequestsEnabled: true
+
+  WebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref AlbArn
+      WebACLArn: !GetAtt WebAcl.Arn
+
+  WafLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: aws-waf-logs-app-regional
+      RetentionInDays: 90
+
+  WafLogging:
+    Type: AWS::WAFv2::LoggingConfiguration
+    Properties:
+      ResourceArn: !GetAtt WebAcl.Arn
+      LogDestinationConfigs:
+        - !GetAtt WafLogGroup.Arn

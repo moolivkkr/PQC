@@ -1,0 +1,18 @@
+=== kyverno-cli v1.19.0 ghcr.io/kyverno/kyverno-cli@sha256:f40718123e3eea8dc36960023e2af7a980bcc76dec24842ad8705c82f4c9172e
+--- apply legacy ClusterPolicy to good
+Applying 11 policy rule(s) to 5 resource(s)...
+pass: 6, fail: 0, warn: 0, error: 0, skip: 0 
+--- apply legacy ClusterPolicy to bad
+Applying 11 policy rule(s) to 5 resource(s)...
+policy pq-tls-aws-load-balancers -> resource app/Ingress/web-bad failed:
+1 - alb-ingress-ssl-policy PQ-K1: set alb.ingress.kubernetes.io/ssl-policy to a -PQ-2025-09 policy (default choice ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09).
+policy pq-tls-aws-load-balancers -> resource app/Service/nlb-bad failed:
+1 - nlb-service-ssl-negotiation-policy PQ-K2: set service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy to a -PQ-2025-09 policy.
+policy pq-tls-ingress-nginx-curves -> resource ingress-nginx/ConfigMap/ingress-nginx-controller failed:
+1 - ssl-ecdh-curve-has-mlkem validation error: PQ-K3: set data.ssl-ecdh-curve to X25519MLKEM768:X25519:prime256v1. rule ssl-ecdh-curve-has-mlkem failed at path /data/ssl-ecdh-curve/
+policy pq-tls-istio-compliance-policy -> resource istio-system/Deployment/istiod failed:
+1 - istiod-env PQ-K4: istiod container needs env COMPLIANCE_POLICY=pqc
+policy pq-tls-workload-env -> resource app/Pod/go-api-bad failed:
+1 - no-godebug-tlsmlkem-off validation failure: PQ-K6: GODEBUG tlsmlkem=0 disables X25519MLKEM768 in Go
+2 - no-openssl-conf-devnull validation failure: PQ-K7: OPENSSL_CONF=/dev/null drops the PQ group configuration
+pass: 0, fail: 6, warn: 0, error: 0, skip: 0 

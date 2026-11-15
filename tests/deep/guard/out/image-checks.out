@@ -1,0 +1,26 @@
+syft: anchore/syft@sha256:03215d0e98b661d0ecbc8575dbc14d65be1743b5de5df6410aecb7e80f95b060
+conftest: openpolicyagent/conftest@sha256:0e77cdf7c1fcde035f3c579e4aaa6664ee2a8be5777eaa9af9f520cdd02280c0
+=== 1. OpenSSL version via Syft SBOM + conftest
+--- debian:trixie-slim (debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2)
+3 tests, 3 passed, 0 warnings, 0 failures, 0 exceptions
+--- debian:bookworm-slim (debian@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc)
+WARN - out/sbom/debian_bookworm-slim.json - image.openssl - PQ-I2 debian@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc: no system OpenSSL package found (distroless/static image?). Check the language runtime's own TLS stack (Go, Java, .NET, Node).
+3 tests, 2 passed, 1 warning, 0 failures, 0 exceptions
+--- python:3.11-slim-bookworm (python@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39)
+FAIL - out/sbom/python_3.11-slim-bookworm.json - image.openssl - PQ-I1 python@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39: libssl3 3.0.22-1~deb12u2 is older than OpenSSL 3.5 (no X25519MLKEM768). Rebase on debian:trixie / alpine:3.22+ or add a PQ-capable TLS library.
+FAIL - out/sbom/python_3.11-slim-bookworm.json - image.openssl - PQ-I1 python@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39: openssl 3.0.22-1~deb12u2 is older than OpenSSL 3.5 (no X25519MLKEM768). Rebase on debian:trixie / alpine:3.22+ or add a PQ-capable TLS library.
+3 tests, 1 passed, 0 warnings, 2 failures, 0 exceptions
+--- alpine:3.22 (alpine@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f)
+3 tests, 3 passed, 0 warnings, 0 failures, 0 exceptions
+--- amazonlinux:2023 (amazonlinux@sha256:3ccfbe800f864982b0a4e124a614b2382518cbd04b3c1cd35202bd46f392675b)
+WARN - out/sbom/amazonlinux_2023.json - image.openssl - PQ-I3 amazonlinux@sha256:3ccfbe800f864982b0a4e124a614b2382518cbd04b3c1cd35202bd46f392675b: Amazon Linux 2023 OpenSSL needs crypto-policy DEFAULT:PQ or OPENSSL_CONF=openssl-pq.cnf for ML-KEM by default.
+3 tests, 2 passed, 1 warning, 0 failures, 0 exceptions
+=== 2. Go binaries: go version -m (DefaultGODEBUG tlsmlkem)
+FAIL /out/app-go1.23: DefaultGODEBUG=containermaxprocs=0,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0 (go.mod go directive < 1.24). Raise go to >= 1.24 or add //go:debug tlsmlkem=1
+PASS /out/app-go1.24: go1.25 DefaultGODEBUG=containermaxprocs=0,decoratemappings=0,tlssha1=1,updatemaxprocs=0,x509sha256skid=0
+exit=1
+=== 3. JDK release check
+WARN eclipse-temurin:21-jre-alpine: JDK 21.0.13 has no ML-KEM TLS group. Add -javaagent:/opt/pq-tls/pq-tls-agent.jar or move to JDK 25
+exit=0
+PASS eclipse-temurin:25-jre-alpine: JDK 25.0.5 (ML-KEM hybrid groups on by default)
+exit=0

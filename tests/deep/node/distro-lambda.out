@@ -1,0 +1,141 @@
+## AL2023 dnf nodejs22, default policy
+nodejs22 rpm: nodejs22-22.23.4-1.amzn2023.0.1.aarch64 bin=/usr/bin/node
+version v22.23.4 openssl 3.5.8 node_shared_openssl=true
+# node v22.23.4 node=v22.23.4 openssl=3.5.8 OPENSSL_CONF=-
+tls.connect                                    | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 60247190FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 60247190FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=FAIL EPROTO write EPROTO 60247190FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200 
+## AL2023 dnf nodejs22, DEFAULT:PQ policy
+nodejs22 rpm: nodejs22-22.23.4-1.amzn2023.0.1.aarch64 bin=/usr/bin/node
+version v22.23.4 openssl 3.5.8 node_shared_openssl=true
+# node v22.23.4 node=v22.23.4 openssl=3.5.8 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 601499ACFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## AL2023 dnf nodejs22, DEFAULT:PQ + --openssl-shared-config
+nodejs22 rpm: nodejs22-22.23.4-1.amzn2023.0.1.aarch64 bin=/usr/bin/node
+version v22.23.4 openssl 3.5.8 node_shared_openssl=true
+# node v22.23.4 node=v22.23.4 openssl=3.5.8 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 60F47F93FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## AL2023 dnf nodejs22, OPENSSL_CONF=openssl-pq-node-system.cnf
+nodejs22 rpm: nodejs22-22.23.4-1.amzn2023.0.1.aarch64 bin=/usr/bin/node
+version v22.23.4 openssl 3.5.8 node_shared_openssl=true
+# node v22.23.4 node=v22.23.4 openssl=3.5.8 OPENSSL_CONF=/w/conf/openssl-pq-node-system.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 60444986FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## Debian 13 apt nodejs (system OpenSSL)
+version v20.19.2 openssl 3.5.7 node_shared_openssl=true
+# node v20.19.2 node=v20.19.2 openssl=3.5.7 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20A04C99FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## Alpine 3.22 apk nodejs (system OpenSSL)
+version v22.23.5 openssl 3.5.9 node_shared_openssl=true
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A005729EFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs22: no OPENSSL_CONF (image only)
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 202029BAFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs22: OPENSSL_CONF=AWS file (as bootstrap sets)
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+tls.connect                                    | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20A0F0B5FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20A0F0B5FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=FAIL EPROTO write EPROTO 20A0F0B5FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200 
+## lambda nodejs22: OPENSSL_CONF=openssl-pq-node.cnf
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=/w/conf/openssl-pq-node.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20A082B6FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs22: AWS file + NODE_OPTIONS=--openssl-config
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20E0BDAAFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs22: AWS file + code tls.DEFAULT_ECDH_CURVE
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20B0DEA4FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs22: AWS file + OPENSSL_CONF=/dev/null
+# node v22.23.5 node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=/dev/null
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2050C6AFFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs24: no OPENSSL_CONF (image only)
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2070EC88FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs24: OPENSSL_CONF=AWS file (as bootstrap sets)
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+tls.connect                                    | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2080E6A4FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2080E6A4FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=FAIL EPROTO write EPROTO 2080E6A4FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200 
+## lambda nodejs24: OPENSSL_CONF=openssl-pq-node.cnf
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=/w/conf/openssl-pq-node.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2040EE9DFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs24: AWS file + NODE_OPTIONS=--openssl-config
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2040BB90FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs24: AWS file + code tls.DEFAULT_ECDH_CURVE
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 205023B7FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## lambda nodejs24: AWS file + OPENSSL_CONF=/dev/null
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=/dev/null
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20E0DD9CFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+## AWS lambda nodejs22 openssl.cnf:
+nodejs_conf = openssl_init
+[openssl_init]
+ssl_conf = ssl_sect
+[ssl_sect]
+system_default = system_default_sect
+[system_default_sect]
+Groups = X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192
+/var/runtime/bootstrap:14:# compatibility issues. Customers can opt-in to PQC by setting OPENSSL_CONF=/dev/null.
+/var/runtime/bootstrap:15:if [ -z "${OPENSSL_CONF+set}" ]; then
+/var/runtime/bootstrap:16:  export OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+## node:24-slim + tls.DEFAULT_ECDH_CURVE=X25519:P-256 (pitfall)
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 207044BFFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 207044BFFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=FAIL EPROTO write EPROTO 207044BFFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200 
+## node:24-slim + --tls-max-v1.2 (pitfall)
+# node v24.22.3 node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=FAIL ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION 20604A94FFFF0000:error:0A00042E:SSL routines:ssl3_rea | cl=FAIL ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION 20604
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION 20604A94FFFF0000:error:0A00042E:SSL routines:ssl3_rea | cl=FAIL ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION 20604
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=FAIL ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION 20604A94FFFF0000:error:0A00042E:SSL routines:ssl3_rea | cl=FAIL ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION 20
+https.get                                      | pq=FAIL EPROTO write EPROTO 20604A94FFFF0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 ale | cl=FAIL EPROTO write EPROTO 20604A94FFFF0000:error

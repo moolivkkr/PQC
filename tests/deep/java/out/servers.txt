@@ -1,0 +1,75 @@
+### Tomcat 11.0.29, JDK 25 default  [tomcat]  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server tomcat on Eclipse Adoptium 25.0.5 provider=SunJSSE groups=null jdk.tls.namedGroups=null
+### Tomcat 11.0.29, JDK 25, SSLHostConfig groups=x25519,secp256r1  [tomcat]  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[]  groups=[x25519,secp256r1]
+   s_client -groups X25519MLKEM768:   FAIL 20804A95FFFF0000:error:0A0003F2:SSL routines:ssl3_read_bytes:ssl/tls alert unexpected message:../ssl/record/re
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 
+   log: server tomcat on Eclipse Adoptium 25.0.5 provider=SunJSSE groups=x25519,secp256r1 jdk.tls.namedGroups=null
+### Tomcat 11.0.29, JDK 25, -Djdk.tls.namedGroups=X25519MLKEM768 (PQ-only server)  [tomcat]  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[-Djdk.tls.namedGroups=X25519MLKEM768]  groups=[]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           FAIL 2080D28BFFFF0000:error:0A0003F2:SSL routines:ssl3_read_bytes:ssl/tls alert unexpected message:../ssl/record/re
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server tomcat on Eclipse Adoptium 25.0.5 provider=SunJSSE groups=null jdk.tls.namedGroups=X25519MLKEM768
+### Tomcat 11.0.29, JDK 21 default  [tomcat]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   FAIL 20303C8FFFFF0000:error:0A0003F2:SSL routines:ssl3_read_bytes:ssl/tls alert unexpected message:../ssl/record/re
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 
+   log: server tomcat on Eclipse Adoptium 21.0.13 provider=SunJSSE groups=null jdk.tls.namedGroups=null
+### Tomcat 11.0.29, JDK 21, groups=X25519MLKEM768,x25519  [tomcat]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]  groups=[X25519MLKEM768,x25519]
+   s_client -groups X25519MLKEM768:   FAIL 2050D0BAFFFF0000:error:0A0003F2:SSL routines:ssl3_read_bytes:ssl/tls alert unexpected message:../ssl/record/re
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 
+   log: server tomcat on Eclipse Adoptium 21.0.13 provider=SunJSSE groups=X25519MLKEM768,x25519 jdk.tls.namedGroups=null
+### Tomcat 11.0.29, JDK 21 + BC agent  [tomcat]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[-javaagent:/agent/pq-tls-agent.jar]  groups=[]
+   s_client -groups X25519MLKEM768:   FAIL 20A0098FFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   s_client -groups X25519:           FAIL 20F0807FFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   s_client default (both offered):   FAIL 20A06499FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   log: pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+   log: server tomcat on Eclipse Adoptium 21.0.13 provider=BCJSSE groups=null jdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1
+### Tomcat 11.0.29, JDK 17 + BC agent  [tomcat]  image=eclipse-temurin@sha256:0b6521287f850ec1c4b31c9074c5a1ae1d67c5922c3fefd21065c7c32e244d4a  opts=[-javaagent:/agent/pq-tls-agent.jar]  groups=[]
+   s_client -groups X25519MLKEM768:   FAIL 2040F0AEFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   s_client -groups X25519:           FAIL 20101BB9FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   s_client default (both offered):   FAIL 20E02E8AFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   log: pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+   log: server tomcat on Eclipse Adoptium 17.0.21 provider=BCJSSE groups=null jdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1
+### Jetty 12.1.15, JDK 25 default  [jetty]  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server jetty on Eclipse Adoptium 25.0.5 provider=SunJSSE groups=null jdk.tls.namedGroups=null
+### Jetty 12.1.15, JDK 21 default  [jetty]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   FAIL 2070C995FFFF0000:error:0A0003F2:SSL routines:ssl3_read_bytes:ssl/tls alert unexpected message:../ssl/record/re
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 
+   log: server jetty on Eclipse Adoptium 21.0.13 provider=SunJSSE groups=null jdk.tls.namedGroups=null
+### Jetty 12.1.15, JDK 21 + BC agent  [jetty]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[-javaagent:/agent/pq-tls-agent.jar]  groups=[]
+   s_client -groups X25519MLKEM768:   FAIL 203050A7FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   s_client -groups X25519:           FAIL 20E097A1FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   s_client default (both offered):   FAIL 20B0EBB7FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec
+   log: pq-tls agent: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1
+   log: server jetty on Eclipse Adoptium 21.0.13 provider=BCJSSE groups=null jdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1
+### JDK HttpsServer, JDK 25 default  [jdk-httpsserver]  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server jdk-httpsserver on Eclipse Adoptium 25.0.5 provider=SunJSSE groups=null jdk.tls.namedGroups=null
+### Netty 4.2.20 + tcnative-boringssl 2.0.85, default groups  [netty-tcnative]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server netty-tcnative on Eclipse Adoptium 21.0.13 provider=SunJSSE groups=null jdk.tls.namedGroups=null
+   log: netty openssl=BoringSSL
+### Netty 4.2.20 + tcnative-boringssl 2.0.85, GROUPS option  [netty-tcnative]  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]  groups=[X25519MLKEM768,X25519]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server netty-tcnative on Eclipse Adoptium 21.0.13 provider=SunJSSE groups=X25519MLKEM768,X25519 jdk.tls.namedGroups=null
+   log: netty openssl=BoringSSL
+### Netty 4.2.20 JDK SslProvider, JDK 25  [netty-jdk]  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[]  groups=[]
+   s_client -groups X25519MLKEM768:   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   s_client -groups X25519:           OK   Protocol version: TLSv1.3 
+   s_client default (both offered):   OK   Protocol version: TLSv1.3 group: X25519MLKEM768
+   log: server netty-jdk on Eclipse Adoptium 25.0.5 provider=SunJSSE groups=null jdk.tls.namedGroups=null

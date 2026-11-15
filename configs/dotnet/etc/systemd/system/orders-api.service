@@ -1,0 +1,15 @@
+[Unit]
+Description=orders-api (.NET)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=orders
+WorkingDirectory=/opt/orders-api
+ExecStart=/usr/bin/dotnet /opt/orders-api/App.dll
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

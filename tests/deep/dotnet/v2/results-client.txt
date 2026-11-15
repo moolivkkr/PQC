@@ -1,0 +1,213 @@
+al2023 test image built
+image aspnet:8.0 = mcr.microsoft.com/dotnet/aspnet@sha256:dccacae9e0e103b5d3ba5fbe442dd8d3316b990cd8f2ec9be0a0ec9db0c0e520
+image aspnet:8.0-alpine = mcr.microsoft.com/dotnet/aspnet@sha256:862a092806bace0c5219879fdbc42da770ac4975a35499ecadc9ede79a21d244
+image aspnet:10.0-alpine = mcr.microsoft.com/dotnet/aspnet@sha256:21c3f9798416cba4c0576a947c286231cb71ea2884896cb968253f5c9668f930
+image aspnet:10.0-resolute = mcr.microsoft.com/dotnet/aspnet@sha256:b5e72aa3bc183d98a0fc5739c583201a4b97bdbaadcb9dcd1b69d428a8bd172b
+image AL2023 aspnetcore-8 + OPENSSL_CONF = pqc-lang2-dotnet-al2023:test
+tools = debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+tools openssl: OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+
+=========== CLIENT CASES D, E, F ===========
+
+--- aspnet:8.0
+  os=Debian GNU/Linux 12 (bookworm) dotnet=8.0.34
+D0 no private CA anywhere (expect FAIL on both)
+  [system] https://pqsrv:8443/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [system] https://clsrv:8444/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+D1 SSL_CERT_FILE=/certs/ca.crt
+  [system] https://pqsrv:8443/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [system] https://clsrv:8444/ -> OK 200
+D2 SSL_CERT_DIR=/certs/hashdir (openssl rehash)
+  [system] https://pqsrv:8443/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [system] https://clsrv:8444/ -> OK 200
+D3 ServerCertificateCustomValidationCallback
+  [callback] https://pqsrv:8443/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [callback] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D4 X509ChainPolicy.CustomTrustStore
+  [chainpolicy] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [chainpolicy] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D5 private CA added to the system store
+  (update-ca-certificates)
+  [system] https://pqsrv:8443/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [system] https://clsrv:8444/ -> OK 200
+E0 server requires a client cert, client sends none (expect FAIL)
+  [system] https://pqsrv:8445/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [system] https://clsrv:8446/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+E1 HttpClientHandler.ClientCertificates (PFX)
+  [mtls-handler] https://pqsrv:8445/ -> FAIL OpenSslCryptographicException: error:0A000410:SSL routines::sslv3 alert handshake failure
+  [mtls-handler] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E2 SocketsHttpHandler.SslOptions.ClientCertificates (PEM pair)
+  [mtls-sockets] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-sockets] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E3 client cert from X509Store CurrentUser/My
+  [mtls-store] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-store] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F1 EnabledSslProtocols=Tls12 (expect PQ-only FAIL)
+  [tls12] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [tls12] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F2 CipherSuitesPolicy = TLS 1.3 AES-GCM only
+  [ciphers13] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [ciphers13] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+
+--- aspnet:8.0-alpine
+  os=Alpine Linux v3.24 dotnet=8.0.34
+D0 no private CA anywhere (expect FAIL on both)
+  [system] https://pqsrv:8443/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+  [system] https://clsrv:8444/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+D1 SSL_CERT_FILE=/certs/ca.crt
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D2 SSL_CERT_DIR=/certs/hashdir (openssl rehash)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D3 ServerCertificateCustomValidationCallback
+  [callback] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [callback] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D4 X509ChainPolicy.CustomTrustStore
+  [chainpolicy] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [chainpolicy] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D5 private CA added to the system store
+  (update-ca-certificates)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+E0 server requires a client cert, client sends none (expect FAIL)
+  [system] https://pqsrv:8445/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+  [system] https://clsrv:8446/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+E1 HttpClientHandler.ClientCertificates (PFX)
+  [mtls-handler] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-handler] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E2 SocketsHttpHandler.SslOptions.ClientCertificates (PEM pair)
+  [mtls-sockets] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-sockets] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E3 client cert from X509Store CurrentUser/My
+  [mtls-store] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-store] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F1 EnabledSslProtocols=Tls12 (expect PQ-only FAIL)
+  [tls12] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [tls12] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F2 CipherSuitesPolicy = TLS 1.3 AES-GCM only
+  [ciphers13] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [ciphers13] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+
+--- aspnet:10.0-alpine
+  os=Alpine Linux v3.24 dotnet=10.0.15
+D0 no private CA anywhere (expect FAIL on both)
+  [system] https://pqsrv:8443/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+  [system] https://clsrv:8444/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+D1 SSL_CERT_FILE=/certs/ca.crt
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D2 SSL_CERT_DIR=/certs/hashdir (openssl rehash)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D3 ServerCertificateCustomValidationCallback
+  [callback] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [callback] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D4 X509ChainPolicy.CustomTrustStore
+  [chainpolicy] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [chainpolicy] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D5 private CA added to the system store
+  (update-ca-certificates)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+E0 server requires a client cert, client sends none (expect FAIL)
+  [system] https://pqsrv:8445/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+  [system] https://clsrv:8446/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+E1 HttpClientHandler.ClientCertificates (PFX)
+  [mtls-handler] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-handler] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E2 SocketsHttpHandler.SslOptions.ClientCertificates (PEM pair)
+  [mtls-sockets] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-sockets] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E3 client cert from X509Store CurrentUser/My
+  [mtls-store] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-store] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F1 EnabledSslProtocols=Tls12 (expect PQ-only FAIL)
+  [tls12] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [tls12] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F2 CipherSuitesPolicy = TLS 1.3 AES-GCM only
+  [ciphers13] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [ciphers13] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+
+--- aspnet:10.0-resolute
+  os=Ubuntu 26.04.1 LTS dotnet=10.0.15
+D0 no private CA anywhere (expect FAIL on both)
+  [system] https://pqsrv:8443/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+  [system] https://clsrv:8444/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+D1 SSL_CERT_FILE=/certs/ca.crt
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D2 SSL_CERT_DIR=/certs/hashdir (openssl rehash)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D3 ServerCertificateCustomValidationCallback
+  [callback] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [callback] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D4 X509ChainPolicy.CustomTrustStore
+  [chainpolicy] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [chainpolicy] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D5 private CA added to the system store
+  (update-ca-certificates)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+E0 server requires a client cert, client sends none (expect FAIL)
+  [system] https://pqsrv:8445/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+  [system] https://clsrv:8446/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+E1 HttpClientHandler.ClientCertificates (PFX)
+  [mtls-handler] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-handler] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E2 SocketsHttpHandler.SslOptions.ClientCertificates (PEM pair)
+  [mtls-sockets] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-sockets] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E3 client cert from X509Store CurrentUser/My
+  [mtls-store] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-store] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F1 EnabledSslProtocols=Tls12 (expect PQ-only FAIL)
+  [tls12] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [tls12] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F2 CipherSuitesPolicy = TLS 1.3 AES-GCM only
+  [ciphers13] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [ciphers13] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+
+--- AL2023 aspnetcore-8 + OPENSSL_CONF
+  os=Amazon Linux 2023.12.20261102 dotnet=8.0.33
+D0 no private CA anywhere (expect FAIL on both)
+  [system] https://pqsrv:8443/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+  [system] https://clsrv:8444/ -> FAIL AuthenticationException: The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+D1 SSL_CERT_FILE=/certs/ca.crt
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D2 SSL_CERT_DIR=/certs/hashdir (openssl rehash)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+D3 ServerCertificateCustomValidationCallback
+  [callback] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [callback] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D4 X509ChainPolicy.CustomTrustStore
+  [chainpolicy] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [chainpolicy] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+D5 private CA added to the system store
+  (update-ca-trust)
+  [system] https://pqsrv:8443/ -> OK 200
+  [system] https://clsrv:8444/ -> OK 200
+E0 server requires a client cert, client sends none (expect FAIL)
+  [system] https://pqsrv:8445/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+  [system] https://clsrv:8446/ -> FAIL OpenSslCryptographicException: error:0A00045C:SSL routines::tlsv13 alert certificate required
+E1 HttpClientHandler.ClientCertificates (PFX)
+  [mtls-handler] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-handler] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E2 SocketsHttpHandler.SslOptions.ClientCertificates (PEM pair)
+  [mtls-sockets] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-sockets] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+E3 client cert from X509Store CurrentUser/My
+  [mtls-store] https://pqsrv:8445/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [mtls-store] https://clsrv:8446/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F1 EnabledSslProtocols=Tls12 (expect PQ-only FAIL)
+  [tls12] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [tls12] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+F2 CipherSuitesPolicy = TLS 1.3 AES-GCM only
+  [ciphers13] https://pqsrv:8443/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+  [ciphers13] https://clsrv:8444/ -> FAIL CryptographicException: The key contents do not contain a PEM, the content is malformed, or the key does not match the certificate.
+
+=== cleanup (own label only) ===
+removed containers=1 network=pqnet2-dotnet

@@ -1,0 +1,14 @@
+# ca.ext - extensions for the intermediate and leaf certificates
+[ v3_int ]
+basicConstraints       = critical, CA:TRUE, pathlen:0
+keyUsage               = critical, keyCertSign, cRLSign
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always
+
+[ v3_leaf ]
+basicConstraints       = critical, CA:FALSE
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = serverAuth, clientAuth
+subjectAltName         = DNS:web, DNS:localhost
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always

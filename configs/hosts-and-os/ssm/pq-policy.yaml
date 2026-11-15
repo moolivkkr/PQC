@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  PqPolicyDoc:
+    Type: AWS::SSM::Document
+    Properties:
+      Name: PQ-SetCryptoPolicy
+      DocumentType: Command
+      DocumentFormat: YAML
+      Content:
+        schemaVersion: "2.2"
+        description: Set the system-wide crypto policy and report the result.
+        parameters:
+          Policy:
+            type: String
+            default: DEFAULT:PQ
+            allowedValues: [DEFAULT:PQ, FIPS:PQ, DEFAULT:PQ-HYBRID, DEFAULT, FIPS]
+          RestartUnits:
+            type: String
+            default: sshd
+        mainSteps:
+          - action: aws:runShellScript
+            name: setCryptoPolicy
+            precondition: { StringEquals: [platformType, Linux] }
+            inputs:
+              timeoutSeconds: "600"
+              runCommand:
+                - set -eu
+                - dnf -y -q install crypto-policies-scripts
+                - dnf -y -q update crypto-policies crypto-policies-scripts
+                - "if [ '{{ Policy }}' = 'DEFAULT:PQ-HYBRID' ]; then printf 'group = +X25519-MLKEM768\\n' > /etc/crypto-policies/policies/modules/PQ-HYBRID.pmod; fi"
+                - "current=$(update-crypto-policies --show); if [ \"$current\" != '{{ Policy }}' ]; then update-crypto-policies --set '{{ Policy }}'; for u in {{ RestartUnits }}; do systemctl try-restart \"$u\" || true; done; fi"
+                - echo "policy=$(update-crypto-policies --show)"
+                - grep -m1 -i '^Groups' /etc/crypto-policies/back-ends/opensslcnf.config || true
+  PqWave1:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref PqPolicyDoc
+      AssociationName: pq-crypto-policy-wave1
+      ScheduleExpression: rate(1 day)
+      MaxConcurrency: "10%"
+      MaxErrors: "5%"
+      Parameters:
+        Policy: [DEFAULT:PQ]
+        RestartUnits: [sshd]
+      Targets:
+        - Key: tag:PQRollout
+          Values: [wave1]
+  PqRollback:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref PqPolicyDoc
+      AssociationName: pq-crypto-policy-rollback
+      MaxConcurrency: "25%"
+      MaxErrors: "10%"
+      Parameters:
+        Policy: [DEFAULT]
+        RestartUnits: [sshd]
+      Targets:
+        - Key: tag:PQRollout
+          Values: [rollback]

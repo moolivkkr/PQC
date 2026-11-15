@@ -1,0 +1,123 @@
+# TAB: python  node=610684f0-aa35  rev=21
+
+## 1. H1 and lead paragraphs
+H1: Python runbook
+
+In Python the TLS library, not the Python version, decides whether a connection offers X25519MLKEM768. There are two families, and each package belongs to one of them:
+
+So the first question for any service is which family each outbound connection uses. A requests call on Debian 12 is classical, while a grpcio call from the same container is PQ.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+  H3: By compute type (the ssl family: requests, boto3, httpx, aiohttp, servers)
+  H3: By library (client offers ML-KEM to a PQ-only server?)
+H2: Client side (app level)
+  H3: Excerpts
+H2: Server side
+H2: Packaging per compute type
+  H3: Lambda zip, python3.12 to 3.14
+  H3: Lambda zip, python3.10 and 3.11 (Amazon Linux 2, OpenSSL 1.1.1)
+  H3: Lambda container image
+  H3: Fargate, ECS and EKS
+  H3: EC2
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Compute type | Python / base | OpenSSL | PQ by default | Fix | Evidence |
+| Lambda zip | python3.12, 3.13, 3.14 (AL2023) | 3.5.8 | No | Ship openssl-pq.cnf, set OPENSSL_CONF | Tested (3.14 image 2026-11-14; 3.12/3.13 on 2026-11-12) |
+| Lambda zip | python3.15 (AL2023, public preview) | 3.5.8 | No | Same as 3.12+; or in code ctx.set_groups("X25519MLKEM768:X25519"), which worked without the file | Tested (Lambda 3.15 base image, 2026-11-14) |
+| Lambda zip | python3.10, 3.11 (AL2) | 1.1.1zb | No | Upgrade to 3.12+; bridge: legacy shim (requests, boto3 only) | Tested |
+| Lambda image | public.ecr.aws/lambda/python:3.12+ | 3.5.8 | No | Same file and variable in the Dockerfile | Tested |
+| Fargate, ECS, EKS | python:*-slim-trixie, python:*-alpine | 3.5.7 / 3.5.9 | Yes | None | Tested |
+| Fargate, ECS, EKS | python:*-slim-bookworm, Ubuntu 24.04 | 3.0.x | No | Change base image | Tested |
+| Fargate, ECS, EKS | Amazon Linux 2023 + python3.12 | 3.5.8 | No | OPENSSL_CONF or DEFAULT:PQ policy | Tested |
+| EC2 | Amazon Linux 2023 | 3.5.x | No | DEFAULT:PQ policy (host) or OPENSSL_CONF (one service) | Tested in an AL2023 container; Documented for hosts |
+| EC2 | Amazon Linux 2 | 1.0.2 / 1.1.1 | No | Migrate the host | Documented |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Every file the sections above reference, complete. Paths are relative to the repository or package root unless they start with /.
+Files marked Tested ran as shown in the container tests. The IaC, task definition, pod spec, systemd unit and SSM document were not deployed (no AWS account in the test lab): only their PQ lines (OPENSSL_CONF, PYTHONPATH, update-crypto-policies --set DEFAULT:PQ) carry tested behaviour. Validate them with sam validate, cfn-lint or terraform validate before use.
+pq-tls/openssl-pq.cnf (Lambda python3.12+, Lambda images, AL2023 containers and hosts; Tested)
+```ini
+# Keeps the AL2023 defaults and only changes the key-exchange group list, PQ hybrid first.
+# Ship it in the package or image and point OPENSSL_CONF at it.
+```
+pq-tls/pyshim/sitecustomize.py (Lambda python3.9 to 3.11 bridge only; Tested on Lambda base images 3.9 and 3.11)
+```python
+# pq-tls shim for Lambda Python 3.9-3.11 (system OpenSSL 1.1.1, no ML-KEM).
+# Routes urllib3 (requests) and botocore (boto3) through pyOpenSSL, whose bundled
+```
+template.yaml (AWS SAM, Lambda zip, python3.13)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+```
+cfn/lambda.yaml (CloudFormation, Lambda zip)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+```
+terraform/lambda.tf (Lambda zip)
+```hcl
+data "archive_file" "orders" {
+  type        = "zip"
+```
+terraform/lambda-legacy.tf (python3.11 bridge until the upgrade; in CloudFormation or SAM set the same PYTHONPATH variable)
+```hcl
+resource "aws_lambda_function" "legacy" {
+  function_name    = "legacy"
+```
+Dockerfile.lambda (Lambda container image)
+```dockerfile
+FROM public.ecr.aws/lambda/python:3.13
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/
+```
+Dockerfile (Fargate / ECS / EKS, Debian 13 trixie: PQ with no extra setting)
+```dockerfile
+FROM python:3.13-slim-trixie
+RUN useradd -r -u 10001 app
+```
+Dockerfile.al2023 (Fargate / ECS / EKS on Amazon Linux 2023)
+```dockerfile
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+RUN dnf -y install python3.12 python3.12-pip && dnf clean all
+```
+ecs/taskdef.json (Fargate)
+```json
+{
+  "family": "orders",
+```
+k8s/deployment.yaml (EKS)
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+```
+gunicorn.conf.py (gunicorn terminates TLS; Tested on 3.12, 3.13 and 3.15; set_groups applies on 3.15 only)
+```python
+import os
+import ssl
+```
+serve_uvicorn.py (uvicorn terminates TLS with an explicit group list; Tested on 3.15: PQ-first and PQ-only)
+```python
+import os
+import ssl
+```
+/etc/systemd/system/orders.service (EC2, AL2023; scope the config to one service)
+```ini
+[Unit]
+Description=orders API (gunicorn)
+```
+ssm/pq-crypto-policy.yaml (SSM Command document for AL2023 hosts; run from a State Manager association)
+```yaml
+schemaVersion: "2.2"
+description: Set the AL2023 crypto policy to DEFAULT:PQ and restart listed services.
+```
+pq_probe.py (posture and live check; run inside the same image, env and user as the service; Tested on 3.15)
+```python
+"""pq_probe.py - report whether this Python process negotiates hybrid PQ TLS.
+
+```

@@ -1,0 +1,22 @@
+Resources:
+  ApiTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: orders-api
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !GetAtt ExecRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      ContainerDefinitions:
+        - Name: api
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/orders-api@${ImageDigest}"
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8443
+          Environment:
+            - Name: OPENSSL_CONF
+              Value: /etc/pq-tls/openssl-pq.cnf

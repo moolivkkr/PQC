@@ -1,0 +1,2 @@
+Premain-Class: PqTlsAgent
+Class-Path: ../java/lib/bcprov-jdk18on-1.87.jar ../java/lib/bctls-jdk18on-1.87.jar ../java/lib/bcutil-jdk18on-1.87.jar

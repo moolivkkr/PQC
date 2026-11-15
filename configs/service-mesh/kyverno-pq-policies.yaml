@@ -1,0 +1,20 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: pq-tls-istiod
+spec:
+  validationActions: [ Audit ]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [ apps ]
+        apiVersions: [ v1 ]
+        operations: [ CREATE, UPDATE ]
+        resources: [ deployments ]
+  matchConditions:
+    - name: istiod
+      expression: "object.metadata.namespace == 'istio-system' && object.metadata.name.startsWith('istiod')"
+  validations:
+    - expression: >-
+        object.spec.template.spec.containers.exists(c, c.name == 'discovery' && has(c.env) &&
+        c.env.exists(e, e.name == 'COMPLIANCE_POLICY' && has(e.value) && e.value == 'pqc'))
+      message: "PQ-K4: istiod container needs env COMPLIANCE_POLICY=pqc"

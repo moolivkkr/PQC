@@ -1,0 +1,1 @@
+JDK 21 tomcat fix=kmf-pkix | X25519MLKEM768=group: X25519MLKEM768; X25519=; DEFAULT=group: X25519MLKEM768;  | km: Importing X509KeyManager implementation: org.bouncycastle.jsse.provider.ProvX509KeyManagerSimple

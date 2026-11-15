@@ -1,0 +1,22 @@
+--- 3.5-default
+   a:PKEY: ML-DSA-44, 10496 (bit); sigalg: ML-DSA-65
+   a:PKEY: ML-DSA-65, 15616 (bit); sigalg: ML-DSA-87
+Peer signature type: mldsa44
+Negotiated TLS1.3 group: X25519MLKEM768
+Verify return code: 0 (ok)
+--- 3.5-ecdsa-only
+   a:PKEY: EC, (prime256v1); sigalg: ecdsa-with-SHA256
+Peer signature type: ecdsa_secp256r1_sha256
+Negotiated TLS1.3 group: X25519MLKEM768
+Verify return code: 0 (ok)
+--- 3.5-mldsa44-only
+   a:PKEY: ML-DSA-44, 10496 (bit); sigalg: ML-DSA-65
+   a:PKEY: ML-DSA-65, 15616 (bit); sigalg: ML-DSA-87
+Peer signature type: mldsa44
+Negotiated TLS1.3 group: X25519MLKEM768
+Verify return code: 0 (ok)
+--- 3.0-bookworm-default
+   a:PKEY: id-ecPublicKey, 256 (bit); sigalg: ecdsa-with-SHA256
+Peer signature type: ECDSA
+Server Temp Key: X25519, 253 bits
+Verify return code: 0 (ok)

@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  SecretsExtensionLayerArn:
+    Type: String
+    Description: AWS-Parameters-and-Secrets-Lambda-Extension layer ARN for this Region, version 19 or later
+  PqTlsLayerArn: { Type: String }
+Resources:
+  Fn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.13
+      Handler: app.handler
+      CodeUri: src/
+      Layers: [!Ref SecretsExtensionLayerArn, !Ref PqTlsLayerArn]
+      Environment:
+        Variables:
+          OPENSSL_CONF: /opt/pq-tls/openssl-pq.cnf
+          PARAMETERS_SECRETS_EXTENSION_HTTP_PORT: "2773"
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy: { SecretArn: "*" }

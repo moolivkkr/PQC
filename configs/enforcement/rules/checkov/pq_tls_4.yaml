@@ -1,0 +1,15 @@
+metadata:
+  id: "CKV2_PQTLS_4"
+  name: "API Gateway REST Regional/Private custom domain must use a *_PQ_2025_09 security policy"
+  category: "ENCRYPTION"
+  severity: "HIGH"
+definition:
+  cond_type: attribute
+  resource_types: [ aws_api_gateway_domain_name ]
+  attribute: security_policy
+  operator: within
+  value:
+    - SecurityPolicy_TLS13_1_2_PQ_2025_09
+    - SecurityPolicy_TLS13_1_2_PFS_PQ_2025_09
+    - SecurityPolicy_TLS13_1_2_FIPS_PQ_2025_09
+    - SecurityPolicy_TLS13_1_2_FIPS_PFS_PQ_2025_09

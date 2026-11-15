@@ -1,0 +1,10 @@
+OK: only Groups differs
+14:# compatibility issues. Customers can opt-in to PQC by setting OPENSSL_CONF=/dev/null.
+15:if [ -z "${OPENSSL_CONF+set}" ]; then
+16:  export OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+exit=0
+OK: only Groups differs
+14:# compatibility issues. Customers can opt-in to PQC by setting OPENSSL_CONF=/dev/null.
+15:if [ -z "${OPENSSL_CONF+set}" ]; then
+16:  export OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf
+exit=0

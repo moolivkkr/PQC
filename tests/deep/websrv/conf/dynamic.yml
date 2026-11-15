@@ -1,0 +1,49 @@
+# /etc/traefik/dynamic.yml - dynamic configuration (file provider)
+tls:
+  certificates:
+    - certFile: /certs/server.crt
+      keyFile: /certs/server.key
+  options:
+    default:                       # applies to every TLS router unless a router names another option
+      minVersion: VersionTLS13
+      curvePreferences:
+        - X25519MLKEM768
+        - X25519
+        - CurveP256
+
+http:
+  routers:
+    tls-in:
+      entryPoints: [websecure]
+      rule: "PathPrefix(`/`)"
+      tls: {}
+      service: be-classic          # inbound test only checks the handshake
+    pq:
+      entryPoints: [web]
+      rule: "PathPrefix(`/pq/`)"
+      middlewares: [strip]
+      service: be-pq
+    classic:
+      entryPoints: [web]
+      rule: "PathPrefix(`/classic/`)"
+      middlewares: [strip]
+      service: be-classic
+  middlewares:
+    strip:
+      stripPrefix:
+        prefixes: ["/pq", "/classic"]
+  serversTransports:
+    backend-tls:
+      serverName: be
+      insecureSkipVerify: true     # lab only; production: rootCAs: [/etc/ssl/certs/ca.pem]
+      # No curve setting on serversTransport: the upstream leg uses Go's default list,
+      # which includes X25519MLKEM768 in Go 1.24+ (Traefik 3.4+ builds).
+  services:
+    be-pq:
+      loadBalancer:
+        serversTransport: backend-tls
+        servers: [{ url: "https://be:8443" }]
+    be-classic:
+      loadBalancer:
+        serversTransport: backend-tls
+        servers: [{ url: "https://be:9443" }]

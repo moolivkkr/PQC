@@ -1,0 +1,47 @@
+# postgres-pq.yaml - PostgreSQL 18 on EKS with hybrid PQ groups (same -c flags as the tests)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:18   # Debian 13, OpenSSL 3.5.x; pin by digest for your architecture
+          args:
+            - "-c"
+            - "ssl=on"
+            - "-c"
+            - "ssl_cert_file=/etc/postgresql/tls/tls.crt"
+            - "-c"
+            - "ssl_key_file=/etc/postgresql/tls/tls.key"
+            - "-c"
+            - "ssl_min_protocol_version=TLSv1.2"
+            - "-c"
+            - "ssl_groups=X25519MLKEM768:X25519:prime256v1"
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-auth, key: password } }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports: [{ containerPort: 5432 }]
+          volumeMounts:
+            - { name: tls, mountPath: /etc/postgresql/tls, readOnly: true }
+            - { name: data, mountPath: /var/lib/postgresql/data }
+      volumes:
+        - name: tls
+          secret: { secretName: postgres-tls-cert, defaultMode: 0640 }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 20Gi } }

@@ -1,0 +1,13 @@
+
+Applying 4 policy rule(s) to 6 resource(s)...
+policy pq-ingress-nginx-ecdh-curve -> resource ingress-nginx-legacy/ConfigMap/ingress-nginx-controller failed:
+1 - configmap-ssl-ecdh-curve validation error: ingress-nginx ConfigMap must set ssl-ecdh-curve with X25519MLKEM768 first. rule configmap-ssl-ecdh-curve failed at path /data/ssl-ecdh-curve/
+
+policy pq-envoy-gateway-client-tls -> resource default/ClientTrafficPolicy/pq-missing failed:
+1 - clienttrafficpolicy-ecdh ClientTrafficPolicy.spec.tls.ecdhCurves must list X25519MLKEM768 first (Envoy's default is X25519,P-256).
+
+policy pq-istiod-compliance-policy -> resource istio-system/DaemonSet/ztunnel failed:
+1 - ztunnel-env ztunnel must run with COMPLIANCE_POLICY=pqc in ambient mode.
+
+
+pass: 3, fail: 3, warn: 0, error: 0, skip: 0 

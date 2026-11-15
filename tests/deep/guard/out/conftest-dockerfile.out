@@ -1,0 +1,13 @@
+--- Dockerfile.good
+
+5 tests, 5 passed, 0 warnings, 0 failures, 0 exceptions
+exit=0
+--- Dockerfile.bad
+WARN - samples/docker/Dockerfile.bad - dockerfile.pq_tls - PQ-D1: base image node:20-bookworm-slim has no PQ by default (OpenSSL < 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22+, golang:1.24+, JDK 25.
+FAIL - samples/docker/Dockerfile.bad - dockerfile.pq_tls - PQ-D2: ENV GODEBUG tlsmlkem=0 disables X25519MLKEM768 in Go
+FAIL - samples/docker/Dockerfile.bad - dockerfile.pq_tls - PQ-D3: ENV OPENSSL_CONF=/dev/null drops PQ group configuration
+FAIL - samples/docker/Dockerfile.bad - dockerfile.pq_tls - PQ-D4: JAVA_TOOL_OPTIONS sets jdk.tls.namedGroups without X25519MLKEM768
+FAIL - samples/docker/Dockerfile.bad - dockerfile.pq_tls - PQ-D5: update-crypto-policies sets a policy without the :PQ subpolicy (use DEFAULT:PQ on AL2023/RHEL)
+
+5 tests, 0 passed, 1 warning, 4 failures, 0 exceptions
+exit=1

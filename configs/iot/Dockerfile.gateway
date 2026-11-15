@@ -1,0 +1,10 @@
+FROM python:3.13-slim-trixie@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends mosquitto-clients openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+# awscrt 0.36.1 tested: TlsCipherPref.DEFAULT and PQ_DEFAULT both negotiate X25519MLKEM768
+RUN pip install --no-cache-dir "awsiotsdk==1.31.0" "awscrt==0.36.1"
+COPY crt_mqtt_pq.py /app/crt_mqtt_pq.py
+WORKDIR /app
+USER nobody
+ENTRYPOINT ["python", "/app/crt_mqtt_pq.py"]

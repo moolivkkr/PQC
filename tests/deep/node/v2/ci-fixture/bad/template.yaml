@@ -1,0 +1,2 @@
+Runtime: nodejs20.x
+OPENSSL_CONF: /var/runtime/openssl_conf/openssl.cnf

@@ -1,0 +1,179 @@
+# node:24-slim node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20005BA6FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO 20005BA6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve=X25519          | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 20005BA6FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+got                                            | pq=OK HTTP 200 | cl=OK HTTP 200
+node-fetch                                     | pq=OK HTTP 200 | cl=OK HTTP 200
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=OK response | cl=OK response
+grpc-js                                        | pq=OK reply=pong | cl=OK reply=pong
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"} | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+ioredis                                        | pq=OK PONG | cl=OK PONG
+Timeout duration was set to 1.
+(Use `node --trace-warnings ...` to show where the warning was created)
+kafkajs                                        | pq=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded) | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:22-slim node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2000F18FFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO 2000F18FFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve=X25519          | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 2000F18FFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+got                                            | pq=OK HTTP 200 | cl=OK HTTP 200
+node-fetch                                     | pq=OK HTTP 200 | cl=OK HTTP 200
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=OK response | cl=OK response
+grpc-js                                        | pq=OK reply=pong | cl=OK reply=pong
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"} | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+ioredis                                        | pq=OK PONG | cl=OK PONG
+kafkajs                                        | pq=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded) | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:20-slim node=v20.20.2 openssl=3.0.19 OPENSSL_CONF=-
+tls.connect                                    | pq=FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE 20103895FFFF0000:error:0A000410:SSL routines:ssl3_re | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE 20103895FFFF0000:error:0A000410:SSL routines:ssl3_re | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=ERR ERR_CRYPTO_OPERATION_FAILED Failed to set ECDH curve | cl=ERR ERR_CRYPTO_OPERATION_FAILED Failed to set ECDH curve
+https.get                                      | pq=FAIL EPROTO write EPROTO 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200
+fetch (global)                                 | pq=FAIL fetch failed ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE 20103895FFFF0000:error:0A000410:SSL rou | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=ERR  Cannot read properties of undefined (reading 'bind') | cl=ERR  Cannot read properties of undefined (reading 'bind')
+undici Agent connect.ecdhCurve=X25519          | pq=ERR  Cannot read properties of undefined (reading 'bind') | cl=ERR  Cannot read properties of undefined (reading 'bind')
+axios                                          | pq=FAIL EPROTO write EPROTO 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200
+got                                            | pq=FAIL EPROTO write EPROTO 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200
+node-fetch                                     | pq=FAIL EPROTO request to https://pqsrv:8443/ failed, reason: write EPROTO 20103895FFFF0000:error: | cl=OK HTTP 200
+versions published after the first week of January 2027
+will require node >=22. You are running node v20.20.2.
+
+To continue receiving updates to AWS services, bug fixes,
+and security updates please upgrade to node >=22.
+
+More information can be found at: https://a.co/c895JFp
+(Use `node --trace-warnings ...` to show where the warning was created)
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=FAIL EPROTO write EPROTO 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK response
+grpc-js                                        | pq=FAIL 14 14 UNAVAILABLE: No connection established. Last error: Error: 20103895FFFF0000:error:0A | cl=OK reply=pong
+pg                                             | pq=FAIL EPROTO write EPROTO 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=FAIL HANDSHAKE_SSL_ERROR 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+[ioredis] Unhandled error event: Error: 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../deps/openssl/openssl/ssl/record/rec_layer_s3.c:1601:SSL alert number 40
+
+ioredis                                        | pq=ERR  Connection is closed. | cl=OK PONG
+kafkajs                                        | pq=FAIL Connection error: 20103895FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:24-alpine node=v24.22.3 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A06B3492FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO A06B3492FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve=X25519          | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A06B3492FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+got                                            | pq=OK HTTP 200 | cl=OK HTTP 200
+node-fetch                                     | pq=OK HTTP 200 | cl=OK HTTP 200
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=OK response | cl=OK response
+grpc-js                                        | pq=OK reply=pong | cl=OK reply=pong
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"} | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+ioredis                                        | pq=OK PONG | cl=OK PONG
+Timeout duration was set to 1.
+(Use `node --trace-warnings ...` to show where the warning was created)
+kafkajs                                        | pq=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded) | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:22-alpine node=v22.23.5 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A01374B1FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO A01374B1FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve=X25519          | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A01374B1FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+got                                            | pq=OK HTTP 200 | cl=OK HTTP 200
+node-fetch                                     | pq=OK HTTP 200 | cl=OK HTTP 200
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=OK response | cl=OK response
+grpc-js                                        | pq=OK reply=pong | cl=OK reply=pong
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"} | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+ioredis                                        | pq=OK PONG | cl=OK PONG
+kafkajs                                        | pq=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded) | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:20-alpine node=v20.20.2 openssl=3.0.19 OPENSSL_CONF=-
+tls.connect                                    | pq=FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_re | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_re | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=ERR ERR_CRYPTO_OPERATION_FAILED Failed to set ECDH curve | cl=ERR ERR_CRYPTO_OPERATION_FAILED Failed to set ECDH curve
+https.get                                      | pq=FAIL EPROTO write EPROTO A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200
+fetch (global)                                 | pq=FAIL fetch failed ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE A073F9A2FFFF0000:error:0A000410:SSL rou | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=ERR  Cannot read properties of undefined (reading 'bind') | cl=ERR  Cannot read properties of undefined (reading 'bind')
+undici Agent connect.ecdhCurve=X25519          | pq=ERR  Cannot read properties of undefined (reading 'bind') | cl=ERR  Cannot read properties of undefined (reading 'bind')
+axios                                          | pq=FAIL EPROTO write EPROTO A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200
+got                                            | pq=FAIL EPROTO write EPROTO A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK HTTP 200
+node-fetch                                     | pq=FAIL EPROTO request to https://pqsrv:8443/ failed, reason: write EPROTO A073F9A2FFFF0000:error: | cl=OK HTTP 200
+versions published after the first week of January 2027
+will require node >=22. You are running node v20.20.2.
+
+To continue receiving updates to AWS services, bug fixes,
+and security updates please upgrade to node >=22.
+
+More information can be found at: https://a.co/c895JFp
+(Use `node --trace-warnings ...` to show where the warning was created)
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=FAIL EPROTO write EPROTO A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK response
+grpc-js                                        | pq=FAIL 14 14 UNAVAILABLE: No connection established. Last error: Error: A073F9A2FFFF0000:error:0A | cl=OK reply=pong
+pg                                             | pq=FAIL EPROTO write EPROTO A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=FAIL HANDSHAKE_SSL_ERROR A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 ale | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+[ioredis] Unhandled error event: Error: A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../deps/openssl/openssl/ssl/record/rec_layer_s3.c:1601:SSL alert number 40
+
+ioredis                                        | pq=ERR  Connection is closed. | cl=OK PONG
+kafkajs                                        | pq=FAIL Connection error: A073F9A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:22.20-alpine node=v22.20.0 openssl=3.5.2 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A0236A9CFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO A0236A9CFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve=X25519          | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A0236A9CFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+got                                            | pq=OK HTTP 200 | cl=OK HTTP 200
+node-fetch                                     | pq=OK HTTP 200 | cl=OK HTTP 200
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=OK response | cl=OK response
+grpc-js                                        | pq=OK reply=pong | cl=OK reply=pong
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"} | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+ioredis                                        | pq=OK PONG | cl=OK PONG
+kafkajs                                        | pq=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded) | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:24.5-alpine node=v24.5.0 openssl=3.5.1 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A0A37CB1FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+https.Agent ecdhCurve=X25519:P-256             | pq=FAIL EPROTO write EPROTO A0A37CB1FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls a | cl=OK HTTP 200
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve PQ-first        | pq=OK HTTP 200 | cl=OK HTTP 200
+undici Agent connect.ecdhCurve=X25519          | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE A0A37CB1FFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+got                                            | pq=OK HTTP 200 | cl=OK HTTP 200
+node-fetch                                     | pq=OK HTTP 200 | cl=OK HTTP 200
+aws-sdk v3 S3 (NodeHttpHandler)                | pq=OK response | cl=OK response
+grpc-js                                        | pq=OK reply=pong | cl=OK reply=pong
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}
+mysql2                                         | pq=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"} | cl=OK {"Variable_name":"Ssl_version","Value":"TLSv1.3"}
+ioredis                                        | pq=OK PONG | cl=OK PONG
+Timeout duration was set to 1.
+(Use `node --trace-warnings ...` to show where the warning was created)
+kafkajs                                        | pq=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded) | cl=OK TLS up; app-layer error as expected (KafkaJSNumberOfRetriesExceeded)
+# node:26-slim node=v26.13.1 openssl=3.5.9 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={"type":"TLSGroup","name":"X25519MLKEM768"} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE 608AD7AEFFFF0000:error:0A000410:SSL routines:ssl3_ | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 
+fetch (global)                                 | pq=OK HTTP 200 | cl=OK HTTP 200
+axios                                          | pq=OK HTTP 200 | cl=OK HTTP 200
+grpc-js                                        | pq=ERR 14 14 UNAVAILABLE: Name resolution failed for target dns:grpcsrv:50051 | cl=ERR 14 14 UNAVAILABLE: Name resolution failed for target dns:grpcsrv:50052
+pg                                             | pq=OK {"version":"TLSv1.3","ssl":true} | cl=OK {"version":"TLSv1.3","ssl":true}

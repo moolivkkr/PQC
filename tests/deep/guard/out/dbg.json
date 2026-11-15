@@ -1,0 +1,1 @@
+{"resource_changes":[{"address":"a","type":"aws_lambda_function","change":{"actions":["create"],"after":{"runtime":"python3.12","environment":[]}}}]}

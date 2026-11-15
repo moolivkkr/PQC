@@ -1,0 +1,11 @@
+metadata:
+  id: "CKV2_PQTLS_2"
+  name: "Lambda runtime must have a PQ path (no nodejs18.x/20.x, python3.8, java8, dotnet6)"
+  category: "ENCRYPTION"
+  severity: "HIGH"
+definition:
+  cond_type: attribute
+  resource_types: [ aws_lambda_function ]
+  attribute: runtime
+  operator: not_within
+  value: [ "nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6" ]

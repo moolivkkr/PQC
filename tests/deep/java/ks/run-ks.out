@@ -1,0 +1,31 @@
+== certs (one private CA; EC + RSA for ks-java, EC for alt-host)
+compiled
+== server side: openssl 3.5 clients against BCJSSE servers
+  9001 EC only, fix                        default client  | group: X25519MLKEM768 | CN=ec-main |  
+  9002 RSA+EC in one p12, fix              default client  | group: X25519MLKEM768 | CN=ec-main |  
+  9002 RSA+EC in one p12, fix              RSA-only client | no group | no cert |  alert handshake failure
+alert number 
+  9003 RSA+EC in one p12, NO fix           default client  | group: X25519MLKEM768 | CN=rsa-main |  
+  9004 two EC certs, fix                   SNI ks-java     | group: X25519MLKEM768 | CN=ec-main |  
+  9004 two EC certs, fix                   SNI alt-host    | group: X25519MLKEM768 | CN=ec-alt |  
+  9005 EC in JKS, fix                      default client  | group: X25519MLKEM768 | CN=ec-main |  
+  9006 code hardcodes SunX509, fix         default client  | no group | no cert |  alert handshake failure
+alert number 
+  9007 javax.net.ssl.keyStore, fix         default client  | group: X25519MLKEM768 | CN=ec-main |  
+  9008 javax.net.ssl.keyStore, NO fix      default client  | no group | no cert |  alert handshake failure
+alert number 
+  9002 RSA+EC, fix  classical-only client (X25519)        | no group | CN=ec-main |  
+  srv-9001: server: kmf=PKIX from BCJSSE aliases=[ec-main]
+  srv-9002: server: kmf=PKIX from BCJSSE aliases=[rsa-main, ec-main]
+  srv-9003: server: kmf=SunX509 from SunJSSE aliases=[rsa-main, ec-main]
+  srv-9004: server: kmf=PKIX from BCJSSE aliases=[ec-main, ec-alt]
+  srv-9005: server: kmf=PKIX from BCJSSE aliases=[ec-main]
+  srv-9006: server: kmf=SunX509 from SunJSSE aliases=[ec-main]
+  srv-9007: server: default SSLContext, kmf default alg=PKIX
+  srv-9008: server: default SSLContext, kmf default alg=SunX509
+== client side: BCJSSE client -> PQ-only openssl server with a private-CA cert
+  no CA configured                       : client FAIL provider=BCJSSE: org.bouncycastle.tls.TlsFatalAlert: certificate_unknown(46)
+  javax.net.ssl.trustStore=trust.p12     : client OK provider=BCJSSE TLSv1.3 peer=CN=ec-ossl
+  CA imported into JDK cacerts (keytool)  : client OK provider=BCJSSE TLSv1.3 peer=CN=ec-ossl
+  cacerts import + kmf fix property      : client OK provider=BCJSSE TLSv1.3 peer=CN=ec-ossl
+left:        0

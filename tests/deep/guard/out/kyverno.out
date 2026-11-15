@@ -1,0 +1,9 @@
+Version: main
+Time: 2026-11-14T15:26:00Z
+Git commit ID: b2e65e2fa88f8ff8bfb0a6351712433d6b14796d
+--- kyverno apply good
+Error: failed to load file rules/k8s/kyverno-pq-tls.yaml: failed to process kyverno.io/v1, Kind=ClusterPolicy: kyverno.io/v1 ClusterPolicy: Kyverno v1.20 removed execution of legacy kyverno.io policy types and no longer accepts create or update requests for them; the API remains available for read, list, export, and delete. Migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+exit=0
+--- kyverno apply bad
+Error: failed to load file rules/k8s/kyverno-pq-tls.yaml: failed to process kyverno.io/v1, Kind=ClusterPolicy: kyverno.io/v1 ClusterPolicy: Kyverno v1.20 removed execution of legacy kyverno.io policy types and no longer accepts create or update requests for them; the API remains available for read, list, export, and delete. Migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+exit=0

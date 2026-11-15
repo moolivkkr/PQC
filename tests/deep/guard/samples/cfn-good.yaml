@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Sample that should PASS pq-tls.guard
+Resources:
+  PyFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.13
+      Handler: app.handler
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { ZipFile: "def handler(e, c): return 1" }
+      Layers: [ arn:aws:lambda:eu-west-1:111122223333:layer:pq-tls:1 ]
+      Environment:
+        Variables:
+          OPENSSL_CONF: /opt/pq-tls/openssl-pq.cnf
+  NodeFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { ZipFile: "exports.handler=async()=>1" }
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/pq-tls/wrapper
+  JavaFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: java21
+      Handler: a.B::handle
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { S3Bucket: artifact-bucket, S3Key: fn.zip }
+      Environment:
+        Variables:
+          JAVA_TOOL_OPTIONS: "-javaagent:/opt/pq-tls/pq-tls-agent.jar"
+  Java25Fn:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: java25
+      Handler: a.B::handle
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { S3Bucket: artifact-bucket, S3Key: fn.zip }
+  ImageFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      Role: arn:aws:iam::111122223333:role/fn
+      Code: { ImageUri: 111122223333.dkr.ecr.eu-west-1.amazonaws.com/fn@sha256:0000000000000000000000000000000000000000000000000000000000000000 }
+  GoTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: api
+          Image: 111122223333.dkr.ecr.eu-west-1.amazonaws.com/api:1
+          Environment:
+            - { Name: GODEBUG, Value: "http2client=1" }
+            - { Name: JAVA_TOOL_OPTIONS, Value: "-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1" }
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: arn:aws:elasticloadbalancing:eu-west-1:111122223333:loadbalancer/app/a/1
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09
+      Certificates: [ { CertificateArn: arn:aws:acm:eu-west-1:111122223333:certificate/x } ]
+      DefaultActions: [ { Type: fixed-response, FixedResponseConfig: { StatusCode: "200" } } ]
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: arn:aws:elasticloadbalancing:eu-west-1:111122223333:loadbalancer/app/a/1
+      Port: 80
+      Protocol: HTTP
+      DefaultActions: [ { Type: redirect, RedirectConfig: { Protocol: HTTPS, Port: "443", StatusCode: HTTP_301 } } ]
+  Domain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: api.example.com
+      RegionalCertificateArn: arn:aws:acm:eu-west-1:111122223333:certificate/x
+      EndpointConfiguration: { Types: [ REGIONAL ] }
+      SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+      EndpointAccessMode: BASIC
+  Api:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: api
+      EndpointConfiguration: { Types: [ REGIONAL ] }
+      SecurityPolicy: SecurityPolicy_TLS13_1_2_PQ_2025_09
+      EndpointAccessMode: BASIC

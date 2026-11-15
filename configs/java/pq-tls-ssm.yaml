@@ -1,0 +1,20 @@
+schemaVersion: '2.2'
+description: Install the pq-tls Java kit v2 (agent + pq-tls.security) and enable it for one systemd service.
+parameters:
+  Service: {type: String}
+  KitS3Uri: {type: String, description: 's3://bucket/pq-tls-1.87.tgz (kit v2)'}
+mainSteps:
+  - action: aws:runShellScript
+    name: install
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - mkdir -p /opt/pq-tls
+        - aws s3 cp '{{ KitS3Uri }}' /tmp/pq-tls.tgz
+        - tar -xzf /tmp/pq-tls.tgz -C /opt/pq-tls
+        - test -f /opt/pq-tls/pq-tls.security
+        - mkdir -p '/etc/systemd/system/{{ Service }}.service.d'
+        - printf '[Service]\nEnvironment="JAVA_TOOL_OPTIONS=-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"\n' > '/etc/systemd/system/{{ Service }}.service.d/pq-tls.conf'
+        - systemctl daemon-reload
+        - systemctl restart '{{ Service }}'
+        - sleep 5; journalctl -u '{{ Service }}' -n 100 --no-pager | grep -m1 'ssl.KeyManagerFactory.algorithm=PKIX'

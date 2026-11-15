@@ -1,0 +1,11 @@
+# .github/workflows/pq-check.yml — runs the .NET PQ guardrail on every pull request.
+# Not run here (no GitHub runner); the script itself was tested on fixtures.
+name: pq-tls-check
+on: [pull_request]
+jobs:
+  pq-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block PQ-disabling TLS settings and old base images
+        run: sh tools/check-dotnet-pq.sh .

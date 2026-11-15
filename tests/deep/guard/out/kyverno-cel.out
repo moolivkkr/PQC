@@ -1,0 +1,17 @@
+=== kyverno-cli v1.20.0 ghcr.io/kyverno/kyverno-cli@sha256:bd2b8b7c9d550ecf04e0bacaf351adce2f82ce67fd3f291075edcee7f8ab4ab4
+--- apply CEL ValidatingPolicy to good
+Applying 5 policy rule(s) to 5 resource(s)...
+pass: 6, fail: 0, warn: 0, error: 0, skip: 0 
+--- apply CEL ValidatingPolicy to bad
+Applying 5 policy rule(s) to 5 resource(s)...
+policy pq-tls-alb-ingress -> resource app/Ingress/web-bad failed:
+1 - validation PQ-K1: set alb.ingress.kubernetes.io/ssl-policy to a -PQ-2025-09 policy (default ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09)
+policy pq-tls-nlb-service -> resource app/Service/nlb-bad failed:
+1 - validation PQ-K2: set service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy to a -PQ-2025-09 policy
+policy pq-tls-ingress-nginx-curves -> resource ingress-nginx/ConfigMap/ingress-nginx-controller failed:
+1 - validation PQ-K3: set data.ssl-ecdh-curve to X25519MLKEM768:X25519:prime256v1
+policy pq-tls-istiod -> resource istio-system/Deployment/istiod failed:
+1 - validation PQ-K4: istiod container needs env COMPLIANCE_POLICY=pqc
+policy pq-tls-workload-env -> resource app/Pod/go-api-bad failed:
+1 - validation PQ-K6: GODEBUG tlsmlkem=0 disables X25519MLKEM768 in Go
+pass: 1, fail: 5, warn: 0, error: 0, skip: 0 

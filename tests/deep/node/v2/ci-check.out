@@ -1,0 +1,20 @@
+== bad
+::error::ecdhCurve / DEFAULT_ECDH_CURVE starts with a classical group
+/w/ci-fixture/bad/src/a.js:1:const agent = new https.Agent({ ecdhCurve: 'X25519:P-256' });
+/w/ci-fixture/bad/src/a.js:2:tls.DEFAULT_ECDH_CURVE = "prime256v1";
+::error::TLS 1.2 cap (maxVersion / secureProtocol / DEFAULT_MAX_VERSION / --tls-max-v1.2)
+/w/ci-fixture/bad/Dockerfile:2:ENV NODE_OPTIONS=--tls-max-v1.2
+/w/ci-fixture/bad/src/a.js:3:https.createServer({ key, cert, maxVersion: 'TLSv1.2' });
+/w/ci-fixture/bad/src/a.js:4:tls.connect({ secureProtocol: 'TLSv1_2_method' });
+::error::Lambda nodejs18.x/20.x runtime (OpenSSL 3.0: no PQ)
+/w/ci-fixture/bad/template.yaml:1:Runtime: nodejs20.x
+::error::OPENSSL_CONF set to the Lambda runtime's classical file
+/w/ci-fixture/bad/template.yaml:2:OPENSSL_CONF: /var/runtime/openssl_conf/openssl.cnf
+::error::node base image below 22.20 / 24.5
+/w/ci-fixture/bad/Dockerfile:1:FROM node:20-slim
+::warning::node_modules files that set ecdhCurve/maxVersion (review):
+/w/ci-fixture/bad/node_modules/lib/index.js
+rc=1
+== good
+check-node-tls: no PQ-blocking settings found
+rc=0

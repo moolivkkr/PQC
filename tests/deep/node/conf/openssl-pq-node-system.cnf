@@ -1,0 +1,15 @@
+# openssl-pq-node-system.cnf
+# For Node.js built against the system OpenSSL 3.5+ (distro packages, e.g. AL2023 dnf nodejs22).
+# Node reads the section named by nodejs_conf by default; with --openssl-shared-config it reads openssl_conf.
+# Both names point at the same section, so the file works either way. Only the group list changes.
+openssl_conf = pq_init
+nodejs_conf = pq_init
+
+[pq_init]
+ssl_conf = pq_ssl
+
+[pq_ssl]
+system_default = pq_system_default
+
+[pq_system_default]
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192

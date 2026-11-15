@@ -1,0 +1,67 @@
+== gRPC client (default creds) -> Go gRPC server PQ-only :9447 and default :9446
+grpc client gosrv:9447 SERVING <nil>
+grpc client gosrv:9446 SERVING <nil>
+== libraries, Go 1.26.11, go.mod go 1.26
+gosrv:9448 go-redis      TLS-OK, then protocol error: EOF
+gosrv:9448 kafka-go      TLS-OK, then protocol error: EOF
+gosrv:9448 sarama        TLS-OK, then protocol error: kafka: client has run out of available brokers to talk to: EOF
+gosrv:9448 pgx           TLS-OK, then protocol error: failed to connect to `user=u database=db`: 172.30.0.3:9448 (gosrv): failed to receive message: unexpected EOF
+gosrv:9448 aws-sdk-go-v2 TLS-OK, then protocol error: operation error STS: GetCallerIdentity, exceeded maximum number of attempts, 1, https response error StatusCode: 0, RequestID: , request sen
+gosrv:9449 go-redis      TLS-OK, then protocol error: EOF
+gosrv:9449 kafka-go      TLS-OK, then protocol error: EOF
+gosrv:9449 sarama        TLS-OK, then protocol error: kafka: client has run out of available brokers to talk to: EOF
+gosrv:9449 pgx           TLS-OK, then protocol error: failed to connect to `user=u database=db`: 172.30.0.3:9449 (gosrv): failed to receive message: unexpected EOF
+gosrv:9449 aws-sdk-go-v2 TLS-OK, then protocol error: operation error STS: GetCallerIdentity, exceeded maximum number of attempts, 1, https response error StatusCode: 0, RequestID: , request sen
+== libraries with GODEBUG=fips140=on
+gosrv:9448 aws-sdk-go-v2 TLS-FAIL: operation error STS: GetCallerIdentity, exceeded maximum number of attempts, 1, https response error StatusCode: 0, RequestID: , request sen
+gosrv:9449 aws-sdk-go-v2 TLS-FAIL: operation error STS: GetCallerIdentity, exceeded maximum number of attempts, 1, https response error StatusCode: 0, RequestID: , request sen
+== error texts and MLKEM1024
+go1.25.14  pqsrv:8443 OK X25519MLKEM768
+go1.25.14  pqsrv:8444 OK X25519
+go1.25.14  pqsrv:8446 OK CurveP256
+go1.25.14  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.25.14 fips140=only pqsrv:8443 ERR crypto/ecdh: use of X25519 is not allowed in FIPS 140-only mode
+go1.25.14 fips140=only pqsrv:8444 ERR crypto/ecdh: use of X25519 is not allowed in FIPS 140-only mode
+go1.25.14 fips140=only pqsrv:8446 ERR crypto/ecdh: use of X25519 is not allowed in FIPS 140-only mode
+go1.25.14 fips140=only pqsrv:8448 ERR crypto/ecdh: use of X25519 is not allowed in FIPS 140-only mode
+go1.25.14  pqsrv:8443 OK X25519MLKEM768
+go1.25.14  pqsrv:8444 OK X25519
+go1.25.14  pqsrv:8446 ERR remote error: tls: handshake failure
+go1.25.14  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.26.11  pqsrv:8443 OK X25519MLKEM768
+go1.26.11  pqsrv:8444 OK X25519
+go1.26.11  pqsrv:8446 OK CurveP256
+go1.26.11  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.26.11 fips140=only pqsrv:8443 OK X25519MLKEM768
+go1.26.11 fips140=only pqsrv:8444 ERR remote error: tls: handshake failure
+go1.26.11 fips140=only pqsrv:8446 OK CurveP256
+go1.26.11 fips140=only pqsrv:8448 ERR remote error: tls: handshake failure
+go1.26.11  pqsrv:8443 OK X25519MLKEM768
+go1.26.11  pqsrv:8444 OK X25519
+go1.26.11  pqsrv:8446 ERR remote error: tls: handshake failure
+go1.26.11  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.27.4  pqsrv:8443 OK X25519MLKEM768
+go1.27.4  pqsrv:8444 OK X25519
+go1.27.4  pqsrv:8446 OK CurveP256
+go1.27.4  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.27.4 fips140=only pqsrv:8443 OK X25519MLKEM768
+go1.27.4 fips140=only pqsrv:8444 ERR remote error: tls: handshake failure
+go1.27.4 fips140=only pqsrv:8446 OK CurveP256
+go1.27.4 fips140=only pqsrv:8448 ERR remote error: tls: handshake failure
+go1.27.4  pqsrv:8443 OK X25519MLKEM768
+go1.27.4  pqsrv:8444 OK X25519
+go1.27.4  pqsrv:8446 ERR remote error: tls: handshake failure
+go1.27.4  pqsrv:8448 OK MLKEM1024
+== Go+BoringCrypto with crypto/tls/fipsonly
+go1.25.14 X:boringcrypto  pqsrv:8443 ERR remote error: tls: handshake failure
+go1.25.14 X:boringcrypto  pqsrv:8444 ERR remote error: tls: handshake failure
+go1.25.14 X:boringcrypto  pqsrv:8446 OK CurveP256
+go1.25.14 X:boringcrypto  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.26.11-X:boringcrypto  pqsrv:8443 ERR remote error: tls: handshake failure
+go1.26.11-X:boringcrypto  pqsrv:8444 ERR remote error: tls: handshake failure
+go1.26.11-X:boringcrypto  pqsrv:8446 OK CurveP256
+go1.26.11-X:boringcrypto  pqsrv:8448 ERR remote error: tls: handshake failure
+go1.27.4-X:boringcrypto  pqsrv:8443 ERR remote error: tls: handshake failure
+go1.27.4-X:boringcrypto  pqsrv:8444 ERR remote error: tls: handshake failure
+go1.27.4-X:boringcrypto  pqsrv:8446 OK CurveP256
+go1.27.4-X:boringcrypto  pqsrv:8448 ERR remote error: tls: handshake failure

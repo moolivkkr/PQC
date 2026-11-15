@@ -1,0 +1,8 @@
+# template.yaml (excerpt) - private roots shipped in the function package under pki/
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          SSL_CERT_FILE: /var/task/pki/roots.pem          # Python, Go
+          NODE_EXTRA_CA_CERTS: /var/task/pki/roots.pem    # Node.js

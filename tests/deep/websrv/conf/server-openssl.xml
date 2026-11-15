@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- /usr/local/tomcat/conf/server.xml - Tomcat 11, NIO connector with the OpenSSL implementation
+     (tomcat-native / libtcnative linked to the system OpenSSL). PQ then depends on the image's OpenSSL:
+     3.5+ needed (tomcat:11-jdk25 on Ubuntu 26.04 ships 3.5.x; Ubuntu 24.04-based images ship 3.0 = no PQ). -->
+<Server port="-1" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" />
+  <Service name="Catalina">
+    <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+               SSLEnabled="true" maxThreads="50"
+               sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation">
+      <SSLHostConfig protocols="TLSv1.3">
+        <!-- Passed to OpenSSL SSL_CONF_cmd, same as nginx ssl_conf_command / Apache SSLOpenSSLConfCmd -->
+        <OpenSSLConf>
+          <OpenSSLConfCmd name="Groups" value="X25519MLKEM768:X25519:secp256r1" />
+        </OpenSSLConf>
+        <Certificate certificateFile="/certs/server.crt"
+                     certificateKeyFile="/certs/server.key"
+                     type="EC" />
+      </SSLHostConfig>
+    </Connector>
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" unpackWARs="false" autoDeploy="false" />
+    </Engine>
+  </Service>
+</Server>

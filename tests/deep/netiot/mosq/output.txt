@@ -1,0 +1,30 @@
+== versions
+mosquitto version 2.0.21
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+awscrt    0.36.1
+awsiotsdk 1.31.0
+TlsCipherPref: ['DEFAULT', 'PQ_TLSv1_0_2021_05', 'PQ_DEFAULT', 'TLSv1_2_2025_07']
+PQ_DEFAULT supported: True
+[PASS] 1 broker (default OpenSSL 3.5) negotiates X25519MLKEM768 with a PQ client (got ok, want ok)
+Protocol version: TLSv1.3
+Peer Temp Key: X25519, 253 bits
+[PASS] 2 broker still accepts a classical-only client (X25519) (got ok, want ok)
+[PASS] 3 mosquitto_pub (default) -> PQ-only broker (got ok, want ok)
+[PASS] 4 mosquitto_pub with classical-only OPENSSL_CONF -> PQ-only broker must fail (got fail, want fail)
+Error: Protocol error
+[PASS] 5 mosquitto_pub (default) -> default broker (got ok, want ok)
+[PASS] 6 awscrt cipher_pref=PQ_DEFAULT -> PQ-only broker (got ok, want ok)
+CONNECT_OK pref=PQ_DEFAULT
+[PASS] 7 awscrt cipher_pref=DEFAULT -> PQ-only broker (records what the default does) (got ok, want ok)
+CONNECT_OK pref=DEFAULT
+[PASS] 8 awscrt cipher_pref=TLSv1_2_2025_07 (non-PQ) -> PQ-only broker must fail (got fail, want fail)
+CONNECT_FAIL pref=TLSv1_2_2025_07: AwsCrtError: AWS_IO_TLS_ERROR_NEGOTIATION_FAILURE: TLS (SSL) negotiation failed
+[PASS] 9 awscrt PQ_DEFAULT -> default broker (classical-capable) (got ok, want ok)
+CONNECT_OK pref=PQ_DEFAULT
+== broker log (PQ-only)
+1794679705: Client crt-DEFAULT disconnected.
+1794679705: New connection from ::1:56862 on port 8884.
+1794679705: Client connection from 127.0.0.1 failed: error:0A000126:SSL routines::unexpected eof while reading.
+1794679705: OpenSSL Error[0]: error:0A000065:SSL routines::no suitable key share
+1794679705: Client <unknown> disconnected: Protocol error.
+RESULT pass=9 fail=0

@@ -1,0 +1,83 @@
+== l311-shim public.ecr.aws/lambda/python@sha256:5de4ea369e5682d2bbdb68c9ad5f084022f2c48babb4817581a990fa9e98f464 env=[] PYTHONPATH=/kit/pyshim:/w/site/l311:/w2/extra
+3.11.18 OpenSSL 1.1.1zb  11 Feb 2025 OPENSSL_CONF=None
+l311-shim | D ssl cafile=                          | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D ssl cafile=                          | classical-only  | OK TLSv1.3 group=n/a
+l311-shim | D ssl SSL_CERT_FILE                    | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D ssl SSL_CERT_FILE                    | classical-only  | OK TLSv1.3 group=n/a
+l311-shim | D requests REQUESTS_CA_BUNDLE          | PQ-only         | OK HTTP 200
+l311-shim | D requests REQUESTS_CA_BUNDLE          | classical-only  | OK HTTP 200
+l311-shim | D requests REQUESTS_CA_BUNDLE          | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D requests verify=                     | PQ-only         | OK HTTP 200
+l311-shim | D requests verify=                     | classical-only  | OK HTTP 200
+l311-shim | D requests verify=                     | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D requests SSL_CERT_FILE only          | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', ''
+l311-shim | D requests SSL_CERT_FILE only          | classical-only  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8444): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', ''
+l311-shim | D requests SSL_CERT_FILE only          | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D requests certifi+CA appended         | PQ-only         | OK HTTP 200
+l311-shim | D requests certifi+CA appended         | classical-only  | OK HTTP 200
+l311-shim | D requests certifi+CA appended         | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D requests certifi (no CA) neg         | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', ''
+l311-shim | D requests certifi (no CA) neg         | classical-only  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8444): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', ''
+l311-shim | D requests certifi (no CA) neg         | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D httpx verify=ctx                     | PQ-only         | FAIL ConnectError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D httpx verify=ctx                     | classical-only  | OK HTTP 200
+l311-shim | D httpx SSL_CERT_FILE                  | PQ-only         | FAIL ConnectError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D httpx SSL_CERT_FILE                  | classical-only  | OK HTTP 200
+l311-shim | D aiohttp ssl=ctx                      | PQ-only         | FAIL ClientConnectorSSLError: Cannot connect to host pqsrv:8443 ssl:<ssl.SSLContext object at 0xffff8395fd10> [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert hands
+l311-shim | D aiohttp ssl=ctx                      | classical-only  | OK HTTP 200
+l311-shim | D boto3 AWS_CA_BUNDLE                  | PQ-only         | OK TLS OK, then HTTPClientError (expected: test server is not STS)
+l311-shim | D boto3 AWS_CA_BUNDLE                  | classical-only  | OK TLS OK, then HTTPClientError (expected: test server is not STS)
+l311-shim | D boto3 AWS_CA_BUNDLE                  | shim log: botocore -> pyOpenSSL; urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | E requests cert=(crt,key)              | PQ-only mTLS    | OK HTTP 200
+l311-shim | E requests cert=(crt,key)              | classical mTLS  | OK HTTP 200
+l311-shim | E requests cert=(crt,key)              | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | E requests no cert neg                 | PQ-only mTLS    | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8451): Max retries exceeded with url: / (Caused by SSLError(SSLError("read error: Error([('SSL routines', '', '
+l311-shim | E requests no cert neg                 | classical mTLS  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8452): Max retries exceeded with url: / (Caused by SSLError(SSLError("read error: Error([('SSL routines', '', '
+l311-shim | E requests no cert neg                 | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | E ssl load_cert_chain                  | PQ-only mTLS    | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | E ssl load_cert_chain                  | classical mTLS  | OK TLSv1.3 group=n/a
+l311-shim | E httpx ctx+cert                       | PQ-only mTLS    | FAIL ConnectError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | E httpx ctx+cert                       | classical mTLS  | OK HTTP 200
+l311-shim | E httpx ctx+encrypted key              | PQ-only mTLS    | FAIL ConnectError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | E httpx ctx+encrypted key              | classical mTLS  | OK HTTP 200
+l311-shim | E aiohttp ctx+cert                     | PQ-only mTLS    | FAIL ClientConnectorSSLError: Cannot connect to host pqsrv:8451 ssl:<ssl.SSLContext object at 0xffff84e27d10> [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert hands
+l311-shim | E aiohttp ctx+cert                     | classical mTLS  | OK HTTP 200
+l311-shim | E boto3 client_cert                    | PQ-only mTLS    | OK TLS OK, then HTTPClientError (expected: test server is not STS)
+l311-shim | E boto3 client_cert                    | classical mTLS  | OK TLS OK, then HTTPClientError (expected: test server is not STS)
+l311-shim | E boto3 client_cert                    | shim log: botocore -> pyOpenSSL; urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | E grpc ssl_channel_credentials         | PQ-only mTLS    | OK no READY (expected: s_server speaks no HTTP/2); handshake judged from server log
+l311-shim | F set_ciphers(ECDHE+AESGCM)            | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | F set_ciphers(ECDHE+AESGCM)            | classical-only  | OK TLSv1.3 group=n/a
+l311-shim | F maximum_version=TLSv1_2              | PQ-only         | FAIL SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:1018)
+l311-shim | F maximum_version=TLSv1_2              | classical-only  | OK TLSv1.2 group=n/a
+l311-shim | F minimum_version=TLSv1_3              | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | F minimum_version=TLSv1_3              | classical-only  | OK TLSv1.3 group=n/a
+l311-shim | F OP_NO_TLSv1_3                        | PQ-only         | FAIL SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:1018)
+l311-shim | F OP_NO_TLSv1_3                        | classical-only  | OK TLSv1.2 group=n/a
+l311-shim | F PROTOCOL_TLSv1_2                     | PQ-only         | FAIL SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:1018)
+l311-shim | F PROTOCOL_TLSv1_2                     | classical-only  | OK TLSv1.2 group=n/a
+l311-shim | F set_ecdh_curve(prime256v1)           | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | F set_ecdh_curve(prime256v1)           | classical-only  | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | F set_ecdh_curve(X25519)               | PQ-only         | FAIL SSLError: [EC: UNKNOWN_GROUP] unknown group (_ssl.c:4462)
+l311-shim | F set_ecdh_curve(X25519)               | classical-only  | FAIL SSLError: [EC: UNKNOWN_GROUP] unknown group (_ssl.c:4462)
+l311-shim | F set_ecdh_curve(X25519MLKEM768)       | PQ-only         | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+l311-shim | F set_ecdh_curve(X25519MLKEM768)       | classical-only  | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+l311-shim | F urllib3 ssl_maximum_version=1.2      | PQ-only         | FAIL MaxRetryError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines
+l311-shim | F urllib3 ssl_maximum_version=1.2      | classical-only  | OK HTTP 200
+l311-shim | F urllib3 ssl_maximum_version=1.2      | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | I cert pin (sha256 of DER)             | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | I cert pin (sha256 of DER)             | classical-only  | OK TLSv1.3 group=n/a pin=match
+l311-shim | grpc s_server log (8453 PQ-only mTLS):  1 Peer Temp Key: X25519MLKEM768; 1 Peer certificate: CN=pq-client; 1 Supported groups: X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1; 1 Verification: OK;
+os-store rc=0
+l311-shim | D ssl default ctx, CA in OS store      | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D ssl default ctx, CA in OS store      | classical-only  | OK TLSv1.3 group=n/a
+l311-shim | D requests default, CA in OS store     | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', ''
+l311-shim | D requests default, CA in OS store     | classical-only  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8444): Max retries exceeded with url: / (Caused by SSLError(SSLError("bad handshake: Error([('SSL routines', ''
+l311-shim | D requests default, CA in OS store     | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D truststore.inject_into_ssl+requests  | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] s
+l311-shim | D truststore.inject_into_ssl+requests  | classical-only  | OK HTTP 200
+l311-shim | D truststore.inject_into_ssl+requests  | shim log: urllib3 -> pyOpenSSL (OpenSSL 4.0.3 29 Sep 2026)
+l311-shim | D truststore.SSLContext raw            | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D truststore.SSLContext raw            | classical-only  | OK TLSv1.3 group=n/a
+l311-shim | D httpx default, CA in OS store        | PQ-only         | FAIL ConnectError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311-shim | D httpx default, CA in OS store        | classical-only  | FAIL ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)

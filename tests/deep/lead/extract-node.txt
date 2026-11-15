@@ -1,0 +1,128 @@
+# TAB: node  node=d02c414f-ccd4  rev=12
+
+## 1. H1 and lead paragraphs
+H1: Node.js runbook
+
+The OpenSSL that the node binary uses decides, and then the OpenSSL config file Node reads. Official Node builds bundle OpenSSL: 22.20.0+ and 24.5.0+ carry OpenSSL 3.5 and offer X25519MLKEM768 first by default, on any OS. Distro builds (AL2023 dnf, Debian apt, Alpine apk) link the system OpenSSL and follow the system config.
+
+Three things turn PQ off again: a config file whose Groups omits ML-KEM (the Lambda bootstrap sets one), an explicit ecdhCurve or tls.DEFAULT_ECDH_CURVE without X25519MLKEM768, and a TLS 1.2 cap. Every client library tested (fetch, undici, axios, got, node-fetch, AWS SDK v3, grpc-js, pg, mysql2, ioredis, kafkajs) inherits Node's defaults.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+H2: Client side (app level)
+H2: Server side
+H2: Packaging per compute type
+  H3: Lambda zip (nodejs22.x, nodejs24.x)
+  H3: Lambda container image
+  H3: Fargate, ECS, EKS
+  H3: EC2
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Node build | OpenSSL | Lambda zip | Lambda image | Fargate / ECS / EKS | EC2 | Evidence |
+| Official 24.5.0+ (tested 24.5.0, 24.9.0, 24.22.3) | 3.5.1+ | nodejs24.x: classical until you override the bootstrap config | lambda/nodejs:24: same override | node:24-slim, node:24-alpine: PQ default | Official tarball: PQ default | Tested |
+| Official 22.20.0+ (tested 22.20.0, 22.23.5) | 3.5.2+ | nodejs22.x: override needed | lambda/nodejs:22: override needed | node:22-slim, node:22-alpine: PQ default | PQ default | Tested |
+| Official 26.x (tested 26.13.1) | 3.5.9 | nodejs26.x is in public preview; not tested | not tested | node:26-slim: PQ default | PQ default | Tested (container) |
+| Official 22.0–22.19, 24.0–24.4 | 3.0.x (22.19.0 = 3.0.17, 24.4.1 = 3.0.16) | only if runtime updates are pinned (Manual mode); check | rebuild on the current base | upgrade the image tag | upgrade | Tested |
+| Official 20.x, 18.x | 3.0.x | nodejs20.x deprecated Apr 30 2026, updates blocked Aug 31 2027: upgrade | upgrade | node:20-*: classical, no setting adds PQ | upgrade | Tested (node:20-slim, node:20-alpine, 20.20.2) |
+| AL2023 dnf install nodejs22 (22.23.4, shared OpenSSL 3.5.8) | system | n/a | n/a | classical until update-crypto-policies --set DEFAULT:PQ or OPENSSL_CONF | same | Tested (amazonlinux:2023) |
+| Debian 13 apt install nodejs (20.19.2, system OpenSSL 3.5.7) | system | n/a | n/a | PQ default | PQ default | Tested (debian:trixie-slim) |
+| Alpine 3.22 apk add nodejs (22.23.5, system OpenSSL 3.5.9) | system | n/a | n/a | PQ default | n/a | Tested (alpine:3.22) |
+| Deno 2.9.8, Bun 1.4.4 | rustls, BoringSSL | n/a | custom image | PQ default (fetch; Bun also node:tls) | same | Tested (denoland/deno, oven/bun) |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Every file referenced above. The two .cnf files, check-lambda-node-conf.sh, tls-pq.js, pq-check.js and server.js were run in the tests. The IaC files follow the documented resource schemas and were not deployed (no AWS account in the test lab).
+pq-tls/openssl-pq-node.cnf (Lambda nodejs22/24: AWS's file with the hybrid group added first; Tested)
+```ini
+# Replaces the Lambda Node.js runtime's /var/runtime/openssl_conf/openssl.cnf (same structure),
+# with the hybrid post-quantum group first. Node reads the nodejs_conf section.
+```
+/etc/app/openssl-pq-node-system.cnf (distro Node on system OpenSSL 3.5+ when you can't change the host policy; Tested on AL2023 nodejs22)
+```ini
+# Node reads nodejs_conf by default and openssl_conf with --openssl-shared-config; both point here.
+openssl_conf = pq_init
+```
+check-lambda-node-conf.sh (pipeline check; Tested against nodejs22 and nodejs24 images: "OK: only Groups differs")
+```bash
+#!/bin/bash
+# Usage: check-lambda-node-conf.sh 24  -> compares AWS's file in the current base image with ours, ignoring Groups.
+```
+src/tls-pq.js (shared TLS options with feature detection; Tested on Node 20, 22, 24)
+```js
+'use strict';
+const tls = require('node:tls');
+```
+pq-check.js (posture and live check; exits 1 if the runtime can't do ML-KEM or any target is not PQ; Tested)
+```js
+#!/usr/bin/env node
+'use strict';
+```
+server.js (Express on HTTPS; Tested on node:24-slim: PQ client got X25519MLKEM768, classical client X25519, TLS 1.2 client connected)
+```js
+'use strict';
+const fs = require('node:fs');
+```
+template.yaml (SAM, Lambda zip)
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+```
+lambda-cfn.yaml (CloudFormation, Lambda zip)
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+```
+lambda.tf (Terraform, Lambda zip)
+```hcl
+resource "aws_lambda_function" "orders" {
+  function_name    = "orders"
+```
+Dockerfile.lambda (Lambda container image)
+```dockerfile
+FROM public.ecr.aws/lambda/nodejs:24@sha256:eb0de3ee81b4638149f0b1bcab2c657603a23a0c221a4b5678be29b48265bd31
+COPY package.json package-lock.json ${LAMBDA_TASK_ROOT}/
+```
+Dockerfile (Fargate / ECS / EKS on an official image: nothing PQ-specific)
+```dockerfile
+FROM node:24-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+WORKDIR /app
+```
+Dockerfile.al2023 (AL2023 base with the distro Node package; policy step Tested)
+```dockerfile
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+RUN dnf -y install nodejs22 crypto-policies-scripts shadow-utils \
+```
+taskdef.json (ECS / Fargate; no TLS setting needed)
+```json
+{
+  "family": "orders",
+```
+ecs.tf (Terraform; distro-Node images only need the commented line)
+```hcl
+resource "aws_ecs_task_definition" "orders" {
+  family                   = "orders"
+```
+ecs-cfn.yaml (CloudFormation)
+```yaml
+Parameters:
+  ExecRoleArn: { Type: String }
+```
+deployment.yaml (EKS)
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+```
+/etc/systemd/system/orders.service (EC2)
+```ini
+[Unit]
+Description=orders API (Node.js)
+```
+pq-node-posture.json (SSM Command document: reports every running Node process on an instance)
+```json
+{
+  "schemaVersion": "2.2",
+```

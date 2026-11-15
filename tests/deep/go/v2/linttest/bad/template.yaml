@@ -1,0 +1,5 @@
+Resources:
+  F:
+    Properties:
+      Runtime: go1.x
+      Environment: {Variables: {GODEBUG: tlsmlkem=0}}

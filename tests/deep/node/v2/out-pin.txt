@@ -1,0 +1,16 @@
+## node22
+{"node":"v22.23.5","OPENSSL_CONF":null,"pin":"NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+{"case":"I SPKI pin matches","ok":true,"group":"X25519MLKEM768 (Node 22 reports {})"}
+{"case":"I SPKI pin wrong (must fail)","ok":false,"error":"pin mismatch: NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+## node24
+{"node":"v24.22.3","OPENSSL_CONF":null,"pin":"NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+{"case":"I SPKI pin matches","ok":true,"group":"X25519MLKEM768"}
+{"case":"I SPKI pin wrong (must fail)","ok":false,"error":"pin mismatch: NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+## lambda22-pq
+{"node":"v22.23.5","OPENSSL_CONF":"/k/openssl-pq-node.cnf","pin":"NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+{"case":"I SPKI pin matches","ok":true,"group":"X25519MLKEM768 (Node 22 reports {})"}
+{"case":"I SPKI pin wrong (must fail)","ok":false,"error":"pin mismatch: NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+## lambda24-pq
+{"node":"v24.22.3","OPENSSL_CONF":"/k/openssl-pq-node.cnf","pin":"NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}
+{"case":"I SPKI pin matches","ok":true,"group":"X25519MLKEM768"}
+{"case":"I SPKI pin wrong (must fail)","ok":false,"error":"pin mismatch: NuW1IgRz6CD3p1kRY9H+yN4tpoHK0tDjXSi8q5PoHNc="}

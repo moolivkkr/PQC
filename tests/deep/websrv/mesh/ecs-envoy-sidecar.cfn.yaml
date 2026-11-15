@@ -1,0 +1,37 @@
+# ecs-envoy-sidecar.yaml - CloudFormation equivalent of ecs-envoy-sidecar.tf
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  AppImage: { Type: String }
+  EnvoyImage: { Type: String }
+  ExecutionRoleArn: { Type: String }
+Resources:
+  OrdersTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: orders
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !Ref ExecutionRoleArn
+      ContainerDefinitions:
+        - Name: app
+          Image: !Ref AppImage
+          Essential: true
+          Environment:
+            - Name: PAYMENTS_URL
+              Value: http://127.0.0.1:8080/payments
+          DependsOn:
+            - ContainerName: envoy
+              Condition: HEALTHY
+        - Name: envoy
+          Image: !Ref EnvoyImage
+          Essential: true
+          Command: [envoy, -c, /etc/envoy/envoy.yaml]
+          PortMappings:
+            - ContainerPort: 8443
+              Protocol: tcp
+          HealthCheck:
+            Command: ["CMD-SHELL", "curl -sf http://127.0.0.1:9901/ready || exit 1"]
+            Interval: 10
+            Retries: 3

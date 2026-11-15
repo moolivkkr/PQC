@@ -1,0 +1,94 @@
+{"go":"go1.23.12","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.23.12 X:boringcrypto","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.23.12 X:boringcrypto","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"classical-curves","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"pq-curves","godebug":"","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"http","godebug":"","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13 X:boringcrypto","cfg":"default","godebug":"","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+panic: fips140: FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto
+
+goroutine 1 [running]:
+crypto/internal/fips140/check.init.0()
+	/usr/local/go/src/crypto/internal/fips140/check/check.go:60 +0x84
+{"go":"go1.24.13","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14 X:boringcrypto","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+panic: fips140: FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto
+
+goroutine 1 [running]:
+crypto/internal/fips140/check.init.0()
+	/usr/local/go/src/crypto/internal/fips140/check/check.go:60 +0x80
+{"go":"go1.25.14","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"FAIL","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"FAIL","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"classical-curves","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"pq-curves","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"http","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11-X:boringcrypto","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+panic: fips140: FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto
+
+goroutine 1 [running]:
+crypto/internal/fips140/check.init.0()
+	/usr/local/go/src/crypto/internal/fips140/check/check.go:60 +0x80
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"classical-curves","godebug":"","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"pq-curves","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"http","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4-X:boringcrypto","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+panic: fips140: FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto
+
+goroutine 1 [running]:
+crypto/internal/fips140/check.init.0()
+	/usr/local/go/src/crypto/internal/fips140/check/check.go:60 +0x80
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"fips140=only","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"tlsmlkem=1","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"tlsmlkem=1,tlssecpmlkem=1","X25519MLKEM768":"OK ?","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"tlsmlkem=1","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"tlsmlkem=1,tlssecpmlkem=1","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"tlsmlkem=1","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"tlsmlkem=1,tlssecpmlkem=1","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"tlsmlkem=1","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"tlsmlkem=1,tlssecpmlkem=1","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"pq-curves","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK ?","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.24.13","cfg":"default","godebug":"fips140=on","X25519MLKEM768":"FAIL","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK ?","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"pq-curves","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.25.14","cfg":"default","godebug":"fips140=on","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"pq-curves","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.26.11","cfg":"default","godebug":"fips140=on","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"tlsmlkem=0","X25519MLKEM768":"FAIL","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"pq-curves","godebug":"tlsmlkem=0","X25519MLKEM768":"OK X25519MLKEM768","X25519":"OK X25519","SecP256r1MLKEM768":"FAIL","P-256":"OK CurveP256","SecP384r1MLKEM1024":"FAIL","MLKEM1024":"FAIL"}
+{"go":"go1.27.4","cfg":"default","godebug":"fips140=on","X25519MLKEM768":"OK X25519MLKEM768","X25519":"FAIL","SecP256r1MLKEM768":"OK SecP256r1MLKEM768","P-256":"OK CurveP256","SecP384r1MLKEM1024":"OK SecP384r1MLKEM1024","MLKEM1024":"FAIL"}

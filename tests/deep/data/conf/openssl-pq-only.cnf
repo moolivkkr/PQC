@@ -1,0 +1,22 @@
+# /etc/ssl/openssl-pq-only.cnf - process-wide TLS group list for servers and clients that have
+# no group setting of their own (Valkey, Redis OSS, MariaDB, libpq clients).
+# Use: OPENSSL_CONF=/etc/ssl/openssl-pq-only.cnf  (OpenSSL 3.5+; Debian 13, Alpine 3.22+, Ubuntu 26.04)
+# Classical groups stay after the hybrid one so old peers still connect.
+openssl_conf = openssl_init
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = tls_defaults
+
+[tls_defaults]
+MinProtocol = TLSv1.3
+Groups = X25519MLKEM768

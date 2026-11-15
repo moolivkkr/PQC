@@ -1,0 +1,49 @@
+docker: Error response from daemon: Conflict. The container name "/pqnode-nodesrv" is already in use by container "3e638c6006356363ecba87c1da780a18ef893d9695077a527a30c13d85441251". You have to remove (or rename) that container to be able to reuse that name.
+
+Run 'docker run --help' for more information
+## server image node:24-slim: node v24.22.3 openssl 3.5.9 
+9001  https default                        | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9002  https ecdhCurve X25519:P-256         | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9003  https ecdhCurve PQ-first             | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9004  http2 secure default                 | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9005  express on https                     | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9006  fastify https                        | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9007  tls.createServer minVersion TLSv1.3  | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9008  grpc-js default                      | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+## server image node:22-alpine: node v22.23.5 openssl 3.5.9 
+9001  https default                        | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9002  https ecdhCurve X25519:P-256         | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9003  https ecdhCurve PQ-first             | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9004  http2 secure default                 | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9005  express on https                     | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9006  fastify https                        | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9007  tls.createServer minVersion TLSv1.3  | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9008  grpc-js default                      | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+## server image node:20-slim: 9003 throws: ERR_CRYPTO_OPERATION_FAILED Failed to set ECDH curve node v20.20.2 openssl 3.0.19 
+9001  https default                        | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9002  https ecdhCurve X25519:P-256         | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9003  not started                          | PQ-only client: refused                                  | classical client: refused                  | default 3.5 client: refused
+9004  http2 secure default                 | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9005  express on https                     | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9006  fastify https                        | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9007  tls.createServer minVersion TLSv1.3  | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9008  grpc-js default                      | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+## server image node:24.5-alpine: node v24.5.0 openssl 3.5.1 
+9001  https default                        | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9002  https ecdhCurve X25519:P-256         | PQ-only client: alert handshake failure
+alert number     | classical client: Peer Temp Key: X25519    | default 3.5 client: Peer Temp Key: X25519
+9003  https ecdhCurve PQ-first             | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9004  http2 secure default                 | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9005  express on https                     | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9006  fastify https                        | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9007  tls.createServer minVersion TLSv1.3  | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768
+9008  grpc-js default                      | PQ-only client: Negotiated TLS1.3 group: X25519MLKEM768  | classical client: Peer Temp Key: X25519    | default 3.5 client: Negotiated TLS1.3 group: X25519MLKEM768

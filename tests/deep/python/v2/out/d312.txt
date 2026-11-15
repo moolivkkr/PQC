@@ -1,0 +1,125 @@
+== d312 python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b env=[] PYTHONPATH=/w/site/b312:/w2/extra
+3.12.16 OpenSSL 3.5.7 9 Jun 2026 OPENSSL_CONF=None
+d312 | D ssl cafile=                          | PQ-only         | OK TLSv1.3 group=n/a
+d312 | D ssl cafile=                          | classical-only  | OK TLSv1.3 group=n/a
+d312 | D ssl SSL_CERT_FILE                    | PQ-only         | OK TLSv1.3 group=n/a
+d312 | D ssl SSL_CERT_FILE                    | classical-only  | OK TLSv1.3 group=n/a
+d312 | D requests REQUESTS_CA_BUNDLE          | PQ-only         | OK HTTP 200
+d312 | D requests REQUESTS_CA_BUNDLE          | classical-only  | OK HTTP 200
+d312 | D requests verify=                     | PQ-only         | OK HTTP 200
+d312 | D requests verify=                     | classical-only  | OK HTTP 200
+d312 | D requests SSL_CERT_FILE only          | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERI
+d312 | D requests SSL_CERT_FILE only          | classical-only  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8444): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERI
+d312 | D requests certifi+CA appended         | PQ-only         | OK HTTP 200
+d312 | D requests certifi+CA appended         | classical-only  | OK HTTP 200
+d312 | D requests certifi (no CA) neg         | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERI
+d312 | D requests certifi (no CA) neg         | classical-only  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8444): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERI
+d312 | D httpx verify=ctx                     | PQ-only         | OK HTTP 200
+d312 | D httpx verify=ctx                     | classical-only  | OK HTTP 200
+d312 | D httpx SSL_CERT_FILE                  | PQ-only         | OK HTTP 200
+d312 | D httpx SSL_CERT_FILE                  | classical-only  | OK HTTP 200
+d312 | D aiohttp ssl=ctx                      | PQ-only         | OK HTTP 200
+d312 | D aiohttp ssl=ctx                      | classical-only  | OK HTTP 200
+d312 | D boto3 AWS_CA_BUNDLE                  | PQ-only         | OK TLS OK, then ReadTimeoutError (expected: test server is not STS)
+d312 | D boto3 AWS_CA_BUNDLE                  | classical-only  | OK TLS OK, then ReadTimeoutError (expected: test server is not STS)
+d312 | E requests cert=(crt,key)              | PQ-only mTLS    | OK HTTP 200
+d312 | E requests cert=(crt,key)              | classical mTLS  | OK HTTP 200
+d312 | E requests no cert neg                 | PQ-only mTLS    | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8451): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: TLSV13_ALERT_CERTIFICATE_REQUIRE
+d312 | E requests no cert neg                 | classical mTLS  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8452): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: TLSV13_ALERT_CERTIFICATE_REQUIRE
+d312 | E ssl load_cert_chain                  | PQ-only mTLS    | OK TLSv1.3 group=n/a
+d312 | E ssl load_cert_chain                  | classical mTLS  | OK TLSv1.3 group=n/a
+d312 | E httpx ctx+cert                       | PQ-only mTLS    | OK HTTP 200
+d312 | E httpx ctx+cert                       | classical mTLS  | OK HTTP 200
+d312 | E httpx ctx+encrypted key              | PQ-only mTLS    | OK HTTP 200
+d312 | E httpx ctx+encrypted key              | classical mTLS  | OK HTTP 200
+d312 | E aiohttp ctx+cert                     | PQ-only mTLS    | OK HTTP 200
+d312 | E aiohttp ctx+cert                     | classical mTLS  | OK HTTP 200
+d312 | E boto3 client_cert                    | PQ-only mTLS    | OK TLS OK, then ReadTimeoutError (expected: test server is not STS)
+d312 | E boto3 client_cert                    | classical mTLS  | OK TLS OK, then ReadTimeoutError (expected: test server is not STS)
+d312 | E grpc ssl_channel_credentials         | PQ-only mTLS    | OK no READY (expected: s_server speaks no HTTP/2); handshake judged from server log
+d312 | F set_ciphers(ECDHE+AESGCM)            | PQ-only         | OK TLSv1.3 group=n/a
+d312 | F set_ciphers(ECDHE+AESGCM)            | classical-only  | OK TLSv1.3 group=n/a
+d312 | F maximum_version=TLSv1_2              | PQ-only         | FAIL SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:1011)
+d312 | F maximum_version=TLSv1_2              | classical-only  | OK TLSv1.2 group=n/a
+d312 | F minimum_version=TLSv1_3              | PQ-only         | OK TLSv1.3 group=n/a
+d312 | F minimum_version=TLSv1_3              | classical-only  | OK TLSv1.3 group=n/a
+d312 | F OP_NO_TLSv1_3                        | PQ-only         | FAIL SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:1011)
+d312 | F OP_NO_TLSv1_3                        | classical-only  | OK TLSv1.2 group=n/a
+d312 | F PROTOCOL_TLSv1_2                     | PQ-only         | FAIL SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:1011)
+d312 | F PROTOCOL_TLSv1_2                     | classical-only  | OK TLSv1.2 group=n/a
+d312 | F set_ecdh_curve(prime256v1)           | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert handshake failure (_ssl.c:1011)
+d312 | F set_ecdh_curve(prime256v1)           | classical-only  | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert handshake failure (_ssl.c:1011)
+d312 | F set_ecdh_curve(X25519)               | PQ-only         | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert handshake failure (_ssl.c:1011)
+d312 | F set_ecdh_curve(X25519)               | classical-only  | OK TLSv1.3 group=n/a
+d312 | F set_ecdh_curve(X25519MLKEM768)       | PQ-only         | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+d312 | F set_ecdh_curve(X25519MLKEM768)       | classical-only  | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+d312 | F urllib3 ssl_maximum_version=1.2      | PQ-only         | FAIL MaxRetryError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: TLSV1_ALERT_PROTOCOL_VERSIO
+d312 | F urllib3 ssl_maximum_version=1.2      | classical-only  | OK HTTP 200
+d312 | I cert pin (sha256 of DER)             | PQ-only         | OK TLSv1.3 group=n/a pin=match
+d312 | I cert pin (sha256 of DER)             | classical-only  | OK TLSv1.3 group=n/a pin=match
+d312 | grpc s_server log (8453 PQ-only mTLS):  1 Peer Temp Key: X25519MLKEM768; 1 Peer certificate: CN=pq-client; 1 Supported groups: X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1; 1 Verification: OK;
+os-store rc=0
+d312 | D ssl default ctx, CA in OS store      | PQ-only         | OK TLSv1.3 group=n/a
+d312 | D ssl default ctx, CA in OS store      | classical-only  | OK TLSv1.3 group=n/a
+d312 | D requests default, CA in OS store     | PQ-only         | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERI
+d312 | D requests default, CA in OS store     | classical-only  | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8444): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERI
+d312 | D truststore.inject_into_ssl+requests  | PQ-only         | OK HTTP 200
+d312 | D truststore.inject_into_ssl+requests  | classical-only  | OK HTTP 200
+d312 | D truststore.SSLContext raw            | PQ-only         | OK TLSv1.3 group=n/a
+d312 | D truststore.SSLContext raw            | classical-only  | OK TLSv1.3 group=n/a
+d312 | D httpx default, CA in OS store        | PQ-only         | FAIL ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1011)
+d312 | D httpx default, CA in OS store        | classical-only  | FAIL ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1011)
+d312 | C ssl.SSLContext RSA PEM                       | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C ssl.SSLContext RSA PEM                       | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 
+d312 | C ssl.SSLContext EC PEM                        | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C ssl.SSLContext EC PEM                        | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C ssl.SSLContext RSA encrypted key             | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C ssl.SSLContext RSA encrypted key             | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 
+d312 | C ssl.SSLContext EC encrypted key (callable)   | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C ssl.SSLContext EC encrypted key (callable)   | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C RSA+EC in one ctx, client ECDSA only         | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C RSA+EC in one ctx, client ECDSA only         | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C RSA+EC in one ctx, client RSA only           | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C RSA+EC in one ctx, client RSA only           | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 
+d312 | C SNI callback, name pyc                       | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C SNI callback, name pyc                       | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C SNI callback, name b.pqsrv (PQ-only client) | Peer certificate: CN=b.pqsrv Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C PKCS#12 -> PEM via cryptography              | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C PKCS#12 -> PEM via cryptography              | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C PKCS#12 via pyOpenSSL load_pkcs12            | client offers X25519MLKEM768  | 20D0CCB3FFFF0000:error:8000006F:system library:BIO_connect:Connection refused:../crypto/bio/bio_sock2.c:183:calling connect() 20D0CCB3FFFF0000:error:10000067:BIO routines:BIO_connect:connect error:../crypto/bio/bio_sock2.c:185: co
+d312 | C PKCS#12 via pyOpenSSL load_pkcs12            | client offers X25519          | 20805484FFFF0000:error:8000006F:system library:BIO_connect:Connection refused:../crypto/bio/bio_sock2.c:183:calling connect() 20805484FFFF0000:error:10000067:BIO routines:BIO_connect:connect error:../crypto/bio/bio_sock2.c:185: co
+d312 | C+E ssl server CERT_REQUIRED, client cert      | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C+E ssl server CERT_REQUIRED, client cert      | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C+E ssl server CERT_REQUIRED, no client cert   | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 20F0138DFFFF0000:error:0A00045C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate required:../
+d312 | C+E ssl server CERT_REQUIRED, no client cert   | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 205007ABFFFF0000:error:0A00045C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate required:../ssl/record/rec_layer_s3.c:918:SSL alert 
+d312 | F server set_ecdh_curve(prime256v1)            | client offers X25519MLKEM768  | 20E0649CFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+d312 | F server set_ecdh_curve(prime256v1)            | client offers X25519          | 2030BF9AFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+d312 | F server maximum_version=TLSv1_2               | client offers X25519MLKEM768  | 20308596FFFF0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:../ssl/record/rec_layer_s3.c:918:SSL alert number 70 
+d312 | F server maximum_version=TLSv1_2               | client offers X25519          | 20B02CB2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+d312 | F server set_ciphers(ECDHE+AESGCM)             | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | F server set_ciphers(ECDHE+AESGCM)             | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C uvicorn RSA --ssl-keyfile                    | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C uvicorn RSA --ssl-keyfile                    | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 
+d312 | C uvicorn EC --ssl-keyfile                     | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C uvicorn EC --ssl-keyfile                     | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C uvicorn RSA encrypted --ssl-keyfile-password | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C uvicorn RSA encrypted --ssl-keyfile-password | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 
+d312 | C uvicorn EC encrypted --ssl-keyfile-password  | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C uvicorn EC encrypted --ssl-keyfile-password  | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | E uvicorn --ssl-cert-reqs 2, client cert       | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | E uvicorn --ssl-cert-reqs 2, client cert       | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C gunicorn RSA --keyfile                       | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C gunicorn RSA --keyfile                       | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: rsa_pss_rsae_sha256 
+d312 | C gunicorn EC --keyfile                        | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C gunicorn EC --keyfile                        | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | C gunicorn EC encrypted --keyfile only         | client offers X25519MLKEM768  | 20E0EE92FFFF0000:error:0A000126:SSL routines::unexpected eof while reading:../ssl/record/rec_layer_s3.c:698: 
+d312 | C gunicorn EC encrypted --keyfile only         | client offers X25519          | 200068A3FFFF0000:error:0A000126:SSL routines::unexpected eof while reading:../ssl/record/rec_layer_s3.c:698: 
+d312 | C gunicorn EC encrypted via ssl_context hook   | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | C gunicorn EC encrypted via ssl_context hook   | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | E gunicorn --cert-reqs 2, client cert          | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 Negotiated TLS1.3 group: X25519MLKEM768 
+d312 | E gunicorn --cert-reqs 2, client cert          | client offers X25519          | Protocol version: TLSv1.3 Peer certificate: CN=pqsrv Signature type: ecdsa_secp256r1_sha256 
+d312 | log servers:  1 9501 rsa: listening; 1 9502 ec: listening; 1 9503 rsa_enc: listening; 1 9504 ec_enc: listening; 1 9505 rsa_and_ec: listening; 1 9506 sni: listening; 1 9507 p12_cryptography: listening; 1 9508 p12_pyopenssl: SETUP FAILED RuntimeError: OpenSSL.crypto.load_pkcs12 does not exist in this pyOpenSSL; use cryptography's pkcs12;
+d312 | log uv3: 
+d312 | log uv4: 
+d312 | log gu3:  2 OSError: [Errno 22] Invalid argument; 2 Traceback (most recent call last):; 1 [2026-11-14 21:30:00 +0000] [1180] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl; 1 [2026-11-14 21:30:00 +0000] [1180] [INFO] Listening at: https://0.0.0.0:9533 (1180); 1 [2026-11-14 21:30:00 +0000] [1193] [INFO] Booting worker with pid: 1193; 1 [2026-11-14 21:30:00 +0000] [1194] [INFO] Booting worke
+d312 | log gu4:  1 [2026-11-14 21:30:00 +0000] [1181] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl; 1 [2026-11-14 21:30:00 +0000] [1181] [INFO] Listening at: https://0.0.0.0:9534 (1181); 1 [2026-11-14 21:30:00 +0000] [1192] [INFO] Booting worker with pid: 1192; 1 [2026-11-14 21:30:00 +0000] [1202] [INFO] Booting worker with pid: 1202;

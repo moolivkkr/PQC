@@ -1,0 +1,137 @@
+### Temurin 17 baseline  image=eclipse-temurin@sha256:0b6521287f850ec1c4b31c9074c5a1ae1d67c5922c3fefd21065c7c32e244d4a  opts=[]
+openjdk version "17.0.21" 2026-10-20
+Eclipse Adoptium 17.0.21/SunJSSE jdk-httpclient       PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 17.0.21/SunJSSE urlconnection        PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE urlconnection        classical-only  OK   HTTP 200 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 17.0.21/SunJSSE apache5              PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE apache5              classical-only  OK   HTTP 200
+Eclipse Adoptium 17.0.21/SunJSSE apache4              PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE apache4              classical-only  OK   HTTP 200
+Eclipse Adoptium 17.0.21/SunJSSE okhttp               PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 17.0.21/SunJSSE netty-jdk            PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE netty-jdk            classical-only  OK   TLSv1.3
+Eclipse Adoptium 17.0.21/SunJSSE netty-tcnative       PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/SunJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/SunJSSE netty-tcnative-groups PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/SunJSSE netty-tcnative-groups classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/SunJSSE aws-apache           PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 17.0.21/SunJSSE aws-apache           classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 17.0.21/SunJSSE aws-netty            PQ-only         FAIL TimeoutException: null
+Eclipse Adoptium 17.0.21/SunJSSE aws-netty            classical-only  FAIL TimeoutException: null
+Eclipse Adoptium 17.0.21/SunJSSE aws-crt              PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 17.0.21/SunJSSE aws-crt              classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+### Temurin 17 + BC agent  image=eclipse-temurin@sha256:0b6521287f850ec1c4b31c9074c5a1ae1d67c5922c3fefd21065c7c32e244d4a  opts=[-javaagent:/agent/pq-tls-agent.jar]
+openjdk version "17.0.21" 2026-10-20
+Eclipse Adoptium 17.0.21/BCJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 17.0.21/BCJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 17.0.21/BCJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 17.0.21/BCJSSE urlconnection        classical-only  OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 17.0.21/BCJSSE apache5              PQ-only         OK   HTTP 200
+Eclipse Adoptium 17.0.21/BCJSSE apache5              classical-only  OK   HTTP 200
+Eclipse Adoptium 17.0.21/BCJSSE apache4              PQ-only         OK   HTTP 200
+Eclipse Adoptium 17.0.21/BCJSSE apache4              classical-only  OK   HTTP 200
+Eclipse Adoptium 17.0.21/BCJSSE okhttp               PQ-only         OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 17.0.21/BCJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 17.0.21/BCJSSE netty-jdk            PQ-only         OK   TLSv1.3
+Eclipse Adoptium 17.0.21/BCJSSE netty-jdk            classical-only  OK   TLSv1.3
+Eclipse Adoptium 17.0.21/BCJSSE netty-tcnative       PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/BCJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/BCJSSE netty-tcnative-groups PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/BCJSSE netty-tcnative-groups classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 17.0.21/BCJSSE aws-apache           PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 17.0.21/BCJSSE aws-apache           classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 17.0.21/BCJSSE aws-netty            PQ-only         FAIL TimeoutException: null
+Eclipse Adoptium 17.0.21/BCJSSE aws-netty            classical-only  FAIL TimeoutException: null
+Eclipse Adoptium 17.0.21/BCJSSE aws-crt              PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 17.0.21/BCJSSE aws-crt              classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+### Temurin 21 baseline  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]
+openjdk version "21.0.13" 2026-10-20 LTS
+Eclipse Adoptium 21.0.13/SunJSSE jdk-httpclient       PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 21.0.13/SunJSSE urlconnection        PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE urlconnection        classical-only  OK   HTTP 200 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 21.0.13/SunJSSE apache5              PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE apache5              classical-only  OK   HTTP 200
+Eclipse Adoptium 21.0.13/SunJSSE apache4              PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE apache4              classical-only  OK   HTTP 200
+Eclipse Adoptium 21.0.13/SunJSSE okhttp               PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 21.0.13/SunJSSE netty-jdk            PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE netty-jdk            classical-only  OK   TLSv1.3
+Eclipse Adoptium 21.0.13/SunJSSE netty-tcnative       PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/SunJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/SunJSSE netty-tcnative-groups PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/SunJSSE netty-tcnative-groups classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/SunJSSE aws-apache           PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 21.0.13/SunJSSE aws-apache           classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 21.0.13/SunJSSE aws-netty            PQ-only         FAIL TimeoutException: null
+Eclipse Adoptium 21.0.13/SunJSSE aws-netty            classical-only  FAIL TimeoutException: null
+Eclipse Adoptium 21.0.13/SunJSSE aws-crt              PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 21.0.13/SunJSSE aws-crt              classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+### Temurin 21 + BC agent  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[-javaagent:/agent/pq-tls-agent.jar]
+openjdk version "21.0.13" 2026-10-20 LTS
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 21.0.13/BCJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 21.0.13/BCJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 21.0.13/BCJSSE urlconnection        classical-only  OK   HTTP 200 TLS_CHACHA20_POLY1305_SHA256
+Eclipse Adoptium 21.0.13/BCJSSE apache5              PQ-only         OK   HTTP 200
+Eclipse Adoptium 21.0.13/BCJSSE apache5              classical-only  OK   HTTP 200
+Eclipse Adoptium 21.0.13/BCJSSE apache4              PQ-only         OK   HTTP 200
+Eclipse Adoptium 21.0.13/BCJSSE apache4              classical-only  OK   HTTP 200
+Eclipse Adoptium 21.0.13/BCJSSE okhttp               PQ-only         OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 21.0.13/BCJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 21.0.13/BCJSSE netty-jdk            PQ-only         OK   TLSv1.3
+Eclipse Adoptium 21.0.13/BCJSSE netty-jdk            classical-only  OK   TLSv1.3
+Eclipse Adoptium 21.0.13/BCJSSE netty-tcnative       PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/BCJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/BCJSSE netty-tcnative-groups PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/BCJSSE netty-tcnative-groups classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 21.0.13/BCJSSE aws-apache           PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 21.0.13/BCJSSE aws-apache           classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 21.0.13/BCJSSE aws-netty            PQ-only         FAIL TimeoutException: null
+Eclipse Adoptium 21.0.13/BCJSSE aws-netty            classical-only  FAIL TimeoutException: null
+Eclipse Adoptium 21.0.13/BCJSSE aws-crt              PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 21.0.13/BCJSSE aws-crt              classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+### Temurin 25 baseline  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[]
+openjdk version "25.0.5" 2026-10-20 LTS
+Eclipse Adoptium 25.0.5/SunJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 25.0.5/SunJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Eclipse Adoptium 25.0.5/SunJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 25.0.5/SunJSSE urlconnection        classical-only  OK   HTTP 200 TLS_AES_256_GCM_SHA384
+Eclipse Adoptium 25.0.5/SunJSSE apache5              PQ-only         OK   HTTP 200
+Eclipse Adoptium 25.0.5/SunJSSE apache5              classical-only  OK   HTTP 200
+Eclipse Adoptium 25.0.5/SunJSSE apache4              PQ-only         OK   HTTP 200
+Eclipse Adoptium 25.0.5/SunJSSE apache4              classical-only  OK   HTTP 200
+Eclipse Adoptium 25.0.5/SunJSSE okhttp               PQ-only         OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 25.0.5/SunJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+Eclipse Adoptium 25.0.5/SunJSSE netty-jdk            PQ-only         OK   TLSv1.3
+Eclipse Adoptium 25.0.5/SunJSSE netty-jdk            classical-only  OK   TLSv1.3
+Eclipse Adoptium 25.0.5/SunJSSE netty-tcnative       PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 25.0.5/SunJSSE netty-tcnative       classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 25.0.5/SunJSSE netty-tcnative-groups PQ-only         OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 25.0.5/SunJSSE netty-tcnative-groups classical-only  OK   TLSv1.3 BoringSSL
+Eclipse Adoptium 25.0.5/SunJSSE aws-apache           PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 25.0.5/SunJSSE aws-apache           classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 25.0.5/SunJSSE aws-netty            PQ-only         FAIL TimeoutException: null
+Eclipse Adoptium 25.0.5/SunJSSE aws-netty            classical-only  FAIL TimeoutException: null
+Eclipse Adoptium 25.0.5/SunJSSE aws-crt              PQ-only         FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+Eclipse Adoptium 25.0.5/SunJSSE aws-crt              classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis
+### Temurin 25, jdk.tls.namedGroups=x25519,secp256r1 (pitfall)  image=eclipse-temurin@sha256:a640968ae55027b322cedd5f8228b01a84baff0b9e9360e47601c6a111ba1699  opts=[-Djdk.tls.namedGroups=x25519,secp256r1]
+openjdk version "25.0.5" 2026-10-20 LTS
+Eclipse Adoptium 25.0.5/SunJSSE jdk-httpclient       PQ-only         FAIL SSLHandshakeException: (handshake_failure) Received fatal alert: handshake_failure
+Eclipse Adoptium 25.0.5/SunJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+### Corretto 25 baseline  image=amazoncorretto@sha256:019e58087ba4c114c817094f70d3d522bcd13e80ce9edbba6e1c67e5700bad63  opts=[]
+cp: cannot create regular file '/usr/local/share/ca-certificates/pq-test-ca.crt': No such file or directory
+openjdk version "25.0.5" 2026-10-20 LTS
+Amazon.com Inc. 25.0.5/SunJSSE jdk-httpclient       PQ-only         OK   HTTP 200 TLSv1.3
+Amazon.com Inc. 25.0.5/SunJSSE jdk-httpclient       classical-only  OK   HTTP 200 TLSv1.3
+Amazon.com Inc. 25.0.5/SunJSSE urlconnection        PQ-only         OK   HTTP 200 TLS_AES_256_GCM_SHA384
+Amazon.com Inc. 25.0.5/SunJSSE urlconnection        classical-only  OK   HTTP 200 TLS_AES_256_GCM_SHA384
+Amazon.com Inc. 25.0.5/SunJSSE okhttp               PQ-only         OK   HTTP 200 TLS_1_3
+Amazon.com Inc. 25.0.5/SunJSSE okhttp               classical-only  OK   HTTP 200 TLS_1_3
+### Temurin 21, AWS SDK 2.35.10 / aws-crt 0.38.9  image=eclipse-temurin@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2  opts=[]
+openjdk version "21.0.13" 2026-10-20 LTS
+Eclipse Adoptium 21.0.13/SunJSSE aws-crt              PQ-only         FAIL SSLHandshakeException: TLS (SSL) negotiation failed
+Eclipse Adoptium 21.0.13/SunJSSE aws-crt              classical-only  FAIL ApiCallTimeoutException: Client execution did not complete before the specified timeout configuration: 10000 millis

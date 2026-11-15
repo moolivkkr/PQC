@@ -1,0 +1,25 @@
+# TAB: config-index  node=c238c638-bd7c  rev=1
+
+## 1. H1 and lead paragraphs
+H1: Configuration file index
+
+Being written: every configuration file in this document, where it goes, and which tab holds it in full.
+
+## 2. Headings
+
+## 3. Status matrix (first table)
+(no table)
+
+## 4. Full configuration files section
+(no 'Full configuration files' section)
+
+## 5. Full text with block ids
+# TAB: config-index  node=c238c638-bd7c  doc rev=1
+# full text with block ids and hashes (id prefix 'mttvddjsrgd')
+
+[paragraph id=mttvddjsrgd.0 h=b71becfc rev=1 heading=1]
+Configuration file index
+
+[paragraph id=mttvddjsrgd.25 h=4d8bd721 rev=-]
+Being written: every configuration file in this document, where it goes, and which tab holds it in full.
+

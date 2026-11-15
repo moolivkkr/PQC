@@ -1,0 +1,17 @@
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+pq-node-probe@ /app
++-- @aws-sdk/client-s3@3.1169.0
++-- @grpc/grpc-js@1.14.7
++-- @smithy/node-http-handler@4.14.2
++-- axios@1.21.1
++-- express@5.3.0
++-- fastify@5.12.8
++-- got@16.2.0
++-- ioredis@6.0.0
++-- kafkajs@2.2.4
++-- mysql2@3.24.6
++-- node-fetch@3.3.2
++-- pg@8.23.1
+`-- undici@8.12.4
+

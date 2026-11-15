@@ -1,0 +1,14 @@
+== resp: strongswan-6.0.7-r2 /usr/lib/strongswan/charon
+libstrongswan-openssl.so 
+  ML_KEM_512[openssl]
+  ML_KEM_768[openssl]
+  ML_KEM_1024[openssl]
+loaded ike secret 'ike-pq'
+no authorities found, 0 unloaded
+no pools found, 0 unloaded
+loaded connection 'pq'
+successfully loaded 1 connections, 0 unloaded
+== responder log
+06[CFG]    proposals = ESP:AES_GCM_16_256/CURVE_25519/NO_EXT_SEQ/KE1_ML_KEM_768/KE1_KE_NONE
+06[CFG]   proposals = IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768/KE1_KE_NONE
+15[CFG] received proposals: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_384/CURVE_25519/KE1_ML_KEM_768/KE1_KE_NONE

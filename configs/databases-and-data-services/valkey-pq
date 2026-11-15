@@ -1,0 +1,18 @@
+{
+  "family": "valkey-pq",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "valkey",
+      "image": "valkey/valkey:8-alpine",
+      "command": ["valkey-server", "/etc/valkey/valkey.conf"],
+      "environment": [
+        { "name": "OPENSSL_CONF", "value": "/etc/ssl/openssl-groups.cnf" }
+      ],
+      "portMappings": [{ "containerPort": 6379 }]
+    }
+  ]
+}

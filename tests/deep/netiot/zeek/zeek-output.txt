@@ -1,0 +1,7 @@
+zeek version 8.0.10
+1794678837.129326	pq.example	TLSv13	TLS_AES_256_GCM_SHA384	X25519MLKEM768	T
+1794678837.133986	classic.example	TLSv13	TLS_AES_256_GCM_SHA384	x25519	F
+1794678837.138810	tls12.example	TLSv12	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384	x25519	F
+
+PQTLS::Classical_Key_Exchange	non-PQ TLS key exchange: group=x25519 version=TLSv13 sni=classic.example
+PQTLS::Classical_Key_Exchange	non-PQ TLS key exchange: group=x25519 version=TLSv12 sni=tls12.example

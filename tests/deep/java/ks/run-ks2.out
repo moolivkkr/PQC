@@ -1,0 +1,8 @@
+  9002 fix client[default] | group: X25519MLKEM768 | CN=ks-ca 
+  9002 fix client[-sigalgs rsa_pss_rsae_sha256] |  |  alert handshake failure
+alert number 
+  9003 nofix client[default] | group: X25519MLKEM768 | CN=rsa-self 
+  9003 nofix client[-sigalgs rsa_pss_rsae_sha256] | group: X25519MLKEM768 | CN=rsa-self 
+  9003 nofix client[-sigalgs ecdsa_secp256r1_sha256] |  |  alert handshake failure
+alert number 
+left:        0

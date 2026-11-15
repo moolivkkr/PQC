@@ -1,0 +1,25 @@
+## node:20-slim pq-check
+{"posture":{"node":"v20.20.2","openssl":"3.0.19","pqCapable":false,"OPENSSL_CONF":null,"NODE_OPTIONS":null,"DEFAULT_ECDH_CURVE":"auto"}}
+{"target":"pqsrv:8443","error":"ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE"}
+{"target":"pqsrv:8444","protocol":"TLSv1.3","group":"X25519","pq":false}
+exit=1
+tls-pq ecdhCurve -> X25519:P-256
+tls-pq helper PQ-only: FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE
+## node:22-slim pq-check
+{"posture":{"node":"v22.23.5","openssl":"3.5.9","pqCapable":true,"OPENSSL_CONF":null,"NODE_OPTIONS":null,"DEFAULT_ECDH_CURVE":"auto"}}
+{"target":"pqsrv:8443","protocol":"TLSv1.3","group":"non-EC group (ML-KEM hybrid on Node 22)","pq":true}
+{"target":"pqsrv:8444","protocol":"TLSv1.3","group":"X25519","pq":false}
+exit=1
+tls-pq ecdhCurve -> X25519MLKEM768:X25519:P-256
+tls-pq helper PQ-only: OK
+## node:24-slim pq-check
+{"posture":{"node":"v24.22.3","openssl":"3.5.9","pqCapable":true,"OPENSSL_CONF":null,"NODE_OPTIONS":null,"DEFAULT_ECDH_CURVE":"auto"}}
+{"target":"pqsrv:8443","protocol":"TLSv1.3","group":"X25519MLKEM768","pq":true}
+{"target":"pqsrv:8444","protocol":"TLSv1.3","group":"X25519","pq":false}
+exit=1
+tls-pq ecdhCurve -> X25519MLKEM768:X25519:P-256
+tls-pq helper PQ-only: OK
+## server.js (node:24-slim) log: {"msg":"listening","node":"v24.22.3","openssl":"3.5.9","ecdhCurve":"default","minVersion":"TLSv1.2"}
+client -groups X25519MLKEM768 -tls1_3 -> Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+client -groups X25519:secp256r1 -> Protocol version: TLSv1.3 Peer Temp Key: X25519, 253 bits 
+client -tls1_2 -> Protocol version: TLSv1.2 Peer Temp Key: X25519, 253 bits 

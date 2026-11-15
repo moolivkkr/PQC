@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: orders-api }
+  template:
+    metadata:
+      labels: { app: orders-api }
+    spec:
+      containers:
+        - name: api
+          image: 111122223333.dkr.ecr.eu-west-1.amazonaws.com/orders-api@sha256:REPLACE
+          ports:
+            - containerPort: 8443
+          env:
+            - name: OPENSSL_CONF          # AL2023 image only
+              value: /etc/pq-tls/openssl-pq.cnf
+          volumeMounts:
+            - name: tls
+              mountPath: /certs
+              readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: orders-api-tls   # holds server.pfx

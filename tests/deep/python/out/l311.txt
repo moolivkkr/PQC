@@ -1,0 +1,71 @@
+== l311 public.ecr.aws/lambda/python@sha256:5de4ea369e5682d2bbdb68c9ad5f084022f2c48babb4817581a990fa9e98f464 env=[]
+l311 | python                       | -              | 3.11.18 OpenSSL 1.1.1zb  11 Feb 2025
+l311 | ssl ctx                      | -              | min=TLSv1_2 options=2186412116 has_set_groups=False
+l311 | ssl (stdlib)                 | PQ-only        | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311 | ssl (stdlib)                 | classical-only | OK TLSv1.3 group=n/a(<3.15)
+l311 | ssl set_ecdh_curve(X25519MLKEM768) | PQ-only        | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+l311 | ssl set_ecdh_curve(X25519MLKEM768) | classical-only | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+l311 | http.client                  | PQ-only        | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311 | http.client                  | classical-only | OK HTTP 200 TLSv1.3
+l311 | urllib.request               | PQ-only        | FAIL URLError: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)>
+l311 | urllib.request               | classical-only | OK HTTP 200
+l311 | requests                     | -              | version 2.34.2
+l311 | requests                     | PQ-only        | FAIL SSLError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_
+l311 | requests                     | classical-only | OK HTTP 200
+l311 | urllib3                      | -              | version 2.8.0
+l311 | urllib3                      | PQ-only        | FAIL MaxRetryError: HTTPSConnectionPool(host='pqsrv', port=8443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDS
+l311 | urllib3                      | classical-only | OK HTTP 200
+l311 | botocore                     | -              | version 1.44.3
+l311 | botocore URLLib3Session      | PQ-only        | FAIL SSLError: SSL validation failed for https://pqsrv:8443/ [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311 | botocore URLLib3Session      | classical-only | OK HTTP 200
+l311 | httpx                        | -              | version 0.28.1
+l311 | httpx                        | PQ-only        | FAIL ConnectError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018)
+l311 | httpx                        | classical-only | OK HTTP 200
+l311 | aiohttp                      | -              | version 3.14.5
+l311 | aiohttp                      | PQ-only        | FAIL ClientConnectorSSLError: Cannot connect to host pqsrv:8443 ssl:<ssl.SSLContext object at 0xffff84fb52e0> [[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 a
+l311 | aiohttp                      | classical-only | OK HTTP 200
+l311 | pyOpenSSL                    | -              | pyOpenSSL 26.4.0 cryptography-bundled OpenSSL 4.0.3 29 Sep 2026
+l311 | pyOpenSSL                    | PQ-only        | OK TLSv1.3 group=X25519MLKEM768
+l311 | pyOpenSSL                    | classical-only | OK TLSv1.3 group=x25519
+l311 | urllib3 + inject pyOpenSSL   | PQ-only        | OK HTTP 200
+l311 | urllib3 + inject pyOpenSSL   | classical-only | OK HTTP 200
+l311 | awscrt                       | -              | version 0.38.1 prefs=['DEFAULT', 'PQ_TLSv1_0_2021_05', 'PQ_DEFAULT', 'TLSv1_2_2025_07']
+l311 | awscrt default               | PQ-only        | OK connected
+l311 | awscrt default               | classical-only | OK connected
+l311 | awscrt PQ_TLSv1_0_2021_05    | PQ-only        | FAIL RuntimeError: 1035 (AWS_IO_TLS_CIPHER_PREF_UNSUPPORTED): A TLS Cipher Preference was specified that is currently not supported by the current platform
+l311 | awscrt PQ_TLSv1_0_2021_05    | classical-only | FAIL RuntimeError: 1035 (AWS_IO_TLS_CIPHER_PREF_UNSUPPORTED): A TLS Cipher Preference was specified that is currently not supported by the current platform
+l311 | awscrt PQ_DEFAULT            | PQ-only        | OK connected
+l311 | awscrt PQ_DEFAULT            | classical-only | OK connected
+l311 | redis-py                     | -              | version 8.1.0
+l311 | redis-py                     | PQ-only        | FAIL ConnectionError: Error 1 connecting to pqsrv:8449. [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1018).
+l311 | redis-py                     | classical-only | OK no SSL error; s_server sends no RESP reply (confirm in server log)
+l311 | confluent_kafka              | -              | not importable: ModuleNotFoundError: No module named 'confluent_kafka'
+l311 | grpcio                       | -              | version 1.85.1
+l311 | grpcio client                | PQ-only        | OK not READY (check server log: s_server speaks no HTTP/2)
+l311 | grpcio client                | classical-only | OK not READY (check server log: s_server speaks no HTTP/2)
+l311 | psycopg3                     | -              | psycopg 3.2.13 impl=binary libpq=170006 libs=['libcom_err-057ba42b.so.2.1', 'libcrypto-6a27ac49.so.3', 'libgssapi_krb5-fec99a71.so.2.2', 'libk5crypto-47ac5e52.so.3.1', 'libkeyutils-19c64d08.so.1.5', 'libkrb5-90a0ef7c.so.3.3', 'libkrb5support-73f3f43d.so.0.1', 'liblber-71c91c9e.so.2.0.200', 'libldap-c62d18eb.so.2.0.200', 'libpcre-6b975b27.so.1.2.0', 'libpq-320873a1.so.5.17', 'libsasl2-68c9cb0a.so.3.0.0', 'libselinux-ae24b712.so.1', 'libssl-94fad26e.so.3']
+l311 | psycopg3                     | PQ-only        | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l311 | psycopg3                     | classical-only | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l311 | psycopg2                     | -              | psycopg2 2.9.11 (dt dec pq3 ext lo64) libpq=170006 libs=['libcom_err-057ba42b.so.2.1', 'libcrypto-f2786510.so.3', 'libgssapi_krb5-fec99a71.so.2.2', 'libk5crypto-47ac5e52.so.3.1', 'libkeyutils-19c64d08.so.1.5', 'libkrb5-90a0ef7c.so.3.3', 'libkrb5support-73f3f43d.so.0.1', 'liblber-15cc1f1c.so.2.0.200', 'libldap-342e452c.so.2.0.200', 'libpcre-6b975b27.so.1.2.0', 'libpq-320873a1.so.5.17', 'libsasl2-68c9cb0a.so.3.0.0', 'libselinux-ae24b712.so.1', 'libssl-92369ee6.so.3']
+l311 | psycopg2                     | PQ-only        | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l311 | psycopg2                     | classical-only | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l311 | PyMySQL                      | -              | pymysql.connections uses ssl.create_default_context=True
+l311 | DONE
+l311 | s_server log grpc   pq        |  1 Peer Temp Key: X25519MLKEM768; 1 Supported groups: X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1;
+l311 | s_server log grpc   classical |  1 Peer Temp Key: X25519, 253 bits; 1 Supported groups: X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1;
+l311 | s_server log kafka  pq        | 
+l311 | s_server log kafka  classical | 
+l311 | s_server log redis  pq        | 
+l311 | s_server log redis  classical |  11 Peer Temp Key: X25519, 253 bits; 11 Supported groups: x25519:secp256r1:x448:secp521r1:secp384r1;
+l311 | server uvicorn                            | client offers X25519MLKEM768  | no output
+l311 | server uvicorn                            | client offers X25519          | Protocol version: TLSv1.3 
+l311 | server gunicorn                           | client offers X25519MLKEM768  | 205009AAFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+l311 | server gunicorn                           | client offers X25519          | Protocol version: TLSv1.3 
+l311 | server hypercorn                          | client offers X25519MLKEM768  | no output
+l311 | server hypercorn                          | client offers X25519          | Protocol version: TLSv1.3 
+l311 | server grpcio-server                      | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l311 | server grpcio-server                      | client offers X25519          | Protocol version: TLSv1.3 
+l311 | server gunicorn+ssl_context:PQ-first      | client offers X25519MLKEM768  | 20D02C8BFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+l311 | server gunicorn+ssl_context:PQ-first      | client offers X25519          | Protocol version: TLSv1.3 
+l311 | server gunicorn+ssl_context:PQ-only       | client offers X25519MLKEM768  | 200062B5FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+l311 | server gunicorn+ssl_context:PQ-only       | client offers X25519          | Protocol version: TLSv1.3 

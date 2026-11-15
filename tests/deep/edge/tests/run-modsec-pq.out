@@ -1,0 +1,29 @@
+debian: debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+waf: owasp/modsecurity-crs@sha256:9a386aa4a9eeec9a46c61a1eaba101c846dd83b1ec125e9126e710dd61d84422
+--- WAF image versions
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+nginx version: nginx/1.30.6
+built with OpenSSL 3.5.7 9 Jun 2026
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+--- client leg
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+verify error:num=18:self-signed certificate
+CONNECTED(00000003)
+Negotiated TLS1.3 group: X25519MLKEM768
+Verification error: self-signed certificate
+classical:
+Protocol: TLSv1.3
+tls1.2:
+Protocol: TLSv1.2
+    Protocol  : TLSv1.2
+--- origin leg (WAF -> PQ-only upstream)
+HTTP 200
+Using default temp DH parameters
+ACCEPT
+20-envsubst-on-templates.sh: Running envsubst on /etc/nginx/templates/includes/proxy_backend_ssl.conf.template to /etc/nginx/includes/proxy_backend_ssl.conf
+20-envsubst-on-templates.sh: Running envsubst on /etc/nginx/templates/includes/proxy_backend_ssl_client_cert.conf.template to /etc/nginx/includes/proxy_backend_ssl_client_cert.conf
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/93-update-proxy-ssl-config.sh
+2026/11/14 17:51:04 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+nginx: [warn] "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+remaining labelled containers:        0

@@ -1,0 +1,11 @@
+# 1. Cipher rule: hybrid first, then the default groups (classical fallback)
+create ltm cipher rule PQ_HYBRID cipher DEFAULT dh-groups X25519MLKEM768:DEFAULT signature-algorithms DEFAULT
+# 2. Cipher group that allows the rule
+create ltm cipher group PQ_HYBRID allow add { PQ_HYBRID }
+# 3. Client leg (clients -> virtual server)
+create ltm profile client-ssl clientssl-pq defaults-from clientssl cipher-group PQ_HYBRID ciphers none options { dont-insert-empty-fragments }
+# 4. Server leg (BIG-IP -> pool); GUI: Server SSL profile > Cipher Group
+create ltm profile server-ssl serverssl-pq defaults-from serverssl cipher-group PQ_HYBRID ciphers none
+# 5. Attach to the virtual server
+modify ltm virtual vs_app_443 profiles add { clientssl-pq { context clientside } serverssl-pq { context serverside } }
+save sys config

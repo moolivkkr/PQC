@@ -1,0 +1,11 @@
+# Dockerfile.squid - ssl-bump egress proxy on Debian 13 (OpenSSL 3.5: hybrid ML-KEM on both legs by default)
+# Pin the base by digest (docker image inspect --format '{{index .RepoDigests 0}}' debian:trixie-slim)
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends squid-openssl openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+COPY squid.conf /etc/squid/squid.conf
+COPY squid-entrypoint.sh /usr/local/bin/squid-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/squid-entrypoint.sh
+EXPOSE 3128
+ENTRYPOINT ["/usr/local/bin/squid-entrypoint.sh"]

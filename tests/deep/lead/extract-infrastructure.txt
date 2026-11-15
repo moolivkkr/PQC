@@ -1,0 +1,51 @@
+# TAB: infrastructure  node=afc77a21-4a57  rev=2
+
+## 1. H1 and lead paragraphs
+H1: Infrastructure and services
+
+Most infrastructure can be made PQ by configuration you control today; a few legs are blocked until AWS ships support. Each sub-page has status, detection, steps and enforcement for one area.
+
+Record every "blocked by AWS" leg in the exception register and recheck it against AWS's PQ readiness page each quarter.
+
+## 2. Headings
+
+## 3. Status matrix (first table)
+| Area | PQ today | Main action | Blocked by AWS |
+| Load balancers | ALB and NLB opt-in; Classic none | Set the 2025-09 PQ policy; SCP on the policy condition key | Classic LB (migrate) |
+| Edge and API front doors | CloudFront viewer on; API Gateway REST opt-in | Set REST PQ policies; front HTTP and WebSocket APIs | CloudFront origin leg, API Gateway egress, HTTP and WebSocket APIs |
+| AWS service endpoints | KMS, Secrets Manager, STS, IAM, ACM, S3, DynamoDB on; others control plane or unlisted | Client-side fixes only (language runbooks) | SSM and other unlisted services |
+| Network devices and egress | AWS network services undocumented; third-party appliances ready | Use an appliance or Envoy egress to convert what can't upgrade; Zeek for detection | Network Firewall inspection, AWS VPN |
+| IoT | Classical into IoT Core | Inventory TLS stacks; PQ-capable stacks for new devices; gateways | IoT Core (no PQ policy) |
+| Service mesh | Linkerd on; Istio, Envoy, Consul opt-in | Upgrade or set mesh config | ECS Service Connect (undocumented) |
+| Databases and data services | RDS and Aurora opt-in by version | Engine upgrade, ssl_groups, PQ-capable drivers | RDS Proxy, ElastiCache, MSK, OpenSearch |
+| Hosts and OS | AL2023 opt-in; Windows opt-in | DEFAULT:PQ via SSM; Schannel group via GPO | Amazon Linux 2 (migrate) |
+| Certificates (ML-DSA) | Private CA, KMS, Roles Anywhere | CLM pilot on internal mutual TLS after ML-KEM | ACM, ELB, CloudFront, public web PKI |
+
+## 4. Full configuration files section
+(no 'Full configuration files' section)
+
+## 5. Full text with block ids
+# TAB: infrastructure  node=afc77a21-4a57  doc rev=2
+# full text with block ids and hashes (id prefix 'mttvddjsrgd')
+
+[paragraph id=mttvddjsrgd.0 h=aedb28b5 rev=1 heading=1]
+Infrastructure and services
+
+[paragraph id=mttvddjsrgd.29 h=6b9b4abf rev=2]
+Most infrastructure can be made PQ by configuration you control today; a few legs are blocked until AWS ships support. Each sub-page has status, detection, steps and enforcement for one area.
+
+[table id=mttvddjsrgd.221 h=7f2a6543 rev=-]
+| Area | PQ today | Main action | Blocked by AWS |
+| Load balancers | ALB and NLB opt-in; Classic none | Set the 2025-09 PQ policy; SCP on the policy condition key | Classic LB (migrate) |
+| Edge and API front doors | CloudFront viewer on; API Gateway REST opt-in | Set REST PQ policies; front HTTP and WebSocket APIs | CloudFront origin leg, API Gateway egress, HTTP and WebSocket APIs |
+| AWS service endpoints | KMS, Secrets Manager, STS, IAM, ACM, S3, DynamoDB on; others control plane or unlisted | Client-side fixes only (language runbooks) | SSM and other unlisted services |
+| Network devices and egress | AWS network services undocumented; third-party appliances ready | Use an appliance or Envoy egress to convert what can't upgrade; Zeek for detection | Network Firewall inspection, AWS VPN |
+| IoT | Classical into IoT Core | Inventory TLS stacks; PQ-capable stacks for new devices; gateways | IoT Core (no PQ policy) |
+| Service mesh | Linkerd on; Istio, Envoy, Consul opt-in | Upgrade or set mesh config | ECS Service Connect (undocumented) |
+| Databases and data services | RDS and Aurora opt-in by version | Engine upgrade, ssl_groups, PQ-capable drivers | RDS Proxy, ElastiCache, MSK, OpenSearch |
+| Hosts and OS | AL2023 opt-in; Windows opt-in | DEFAULT:PQ via SSM; Schannel group via GPO | Amazon Linux 2 (migrate) |
+| Certificates (ML-DSA) | Private CA, KMS, Roles Anywhere | CLM pilot on internal mutual TLS after ML-KEM | ACM, ELB, CloudFront, public web PKI |
+
+[paragraph id=mttvddjsrgd.1655 h=27f1c904 rev=-]
+Record every "blocked by AWS" leg in the exception register and recheck it against AWS's PQ readiness page each quarter.
+

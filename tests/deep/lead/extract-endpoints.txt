@@ -1,0 +1,97 @@
+# TAB: endpoints  node=8868eb3f-63a6  rev=13
+
+## 1. H1 and lead paragraphs
+H1: AWS service endpoints: KMS, SSM, Secrets Manager and others
+
+AWS owns the server side of every AWS API endpoint. On the listed services, the endpoint prefers X25519MLKEM768 whenever the client offers it ("transparent"), so the work is on the client: the SDK, the AWS CLI, or the AWS agent that makes the call. Services AWS has not listed (Systems Manager, Lambda Invoke, CloudWatch, Step Functions, ECS, EKS, the EC2 API) should be treated as classical even from a PQ client. Source: AWS PQ readiness (confidentiality), re-read 2026-11-14 (the page has no date; footer © 2026).
+
+Re-read 2026-11-14. "Transparent" means nothing to configure on the AWS side.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status by service
+  H3: Client posture by compute type
+H2: Client side (app level)
+  H3: AWS SDKs
+  H3: AWS CLI
+  H3: Parameters and Secrets Lambda Extension
+  H3: Workload Credentials Provider (formerly Secrets Manager Agent) and ASCP
+  H3: SSM Agent, Session Manager, EC2 Instance Connect
+H2: Server side
+  H3: FIPS endpoints
+  H3: VPC interface endpoints (PrivateLink)
+H2: Packaging per compute type
+H2: Verify and detect
+  H3: CloudTrail Lake: classical calls by role and account
+  H3: Athena over the CloudTrail S3 bucket
+  H3: Alert
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Service | PQ on the endpoint | CloudTrail tlsDetails.keyExchange | Evidence |
+| KMS | Yes, FIPS and non-FIPS, all Regions | Yes | Documented (KMS PQ TLS) |
+| Secrets Manager | Yes, FIPS and non-FIPS (not China Regions) | Yes | Documented (readiness, SM PQ TLS) |
+| STS | Yes, FIPS and non-FIPS | Yes | Documented (readiness) |
+| IAM, IAM Roles Anywhere | Yes, FIPS and non-FIPS | Yes | Documented (readiness) |
+| ACM | Yes, FIPS and non-FIPS | Yes | Documented (readiness) |
+| Payment Cryptography | Yes | Yes | Documented (readiness) |
+| S3 (all bucket types) | Yes, FIPS and non-FIPS | No: data events show TLS version and cipher; key exchange "coming soon" | Documented (readiness) |
+| DynamoDB | Non-FIPS only; FIPS endpoints and DAX "coming soon" | No | Documented (readiness) |
+| CodeBuild, CodePipeline, Firewall Manager, IAM Identity Center, Network Firewall (API) | Yes, FIPS and non-FIPS | "Coming soon" | Documented (readiness) |
+| SQS, SNS, EventBridge, ECR, Kinesis Data Streams, CloudFormation, EBS, EFS, ElastiCache, DocumentDB, Keyspaces, Glacier, Config, EC2 Auto Scaling, EC2 Instance Connect, AppSync, DMS, SWF and others | Control plane only (the page does not define "control plane") | Mostly "coming soon" | Documented (readiness) |
+| Direct Connect | API endpoints | "Coming soon" | Documented (readiness) |
+| Cognito custom user pool domains | Opt-in TLS policy | Not stated | Documented (readiness) |
+| API Gateway (REST), ALB, NLB, RDS, Aurora, Transfer Family SFTP | Opt-in (customer resource) | ALB/NLB logs carry keyExchange | [Load balancers], [Edge and API front doors], [Databases and data services] |
+| Classic Load Balancer | "No PQC plan" | n/a | Documented (readiness) |
+| Systems Manager (SSM API, Parameter Store, ssmmessages, ec2messages) | Not listed | Unknown | Absent from the page on 2026-11-14 |
+| Lambda (Invoke), Step Functions, CloudWatch (Logs, metrics), ECS, EKS, Fargate, EC2 API, Kinesis Firehose, Route 53, Organizations, SES, Athena, Glue, Bedrock, SageMaker, IoT Core, VPN | Not listed | Unknown | Absent from the page on 2026-11-14 |
+
+## 4. Full configuration files section
+H2: Full configuration files
+None of these were applied to an AWS account (no credentials here). The patterns follow AWS docs; the CLI image version is Tested.
+monitoring/pq-metric-filter.tf
+```hcl
+variable "trail_log_group" { type = string }   # CloudTrail -> CloudWatch Logs group
+variable "alarm_topic_arn" { type = string }
+```
+monitoring/pq-metric-filter.yaml (CloudFormation)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+```
+monitoring/pq-eventbridge.tf (per-call events for write APIs; see the read-only caveat above; untested)
+```hcl
+resource "aws_cloudwatch_event_rule" "non_pq_calls" {
+  name = "non-pq-aws-api-calls"
+```
+athena/cloudtrail_pq.sql
+```sql
+-- Add keyExchange to the tlsDetails struct of the AWS sample CloudTrail table.
+CREATE EXTERNAL TABLE cloudtrail_pq (
+```
+lambda/template.yaml (SAM: extension layer ≥ v19 plus the Python PQ conf; look up the layer ARN for your Region in the extension docs)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+```
+lambda/main.tf (Terraform equivalent)
+```hcl
+resource "aws_lambda_function" "fn" {
+  function_name = "pq-fn"
+```
+images/awscli/Dockerfile (container or Lambda image step that needs the CLI; amazon/aws-cli 2.40.3 is the Tested version)
+```dockerfile
+FROM amazon/aws-cli:2.40.3 AS cli
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+```
+ssm/PQ-UpgradeAwsCliV2.json (SSM Command document for EC2 Linux)
+```json
+{
+  "schemaVersion": "2.2",
+```
+~/.aws/config (FIPS endpoints, optional)
+```ini
+[default]
+region = us-east-1
+```

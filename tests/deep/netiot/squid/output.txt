@@ -1,0 +1,22 @@
+== versions
+Squid Cache: Version 6.13
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+curl 8.14.1 (aarch64-unknown-linux-gnu) libcurl/8.14.1 OpenSSL/3.5.7 zlib/1.3.1 brotli/1.1.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.2 libssh2/1.11.1 nghttp2/1.64.0 nghttp3/1.8.0 librtmp/2.3 OpenLDAP/2.6.10
+2026/11/14 17:53:15| ERROR: '0.0.0.0/0' needs to be replaced by the term 'all'.
+[PASS] A PQ client -> squid -> PQ-only origin (both legs PQ) (got ok, want ok)
+[PASS] B classical client (X25519) -> squid -> PQ-only origin (squid converts) (got ok, want ok)
+[PASS] C PQ client -> squid -> classical-only origin (server-leg fallback) (got ok, want ok)
+== client-leg group as seen by an OpenSSL client through the proxy
+Protocol version: TLSv1.3
+Verification: OK
+Negotiated TLS1.3 group: X25519MLKEM768
+== negative control: squid restricted to X25519 by OPENSSL_CONF
+[PASS] D squid limited to X25519 -> PQ-only origin must fail (got fail, want fail)
+== access.log
+1794678799.634 127.0.0.1 TCP_MISS/200 GET https://localhost:4433/ cl=TLS/1.3/TLS_AES_256_GCM_SHA384 sv=TLS/1.3/TLS_AES_256_GCM_SHA384
+1794678799.647 127.0.0.1 NONE_NONE/200 CONNECT localhost:4433 cl=TLS/1.3/TLS_AES_256_GCM_SHA384 sv=TLS/1.3/TLS_AES_256_GCM_SHA384
+1794678799.648 127.0.0.1 TCP_MISS/200 GET https://localhost:4433/ cl=TLS/1.3/TLS_AES_256_GCM_SHA384 sv=TLS/1.3/TLS_AES_256_GCM_SHA384
+1794678799.659 127.0.0.1 NONE_NONE/200 CONNECT localhost:4434 cl=TLS/1.3/TLS_AES_256_GCM_SHA384 sv=TLS/1.3/TLS_AES_256_GCM_SHA384
+1794678799.660 127.0.0.1 TCP_MISS/200 GET https://localhost:4434/ cl=TLS/1.3/TLS_AES_256_GCM_SHA384 sv=TLS/1.3/TLS_AES_256_GCM_SHA384
+1794678799.672 127.0.0.1 NONE_NONE/200 CONNECT localhost:4433 cl=TLS/1.3/TLS_AES_256_GCM_SHA384 sv=TLS/1.3/TLS_AES_256_GCM_SHA384
+RESULT pass=4 fail=0

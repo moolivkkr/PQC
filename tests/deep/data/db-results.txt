@@ -1,0 +1,125 @@
+=== PostgreSQL 18 (trixie, OpenSSL 3.5.7) default ssl_groups
+X25519:prime256v1
+TLSv1.2
+X25519:prime256v1
+--- s_client pgdef:5432 groups=X25519MLKEM768 -starttls postgres -tls1_3
+20C021A7FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- s_client pgdef:5432 groups=X25519 -starttls postgres
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Peer Temp Key: X25519, 253 bits
+--- psql (trixie libpq) -> pgdef
+connected|TLSv1.3|TLS_AES_256_GCM_SHA384
+=== PostgreSQL 18 ssl_groups=X25519MLKEM768:X25519:prime256v1 (PQ first)
+X25519MLKEM768:X25519:prime256v1
+--- s_client pgpq:5432 groups=X25519MLKEM768 -starttls postgres -tls1_3
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Negotiated TLS1.3 group: X25519MLKEM768
+--- s_client pgpq:5432 groups=X25519MLKEM768:X25519 -starttls postgres
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Negotiated TLS1.3 group: X25519MLKEM768
+--- s_client pgpq:5432 groups=X25519 -starttls postgres
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Peer Temp Key: X25519, 253 bits
+--- psql (trixie libpq) -> pgpq
+connected|TLSv1.3|TLS_AES_256_GCM_SHA384
+--- psql (bookworm libpq OpenSSL 3.0) -> pgpq
+connected|TLSv1.3|TLS_AES_256_GCM_SHA384
+--- server log connection lines
+2026-11-14 17:41:46.525 UTC [103] LOG:  connection authorized: user=postgres database=postgres application_name=psql SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)
+2026-11-14 17:41:47.890 UTC [104] LOG:  connection authorized: user=postgres database=postgres application_name=psql SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)
+=== PostgreSQL 18 ssl_groups=X25519MLKEM768 (PQ only)
+--- s_client pgonly:5432 groups=X25519 -starttls postgres
+20106D86FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- psql (trixie libpq (proves client offers ML-KEM)) -> pgonly
+connected|TLSv1.3|TLS_AES_256_GCM_SHA384
+--- psql (bookworm libpq OpenSSL 3.0 (expect fail)) -> pgonly
+psql: error: connection to server at "pgonly" (172.28.0.2), port 5432 failed: SSL error: sslv3 alert handshake failure
+=== mysql:8.4 (Oracle Linux 9.8, OpenSSL 3.5.8) default config
+8.4.13
+tls_certificates_enforced_validation	OFF
+tls_ciphersuites	
+tls_version	TLSv1.2,TLSv1.3
+ssl_cipher	
+ssl_fips_mode	OFF
+ssl_session_cache_mode	ON
+ssl_session_cache_timeout	300
+--- s_client mydb:3306 groups=X25519MLKEM768 -starttls mysql -tls1_3
+2000A1A1FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- s_client mydb:3306 groups=X25519 -starttls mysql
+203047B2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- mysql client (same image) status
+Ssl_version	TLSv1.3
+Ssl_cipher	TLS_AES_128_GCM_SHA256
+=== mysql:9 (Oracle Linux 9.8, OpenSSL 3.5.8) default config
+9.7.4
+tls_certificates_enforced_validation	OFF
+tls_ciphersuites	
+tls_version	TLSv1.2,TLSv1.3
+ssl_cipher	
+ssl_fips_mode	OFF
+ssl_session_cache_mode	ON
+ssl_session_cache_timeout	300
+--- s_client mydb:3306 groups=X25519MLKEM768 -starttls mysql -tls1_3
+2090AA9CFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- s_client mydb:3306 groups=X25519 -starttls mysql
+205050A6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- mysql client (same image) status
+Ssl_version	TLSv1.3
+Ssl_cipher	TLS_AES_128_GCM_SHA256
+=== mariadb:11.8 (Ubuntu 24.04, OpenSSL 3.0.13)
+11.8.9-MariaDB-ubu2404	YES	TLSv1.2,TLSv1.3
+--- s_client mdb:3306 groups=X25519MLKEM768 -starttls mysql -tls1_3
+201089A4FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+--- s_client mdb:3306 groups=X25519 -starttls mysql
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Peer Temp Key: X25519, 253 bits
+=== valkey:8-trixie TLS
+Valkey server v=8.1.11 sha=00000000:0 malloc=jemalloc-5.3.0 bits=64 build=a5dcb0efdf0757ac
+--- s_client vk:6380 groups=X25519MLKEM768 -tls1_3
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Negotiated TLS1.3 group: X25519MLKEM768
+--- s_client vk:6380 groups=X25519 
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Peer Temp Key: X25519, 253 bits
+--- valkey-cli --tls (same image) PING
+PONG
+=== valkey:8-alpine TLS
+Valkey server v=8.1.11 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=37b0caf61e0524c4
+--- s_client vk:6380 groups=X25519MLKEM768 -tls1_3
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Negotiated TLS1.3 group: X25519MLKEM768
+--- s_client vk:6380 groups=X25519 
+verify error:num=18:self-signed certificate
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Verification error: self-signed certificate
+Peer Temp Key: X25519, 253 bits
+--- valkey-cli --tls (same image) PING
+PONG
+=== valkey-cli client offering: PQ-only openssl s_server pretending to be valkey
+Error: Server closed the connection
+DONE

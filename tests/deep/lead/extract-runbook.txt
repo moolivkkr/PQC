@@ -1,0 +1,78 @@
+# TAB: runbook  node=b5cf0064-6a9b  rev=2
+
+## 1. H1 and lead paragraphs
+H1: Runbook by language
+
+Each language tab says, for each component, exactly what to change: the version to upgrade to, the file to ship, the variable to set, and how to check it worked. Every change goes through the normal build, package and release; nothing here is applied by hand.
+
+The kit is versioned once and pulled in by the shared build template, so a fix to a file reaches every workload on its next release.
+
+## 2. Headings
+H2: Components
+H2: Where a variable goes, per component
+H2: Shared files (the pq-tls kit)
+H2: Checking a workload
+
+## 3. Status matrix (first table)
+| Component | Who owns the OS and TLS library | Where the fix lives |
+| Lambda, managed runtime (zip) | AWS | Files in the deployment package under /var/task/pq-tls/; variables in the function's IaC |
+| Lambda, container image | You, starting from an AWS base image (public.ecr.aws/lambda/...) | Files and ENV in the Dockerfile; function variables override image ENV |
+| Fargate (ECS or EKS) | You (the image) | Base image and Dockerfile; variables in the ECS task definition or pod spec |
+| ECS or EKS on EC2 | You (the image); the host OS doesn't affect the container's TLS | Same as Fargate |
+| EC2 or other hosts (no containers) | You | OS packages, crypto policy pushed with SSM State Manager, service unit environment |
+
+## 4. Full configuration files section
+(no 'Full configuration files' section)
+
+## 5. Full text with block ids
+# TAB: runbook  node=b5cf0064-6a9b  doc rev=2
+# full text with block ids and hashes (id prefix 'mttvddjsrgd')
+
+[paragraph id=mttvddjsrgd.0 h=8804ba66 rev=1 heading=1]
+Runbook by language
+
+[paragraph id=mttvddjsrgd.21 h=90824be3 rev=2]
+Each language tab says, for each component, exactly what to change: the version to upgrade to, the file to ship, the variable to set, and how to check it worked. Every change goes through the normal build, package and release; nothing here is applied by hand.
+
+[paragraph id=mttvddjsrgd.281 h=a150ce22 rev=- heading=2]
+Components
+
+[table id=mttvddjsrgd.292 h=524852bf rev=-]
+| Component | Who owns the OS and TLS library | Where the fix lives |
+| Lambda, managed runtime (zip) | AWS | Files in the deployment package under /var/task/pq-tls/; variables in the function's IaC |
+| Lambda, container image | You, starting from an AWS base image (public.ecr.aws/lambda/...) | Files and ENV in the Dockerfile; function variables override image ENV |
+| Fargate (ECS or EKS) | You (the image) | Base image and Dockerfile; variables in the ECS task definition or pod spec |
+| ECS or EKS on EC2 | You (the image); the host OS doesn't affect the container's TLS | Same as Fargate |
+| EC2 or other hosts (no containers) | You | OS packages, crypto policy pushed with SSM State Manager, service unit environment |
+
+[paragraph id=mttvddjsrgd.995 h=558dc215 rev=- heading=2]
+Where a variable goes, per component
+
+[table id=mttvddjsrgd.1032 h=d31e1821 rev=-]
+| Component | How to set NAME=value |
+| Lambda (zip or image) | Environment.Variables in CloudFormation or SAM, environment in CDK or Terraform aws_lambda_function |
+| Lambda image, Fargate, EKS, ECS on EC2 | ENV NAME=value in the Dockerfile, so every deployment of the image carries it |
+| ECS task (override) | containerDefinitions[].environment in the task definition |
+| EKS pod (override) | spec.containers[].env in the pod or Deployment spec |
+| EC2 service | Environment=NAME=value in the systemd unit, rolled out by SSM or the AMI pipeline |
+
+[paragraph id=mttvddjsrgd.1565 h=33db442d rev=- heading=2]
+Shared files (the pq-tls kit)
+
+[table id=mttvddjsrgd.1595 h=771c5fb3 rev=-]
+| File | Used by | Purpose |
+| openssl-pq.cnf | Python and .NET on Amazon Linux 2023 | Loads the AL2023 crypto policy, adds X25519MLKEM768 first |
+| openssl-pq-node.cnf | Node.js on Lambda | AWS's Node group list with X25519MLKEM768 added first |
+| pq-tls-agent.jar plus Bouncy Castle 1.87 jars (bcprov, bctls, bcutil) | Java 8 to 21 | Makes Bouncy Castle JSSE the TLS provider and enables the ML-KEM group |
+| pyshim/sitecustomize.py plus pyOpenSSL and cryptography | Python 3.9 to 3.11 on Lambda only | Routes requests and boto3 through pyOpenSSL's newer OpenSSL |
+
+[paragraph id=mttvddjsrgd.2143 h=6b60cb78 rev=-]
+The kit is versioned once and pulled in by the shared build template, so a fix to a file reaches every workload on its next release.
+
+[paragraph id=mttvddjsrgd.2276 h=e92c2ea6 rev=- heading=2]
+Checking a workload
+
+[list id=mttvddjsrgd.2296 h=82265e05 rev=-]
+- Observed: CloudTrail tlsDetails.keyExchange for its AWS API calls shows X25519MLKEM768, and ELB logs show the same for inbound traffic.
+- Test endpoint: a test server that accepts only X25519MLKEM768 (openssl s_server -groups X25519MLKEM768 -tls1_3 with OpenSSL 3.5) fails any client that isn't PQ. Each tab's verify step uses it.
+

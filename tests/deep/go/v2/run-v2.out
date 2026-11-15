@@ -1,0 +1,632 @@
+image debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)
+== key files
+srv-rsa-legacyenc.key: -----BEGIN RSA PRIVATE KEY----- Proc-Type: 4,ENCRYPTED DEK-Info: AES-256-CBC,62B49ED0F2864
+srv-ec-pkcs8enc.key: -----BEGIN ENCRYPTED PRIVATE KEY----- MIH0MF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBBP7GKY
+srv-ec-modern.p12: MAC: sha256, Iteration 2048 MAC length: 32, salt length: 8 PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC, Iteration 2048, PRF hmacWithSHA256 Certificate bag Certificate bag PKCS7 Data Shrouded Keyb
+srv-rsa-legacy.p12: MAC: sha1, Iteration 2048 MAC length: 20, salt length: 8 PKCS7 Encrypted data: pbeWithSHA1And3-KeyTripleDES-CBC, Iteration 2048 Certificate bag PKCS7 Data Shrouded Keybag: pbeWithSHA1And3-KeyTripleDES
+
+################ cases-1.23-mod1.23
+-- D: default RootCAs with env
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (no env, negative)           | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | default RootCAs (no env, negative)           | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+-- D/E/F client cases
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | RootCAs = empty pool (negative)              | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = empty pool (negative)              | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+E | Certificates=[client RSA]                    | localhost:8445  | FAIL | remote error: tls: handshake failure
+E | GetClientCertificate -> client EC            | localhost:8445  | FAIL | remote error: tls: handshake failure
+E | no client cert (negative)                    | localhost:8445  | FAIL | remote error: tls: handshake failure
+E | Certificates=[client RSA]                    | localhost:8446  | OK   | TLS1.3 group=n/a(<go1.25)
+E | GetClientCertificate -> client EC            | localhost:8446  | OK   | TLS1.3 group=n/a(<go1.25)
+E | no client cert (negative)                    | localhost:8446  | FAIL | TLS1.3 group=n/a(<go1.25) read: remote error: tls: certificate required
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | FAIL | tls: CurvePreferences includes unsupported curve
+F | MaxVersion=TLS1.2                            | localhost:8443  | FAIL | remote error: tls: protocol version not supported
+F | MinVersion=TLS1.3                            | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | FAIL | tls: CurvePreferences includes unsupported curve
+F | MaxVersion=TLS1.2                            | localhost:8444  | OK   | TLS1.2 group=n/a(<go1.25)
+F | MinVersion=TLS1.3                            | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+-- C/E/F server cases
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20409290FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20900DA7FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20905FB2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | FAIL |  |  | cert= |  203023A1FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | FAIL |  |  | cert= |  2000B7BCFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20C066A4FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | FAIL |  |  | cert= |  20000597FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | FAIL |  |  | cert= |  2030B18CFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | FAIL |  |  | cert= |  20A09E9FFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | FAIL |  |  | cert= |  20D0A7B7FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | FAIL |  |  | cert= |  202097BAFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | FAIL |  |  | cert= |  2080D5B4FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | FAIL |  |  | cert= |  20F03799FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | FAIL |  |  | cert= |  20B0E888FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C legacy-encrypted key | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20C05294FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C legacy-encrypted key | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe E mTLS RSA client | -groups X25519MLKEM768 -tls1_3 -cert cli-rsa.pem -key cli-rsa.key | FAIL |  |  | cert= |  20A0AB96FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe E mTLS EC client | -groups X25519MLKEM768 -tls1_3 -cert cli-ec.pem -key cli-ec.key | FAIL |  |  | cert= |  20305185FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe E mTLS EC client classical | -groups X25519 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS no client cert (neg) | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20C032A9FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20306684FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768:X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768  | FAIL |  |  | cert= |  20F00EB4FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server MaxVersion 1.2 | -groups X25519  | FAIL |  |  | cert= |  20C0EC8CFFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server CipherSuites | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20303D86FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CipherSuites | -groups X25519 -tls1_2 | FAIL |  |  | cert= |  2010AB80FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server PQ-only | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  202065ADFFFF0000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:..
+  probe F server PQ-only | -groups X25519  | FAIL |  |  | cert= |  20A03689FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20203C93FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+-- server log (cases-1.23-mod1.23)
+  servers-up
+  port=9443 case="C rsa LoadX509KeyPair" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9445 case="C Certificates=[rsa,ec]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9445 case="C Certificates=[rsa,ec]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9446 case="C Certificates=[ec,rsa]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9446 case="C Certificates=[ec,rsa]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9446 case="C Certificates=[ec,rsa]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9447 case="C SNI Certificates=[a.test,b.test]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9447 case="C SNI Certificates=[a.test,b.test]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9448 case="C GetCertificate by SNI" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9448 case="C GetCertificate by SNI" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9449 case="C encrypted legacy PEM key" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=n/a(<go1.25) sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=tls: no cipher suite supported by both client and server
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=remote error: tls: illegal parameter
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=remote error: tls: illegal parameter
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: CurvePreferences includes unsupported curve
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" handshake_error=tls: no ECDHE curve supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+
+################ cases-1.24-mod1.22
+-- D: default RootCAs with env
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (no env, negative)           | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | default RootCAs (no env, negative)           | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+-- D/E/F client cases
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | RootCAs = empty pool (negative)              | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = empty pool (negative)              | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+E | Certificates=[client RSA]                    | localhost:8445  | FAIL | remote error: tls: handshake failure
+E | GetClientCertificate -> client EC            | localhost:8445  | FAIL | remote error: tls: handshake failure
+E | no client cert (negative)                    | localhost:8445  | FAIL | remote error: tls: handshake failure
+E | Certificates=[client RSA]                    | localhost:8446  | OK   | TLS1.3 group=n/a(<go1.25)
+E | GetClientCertificate -> client EC            | localhost:8446  | OK   | TLS1.3 group=n/a(<go1.25)
+E | no client cert (negative)                    | localhost:8446  | FAIL | TLS1.3 group=n/a(<go1.25) read: remote error: tls: certificate required
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | MaxVersion=TLS1.2                            | localhost:8443  | FAIL | remote error: tls: protocol version not supported
+F | MinVersion=TLS1.3                            | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | MaxVersion=TLS1.2                            | localhost:8444  | OK   | TLS1.2 group=n/a(<go1.25)
+F | MinVersion=TLS1.3                            | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+-- C/E/F server cases
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20C0008AFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20207C84FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20203CAEFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | FAIL |  |  | cert= |  20303790FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | FAIL |  |  | cert= |  20A0C8AEFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  2020C6B6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | FAIL |  |  | cert= |  20F0AC89FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | FAIL |  |  | cert= |  2030A0A2FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | FAIL |  |  | cert= |  20D08A94FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | FAIL |  |  | cert= |  202023A9FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | FAIL |  |  | cert= |  2070DE83FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | FAIL |  |  | cert= |  20B0AFA6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | FAIL |  |  | cert= |  20F0C6BCFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | FAIL |  |  | cert= |  20A0D182FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C legacy-encrypted key | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20C089BAFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C legacy-encrypted key | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe E mTLS RSA client | -groups X25519MLKEM768 -tls1_3 -cert cli-rsa.pem -key cli-rsa.key | FAIL |  |  | cert= |  20C041A5FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe E mTLS EC client | -groups X25519MLKEM768 -tls1_3 -cert cli-ec.pem -key cli-ec.key | FAIL |  |  | cert= |  20406BBAFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe E mTLS EC client classical | -groups X25519 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS no client cert (neg) | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20D0E581FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  2090E190FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768:X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768  | FAIL |  |  | cert= |  20106B99FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server MaxVersion 1.2 | -groups X25519  | FAIL |  |  | cert= |  20C07391FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server CipherSuites | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20B02A9EFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CipherSuites | -groups X25519 -tls1_2 | FAIL |  |  | cert= |  2020AFA6FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server PQ-only | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20006397FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server PQ-only | -groups X25519  | FAIL |  |  | cert= |  20205397FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20B037B3FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+-- server log (cases-1.24-mod1.22)
+  servers-up
+  port=9443 case="C rsa LoadX509KeyPair" handshake_error=tls: no key exchanges supported by both client and server
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" handshake_error=tls: no key exchanges supported by both client and server
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9445 case="C Certificates=[rsa,ec]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9445 case="C Certificates=[rsa,ec]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9446 case="C Certificates=[ec,rsa]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9446 case="C Certificates=[ec,rsa]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9446 case="C Certificates=[ec,rsa]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9447 case="C SNI Certificates=[a.test,b.test]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9447 case="C SNI Certificates=[a.test,b.test]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" handshake_error=tls: no key exchanges supported by both client and server
+  port=9448 case="C GetCertificate by SNI" handshake_error=tls: no key exchanges supported by both client and server
+  port=9448 case="C GetCertificate by SNI" handshake_error=tls: no key exchanges supported by both client and server
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" handshake_error=tls: no key exchanges supported by both client and server
+  port=9449 case="C encrypted legacy PEM key" handshake_error=tls: no key exchanges supported by both client and server
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: no key exchanges supported by both client and server
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: no key exchanges supported by both client and server
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=n/a(<go1.25) sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: no key exchanges supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=tls: no cipher suite supported by both client and server
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=remote error: tls: illegal parameter
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=tls: no key exchanges supported by both client and server
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=remote error: tls: illegal parameter
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" handshake_error=tls: no key exchanges supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+
+################ cases-1.24-mod1.24
+-- D: default RootCAs with env
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | default RootCAs (no env, negative)           | localhost:8443  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+D | default RootCAs (no env, negative)           | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+-- D/E/F client cases
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = empty pool (negative)              | localhost:8443  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = empty pool (negative)              | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+E | Certificates=[client RSA]                    | localhost:8445  | OK   | TLS1.3 group=n/a(<go1.25)
+E | GetClientCertificate -> client EC            | localhost:8445  | OK   | TLS1.3 group=n/a(<go1.25)
+E | no client cert (negative)                    | localhost:8445  | FAIL | TLS1.3 group=n/a(<go1.25) read: remote error: tls: certificate required
+E | Certificates=[client RSA]                    | localhost:8446  | OK   | TLS1.3 group=n/a(<go1.25)
+E | GetClientCertificate -> client EC            | localhost:8446  | OK   | TLS1.3 group=n/a(<go1.25)
+E | no client cert (negative)                    | localhost:8446  | FAIL | TLS1.3 group=n/a(<go1.25) read: remote error: tls: certificate required
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+F | MaxVersion=TLS1.2                            | localhost:8443  | FAIL | remote error: tls: protocol version not supported
+F | MinVersion=TLS1.3                            | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | MaxVersion=TLS1.2                            | localhost:8444  | OK   | TLS1.2 group=n/a(<go1.25)
+F | MinVersion=TLS1.3                            | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+-- C/E/F server cases
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C legacy-encrypted key | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C legacy-encrypted key | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe E mTLS RSA client | -groups X25519MLKEM768 -tls1_3 -cert cli-rsa.pem -key cli-rsa.key | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS EC client | -groups X25519MLKEM768 -tls1_3 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS EC client classical | -groups X25519 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS no client cert (neg) | -groups X25519MLKEM768 -tls1_3 | FAIL | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 20B0D291FFFF0000:error:0A00045C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate requ
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20305B94FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768:X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768  | FAIL |  |  | cert= |  207058A6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server MaxVersion 1.2 | -groups X25519  | FAIL |  |  | cert= |  2010CE88FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server CipherSuites | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server CipherSuites | -groups X25519 -tls1_2 | FAIL |  |  | cert= |  2050D2A5FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server PQ-only | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server PQ-only | -groups X25519  | FAIL |  |  | cert= |  20C07188FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C env PEM | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+-- server log (cases-1.24-mod1.24)
+  servers-up
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=n/a(<go1.25) sni="a.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=n/a(<go1.25) sni="c.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=n/a(<go1.25) sni="a.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=n/a(<go1.25) sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=n/a(<go1.25) sni="c.test" client_cn=-
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=n/a(<go1.25) sni="" client_cn=cli-rsa
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=n/a(<go1.25) sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=n/a(<go1.25) sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: client didn't provide a certificate
+  port=9451 case="F CurvePreferences={X25519,P256}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=tls: no cipher suite supported by both client and server
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=remote error: tls: illegal parameter
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=remote error: tls: illegal parameter
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+
+################ cases-1.25-mod1.25
+-- D: default RootCAs with env
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8444  | OK   | TLS1.3 group=X25519
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8444  | OK   | TLS1.3 group=X25519
+D | default RootCAs (no env, negative)           | localhost:8443  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+D | default RootCAs (no env, negative)           | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+-- D/E/F client cases
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | RootCAs = empty pool (negative)              | localhost:8443  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8444  | OK   | TLS1.3 group=X25519
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=X25519
+D | RootCAs = empty pool (negative)              | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+E | Certificates=[client RSA]                    | localhost:8445  | OK   | TLS1.3 group=X25519MLKEM768
+E | GetClientCertificate -> client EC            | localhost:8445  | OK   | TLS1.3 group=X25519MLKEM768
+E | no client cert (negative)                    | localhost:8445  | FAIL | TLS1.3 group=X25519MLKEM768 read: remote error: tls: certificate required
+E | Certificates=[client RSA]                    | localhost:8446  | OK   | TLS1.3 group=X25519
+E | GetClientCertificate -> client EC            | localhost:8446  | OK   | TLS1.3 group=X25519
+E | no client cert (negative)                    | localhost:8446  | FAIL | TLS1.3 group=X25519 read: remote error: tls: certificate required
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+F | MaxVersion=TLS1.2                            | localhost:8443  | FAIL | remote error: tls: protocol version not supported
+F | MinVersion=TLS1.3                            | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=X25519
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | OK   | TLS1.3 group=X25519
+F | MaxVersion=TLS1.2                            | localhost:8444  | OK   | TLS1.2 group=X25519
+F | MinVersion=TLS1.3                            | localhost:8444  | OK   | TLS1.3 group=X25519
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8444  | OK   | TLS1.3 group=X25519
+-- C/E/F server cases
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C legacy-encrypted key | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C legacy-encrypted key | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe E mTLS RSA client | -groups X25519MLKEM768 -tls1_3 -cert cli-rsa.pem -key cli-rsa.key | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS EC client | -groups X25519MLKEM768 -tls1_3 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS EC client classical | -groups X25519 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS no client cert (neg) | -groups X25519MLKEM768 -tls1_3 | FAIL | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 2020EE8FFFFF0000:error:0A00045C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate requ
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  2020EB92FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768:X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768  | FAIL |  |  | cert= |  20A00695FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server MaxVersion 1.2 | -groups X25519  | FAIL |  |  | cert= |  20C04886FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server CipherSuites | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server CipherSuites | -groups X25519 -tls1_2 | FAIL |  |  | cert= |  20A0DD8DFFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server PQ-only | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server PQ-only | -groups X25519  | FAIL |  |  | cert= |  20B09392FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C env PEM | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+-- server log (cases-1.25-mod1.25)
+  servers-up
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519MLKEM768 sni="a.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519MLKEM768 sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519 sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519MLKEM768 sni="c.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519MLKEM768 sni="a.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519MLKEM768 sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519 sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519MLKEM768 sni="c.test" client_cn=-
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=X25519MLKEM768 sni="" client_cn=cli-rsa
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=X25519MLKEM768 sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=X25519 sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: client didn't provide a certificate
+  port=9451 case="F CurvePreferences={X25519,P256}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=tls: no cipher suite supported by both client and server; client offered: [1302 1303 1301 c02c c030 9f cca9 cca8 ccaa c02b c02f 9e c024 c028 6b c023 c027 67 c00a c014 39 c009 c013 33 9d 9c 3d 3c 35 2f]
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=remote error: tls: illegal parameter
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=remote error: tls: illegal parameter
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=X25519 sni="" client_cn=-
+
+################ cases-1.26-mod1.26
+-- D: default RootCAs with env
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | default RootCAs (SSL_CERT_FILE)              | localhost:8444  | OK   | TLS1.3 group=X25519
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | default RootCAs (SSL_CERT_DIR)               | localhost:8444  | OK   | TLS1.3 group=X25519
+D | default RootCAs (no env, negative)           | localhost:8443  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+D | default RootCAs (no env, negative)           | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+-- D/E/F client cases
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+D | RootCAs = empty pool (negative)              | localhost:8443  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+D | SystemCertPool()+AppendCertsFromPEM(ca)      | localhost:8444  | OK   | TLS1.3 group=X25519
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=X25519
+D | RootCAs = empty pool (negative)              | localhost:8444  | FAIL | tls: failed to verify certificate: x509: certificate signed by unknown authority
+E | Certificates=[client RSA]                    | localhost:8445  | OK   | TLS1.3 group=X25519MLKEM768
+E | GetClientCertificate -> client EC            | localhost:8445  | OK   | TLS1.3 group=X25519MLKEM768
+E | no client cert (negative)                    | localhost:8445  | FAIL | TLS1.3 group=X25519MLKEM768 read: remote error: tls: certificate required
+E | Certificates=[client RSA]                    | localhost:8446  | OK   | TLS1.3 group=X25519
+E | GetClientCertificate -> client EC            | localhost:8446  | OK   | TLS1.3 group=X25519
+E | no client cert (negative)                    | localhost:8446  | FAIL | TLS1.3 group=X25519 read: remote error: tls: certificate required
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+F | MaxVersion=TLS1.2                            | localhost:8443  | FAIL | remote error: tls: protocol version not supported
+F | MinVersion=TLS1.3                            | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8443  | OK   | TLS1.3 group=X25519MLKEM768
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=X25519
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | OK   | TLS1.3 group=X25519
+F | MaxVersion=TLS1.2                            | localhost:8444  | OK   | TLS1.2 group=X25519
+F | MinVersion=TLS1.3                            | localhost:8444  | OK   | TLS1.3 group=X25519
+F | CipherSuites=2 ECDHE-GCM (TLS1.2 list)       | localhost:8444  | OK   | TLS1.3 group=X25519
+-- C/E/F server cases
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C single cert | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C single cert | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C two certs, RSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C two certs, ECDSA-only sigalgs | -groups X25519MLKEM768 -tls1_3 -sigalgs ecdsa_secp256r1_sha256 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI a.test | -groups X25519MLKEM768 -tls1_3 -servername a.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=a.test | Signature type: ecdsa_secp256r1_sha256 
+  probe C SNI b.test | -groups X25519MLKEM768 -tls1_3 -servername b.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI b.test classical | -groups X25519 -servername b.test | OK | TLSv1.3 |  | cert=CN=b.test | Signature type: rsa_pss_rsae_sha256 
+  probe C SNI unknown | -groups X25519MLKEM768 -tls1_3 -servername c.test | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C legacy-encrypted key | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C legacy-encrypted key | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe E mTLS RSA client | -groups X25519MLKEM768 -tls1_3 -cert cli-rsa.pem -key cli-rsa.key | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS EC client | -groups X25519MLKEM768 -tls1_3 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS EC client classical | -groups X25519 -cert cli-ec.pem -key cli-ec.key | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe E mTLS no client cert (neg) | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768 -tls1_3 | FAIL |  |  | cert= |  20F010AEFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server CurvePreferences{X25519,P256} | -groups X25519MLKEM768:X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768  | FAIL |  |  | cert= |  20D0759CFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe F server MaxVersion 1.2 | -groups X25519  | FAIL |  |  | cert= |  20F0308EFFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server CipherSuites | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server CipherSuites | -groups X25519 -tls1_2 | FAIL |  |  | cert= |  202020B2FFFF0000:error:0A00017A:SSL routines:tls12_check_peer_sigalg:wrong curve:../ssl/t1
+  probe F server PQ-only | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe F server PQ-only | -groups X25519  | FAIL |  |  | cert= |  20C0CC95FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failu
+  probe C env PEM | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C env PEM | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+-- server log (cases-1.26-mod1.26)
+  servers-up
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9443 case="C rsa LoadX509KeyPair" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9445 case="C Certificates=[rsa,ec]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9446 case="C Certificates=[ec,rsa]" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519MLKEM768 sni="a.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519MLKEM768 sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519 sni="b.test" client_cn=-
+  port=9447 case="C SNI Certificates=[a.test,b.test]" TLS1.3 group=X25519MLKEM768 sni="c.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519MLKEM768 sni="a.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519MLKEM768 sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519 sni="b.test" client_cn=-
+  port=9448 case="C GetCertificate by SNI" TLS1.3 group=X25519MLKEM768 sni="c.test" client_cn=-
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9449 case="C encrypted legacy PEM key" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=X25519MLKEM768 sni="" client_cn=cli-rsa
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=X25519MLKEM768 sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" TLS1.3 group=X25519 sni="" client_cn=cli-ec
+  port=9450 case="E RequireAndVerifyClientCert" handshake_error=tls: client didn't provide a certificate
+  port=9451 case="F CurvePreferences={X25519,P256}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9451 case="F CurvePreferences={X25519,P256}" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=tls: no cipher suite supported by both client and server; client offered: [1302 1303 1301 c02c c030 9f cca9 cca8 ccaa c02b c02f 9e c024 c028 6b c023 c027 67 c00a c014 39 c009 c013 33 9d 9c 3d 3c 35 2f]
+  port=9452 case="F MaxVersion=TLS1.2" handshake_error=remote error: tls: illegal parameter
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" handshake_error=remote error: tls: illegal parameter
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9454 case="F PQ-only MinVersion1.3+{X25519MLKEM768}" handshake_error=tls: no key exchanges supported by both client and server
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9455 case="C cert+key PEM from env vars" TLS1.3 group=X25519 sni="" client_cn=-
+
+################ GODEBUG overrides at run time (client F/D subset)
+-- cases-1.24-mod1.22 GODEBUG=tlsmlkem=1
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | OK   | TLS1.3 group=n/a(<go1.25)
+-- cases-1.26-mod1.26 GODEBUG=tlsmlkem=0
+D | RootCAs = NewCertPool with private CA only   | localhost:8443  | FAIL | remote error: tls: handshake failure
+D | RootCAs = NewCertPool with private CA only   | localhost:8444  | OK   | TLS1.3 group=X25519
+F | CurvePreferences={X25519,P256}               | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8443  | FAIL | remote error: tls: handshake failure
+F | CurvePreferences={X25519,P256}               | localhost:8444  | OK   | TLS1.3 group=X25519
+F | CurvePreferences={X25519MLKEM768,X25519,P256} | localhost:8444  | OK   | TLS1.3 group=X25519
+
+################ deps: PKCS#12 and encrypted PKCS#8 (Go 1.26.11)
+  probe C deps | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C deps | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C deps | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C deps | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-rsa | Signature type: rsa_pss_rsae_sha256 
+  probe C deps | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768 | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  probe C deps | -groups X25519  | OK | TLSv1.3 |  | cert=CN=srv-ec | Signature type: ecdsa_secp256r1_sha256 
+  case="C x/crypto Decode on modern PKCS#12" load_error=pkcs12: unknown digest algorithm: 2.16.840.1.101.3.4.2.1
+  servers-up
+  port=9460 case="C PKCS#12 modern via sslmate DecodeChain" group=X25519MLKEM768 leaf=srv-ec
+  port=9460 case="C PKCS#12 modern via sslmate DecodeChain" group=X25519 leaf=srv-ec
+  port=9461 case="C PKCS#12 legacy via x/crypto Decode" group=X25519MLKEM768 leaf=srv-rsa
+  port=9461 case="C PKCS#12 legacy via x/crypto Decode" group=X25519 leaf=srv-rsa
+  port=9462 case="C encrypted PKCS#8 via youmark/pkcs8" group=X25519MLKEM768 leaf=srv-ec
+  port=9462 case="C encrypted PKCS#8 via youmark/pkcs8" group=X25519 leaf=srv-ec
+
+################ H: libraries with custom tls.Config (Go 1.26.11)
+observer=https group=X25519MLKEM768 client_cn=cli-ec ua=aws-sdk-go-v2/1.48.0 ua/2.1 os/linux lan
+H | aws-sdk  | BuildableClient, TLSClientConfig=custom              | https://localhost:9470 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 400, RequestID: , deserialization failed, EOF
+observer=https group=X25519MLKEM768 client_cn=cli-ec ua=aws-sdk-go-v2/1.48.0 ua/2.1 os/linux lan
+H | aws-sdk  | plain *http.Client{Transport: TLSClientConfig=custom} | https://localhost:9470 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 400, RequestID: , deserialization failed, EOF
+observer=https http: TLS handshake error from [::1]:41478: tls: no key exchanges supported by both client and server
+H | aws-sdk  | BuildableClient, custom + CurvePreferences{X25519,P256} | https://localhost:9470 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:9470/": remote error: tls: handshake failure
+H | aws-sdk  | BuildableClient, TLSClientConfig=custom              | https://localhost:8445 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | plain *http.Client{Transport: TLSClientConfig=custom} | https://localhost:8445 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | BuildableClient, custom + CurvePreferences{X25519,P256} | https://localhost:8445 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:8445/": remote error: tls: handshake failure
+H | aws-sdk  | BuildableClient, TLSClientConfig=custom              | https://localhost:8446 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | plain *http.Client{Transport: TLSClientConfig=custom} | https://localhost:8446 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | BuildableClient, custom + CurvePreferences{X25519,P256} | https://localhost:8446 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | default client + WithCustomCABundle (no client cert) | https://localhost:8443 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | plain *http.Client + WithCustomCABundle              | https://localhost:8443 | TLS-OK, then protocol error: config: unable to add custom RootCAs HTTPClient, has no WithTransportOptions, *http.Client
+observer=grpc method=/grpc.health.v1.Health/Check group=X25519MLKEM768 client_cn=cli-ec
+H | grpc     | credentials.NewTLS(custom)                           | localhost:9472         | TLS-OK
+H | grpc     | credentials.NewTLS(custom + CurvePreferences{X25519,P256}) | localhost:9472         | TLS-FAIL: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: remote error: tls: handshake failure"
+H | grpc     | credentials.NewClientTLSFromFile(ca.pem)             | localhost:9473         | TLS-OK
+observer=raw group=X25519MLKEM768 client_cn=cli-ec alpn=""
+observer=raw group=X25519MLKEM768 client_cn=cli-ec alpn=""
+H | pgx      | ConnConfig.TLSConfig=custom                          | localhost:9471         | TLS-OK, then protocol error: tabase=app`:
+	127.0.0.1:9471 (localhost): failed to receive message: unexpected EOF
+	[::1]:9471 (localhost): failed to receive message: unexpected EOF
+observer=raw group=X25519MLKEM768 client_cn=cli-ec alpn=""
+observer=raw group=X25519MLKEM768 client_cn=cli-ec alpn=""
+H | pgx      | DSN sslrootcert+sslcert+sslkey                       | localhost:9471         | TLS-OK, then protocol error: tabase=app`:
+	127.0.0.1:9471 (localhost): failed to receive message: unexpected EOF
+	[::1]:9471 (localhost): failed to receive message: unexpected EOF
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+H | pgx      | ConnConfig.TLSConfig=custom + CurvePreferences{X25519,P256} | localhost:9471         | TLS-FAIL: led: remote error: tls: handshake failure
+	[::1]:9471 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+H | pgx      | ConnConfig.TLSConfig=custom                          | localhost:8445         | TLS-OK, then protocol error: : failed to receive message: timeout: context deadline exceeded
+	[::1]:8445 (localhost): failed to receive message: timeout: context deadline exceeded
+H | pgx      | DSN sslrootcert+sslcert+sslkey                       | localhost:8445         | TLS-OK, then protocol error: : failed to receive message: timeout: context deadline exceeded
+	[::1]:8445 (localhost): failed to receive message: timeout: context deadline exceeded
+H | pgx      | ConnConfig.TLSConfig=custom + CurvePreferences{X25519,P256} | localhost:8445         | TLS-FAIL: led: remote error: tls: handshake failure
+	[::1]:8445 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+H | pgx      | ConnConfig.TLSConfig=custom                          | localhost:8446         | TLS-OK, then protocol error: : failed to receive message: timeout: context deadline exceeded
+	[::1]:8446 (localhost): failed to receive message: timeout: context deadline exceeded
+H | pgx      | DSN sslrootcert+sslcert+sslkey                       | localhost:8446         | TLS-OK, then protocol error: : failed to receive message: timeout: context deadline exceeded
+	[::1]:8446 (localhost): failed to receive message: timeout: context deadline exceeded
+H | pgx      | ConnConfig.TLSConfig=custom + CurvePreferences{X25519,P256} | localhost:8446         | TLS-OK, then protocol error: : failed to receive message: timeout: context deadline exceeded
+	[::1]:8446 (localhost): failed to receive message: timeout: context deadline exceeded
+-- AWS_CA_BUNDLE
+H | aws-sdk  | default client + AWS_CA_BUNDLE env                   | https://localhost:8443 | TLS-OK, then protocol error: operation error STS: GetCallerIdentity, https response error StatusCode: 0, RequestID: , canceled, context deadline exceeded
+H | aws-sdk  | plain *http.Client + AWS_CA_BUNDLE env               | https://localhost:8443 | TLS-OK, then protocol error: config: unable to add custom RootCAs HTTPClient, has no WithTransportOptions, *http.Client
+-- H with GODEBUG=tlsmlkem=0 (should fail against PQ-only)
+observer=https http: TLS handshake error from [::1]:33338: tls: no key exchanges supported by both client and server
+H | aws-sdk  | BuildableClient, TLSClientConfig=custom              | https://localhost:9470 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:9470/": remote error: tls: handshake failure
+observer=https http: TLS handshake error from [::1]:33352: tls: no key exchanges supported by both client and server
+H | aws-sdk  | plain *http.Client{Transport: TLSClientConfig=custom} | https://localhost:9470 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:9470/": remote error: tls: handshake failure
+observer=https http: TLS handshake error from [::1]:33362: tls: no key exchanges supported by both client and server
+H | aws-sdk  | BuildableClient, TLSClientConfig=custom              | https://localhost:8445 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:8445/": remote error: tls: handshake failure
+H | aws-sdk  | plain *http.Client{Transport: TLSClientConfig=custom} | https://localhost:8445 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:8445/": remote error: tls: handshake failure
+H | aws-sdk  | default client + WithCustomCABundle (no client cert) | https://localhost:8443 | TLS-FAIL: ttempts, 1, https response error StatusCode: 0, RequestID: , request send failed, Post "https://localhost:8443/": remote error: tls: handshake failure
+H | aws-sdk  | plain *http.Client + WithCustomCABundle              | https://localhost:8443 | TLS-OK, then protocol error: config: unable to add custom RootCAs HTTPClient, has no WithTransportOptions, *http.Client
+H | grpc     | credentials.NewTLS(custom)                           | localhost:9472         | TLS-FAIL: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: remote error: tls: handshake failure"
+H | grpc     | credentials.NewClientTLSFromFile(ca.pem)             | localhost:9473         | TLS-FAIL: rpc error: code = Unavailable desc = connection error: desc = "transport: authentication handshake failed: remote error: tls: handshake failure"
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+H | pgx      | ConnConfig.TLSConfig=custom                          | localhost:9471         | TLS-FAIL: led: remote error: tls: handshake failure
+	[::1]:9471 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+H | pgx      | DSN sslrootcert+sslcert+sslkey                       | localhost:9471         | TLS-FAIL: led: remote error: tls: handshake failure
+	[::1]:9471 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+observer=raw handshake_error=tls: no key exchanges supported by both client and server
+	[::1]:9471 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+H | pgx      | ConnConfig.TLSConfig=custom                          | localhost:8445         | TLS-FAIL: led: remote error: tls: handshake failure
+	[::1]:8445 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+H | pgx      | DSN sslrootcert+sslcert+sslkey                       | localhost:8445         | TLS-FAIL: led: remote error: tls: handshake failure
+	[::1]:8445 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+	[::1]:8445 (localhost): failed to write startup message: write failed: remote error: tls: handshake failure
+DONE

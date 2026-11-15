@@ -1,0 +1,6 @@
+pilot:
+  env:
+    COMPLIANCE_POLICY: pqc
+meshConfig:
+  tlsDefaults:
+    ecdhCurves: [X25519MLKEM768, X25519]

@@ -1,0 +1,44 @@
+== cases-1.26-mod1.26 server GODEBUG=
+  probe C ec default | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768
+  probe C ec default | -groups X25519  | OK | TLSv1.3 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768:X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server CipherSuites | -groups X25519:P-256 -tls1_2 | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=X25519 sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=X25519 sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.2 group=X25519 sni="" client_cn=-
+== cases-1.26-mod1.26 server GODEBUG=tlsmlkem=1
+  probe C ec default | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768
+  probe C ec default | -groups X25519  | OK | TLSv1.3 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768:X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server CipherSuites | -groups X25519:P-256 -tls1_2 | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519MLKEM768 sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=X25519 sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=X25519 sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=X25519 sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.2 group=X25519 sni="" client_cn=-
+== cases-1.24-mod1.22 server GODEBUG=
+  probe C ec default | -groups X25519MLKEM768 -tls1_3 | FAIL |  | 
+  probe C ec default | -groups X25519  | OK | TLSv1.3 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768:X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server CipherSuites | -groups X25519:P-256 -tls1_2 | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  port=9444 case="C ec LoadX509KeyPair" handshake_error=tls: no key exchanges supported by both client and server
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=n/a(<go1.25) sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.2 group=n/a(<go1.25) sni="" client_cn=-
+== cases-1.24-mod1.22 server GODEBUG=tlsmlkem=1
+  probe C ec default | -groups X25519MLKEM768 -tls1_3 | OK | TLSv1.3 | Negotiated TLS1.3 group: X25519MLKEM768
+  probe C ec default | -groups X25519  | OK | TLSv1.3 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519MLKEM768:X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server MaxVersion 1.2 | -groups X25519:P-256  | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  probe F server CipherSuites | -groups X25519:P-256 -tls1_2 | OK | TLSv1.2 | Peer Temp Key: X25519, 253 bits
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9444 case="C ec LoadX509KeyPair" TLS1.3 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=n/a(<go1.25) sni="" client_cn=-
+  port=9452 case="F MaxVersion=TLS1.2" TLS1.2 group=n/a(<go1.25) sni="" client_cn=-
+  port=9453 case="F CipherSuites=TLS1.2 ECDHE-GCM" TLS1.2 group=n/a(<go1.25) sni="" client_cn=-

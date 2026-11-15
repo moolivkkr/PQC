@@ -1,0 +1,15 @@
+=== valkey with OPENSSL_CONF=openssl-groups.cnf
+--- s_client groups=X25519MLKEM768
+Negotiated TLS1.3 group: X25519MLKEM768
+--- s_client groups=X25519
+Peer Temp Key: X25519, 253 bits
+--- s_client groups=X25519:X25519MLKEM768
+Peer Temp Key: X25519, 253 bits
+=== valkey with OPENSSL_CONF=openssl-pq-only.cnf
+--- s_client groups=X25519MLKEM768
+Negotiated TLS1.3 group: X25519MLKEM768
+--- s_client groups=X25519
+20605AADFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40
+Negotiated TLS1.3 group: <NULL>
+--- s_client groups=X25519:X25519MLKEM768
+Negotiated TLS1.3 group: X25519MLKEM768

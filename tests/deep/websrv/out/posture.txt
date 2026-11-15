@@ -1,0 +1,80 @@
+--- nginx
+## nginx:latest
+nginx version: nginx/1.31.8
+built by gcc 14.2.0 (Debian 14.2.0-19) 
+built with OpenSSL 3.5.7 9 Jun 2026
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+## nginx:stable
+nginx version: nginx/1.30.6
+built by gcc 14.2.0 (Debian 14.2.0-19) 
+built with OpenSSL 3.5.7 9 Jun 2026
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+## nginx:alpine
+nginx version: nginx/1.31.8
+built by gcc 15.2.0 (Alpine 15.2.0) 
+built with OpenSSL 3.5.9 29 Sep 2026
+PRETTY_NAME="Alpine Linux v3.24"
+/usr/lib/libssl.so.3
+--- httpd
+## httpd:2.4
+Server version: Apache/2.4.71 (Unix)
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+/usr/lib/aarch64-linux-gnu/libssl.so.3
+## httpd:2.4-alpine
+Server version: Apache/2.4.71 (Unix)
+PRETTY_NAME="Alpine Linux v3.24"
+/usr/lib/libssl.so.3
+--- haproxy
+## haproxy:latest
+HAProxy version 3.4.7-8872a26 2026/10/14 - https://haproxy.org/
+  OPTIONS = USE_PTHREAD_EMULATION=1 USE_GETADDRINFO=1 USE_OPENSSL=1 USE_LUA=1 USE_QUIC=1 USE_PROMEX=1 USE_PCRE2=1 USE_PCRE2_JIT=1
+Feature list : -51DEGREES +ACCEPT4 +ACME +BACKTRACE -CLOSEFROM +CPU_AFFINITY +CRYPT_H -DEVICEATLAS +DL -ECH -ENGINE +EPOLL -EVPORTS +GETADDRINFO +HAVE_TCP_MD5SIG -KQUEUE +KTLS -LIBATOMIC +LIBCRYPT +LINUX_CAP +LINUX_SPLICE +LINUX_TPROXY +LUA +MATH -MEMORY_PROFILING +NETFILTER +NS -OBSOLETE_LINKER +OPENSSL -OPENSSL_AWSLC -OPENSSL_WOLFSSL -OT -PCRE +PCRE2 +PCRE2_JIT -PCRE_JIT +POLL +PRCTL -PROCCTL +PROMEX +PTHREAD_EMULATION +QUIC -QUIC_OPENSSL_COMPAT +RT +SHM_OPEN +SLZ +SSL -STATIC_PCRE -STATIC_PCRE2 +TFO +THREAD +THREAD_DUMP +TPROXY +TRACE -WURFL -ZLIB
+Built with SSL library version : OpenSSL 3.5.7 9 Jun 2026
+Running on SSL library version : OpenSSL 3.5.7 9 Jun 2026
+OpenSSL providers loaded : default
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+## haproxy:lts-alpine
+HAProxy version 3.4.7-8872a26 2026/10/14 - https://haproxy.org/
+  OPTIONS = USE_PTHREAD_EMULATION=1 USE_GETADDRINFO=1 USE_OPENSSL=1 USE_LUA=1 USE_QUIC=1 USE_PROMEX=1 USE_PCRE2=1 USE_PCRE2_JIT=1
+Feature list : -51DEGREES +ACCEPT4 +ACME +BACKTRACE -CLOSEFROM +CPU_AFFINITY +CRYPT_H -DEVICEATLAS +DL -ECH -ENGINE +EPOLL -EVPORTS +GETADDRINFO +HAVE_TCP_MD5SIG -KQUEUE +KTLS -LIBATOMIC +LIBCRYPT +LINUX_CAP +LINUX_SPLICE +LINUX_TPROXY +LUA +MATH -MEMORY_PROFILING +NETFILTER +NS -OBSOLETE_LINKER +OPENSSL -OPENSSL_AWSLC -OPENSSL_WOLFSSL -OT -PCRE +PCRE2 +PCRE2_JIT -PCRE_JIT +POLL +PRCTL -PROCCTL +PROMEX +PTHREAD_EMULATION +QUIC -QUIC_OPENSSL_COMPAT +RT +SHM_OPEN +SLZ +SSL -STATIC_PCRE -STATIC_PCRE2 +TFO +THREAD +THREAD_DUMP +TPROXY +TRACE -WURFL -ZLIB
+Built with SSL library version : OpenSSL 3.5.9 29 Sep 2026
+Running on SSL library version : OpenSSL 3.5.9 29 Sep 2026
+OpenSSL providers loaded : default
+PRETTY_NAME="Alpine Linux v3.24"
+--- envoy
+
+envoy  version: eb0a95ba450a3e29a9a8e75f672e2c294493eea2/1.36.13/Clean/RELEASE/BoringSSL
+
+--- istio proxyv2
+
+/usr/local/bin/envoy  version: 50c73beaed934536017c84120b9a466c3ff903cf/1.36.3-dev/Clean/RELEASE/BoringSSL
+
+--- caddy
+v2.11.9 h1:bhZtcRKQOq0fuLvEgCdPYvUxXyGn9kzjG4lh2332DTE=
+go	go1.27.3
+path	caddy
+--- traefik
+Version:      3.7.19
+Codename:     langres
+Go version:   go1.27.4
+Built:        2026-11-13T09:24:59Z
+OS/Arch:      linux/arm64
+--- tomcat
+openjdk version "25.0.5" 2026-10-20 LTS
+Server number:  11.0.29.0
+OS Name:        Linux
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+libtcnative-2.a
+libtcnative-2.la
+libtcnative-2.so
+libtcnative-2.so.0
+libtcnative-2.so.0.0.17
+--- ingress-nginx controller v1.14.0
+nginx version: nginx/1.27.1
+built by gcc 14.2.0 (Alpine 14.2.0) 
+built with OpenSSL 3.5.4 30 Sep 2025
+PRETTY_NAME="Alpine Linux v3.22"
+/usr/lib/libssl.so.3

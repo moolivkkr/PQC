@@ -1,0 +1,7 @@
+Tls12-only Kestrel, ec cert, client groups X25519: 2000F28FFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 
+Tls12-only Kestrel, ec cert, client groups X25519:P-256: Protocol version: TLSv1.2 
+Tls12-only Kestrel, ec cert, client groups X25519MLKEM768:X25519:P-256: Protocol version: TLSv1.2 
+Tls12-only Kestrel, rsa cert, client groups X25519: Protocol version: TLSv1.2 
+Tls12-only Kestrel, rsa cert, client groups X25519:P-256: Protocol version: TLSv1.2 
+Tls12-only Kestrel, rsa cert, client groups X25519MLKEM768:X25519:P-256: Protocol version: TLSv1.2 
+cleanup done

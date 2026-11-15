@@ -1,0 +1,23 @@
+# /etc/ssl/openssl-groups.cnf - use with OPENSSL_CONF=/etc/ssl/openssl-groups.cnf
+# OpenSSL 3.5+ (Debian 13, Alpine 3.22+, Ubuntu 26.04). Tested with Valkey 8.1.11.
+openssl_conf = openssl_init
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = tls_defaults
+
+[tls_defaults]
+MinProtocol = TLSv1.2
+Groups = X25519MLKEM768:X25519:secp256r1:secp384r1
+# PQ-only enforcement variant (openssl-pq-only.cnf, Tested):
+#   MinProtocol = TLSv1.3
+#   Groups = X25519MLKEM768

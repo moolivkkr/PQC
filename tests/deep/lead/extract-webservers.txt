@@ -1,0 +1,122 @@
+# TAB: webservers  node=10112461-0b3c  rev=13
+
+## 1. H1 and lead paragraphs
+H1: Web servers, reverse proxies and app servers (self-managed)
+
+Every OpenSSL 3.5, Go 1.24+ and JDK 25 server tested here negotiates X25519MLKEM768 on both legs with one or two lines of config; Envoy and anything under the Amazon Linux 2023 crypto policy stay classical until you set the group list. 110 checks across 20 server configurations, run 2026-11-14.
+
+The TLS library linked into the server binary decides, separately for each leg. Inbound (client to server) uses the listener's group list. Upstream (server to backend: proxy_pass, ProxyPass, HAProxy server lines, Envoy clusters) uses the proxy's client-side group list.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+H2: Client side (upstream leg)
+H2: Server side (inbound)
+  H3: Kubernetes ingress and gateways
+H2: Packaging per compute type
+H2: Verify
+H2: Pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Product and version | Image or package (compute) | TLS library | Inbound PQ by default | Upstream PQ by default | Setting that controls it | Evidence |
+| nginx 1.31.8 mainline | nginx:latest, Debian 13 (ECS, Fargate, EKS) | OpenSSL 3.5.7 | Yes | Yes | ssl_ecdh_curve, proxy_ssl_conf_command Groups | Tested |
+| nginx 1.31.8 | nginx:alpine, Alpine 3.24 | OpenSSL 3.5.9 | Yes | Yes | same | Tested |
+| nginx 1.30.6 stable | nginx:stable, Debian 13 | OpenSSL 3.5.7 | Yes (same OpenSSL) | Yes | same | Tested (version check only) |
+| nginx 1.30.6 | Amazon Linux 2023 dnf install nginx (EC2, AL2023 images) | OpenSSL 3.5.8 + crypto policy | No | No | explicit directives, or DEFAULT:PQ policy | Tested |
+| Apache httpd 2.4.71 | httpd:2.4 Debian 13, httpd:2.4-alpine | OpenSSL 3.5.7 / 3.5.9 | Yes | Yes | SSLOpenSSLConfCmd Groups; no proxy-side directive | Tested |
+| Apache httpd (AL2023 package) | Amazon Linux 2023 dnf install httpd mod_ssl | OpenSSL 3.5.8 + crypto policy | Yes with SSLOpenSSLConfCmd | No; Yes after update-crypto-policies --set DEFAULT:PQ | host crypto policy or OPENSSL_CONF | Tested |
+| HAProxy 3.4.7 | haproxy:latest / lts Debian 13, haproxy:lts-alpine | OpenSSL 3.5.7 / 3.5.9 | Yes | Yes | curves on bind and server lines, ssl-default-bind-curves, ssl-default-server-curves | Tested |
+| Envoy 1.36.13 | envoyproxy/envoy:v1.36-latest | BoringSSL | No (X25519, P-256) | No | tls_params.ecdh_curves on both contexts | Tested |
+| Envoy 1.36.3 in Istio proxyv2 1.28.0 | istio/proxyv2:1.28.0 | BoringSSL | No unless set | No unless set | same; Istio pushes it ([Service mesh]) | Tested |
+| Caddy 2.11.9 (Go 1.27.3) | caddy:2 | Go crypto/tls | Yes | Yes | tls { curves }, transport http { tls_curves } | Tested |
+| Traefik 3.7.19 (Go 1.27.4) | traefik:v3 | Go crypto/tls | Yes | Yes (Go default; no curve option on serversTransport) | TLS option curvePreferences | Tested |
+| Tomcat 11.0.29, JSSE connector | tomcat:11-jdk25-temurin (JDK 25.0.5) | JDK JSSE | Yes | n/a (app clients: Java tab) | SSLHostConfig groups | Tested |
+| Tomcat 11.0.29, OpenSSL connector | same image, Ubuntu 26.04 | OpenSSL 3.5.5 via tomcat-native | Yes | n/a | <OpenSSLConfCmd name="Groups"> | Tested |
+| ingress-nginx controller v1.14.0 (nginx 1.27.1) | registry.k8s.io/ingress-nginx/controller:v1.14.0, Alpine 3.22 | OpenSSL 3.5.4 | Yes | Yes | ConfigMap ssl-ecdh-curve | Tested (its nginx binary with the same directives; ConfigMap path not run) |
+| nginx, httpd, HAProxy on Ubuntu 24.04 or Debian 12 | distro packages (EC2) | OpenSSL 3.0.x | No, cannot | No, cannot | upgrade the OS or run a container image | Tested 2026-11-12/13 (Hosts tab) |
+| IIS on Windows Server 2025 | SChannel | SChannel | not confirmed | not confirmed | Microsoft lists hybrid ML-KEM groups from the July 14, 2026 update KB5099536 (Microsoft FAQ); default ordering not confirmed | Documented (availability only) |
+
+## 4. Full configuration files section
+H2: Full configuration files
+All files below were used in the tests except the AWS IaC (linted, not deployed). Lab shortcuts (verify none, tls_insecure_skip_verify) are marked; use CA verification in production.
+/etc/nginx/nginx.conf
+```nginx
+# /etc/nginx/nginx.conf - PQ hybrid TLS on the listener and on the proxy_pass (upstream) leg
+# Needs nginx linked against OpenSSL 3.5+ (nginx:1.29+/stable on Debian 13 or Alpine 3.22+).
+```
+/usr/local/apache2/conf/httpd.conf (official image; on AL2023 use ServerRoot "/etc/httpd", User apache, Group apache, DocumentRoot /var/www/html, and drop the mod_mime line)
+```apache
+# /usr/local/apache2/conf/httpd.conf - minimal, complete. PQ hybrid inbound (mod_ssl) and on the reverse-proxy leg.
+# Needs Apache httpd 2.4.x with mod_ssl linked against OpenSSL 3.5+ (httpd:2.4 on Debian 13 / Alpine 3.22+).
+```
+/usr/local/etc/haproxy/haproxy.cfg
+```haproxy
+# /usr/local/etc/haproxy/haproxy.cfg - PQ hybrid on bind (inbound) and server (upstream) lines.
+# Needs HAProxy built against OpenSSL 3.5+ (haproxy:3.x on Debian 13 / Alpine 3.22+).
+```
+/etc/caddy/Caddyfile
+```caddy
+# /etc/caddy/Caddyfile - Caddy 2.10+ (Go 1.24+): X25519MLKEM768 is in Go's default list, so the
+# explicit "curves" lines below only pin the order and make the intent auditable.
+```
+/etc/traefik/traefik.yml (static)
+```yaml
+entryPoints:
+  websecure:
+```
+/etc/traefik/dynamic.yml (file provider)
+```yaml
+tls:
+  certificates:
+```
+/etc/envoy/envoy.yaml (also the sidecar config for the Service mesh tab's ECS example)
+```yaml
+# /etc/envoy/envoy.yaml - standalone Envoy: PQ hybrid downstream (listener) and upstream (cluster) TLS.
+# Envoy default ecdh_curves is X25519, P-256 (no ML-KEM): you must set the list on BOTH sides.
+```
+/usr/local/tomcat/conf/server.xml (JSSE connector)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tomcat 11, JSSE connector. PQ comes from the JDK: JDK 25.0.5+ (Temurin/Corretto) offers X25519MLKEM768
+```
+/usr/local/tomcat/conf/server.xml (OpenSSL implementation via tomcat-native)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tomcat 11, NIO connector with the OpenSSL implementation (libtcnative linked to the system OpenSSL).
+```
+ingress-nginx-values.yaml (Helm)
+```yaml
+# helm upgrade ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f ingress-nginx-values.yaml
+# Controller v1.14.0 links OpenSSL 3.5.4 (checked 2026-11-14). Project retired 2026-03-24: plan a Gateway API move.
+```
+envoy-gateway-pq.yaml (field names from the v1.10 API reference; not run here)
+```yaml
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+```
+Dockerfile (nginx for ECS, Fargate, EKS)
+```dockerfile
+# nginx:1.31.8 on Debian 13, OpenSSL 3.5.7 (checked 2026-11-14). Pin by digest; refresh it when you patch.
+FROM nginx@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
+```
+ecs-nginx.tf (Terraform)
+```hcl
+variable "image" {
+  description = "ECR image by digest, e.g. 123456789012.dkr.ecr.eu-west-1.amazonaws.com/pq-nginx@sha256:..."
+```
+ecs-nginx.yaml (CloudFormation)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+```
+ssm-nginx-pq.tf (Terraform; EC2 on AL2023, run with State Manager or Run Command)
+```hcl
+resource "aws_ssm_document" "nginx_pq" {
+  name            = "PQ-Nginx-Groups"
+```
+ssm-nginx-pq.yaml (CloudFormation)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+```

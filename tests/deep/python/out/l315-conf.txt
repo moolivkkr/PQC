@@ -1,0 +1,77 @@
+== l315-conf public.ecr.aws/lambda/python@sha256:ccd3496ae99acd0a2994a1018497ebe9c34cae27bd1847e5a6ef60fa203c79fc env=[-e OPENSSL_CONF=/kit/openssl-pq.cnf]
+l315-conf | python                       | -              | 3.15.2 OpenSSL 3.5.8 25 Aug 2026
+l315-conf | ssl ctx                      | -              | min=TLSv1_2 options=2186412112 has_set_groups=True
+l315-conf | ssl get_groups               | -              | sect163r1,sect193r1,sect193r2,sect239k1,secp160k1,secp160r1,secp160r2,secp192k1,secp192r1,secp224k1,secp224r1,secp256k1,secp256r1,secp384r1,secp521r1,brainpoolP256r1,brainpoolP384r1,brainpoolP512r1,x2
+l315-conf | ssl (stdlib)                 | PQ-only        | OK TLSv1.3 group=X25519MLKEM768
+l315-conf | ssl (stdlib)                 | classical-only | OK TLSv1.3 group=x25519
+l315-conf | ssl set_groups(X25519MLKEM768) | PQ-only        | OK TLSv1.3 group=X25519MLKEM768
+l315-conf | ssl set_groups(X25519MLKEM768) | classical-only | FAIL SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert handshake failure (_ssl.c:1147)
+l315-conf | ssl set_groups(MLKEM:X25519) | PQ-only        | OK TLSv1.3 group=X25519MLKEM768
+l315-conf | ssl set_groups(MLKEM:X25519) | classical-only | OK TLSv1.3 group=x25519
+l315-conf | ssl set_ecdh_curve(X25519MLKEM768) | PQ-only        | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+l315-conf | ssl set_ecdh_curve(X25519MLKEM768) | classical-only | FAIL ValueError: unknown elliptic curve name 'X25519MLKEM768'
+l315-conf | http.client                  | PQ-only        | OK HTTP 200 TLSv1.3
+l315-conf | http.client                  | classical-only | OK HTTP 200 TLSv1.3
+l315-conf | urllib.request               | PQ-only        | OK HTTP 200
+l315-conf | urllib.request               | classical-only | OK HTTP 200
+l315-conf | requests                     | -              | version 2.34.2
+l315-conf | requests                     | PQ-only        | OK HTTP 200
+l315-conf | requests                     | classical-only | OK HTTP 200
+l315-conf | urllib3                      | -              | version 2.8.0
+l315-conf | urllib3                      | PQ-only        | OK HTTP 200
+l315-conf | urllib3                      | classical-only | OK HTTP 200
+l315-conf | botocore                     | -              | version 1.44.3
+l315-conf | botocore URLLib3Session      | PQ-only        | OK HTTP 200
+l315-conf | botocore URLLib3Session      | classical-only | OK HTTP 200
+l315-conf | httpx                        | -              | version 0.28.1
+l315-conf | httpx                        | PQ-only        | OK HTTP 200
+l315-conf | httpx                        | classical-only | OK HTTP 200
+l315-conf | aiohttp                      | -              | version 3.14.5
+l315-conf | aiohttp                      | PQ-only        | OK HTTP 200
+l315-conf | aiohttp                      | classical-only | OK HTTP 200
+l315-conf | pyOpenSSL                    | -              | pyOpenSSL 26.4.0 cryptography-bundled OpenSSL 4.0.3 29 Sep 2026
+l315-conf | pyOpenSSL                    | PQ-only        | OK TLSv1.3 group=X25519MLKEM768
+l315-conf | pyOpenSSL                    | classical-only | OK TLSv1.3 group=x25519
+l315-conf | urllib3 + inject pyOpenSSL   | PQ-only        | OK HTTP 200
+l315-conf | urllib3 + inject pyOpenSSL   | classical-only | OK HTTP 200
+l315-conf | awscrt                       | -              | version 0.38.1 prefs=['DEFAULT', 'PQ_TLSv1_0_2021_05', 'PQ_DEFAULT', 'TLSv1_2_2025_07']
+l315-conf | awscrt default               | PQ-only        | OK connected
+l315-conf | awscrt default               | classical-only | OK connected
+l315-conf | awscrt PQ_TLSv1_0_2021_05    | PQ-only        | FAIL RuntimeError: 1035 (AWS_IO_TLS_CIPHER_PREF_UNSUPPORTED): A TLS Cipher Preference was specified that is currently not supported by the current platform
+l315-conf | awscrt PQ_TLSv1_0_2021_05    | classical-only | FAIL RuntimeError: 1035 (AWS_IO_TLS_CIPHER_PREF_UNSUPPORTED): A TLS Cipher Preference was specified that is currently not supported by the current platform
+l315-conf | awscrt PQ_DEFAULT            | PQ-only        | OK connected
+l315-conf | awscrt PQ_DEFAULT            | classical-only | OK connected
+l315-conf | redis-py                     | -              | version 8.1.0
+l315-conf | redis-py                     | PQ-only        | OK no SSL error; s_server sends no RESP reply (confirm in server log)
+l315-conf | redis-py                     | classical-only | OK no SSL error; s_server sends no RESP reply (confirm in server log)
+l315-conf | confluent-kafka              | -              | AdminClient missing in this build: ImportError: cannot import name 'AdminClient' from 'confluent_kafka.admin' (/w/site/l315/confluent_kafka/admin/__init__.py)
+l315-conf | confluent-kafka              | -              | client ? librdkafka ? bundled []
+l315-conf | grpcio                       | -              | version 1.85.1
+l315-conf | grpcio client                | PQ-only        | OK not READY (check server log: s_server speaks no HTTP/2)
+l315-conf | grpcio client                | classical-only | OK not READY (check server log: s_server speaks no HTTP/2)
+l315-conf | psycopg3                     | -              | psycopg 3.3.9 impl=binary libpq=180006 libs=['libcom_err-6d8d18aa.so.2.1', 'libcom_err-ade663e2.so.3.0', 'libcrypt-258f54d5.so.1.1.0', 'libcrypto-5e36fb0e.so.3', 'libgssapi_krb5-2d78fad2.so.2.2', 'libk5crypto-08068307.so.3.1', 'libkeyutils-fe6e95a9.so.1.6', 'libkrb5-138a6e7a.so.3.3', 'libkrb5support-bba7dd31.so.0.1', 'liblber-39a5c986.so.2.0.200', 'libldap-ed13728f.so.2.0.200', 'libpq-53e4e5f8.so.5.18', 'libsasl2-076b3c1f.so.3.0.0', 'libssl-8f8630a8.so.3']
+l315-conf | psycopg3                     | PQ-only        | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l315-conf | psycopg3                     | classical-only | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l315-conf | psycopg2                     | -              | psycopg2 2.9.13 (dt dec pq3 ext lo64) libpq=170011 libs=['libcom_err-6d8d18aa.so.2.1', 'libcrypt-258f54d5.so.1.1.0', 'libcrypto-02bae65c.so.1.1.1k', 'libcrypto-d03c352e.so.3', 'libgssapi_krb5-42536122.so.2.2', 'libk5crypto-f5362a5f.so.3.1', 'libkeyutils-fe6e95a9.so.1.6', 'libkrb5-98c41d04.so.3.3', 'libkrb5support-beb3078f.so.0.1', 'liblber-c572adb0.so.2.0.200', 'libldap-998d4f9f.so.2.0.200', 'libpcre2-8-8701a61e.so.0.7.1', 'libpq-6d43a12c.so.5.17', 'libsasl2-076b3c1f.so.3.0.0', 'libselinux-be7a4dc7.so.1', 'libssl-c64c0f6b.so.3']
+l315-conf | psycopg2                     | PQ-only        | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l315-conf | psycopg2                     | classical-only | OK ('TLSv1.3', 'TLS_AES_256_GCM_SHA384')
+l315-conf | PyMySQL                      | -              | pymysql.connections uses ssl.create_default_context=True
+l315-conf | DONE
+l315-conf | s_server log grpc   pq        |  1 Peer Temp Key: X25519MLKEM768; 1 Supported groups: X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1;
+l315-conf | s_server log grpc   classical |  1 Peer Temp Key: X25519, 253 bits; 1 Supported groups: X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1;
+l315-conf | s_server log kafka  pq        | 
+l315-conf | s_server log kafka  classical | 
+l315-conf | s_server log redis  pq        |  11 Peer Temp Key: X25519MLKEM768; 11 Supported groups: X25519MLKEM768:x25519:secp256r1:x448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192;
+l315-conf | s_server log redis  classical |  11 Peer Temp Key: X25519, 253 bits; 11 Supported groups: X25519MLKEM768:x25519:secp256r1:x448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192;
+l315-conf | server uvicorn                            | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l315-conf | server uvicorn                            | client offers X25519          | Protocol version: TLSv1.3 
+l315-conf | server gunicorn                           | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l315-conf | server gunicorn                           | client offers X25519          | Protocol version: TLSv1.3 
+l315-conf | server hypercorn                          | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l315-conf | server hypercorn                          | client offers X25519          | Protocol version: TLSv1.3 
+l315-conf | server grpcio-server                      | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l315-conf | server grpcio-server                      | client offers X25519          | Protocol version: TLSv1.3 
+l315-conf | server gunicorn+ssl_context:PQ-first      | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l315-conf | server gunicorn+ssl_context:PQ-first      | client offers X25519          | Protocol version: TLSv1.3 
+l315-conf | server gunicorn+ssl_context:PQ-only       | client offers X25519MLKEM768  | Protocol version: TLSv1.3 Negotiated TLS1.3 group: X25519MLKEM768 
+l315-conf | server gunicorn+ssl_context:PQ-only       | client offers X25519          | 20C074B9FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40 

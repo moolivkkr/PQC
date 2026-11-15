@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  Java8:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+Conditions:
+  IsJava8: !Equals [!Ref Java8, 'true']
+Resources:
+  Fn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: java21              # java25: delete the Environment block, nothing else needed
+      Handler: com.example.Handler::handleRequest
+      CodeUri: build/function.zip
+      MemorySize: 1024
+      Timeout: 30
+      Architectures: [arm64]
+      Environment:
+        Variables:
+          JAVA_TOOL_OPTIONS: !If
+            - IsJava8
+            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2
+            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar

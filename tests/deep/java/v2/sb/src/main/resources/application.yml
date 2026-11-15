@@ -1,0 +1,15 @@
+server:
+  port: 9443
+  ssl:
+    bundle: web
+spring:
+  ssl:
+    bundle:
+      jks:
+        web:
+          keystore:
+            location: file:/v/c/ec-main.p12
+            password: changeit
+            type: PKCS12
+          options:
+            enabled-protocols: [TLSv1.3, TLSv1.2]

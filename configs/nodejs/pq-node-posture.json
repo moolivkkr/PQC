@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Report Node.js and OpenSSL versions and TLS-relevant environment for every running node process.",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "nodePqPosture",
+      "inputs": {
+        "runCommand": [
+          "command -v update-crypto-policies >/dev/null && update-crypto-policies --show || true",
+          "for pid in $(pgrep -x node); do exe=$(readlink /proc/$pid/exe); echo pid=$pid exe=$exe; $exe -e 'console.log(process.version, process.versions.openssl)'; tr '\\0' '\\n' < /proc/$pid/environ | grep -E '^(OPENSSL_CONF|NODE_OPTIONS)=' || true; done"
+        ]
+      }
+    }
+  ]
+}

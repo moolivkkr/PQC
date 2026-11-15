@@ -1,0 +1,18 @@
+schemaVersion: "2.2"
+description: Set the AL2023 crypto policy to DEFAULT:PQ and restart .NET services
+parameters:
+  Services:
+    type: String
+    default: orders-api
+mainSteps:
+  - action: aws:runShellScript
+    name: setPqPolicy
+    precondition:
+      StringEquals: [platformType, Linux]
+    inputs:
+      runCommand:
+        - set -euo pipefail
+        - dnf install -y crypto-policies-scripts
+        - update-crypto-policies --set DEFAULT:PQ
+        - update-crypto-policies --show
+        - for s in {{ Services }}; do systemctl restart "$s"; done

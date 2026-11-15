@@ -1,0 +1,10 @@
+nodejs22  baseline      
+nodejs22  conf          {"runtime":"v22.23.5","openssl":"3.5.9","pq_only":"OK TLSv1.3","classical_only":"OK TLSv1.3"}
+nodejs22  node_options  {"runtime":"v22.23.5","openssl":"3.5.9","pq_only":"OK TLSv1.3","classical_only":"OK TLSv1.3"}
+nodejs22  devnull       {"runtime":"v22.23.5","openssl":"3.5.9","pq_only":"OK TLSv1.3","classical_only":"OK TLSv1.3"}
+nodejs24  baseline      
+nodejs24  conf          {"runtime":"v24.22.3","openssl":"3.5.9","pq_only":"OK TLSv1.3","classical_only":"OK TLSv1.3"}
+nodejs24  node_options  {"runtime":"v24.22.3","openssl":"3.5.9","pq_only":"OK TLSv1.3","classical_only":"OK TLSv1.3"}
+nodejs24  devnull       {"runtime":"v24.22.3","openssl":"3.5.9","pq_only":"OK TLSv1.3","classical_only":"OK TLSv1.3"}
+nodejs22 baseline(rerun) {"runtime":"v22.23.5","openssl":"3.5.9","pq_only":"FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE","classical_only":"OK TLSv1.3"}
+nodejs24 baseline(rerun) {"runtime":"v24.22.3","openssl":"3.5.9","pq_only":"FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE","classical_only":"OK TLSv1.3"}

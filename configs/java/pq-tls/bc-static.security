@@ -1,0 +1,19 @@
+# Appended to $JAVA_HOME/conf/security/java.security. Bouncy Castle JSSE goes before SunJSSE;
+# the BC JCA provider goes last so other crypto keeps resolving to the JDK providers.
+# The three BC jars must be on the application class path.
+security.provider.1=SUN
+security.provider.2=SunRsaSign
+security.provider.3=SunEC
+security.provider.4=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider BC
+security.provider.5=SunJSSE
+security.provider.6=SunJCE
+security.provider.7=SunJGSS
+security.provider.8=SunSASL
+security.provider.9=XMLDSig
+security.provider.10=SunPCSC
+security.provider.11=JdkLDAP
+security.provider.12=JdkSASL
+security.provider.13=SunPKCS11
+security.provider.14=org.bouncycastle.jce.provider.BouncyCastleProvider
+# EC certificates (server and mTLS client) under BCJSSE need the PKIX key manager.
+ssl.KeyManagerFactory.algorithm=PKIX

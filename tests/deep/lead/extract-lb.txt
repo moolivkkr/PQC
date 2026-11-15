@@ -1,0 +1,58 @@
+# TAB: lb  node=143c638f-590a  rev=9
+
+## 1. H1 and lead paragraphs
+H1: Load balancers: ALB, NLB, GWLB, Classic
+
+The load balancer's security policy decides the client-facing leg. Only policies with PQ in the name offer X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024, and only on TLS 1.3. The console defaults to a PQ policy; the CLI, CloudFormation, CDK, Terraform and the AWS Load Balancer Controller default to ELBSecurityPolicy-2016-08, which is classical. On the target leg the load balancer is the TLS client: AWS picks its backend policy from your listener policy, and the target's own TLS stack decides whether that hop is PQ. Sources: ALB policies, NLB policies (Documented, read 2026-11-14).
+
+PQ policy names, each prefixed ELBSecurityPolicy- and suffixed -2025-09: TLS13-1-2-Res-PQ (AWS's recommendation), TLS13-1-2-PQ, TLS13-1-2-Ext1-PQ, TLS13-1-2-Ext2-PQ, TLS13-1-3-PQ. FIPS: TLS13-1-2-Res-FIPS-PQ, TLS13-1-2-FIPS-PQ, TLS13-1-2-Ext0-FIPS-PQ, TLS13-1-2-Ext1-FIPS-PQ, TLS13-1-2-Ext2-FIPS-PQ, TLS13-1-3-FIPS-PQ. Backend only: TLS13-1-0-PQ, TLS13-1-0-FIPS-PQ. Documented. Confirm in your Region with aws elbv2 describe-ssl-policies.
+
+## 2. Headings
+H2: What decides PQ here
+H2: Status matrix
+H2: Client side: the load balancer's connection to targets
+H2: Server side: the listener
+H2: Packaging and rollout from TLS 1.2+1.3 to 1.3-only
+H2: Verify
+H2: Enforce, pitfalls and rollback
+H2: Full configuration files
+
+## 3. Status matrix (first table)
+| Load balancer / listener | Device type | Client leg PQ | Target leg | Default from IaC | Evidence |
+| ALB, HTTPS listener | Managed AWS service | Opt-in PQ policy | Backend policy ELBSecurityPolicy-TLS13-1-0-PQ-2025-09 when any listener is PQ; PQ only if the target offers ML-KEM | ELBSecurityPolicy-2016-08 (classical) | Documented |
+| NLB, TLS listener | Managed AWS service | Opt-in PQ policy | Same backend rule for TLS target groups; plaintext for TCP target groups | ELBSecurityPolicy-2016-08 | Documented |
+| NLB, TCP or UDP listener | Managed AWS service | Pass-through: client and target negotiate end to end | Same connection | none | Documented |
+| Gateway Load Balancer | Managed AWS service, GENEVE to appliances | No TLS listener: end to end between client and server. An inspecting appliance behind it uses its own TLS stack, see [Network devices and egress] | none | none | Documented (no TLS listener type) |
+| Classic Load Balancer | Managed AWS service (legacy) | No PQ policy; migrate to ALB or NLB | Classical | none | Documented |
+| ALB or NLB via AWS Load Balancer Controller (EKS) | Kubernetes controller | Annotation or IngressClassParams | backend-protocol annotation | ELBSecurityPolicy-2016-08 unless Helm defaultSSLPolicy is set | Documented (LBC annotations) |
+| Lightsail load balancer | Managed (Lightsail) | No: only TLS-2016-08 and TLS-FS-1-2-Res-2019-08 | Classical | TLS-2016-08 | Documented (Lightsail TLS policies) |
+| Elastic Beanstalk | Managed, creates an ALB/NLB | The policy you set on its listener | As ALB/NLB | Platform default | Unverified |
+
+## 4. Full configuration files section
+H2: Full configuration files
+Terraform and CloudFormation passed terraform validate (Terraform 1.13.5, aws provider 6.73.0) and cfn-lint 1.60.1 in containers on 2026-11-14; the SCP and Kubernetes files were parse-checked only. Replace the placeholders before use.
+iac/lb/main.tf
+```hcl
+terraform {
+  required_version = ">= 1.6"
+```
+iac/lb/lb.yaml (CloudFormation)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ALB and NLB with hybrid post-quantum TLS listener policies, HTTPS/TLS targets, logs and a Config rule.
+```
+iac/lb/scp-elb-pq.json
+```json
+{
+  "Version": "2012-10-17",
+```
+iac/lb/k8s-lbc.yaml (AWS Load Balancer Controller)
+```yaml
+# Controller default when nothing is set: ELBSecurityPolicy-2016-08 (not PQ).
+# Cluster-wide default instead: Helm value defaultSSLPolicy / flag --default-ssl-policy.
+```
+iac/lb/athena.sql (DDL and queries Q1 to Q5)
+```sql
+-- ALB connection logs: 15 fields (tls_keyexchange = field 13). AWS's published Athena DDL
+-- stops at conn_trace_id; this one adds tls_keyexchange, elb and ip_address, and accepts
+```

@@ -1,0 +1,15 @@
+## deno
+deno 2.9.8 (stable, release, aarch64-unknown-linux-gnu)
+8443 OK 200 
+8444 OK 200 
+## bun fetch
+1.4.4
+versions {"openssl":"1.1.0","boringssl":"41bf9b59c2ebf277a7aa427e1ecad5cc80dd4d4f"}
+8443 OK 200 
+8444 OK 200 
+## bun node:tls
+# node v26.3.0 node=v26.3.0 openssl=1.1.0 OPENSSL_CONF=-
+tls.connect                                    | pq=OK null ephemeralKeyInfo={} | cl=OK null ephemeralKeyInfo={"type":"ECDH","name":"X25519","size":253}
+tls.connect ecdhCurve=X25519:P-256             | pq=FAIL ERR_SSL_SSLV3_ALERT_HANDSHAKE_FAILURE error:10000410:SSL routines:OPENSSL_internal:SSLV3_A | cl=OK null
+tls.connect ecdhCurve=X25519MLKEM768:X25519:P-256 | pq=OK null | cl=OK null
+https.get                                      | pq=OK HTTP 200  | cl=OK HTTP 200 

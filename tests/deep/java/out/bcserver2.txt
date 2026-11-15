@@ -1,0 +1,15 @@
+### Tomcat 11.0.29, JDK 21 + agent, keystore=rsa
+   s_client -groups X25519MLKEM768: CONNECTION ESTABLISHED
+   s_client -groups X25519: CONNECTION ESTABLISHED
+### Tomcat 11.0.29, JDK 21 + agent, keystore=ec-legacy
+   s_client -groups X25519MLKEM768: alert handshake failure
+alert number 
+   s_client -groups X25519: alert handshake failure
+alert number 
+   log: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40); [server #1 @71b77b18] found no selectable cipher suite among the 30 offered: [{0x13,0x02}(TLS_AES_256_GCM_SHA384), {0x13,0x03}(TLS_CHACHA20_P
+### Tomcat 11.0.29, JDK 21 + agent, keystore=ec-keytool
+   s_client -groups X25519MLKEM768: alert handshake failure
+alert number 
+   s_client -groups X25519: alert handshake failure
+alert number 
+   log: org.bouncycastle.tls.TlsFatalAlert: handshake_failure(40); [server #1 @3f59507b] found no selectable cipher suite among the 30 offered: [{0x13,0x02}(TLS_AES_256_GCM_SHA384), {0x13,0x03}(TLS_CHACHA20_P

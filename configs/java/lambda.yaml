@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  CodeBucket: {Type: String}
+  CodeKey: {Type: String}
+  RoleArn: {Type: String}
+Resources:
+  Fn:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: java21
+      Handler: com.example.Handler::handleRequest
+      Role: !Ref RoleArn
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      MemorySize: 1024
+      Timeout: 30
+      Architectures: [arm64]
+      Environment:
+        Variables:
+          JAVA_TOOL_OPTIONS: -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar

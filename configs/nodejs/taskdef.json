@@ -1,0 +1,21 @@
+{
+  "family": "orders",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": { "cpuArchitecture": "ARM64", "operatingSystemFamily": "LINUX" },
+  "executionRoleArn": "arn:aws:iam::111122223333:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "orders",
+      "image": "111122223333.dkr.ecr.eu-west-1.amazonaws.com/orders@sha256:<digest>",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8443, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "TLS_MIN_VERSION", "value": "TLSv1.2" }
+      ]
+    }
+  ]
+}

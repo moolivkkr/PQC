@@ -1,0 +1,6 @@
+# nginx:1.31.8 on Debian 13, OpenSSL 3.5.7 (checked 2026-11-14). Pin by digest; refresh it when you patch.
+FROM nginx@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
+COPY nginx.conf /etc/nginx/nginx.conf
+# Certificates: mount at /certs at runtime (Kubernetes Secret, or written at task start); never bake keys in.
+RUN nginx -V 2>&1 | grep -q 'OpenSSL 3\.[5-9]' || (echo "nginx not linked to OpenSSL 3.5+" && exit 1)
+EXPOSE 8443 8080
