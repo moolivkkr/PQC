@@ -137,6 +137,8 @@ Behind a load balancer the client-facing handshake belongs to the load balancer,
 
 The server has no API for the negotiated group: `getEphemeralKeyInfo()` returns `null` on server sockets ([Node TLS docs](https://nodejs.org/api/tls.html#tlssocketgetephemeralkeyinfo)). Probe the server with `s_client` instead (see Verify).
 
+**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `https.createServer` target on `node:24-slim` negotiated X25519MLKEM768 with no change; `node:20-slim` and AL2023 nodejs22 stayed classical, and AL2023 nodejs20/22 with `OPENSSL_CONF` or `DEFAULT:PQ` gave X25519MLKEM768 (cases `srv-node-*`, Load balancers tab).
+
 ### C. Existing server certificates, keys and PFX files
 
 **Who this is:** your server loads its own certificate and key, from files, a mounted secret, Secrets Manager, or env vars that point at files. Find it with:

@@ -11,15 +11,15 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | [PQC-Detection-and-Remediation.pdf](PQC-Detection-and-Remediation.pdf) | All 22 sections: Overview, Runbook, Go, Python, Node.js, Java, .NET, twelve infrastructure sections, Enforcement and guardrails, Configuration file index |
 | [PQC-Detection-and-Remediation.docx](PQC-Detection-and-Remediation.docx) | Same content in Word; import into Google Docs with Drive > Upload, then Open with Google Docs |
 | [PQC-Detection-and-Remediation.html](PQC-Detection-and-Remediation.html) | Same content as one HTML page |
-| [PQC-Summary.pptx](PQC-Summary.pptx) | 34-slide summary: problem, status by language, three detail slides per language (what decides PQ, versions and compute types, pitfalls and e2e evidence), existing keystores, ALB/NLB policy, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
+| [PQC-Summary.pptx](PQC-Summary.pptx) | 35-slide summary: problem, status by language, three detail slides per language (what decides PQ, versions and compute types, pitfalls and e2e evidence), existing keystores, ALB/NLB policy and the tested ALB-to-container leg, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
 
 ## End-to-end verification (2026-11-15)
 
 `e2e/` deploys real workloads into an isolated LocalStack Pro (Lambda zip, layer, extension and container image; ECS Fargate; ECS on EC2; EC2 from AMIs built on AL2023 `2023.12.20261109` and Amazon Linux 2) for Python, Node.js, Java, .NET and Go. Each one connects to a TLS observer that records what was offered and negotiated, and the run is graded against the document's claims.
 
-- **Result:** 437 cases, all passing ([results](e2e/results/latest/summary.md)). The CloudWatch and server-side detection checks find every classical handshake, apart from one log line LocalStack dropped under load ([RUNNING.md](e2e/RUNNING.md), Troubleshooting).
+- **Result:** 469 cases, all passing: 437 client cases plus 32 load balancer target-leg cases ([results](e2e/results/latest/summary.md)). The CloudWatch and server-side detection checks find every classical handshake, apart from one log line LocalStack dropped under load ([RUNNING.md](e2e/RUNNING.md), Troubleshooting).
 - **Document errors found and fixed** (each kept as a regression case): Python legacy bridge missing `idna`; Node 20 on AL2023 is fixable; JDK 8 needs `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true`; the layer wrapper had no .NET branch, so the enforcement guard accepted classical .NET functions; .NET `X509Store` on Lambda needs `HOME=/tmp`; Go FIPS group lists. Details: [e2e/README.md](e2e/README.md).
-- **Run it:** [e2e/RUNNING.md](e2e/RUNNING.md). **Not covered:** real AWS, x86_64, server-side TLS behind ALB/NLB.
+- **Run it:** [e2e/RUNNING.md](e2e/RUNNING.md). **Not covered:** real AWS, x86_64, and the ALB/NLB listener leg (LocalStack's ALB ignores security policies; the load balancer to container leg is modelled and tested).
 
 ## Layout
 

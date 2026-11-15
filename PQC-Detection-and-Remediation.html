@@ -608,7 +608,11 @@ and 1.3), later <code>ELBSecurityPolicy-TLS13-1-3-PQ-2025-09</code> (1.3
 only); FIPS variants exist</td>
 <td>Console default is a PQ policy, but CLI, CloudFormation and CDK
 default to <code>ELBSecurityPolicy-2016-08</code>. The backend leg also
-becomes PQ-capable. Enforce in an SCP with the
+becomes PQ-capable: AWS then uses
+<code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> towards HTTPS
+targets, and the hop is PQ only when the target has its language fix
+(e2e target-leg cases, 2026-11-15; LocalStack can't test the listener
+leg itself). Enforce in an SCP with the
 <code>elasticloadbalancing:SecurityPolicy</code> condition key, which
 applies to CreateListener and ModifyListener (not
 CreateLoadBalancer)</td>
@@ -1612,6 +1616,13 @@ see "What happens today" above).</p>
 <pre class="go"><code>srv := &amp;http.Server{Addr: &quot;:8443&quot;, Handler: mux,
     TLSConfig: &amp;tls.Config{MinVersion: tls.VersionTLS12}} // no CurvePreferences
 log.Fatal(srv.ListenAndServeTLS(&quot;/etc/tls/tls.crt&quot;, &quot;/etc/tls/tls.key&quot;))</code></pre>
+<p><strong>Behind an ALB or NLB TLS listener (e2e, 2026-11-15):</strong>
+with the load balancer modelled as the client on the target leg, a
+<code>net/http</code> target built with Go 1.26 and <code>go 1.26</code>
+negotiated X25519MLKEM768 under the PQ backend policy; Go 1.23, and Go
+1.26 with <code>go 1.23</code>, stayed classical until
+<code>GODEBUG=tlsmlkem=1</code> was set in the task definition (cases
+<code>srv-go-*</code>, Load balancers tab).</p>
 <h3 id="t2-c-existing-server-certificates-in-your-own-files-or-keystore">C.
 Existing server certificates in your own files or keystore</h3>
 <p><strong>Who this is.</strong>
@@ -4431,6 +4442,13 @@ end):</p>
     if hasattr(ctx, &quot;set_groups&quot;):  # Python 3.15+
         ctx.set_groups(os.environ.get(&quot;PQ_GROUPS&quot;, &quot;X25519MLKEM768:X25519:secp256r1&quot;))
     return ctx</code></pre>
+<p><strong>Behind an ALB or NLB TLS listener (e2e, 2026-11-15):</strong>
+with the load balancer modelled as the client on the target leg, an
+<code>ssl</code>-module HTTPS target on AL2023 Python 3.12 or
+<code>python:3.12-slim-bookworm</code> stayed classical;
+<code>OPENSSL_CONF=openssl-pq.cnf</code>, <code>DEFAULT:PQ</code> or
+<code>python:3.13-slim-trixie</code> gave X25519MLKEM768, with the same
+certificate (cases <code>srv-python-*</code>, Load balancers tab).</p>
 <h3 id="t3-c-existing-server-certificates-and-key-files">C. Existing server
 certificates and key files</h3>
 <p><strong>Who this is:</strong> a Python server that loads its own
@@ -6499,6 +6517,13 @@ sockets (<a
 href="https://nodejs.org/api/tls.html#tlssocketgetephemeralkeyinfo">Node
 TLS docs</a>). Probe the server with <code>s_client</code> instead (see
 Verify).</p>
+<p><strong>Behind an ALB or NLB TLS listener (e2e, 2026-11-15):</strong>
+with the load balancer modelled as the client on the target leg, an
+<code>https.createServer</code> target on <code>node:24-slim</code>
+negotiated X25519MLKEM768 with no change; <code>node:20-slim</code> and
+AL2023 nodejs22 stayed classical, and AL2023 nodejs20/22 with
+<code>OPENSSL_CONF</code> or <code>DEFAULT:PQ</code> gave X25519MLKEM768
+(cases <code>srv-node-*</code>, Load balancers tab).</p>
 <h3 id="t4-c-existing-server-certificates-keys-and-pfx-files">C. Existing
 server certificates, keys and PFX files</h3>
 <p><strong>Who this is:</strong> your server loads its own certificate
@@ -8472,8 +8497,9 @@ mTLS not tested</td>
 <code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code></td>
 <td>Tested: e2e Lambda <code>java8.al2</code> zip/layer,
 <code>lambda/java:8.al2023</code> image, Fargate and ECS-EC2
-<code>amazoncorretto:8</code> (8u512, HttpsURLConnection, mTLS); server
-not tested</td>
+<code>amazoncorretto:8</code> (8u512, HttpsURLConnection, mTLS); server:
+e2e <code>srv-java-fargate-corretto8-agent</code> (HttpsServer, kit
+v2)</td>
 </tr>
 <tr>
 <td>Any JDK + Netty tcnative-boringssl-static 2.0.85</td>
@@ -9020,6 +9046,13 @@ even with tcnative (Tested).</p>
 JDK SSL engine and the Netty tcnative row with native SSL. Neither was
 run here; confirm the engine from the startup log before claiming
 PQ.</p>
+<p><strong>Behind an ALB or NLB TLS listener (e2e, 2026-11-15):</strong>
+with the load balancer modelled as the client on the target leg, an
+<code>HttpsServer</code> target with a PKCS#12 RSA keystore stayed
+classical on Corretto 8 and 21, and negotiated X25519MLKEM768 with kit
+v2 on Corretto 8, 17 and 21 and with no change on Corretto 25.0.5. This
+is the first server-side test of kit v2 on JDK 8 (cases
+<code>srv-java-*</code>, Load balancers tab).</p>
 <h3
 id="c-existing-server-certificates-in-a-custom-keystore-or-cert-files">C.
 Existing server certificates in a custom keystore or cert files</h3>
@@ -11447,6 +11480,14 @@ sets <code>SslProtocols</code> in <code>ConfigureHttpsDefaults</code>,
 <code>UseHttps(o =&gt; ...)</code> or
 <code>SslServerAuthenticationOptions.EnabledSslProtocols</code> has the
 same effect.</p>
+<p><strong>Behind an ALB or NLB TLS listener (e2e, 2026-11-15):</strong>
+with the load balancer modelled as the client on the target leg, an
+<code>SslStream</code> server (Kestrel's TLS layer) stayed classical on
+<code>runtime:8.0</code> and AL2023 .NET 8, and negotiated
+X25519MLKEM768 on <code>10.0-alpine</code>,
+<code>aspnet:10.0-resolute</code>, and AL2023 with
+<code>OPENSSL_CONF</code> or <code>DEFAULT:PQ</code> (cases
+<code>srv-dotnet-*</code>, Load balancers tab).</p>
 <h3
 id="c-existing-server-certificates-pfx-pem-encrypted-keys-sni-x509store">C.
 Existing server certificates: PFX, PEM, encrypted keys, SNI,
@@ -13335,6 +13376,15 @@ recheck it against AWS's PQ readiness page each quarter.</p>
 <p>The load balancer is the TLS client on the target leg, and you cannot choose its policy. AWS uses <code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> if any listener uses a PQ policy, <code>ELBSecurityPolicy-TLS13-1-0-FIPS-PQ-2025-09</code> for a FIPS PQ listener, and an RFC 9151 listener overrides both (Documented). The backend policy offers ML-KEM groups, so the hop is PQ only when the target accepts one. AWS does not log the group negotiated to the target.</p>
 <table><thead><tr><th>Target type</th><th>What the target must run for a PQ hop</th><th>Evidence</th></tr></thead><tbody><tr><td>ALB HTTPS target group (EC2, ECS, EKS pods)</td><td>A TLS 1.3 server whose library offers X25519MLKEM768: nginx, Apache, HAProxy or Envoy on OpenSSL 3.5+ (Debian 13, Alpine 3.24), Go 1.24+, Java 25, .NET on OpenSSL 3.5. Server configs are in <a href="#tab18-web-servers-reverse-proxies-and-app-servers-self-managed">Web servers and proxies</a>; runtimes in the language tabs</td><td>Documented (policy); servers Tested in other tabs</td></tr><tr><td>ALB HTTP target group</td><td>Plaintext inside the VPC: no TLS on this hop</td><td>Documented</td></tr><tr><td>ALB Lambda target</td><td>Invoked by the service; not a TLS connection you configure</td><td>Documented</td></tr><tr><td>NLB TLS target group</td><td>Same as ALB HTTPS targets</td><td>Documented</td></tr><tr><td>NLB TCP target group behind a TLS listener</td><td>Plaintext to the target</td><td>Documented</td></tr><tr><td>NLB TCP listener (pass-through)</td><td>The target is the TLS server for the client; its stack decides PQ end to end</td><td>Documented</td></tr></tbody></table>
 <p>To see the group on the target leg, log it on the target (for nginx, the <code>$ssl_curve</code> variable; see <a href="#tab18-web-servers-reverse-proxies-and-app-servers-self-managed">Web servers and proxies</a>). The target sees the load balancer as its client, not the end user.</p>
+<p><strong>Target leg tested on LocalStack (2026-11-15, model of the load balancer's client).</strong> LocalStack's ALB ignores listener security policies (an <code>ELBSecurityPolicy-2016-08</code> listener still negotiated X25519MLKEM768 with LocalStack's own certificate), so the listener leg needs real AWS. The target leg was tested instead: each workload ran as the HTTPS target on ECS Fargate or ECS on EC2 with its existing RSA certificate, and the e2e observer connected to it twice, once offering what AWS documents for <code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> (TLS 1.0 to 1.3, the three ML-KEM hybrids plus classical groups) and once as <code>ELBSecurityPolicy-2016-08</code> (TLS 1.0 to 1.2), without verifying the certificate, as the load balancer does. The certificate never changed. 32 cases, all as expected (<code>e2e/cases/server.py</code>, cases <code>srv-*</code>):</p>
+<table><thead><tr><th>Target workload</th><th>No fix</th><th>With the language tab's fix</th><th>PQ with no change</th></tr></thead><tbody>
+<tr><td>Python (ssl module server)</td><td>AL2023 Python 3.12, <code>python:3.12-slim-bookworm</code>: classical</td><td><code>OPENSSL_CONF</code> or <code>DEFAULT:PQ</code>: X25519MLKEM768</td><td><code>python:3.13-slim-trixie</code></td></tr>
+<tr><td>Node.js (<code>https.createServer</code>)</td><td><code>node:20-slim</code>, AL2023 nodejs22: classical</td><td>AL2023 nodejs20/22 + <code>OPENSSL_CONF</code> or <code>DEFAULT:PQ</code>: X25519MLKEM768</td><td><code>node:24-slim</code></td></tr>
+<tr><td>Go (<code>net/http</code>)</td><td>Go 1.23; Go 1.26 with <code>go 1.23</code>: classical</td><td><code>GODEBUG=tlsmlkem=1</code>: X25519MLKEM768</td><td>Go 1.26, <code>go 1.26</code></td></tr>
+<tr><td>Java (<code>HttpsServer</code>)</td><td>Corretto 8, 21: classical</td><td>Kit v2 on 8, 17, 21: X25519MLKEM768</td><td>Corretto 25.0.5</td></tr>
+<tr><td>.NET (<code>SslStream</code>, Kestrel's TLS layer)</td><td><code>runtime:8.0</code> (Debian 12), AL2023 .NET 8: classical</td><td>AL2023 + <code>OPENSSL_CONF</code> or <code>DEFAULT:PQ</code>: X25519MLKEM768</td><td><code>10.0-alpine</code>, <code>aspnet:10.0-resolute</code></td></tr>
+</tbody></table>
+<p>Every target negotiated classical TLS 1.2 under the non-PQ backend policy, fixed or not, so moving the listener to a PQ policy is required for a PQ target leg, and the target's own fix is required as well. This models the load balancer's ClientHello with Go's TLS client, not AWS's s2n-tls; confirm on real AWS by logging the negotiated group on the target.</p>
 <h2 id="t8-server-side-the-listener">Server side: the listener</h2>
 <table><thead><tr><th>Tool</th><th>Setting</th><th>Evidence</th></tr></thead><tbody><tr><td>Console</td><td>Security policy; default is already <code>ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code></td><td>Documented</td></tr><tr><td>AWS CLI</td><td><code>aws elbv2 modify-listener --listener-arn ARN --ssl-policy ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code></td><td>Documented</td></tr><tr><td>CloudFormation</td><td><code>AWS::ElasticLoadBalancingV2::Listener</code> property <code>SslPolicy</code></td><td>Tested (cfn-lint 1.60.1)</td></tr><tr><td>Terraform</td><td><code>aws_lb_listener.ssl_policy</code></td><td>Tested (<code>terraform validate</code>, Terraform 1.13.5, aws provider 6.73.0)</td></tr><tr><td>CDK</td><td><code>sslPolicy: elbv2.SslPolicy.TLS13_12_RES_PQ</code>; enum added by <a href="https://github.com/aws/aws-cdk/pull/36297">aws-cdk PR #36297</a>, merged 2026-03-19. Older versions: pass the string</td><td>Documented (source code)</td></tr><tr><td>LBC Ingress (ALB)</td><td><code>alb.ingress.kubernetes.io/ssl-policy</code>, or <code>IngressClassParams.spec.sslPolicy</code>, which wins over the annotation</td><td>Documented</td></tr><tr><td>LBC Service (NLB)</td><td><code>service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy</code></td><td>Documented</td></tr><tr><td>LBC cluster default</td><td>Helm value <code>defaultSSLPolicy</code> (flag <code>--default-ssl-policy</code>)</td><td>Documented</td></tr></tbody></table>
 <p>Terraform:</p>

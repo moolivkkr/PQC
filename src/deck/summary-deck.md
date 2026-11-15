@@ -188,11 +188,11 @@ subtitle: Detection and remediation summary, 2026-11-14 (end-to-end verified 202
 
 ## End-to-end verification on LocalStack
 
-- **437 cases, all passing:** Python, Node.js, Java, .NET and Go on Lambda (zip, layer, extension, image), ECS Fargate, ECS on EC2, and EC2 from AL2023 `2023.12.20261109` and AL2 AMIs.
+- **469 cases, all passing:** 437 client cases (Python, Node.js, Java, .NET and Go on Lambda zip, layer, extension and image, ECS Fargate, ECS on EC2, and EC2 from AL2023 `2023.12.20261109` and AL2 AMIs) plus 32 load balancer target-leg cases.
 - **The method:** each workload connects to a TLS observer that records the offered and negotiated groups, and the run is graded against the document's claims.
 - **Detection:** a CloudWatch Logs filter and the server-side handshake log both find the classical handshakes.
 - **Corrections** (next slide) are in the document and kept as regression cases in `e2e/`.
-- **Not covered:** real AWS, x86_64, and ALB/NLB listener policies (LocalStack's ALB ignores them).
+- **Not covered:** real AWS, x86_64, and the ALB/NLB listener leg (LocalStack's ALB ignores security policies).
 
 ## What the end-to-end run corrected
 
@@ -223,9 +223,20 @@ subtitle: Detection and remediation summary, 2026-11-14 (end-to-end verified 202
 
 - The **listener security policy** decides, not the certificate. Keep the existing ACM certificate (RSA or ECDSA).
 - Set `ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09`, later the TLS 1.3-only PQ policy. CLI, CloudFormation and CDK default to classical `ELBSecurityPolicy-2016-08`.
-- A PQ listener policy makes the ALB offer ML-KEM to HTTPS targets too: that leg is PQ when the container's TLS stack is.
+- A PQ listener policy makes the load balancer offer ML-KEM to HTTPS targets too: that hop is PQ only when the container has its language fix.
 - Verify in ALB connection logs (`tls_keyexchange`). Log the target leg on the target.
-- **Not testable on LocalStack:** its ALB ignores the policy (PQ even under `2016-08`). Needs real AWS.
+- LocalStack's ALB ignores the policy: the listener leg needs real AWS. The container leg is tested (next slide).
+
+## ALB to container: tested on LocalStack
+
+| Container (HTTPS target) | No fix | With the fix | No change needed |
+|---|---|---|---|
+| Python | AL2023, bookworm: classical | `OPENSSL_CONF`, `DEFAULT:PQ`: PQ | trixie |
+| Node.js | `node:20`, AL2023 nodejs22: classical | AL2023 nodejs20/22 + config or policy: PQ | `node:24` |
+| Go | 1.23; 1.26 with `go 1.23`: classical | `GODEBUG=tlsmlkem=1`: PQ | 1.26 with `go 1.26` |
+| Java | Corretto 8, 21: classical | Kit v2 on 8, 17, 21: PQ | Corretto 25.0.5 |
+| .NET | `runtime:8.0`, AL2023: classical | AL2023 + config or policy: PQ | `10.0-alpine`, `10.0-resolute` |
+| Non-PQ backend policy | Every target: classical TLS 1.2 | Same | Same |
 
 ## Resolved risks
 

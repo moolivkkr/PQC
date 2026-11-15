@@ -27,7 +27,7 @@ Oracle has said it will bring PQC to its LTS releases 21, 17, 11 and 8 ([Oracle 
 | JDK 21 (21.0.13) | SunJSSE | No (Lambda, container, EC2) | No | `jdk.tls.namedGroups` (no ML-KEM names) | Not tested | pq-tls kit v2 (agent + `pq-tls.security`), or upgrade to 25 | Tested |
 | JDK 17 (17.0.21) | SunJSSE | No | No | Same | Not tested | Kit v2, or upgrade | Tested |
 | JDK 11 | SunJSSE | No | No | Same | Not tested | Kit v2 | Tested on Lambda `java11` (kit v1, client); server and mTLS not tested |
-| JDK 8 | SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only (plain Corretto 8u512 offers TLS 1.3) | No | No | Same | Not tested | Kit v2 + `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Tested: e2e Lambda `java8.al2` zip/layer, `lambda/java:8.al2023` image, Fargate and ECS-EC2 `amazoncorretto:8` (8u512, HttpsURLConnection, mTLS); server not tested |
+| JDK 8 | SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only (plain Corretto 8u512 offers TLS 1.3) | No | No | Same | Not tested | Kit v2 + `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Tested: e2e Lambda `java8.al2` zip/layer, `lambda/java:8.al2023` image, Fargate and ECS-EC2 `amazoncorretto:8` (8u512, HttpsURLConnection, mTLS); server: e2e `srv-java-fargate-corretto8-agent` (HttpsServer, kit v2) |
 | Any JDK + Netty tcnative-boringssl-static 2.0.85 | BoringSSL | Yes | Yes | `OpenSslContextOption.GROUPS`; also reads `jdk.tls.namedGroups` | n/a | Nothing (keep it) | Tested |
 | Any JDK + AWS SDK v2 CRT client (2.35.11+) | s2n-tls | Yes, AWS API calls only | n/a | n/a | Not tested | Nothing; CRT before 2.35.11: upgrade | Tested (2.59.1); Documented |
 
@@ -199,6 +199,8 @@ When `jdk.tls.namedGroups` is set, Netty logs `Using configured namedGroups -D '
 #### Quarkus and Micronaut
 
 Quarkus (Vert.x) and Micronaut (Netty) follow the JDK rows with the JDK SSL engine and the Netty tcnative row with native SSL. Neither was run here; confirm the engine from the startup log before claiming PQ.
+
+**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `HttpsServer` target with a PKCS#12 RSA keystore stayed classical on Corretto 8 and 21, and negotiated X25519MLKEM768 with kit v2 on Corretto 8, 17 and 21 and with no change on Corretto 25.0.5. This is the first server-side test of kit v2 on JDK 8 (cases `srv-java-*`, Load balancers tab).
 
 ### C. Existing server certificates in a custom keystore or cert files
 

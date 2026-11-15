@@ -200,6 +200,8 @@ def ssl_context(conf, default_ssl_context_factory):
     return ctx
 ```
 
+**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `ssl`-module HTTPS target on AL2023 Python 3.12 or `python:3.12-slim-bookworm` stayed classical; `OPENSSL_CONF=openssl-pq.cnf`, `DEFAULT:PQ` or `python:3.13-slim-trixie` gave X25519MLKEM768, with the same certificate (cases `srv-python-*`, Load balancers tab).
+
 ### C. Existing server certificates and key files
 
 **Who this is:** a Python server that loads its own certificate and key. Find it with:

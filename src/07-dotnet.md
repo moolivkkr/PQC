@@ -145,6 +145,8 @@ var channel = GrpcChannel.ForAddress("https://orders.internal:8443",
 
 The same endpoint set to `Tls12` only rejected the PQ client with a `protocol_version` alert (Tested). Code that sets `SslProtocols` in `ConfigureHttpsDefaults`, `UseHttps(o => ...)` or `SslServerAuthenticationOptions.EnabledSslProtocols` has the same effect.
 
+**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `SslStream` server (Kestrel's TLS layer) stayed classical on `runtime:8.0` and AL2023 .NET 8, and negotiated X25519MLKEM768 on `10.0-alpine`, `aspnet:10.0-resolute`, and AL2023 with `OPENSSL_CONF` or `DEFAULT:PQ` (cases `srv-dotnet-*`, Load balancers tab).
+
 ### C. Existing server certificates: PFX, PEM, encrypted keys, SNI, X509Store
 
 - **Who this is:** Kestrel loads your own certificate. Find it with:
