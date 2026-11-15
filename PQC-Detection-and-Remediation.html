@@ -254,8 +254,9 @@ Distro Node follows the system OpenSSL: AL2023
 </tr>
 <tr>
 <td>Node.js 18, 20</td>
-<td>No in-process fix: bundled OpenSSL is older than 3.5. Upgrade the
-runtime</td>
+<td>No in-process fix: bundled OpenSSL has no ML-KEM. Upgrade the
+runtime; interim, the <code>pq-egress</code> extension (Tested in
+e2e)</td>
 <td>Upgrade Node, or use a distro Node linked to a system OpenSSL 3.5
 (Debian 13's Node 20 and AL2023's <code>dnf install nodejs20</code>
 negotiated PQ, the AL2023 one after <code>DEFAULT:PQ</code> or
@@ -490,9 +491,25 @@ a <code>sitecustomize.py</code> shim patches urllib3 and botocore to use
 pyOpenSSL, whose bundled OpenSSL offers PQ. Set <code>PYTHONPATH</code>
 to the shim's directory. It covers <code>requests</code> and
 <code>boto3</code>, not <code>ssl</code>, <code>http.client</code>,
-aiohttp or httpx. It overrides a deliberate botocore choice and was
-tested with certificate verification off, so treat it as a bridge until
-the runtime upgrade.</li>
+aiohttp or httpx. It overrides a deliberate botocore choice; it was
+tested with certificate verification on against a private CA, including
+mutual TLS (e2e <code>py-lambda-py39/310/311-*</code>), but not against
+real AWS endpoints, so treat it as a bridge until the runtime upgrade.
+Build pyOpenSSL, cryptography <strong>and idna</strong> inside each
+Python version's Lambda image: without idna every request fails.</li>
+<li><strong><code>pq-egress</code> Lambda extension</strong> (interim,
+Tested in the LocalStack e2e suite on every Lambda runtime: Python
+3.9-3.14, Node 18-24, Java 8-25, dotnet8/10, Go 1.23 on
+<code>provided.al2023</code>/<code>al2</code>): an external extension
+that makes the outbound TLS connection with X25519MLKEM768 for a
+function whose runtime can't. The function sends plain HTTP to
+<code>http://127.0.0.1:2779/&lt;route&gt;/&lt;path&gt;</code> (routes in
+<code>PQ_EGRESS_ROUTES</code>, optional client certificate per route),
+so the app's base URL changes; the loopback hop never leaves the
+execution environment. Same pattern as the AWS Parameters and Secrets
+Lambda Extension. Source: <code>e2e/lambda/extension/pq-egress/</code>.
+Not tested for AWS SDK calls (SigV4 signs the host name) or on real
+AWS.</li>
 </ul>
 <h3 id="t0-nodejs-bundled-openssl">Node.js (bundled OpenSSL)</h3>
 <p>Node compiles in its own OpenSSL; 22.20+ and 24.5+ ship 3.5 (use
@@ -680,9 +697,11 @@ block-update date can't be changed at all, so schedule those first.</p>
 <tbody>
 <tr>
 <td>Node.js 18 and 20 on Lambda</td>
-<td>No fix short of a runtime upgrade</td>
-<td>Schedule upgrades to nodejs22 or 24; one oqs-provider experiment
-possible (needs source from GitHub)</td>
+<td>No in-process fix short of a runtime upgrade. Interim: the
+<code>pq-egress</code> extension (Tested in e2e; the app calls it over
+loopback)</td>
+<td>Schedule upgrades to nodejs22 or 24; use the extension only for the
+calls that must be PQ before then</td>
 </tr>
 <tr>
 <td>Runtime deprecation dates</td>
@@ -695,9 +714,9 @@ workloads first</td>
 <tr>
 <td>Python 3.9 to 3.11 shim</td>
 <td>Covers requests and boto3 only; overrides a botocore design choice;
-tested with certificate verification off</td>
-<td>Test against real AWS endpoints with verification on; prefer the
-runtime upgrade</td>
+needs idna in the package. Tested with verification on against a private
+CA and mTLS (e2e), not against real AWS endpoints</td>
+<td>Test against real AWS endpoints; prefer the runtime upgrade</td>
 </tr>
 <tr>
 <td>Bouncy Castle agent on Java 8 to 21</td>
@@ -1074,6 +1093,23 @@ maximum, hard-coded <code>SunX509</code>)</td>
 and idna (built per Python version)</td>
 <td>Python 3.9 to 3.11 on Lambda only</td>
 <td>Routes requests and boto3 through pyOpenSSL's newer OpenSSL</td>
+</tr>
+<tr>
+<td><code>pq-tls</code> layer <code>wrapper</code>
+(<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code>)</td>
+<td>Lambda python3.9+, nodejs22+, java8-21, dotnet8/10</td>
+<td>Applies the right fix per runtime at start:
+<code>OPENSSL_CONF</code> (Python 3.12+, Node 22+, .NET), the shim
+(Python 3.9-3.11), the agent plus JDK 8 flags (Java). Leaves a
+function's own settings alone; <code>PQ_TLS_DISABLE=1</code> rolls
+back</td>
+</tr>
+<tr>
+<td><code>pq-egress</code> Lambda extension
+(<code>e2e/lambda/extension/pq-egress/</code>)</td>
+<td>Interim, any Lambda runtime without an in-process fix</td>
+<td>Makes the outbound TLS connection with PQ; the function calls it
+over loopback HTTP (Tested in the e2e suite, not on real AWS)</td>
 </tr>
 </tbody>
 </table>
@@ -19675,7 +19711,8 @@ ML-KEM on</td>
 </tr>
 <tr>
 <td><code>pq-tls/pyshim/sitecustomize.py</code></td>
-<td>Routes requests and boto3 through pyOpenSSL</td>
+<td>Routes requests and boto3 through pyOpenSSL (package must also
+contain pyOpenSSL, cryptography and idna)</td>
 <td>Client</td>
 <td>Python 3.9 to 3.11; Lambda only</td>
 <td>Python</td>

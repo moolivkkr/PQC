@@ -54,6 +54,8 @@ Every language tab follows the same page template, built for application teams t
 | `pq-tls.security` | Java 8 to 21 servers | One line, `ssl.KeyManagerFactory.algorithm=PKIX`, passed with `-Djava.security.properties=`, for EC server and client certificates under Bouncy Castle |
 | `ci/java-pq-check.sh` and each language's lint script | CI | Fails builds on settings that block PQ (pinned groups, TLS 1.2 maximum, hard-coded `SunX509`) |
 | `pyshim/sitecustomize.py` plus pyOpenSSL, cryptography and idna (built per Python version) | Python 3.9 to 3.11 on Lambda only | Routes requests and boto3 through pyOpenSSL's newer OpenSSL |
+| `pq-tls` layer `wrapper` (`AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`) | Lambda python3.9+, nodejs22+, java8-21, dotnet8/10 | Applies the right fix per runtime at start: `OPENSSL_CONF` (Python 3.12+, Node 22+, .NET), the shim (Python 3.9-3.11), the agent plus JDK 8 flags (Java). Leaves a function's own settings alone; `PQ_TLS_DISABLE=1` rolls back |
+| `pq-egress` Lambda extension (`e2e/lambda/extension/pq-egress/`) | Interim, any Lambda runtime without an in-process fix | Makes the outbound TLS connection with PQ; the function calls it over loopback HTTP (Tested in the e2e suite, not on real AWS) |
 
 The kit is versioned once and pulled in by the shared build template, so a fix to a file reaches every workload on its next release.
 

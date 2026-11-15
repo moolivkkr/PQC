@@ -1,6 +1,6 @@
 ---
 title: Post-quantum TLS across languages and infrastructure
-subtitle: Detection and remediation summary, 2026-11-14
+subtitle: Detection and remediation summary, 2026-11-14 (end-to-end verified 2026-11-15)
 ---
 
 # The problem
@@ -31,20 +31,20 @@ A TLS 1.2 connection is always non-PQ.
 | Language | PQ by default today | Fix |
 |---|---|---|
 | Go | 1.24+ with `go` line 1.24+ | Build with current Go; drop pinned `CurvePreferences` |
-| Python | Debian 13 / Alpine images; not Lambda or AL2023 | `openssl-pq.cnf` + `OPENSSL_CONF`; upgrade 3.9–3.11 on Lambda |
-| Node.js | Official 22.20+ / 24.5+ images; not on Lambda | `openssl-pq-node.cnf` on Lambda; upgrade 18 and 20 |
-| Java | JDK 25.0.5+ | Bouncy Castle agent (kit v2) on 8–21, or move to 25.0.5+ |
-| .NET | Alpine, Ubuntu 26.04 images; not Lambda or AL2023 | PQ base image or `openssl-pq.cnf`; Schannel opt-in on Windows |
+| Python | Debian 13 / Alpine images; not Lambda or AL2023 | `openssl-pq.cnf` + `OPENSSL_CONF`; 3.9–3.11 on Lambda: shim with pyOpenSSL + cryptography + **idna**, then upgrade |
+| Node.js | Official 22.20+ / 24.5+ images; not on Lambda | `openssl-pq-node.cnf` on Lambda; upgrade official 18/20 (AL2023 `nodejs20` takes the config) |
+| Java | JDK 25.0.5+ | Bouncy Castle agent (kit v2) on 8–21, or move to 25.0.5+; JDK 8 also needs `assumeOriginalHostName=true` |
+| .NET | Alpine, Ubuntu 26.04 images; not Lambda or AL2023 | PQ base image or `openssl-pq.cnf` (or the `pq-tls` layer on Lambda); Schannel opt-in on Windows |
 
 ## Existing certificates and keystores
 
 | Language | Keystore / key files | Watch out for |
 |---|---|---|
 | Go | No change | `AWS_CA_BUNDLE` with a plain `http.Client`; `x/crypto/pkcs12` vs OpenSSL 3 files |
-| Python | No change | gunicorn + encrypted key; `truststore` disables the Lambda shim |
+| Python | No change | gunicorn + encrypted key; `truststore` disables the Lambda shim; shim without `idna` breaks every request |
 | Node.js | No change | Legacy RC2/3DES PFX: re-export; empty CA store in Lambda image |
-| Java | No change | EC server cert under Bouncy Castle needs `PKIX` key manager; hard-coded `SunX509` |
-| .NET | No change | `CreateFromPemFile` on a CA-only file throws |
+| Java | No change | EC server cert under Bouncy Castle needs `PKIX` key manager; hard-coded `SunX509`; JDK 8 `HttpsURLConnection` fails without `assumeOriginalHostName=true` |
+| .NET | No change | `CreateFromPemFile` on a CA-only file throws; `X509Store` on Lambda needs `HOME=/tmp` |
 
 All cases tested with the PQ fix in place: own server certificate, private CA trust, mutual TLS.
 
@@ -56,6 +56,26 @@ All cases tested with the PQ fix in place: own server certificate, private CA tr
 - **Tested:** Tomcat 11, Jetty 12, HttpsServer on JDK 17 and 21; classical clients still connect.
 - **Still breaks:** code or Tomcat config that hard-codes `SunX509` (CI check flags it).
 - **Side effect:** RSA+EC stores now serve EC to default clients.
+
+## End-to-end verification on LocalStack
+
+- **437 cases, all passing:** Python, Node.js, Java, .NET and Go on Lambda (zip, layer, extension, image), ECS Fargate, ECS on EC2, and EC2 from AL2023 `2023.12.20261109` and AL2 AMIs.
+- **The method:** each workload connects to a TLS observer that records the offered and negotiated groups, and the run is graded against the document's claims.
+- **Detection:** a CloudWatch Logs filter and the server-side handshake log both find the classical handshakes.
+- **Not covered:** real AWS, x86_64, and server-side TLS behind an ALB or NLB.
+
+## What the end-to-end run corrected
+
+Each correction is in the document and kept as a regression case in `e2e/`.
+
+| Area | Was | Now |
+|---|---|---|
+| Python 3.9–3.11 shim | pyOpenSSL + cryptography | Also **idna**, built in each version's image; without it every request fails |
+| Node.js 20 | No setting adds PQ | AL2023 `nodejs20` (system OpenSSL 3.5.8) is PQ with the config |
+| Java 8 + kit | Agent + TLS 1.3 flag | Also `assumeOriginalHostName=true`; the layer adds it |
+| .NET on Lambda | Layer wrapper counted as a fix | The wrapper had no .NET branch; it now has one |
+| .NET `X509Store` | Re-import at start | On Lambda set `HOME=/tmp` first |
+| Go FIPS | P-256 only | P-256, P-384 and P-521 are offered |
 
 # Infrastructure
 
@@ -90,8 +110,8 @@ Canary first; rollback is removing the variable or file in the next release.
 
 ## Open items
 
-- Node.js 18/20 and Python 3.9–3.11 on Lambda: upgrade before AWS block-update dates.
+- Node.js 18/20 and Python 3.9–3.11 on Lambda: upgrade before AWS block-update dates. Interim: the `pq-egress` extension (Tested in e2e; the app calls it over loopback).
 - Lambda and Fargate outbound to non-AWS services: no AWS log shows the group.
 - API Gateway egress, CloudFront origin leg, IoT Core: classical by AWS design; record as exceptions.
-- IaC and guardrails not yet applied to an AWS account: validate in a sandbox, start in audit mode.
+- IaC, guardrails and the e2e results not yet confirmed on a real AWS account: validate in a sandbox, start in audit mode.
 - Untested: Ruby, PHP, Rust, Windows Schannel, HSM/PKCS#11 keys.

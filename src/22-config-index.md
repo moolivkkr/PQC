@@ -24,7 +24,7 @@ Every file listed in a tab's "Full configuration files" section, with what it do
 | `/etc/systemd/system/payments-api.service` | Service unit | Both | Go; EC2 | Go |
 | `go-pq-posture.sh` | CI gate and image or host scan of Go binaries | Infra | Go; CI, images, EC2 via SSM | Go |
 | `pq-tls/openssl-pq.cnf` | AL2023 crypto policy plus X25519MLKEM768 | Both | Python; Lambda 3.12+, AL2023 images and hosts | Python |
-| `pq-tls/pyshim/sitecustomize.py` | Routes requests and boto3 through pyOpenSSL | Client | Python 3.9 to 3.11; Lambda only | Python |
+| `pq-tls/pyshim/sitecustomize.py` | Routes requests and boto3 through pyOpenSSL (package must also contain pyOpenSSL, cryptography and idna) | Client | Python 3.9 to 3.11; Lambda only | Python |
 | `template.yaml` (SAM) | Lambda zip, python3.13 | Client | Python; Lambda zip | Python |
 | `cfn/lambda.yaml` | CloudFormation, Lambda zip | Client | Python; Lambda zip | Python |
 | `terraform/lambda.tf` | Terraform, Lambda zip | Client | Python; Lambda zip | Python |
