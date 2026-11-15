@@ -1,0 +1,6658 @@
+{
+ "lang": "go",
+ "generated_by": "cases/go.py",
+ "default_targets": [
+  "hybrid",
+  "pqonly",
+  "mtls",
+  "eccert",
+  "tls12"
+ ],
+ "cases": [
+  {
+   "id": "go-lambda-al2023-go123-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2023 bootstrap built with Go 1.23, go 1.23: no ML-KEM (Kyber draft offered)",
+   "doc": "src/03-go.md:21, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go124-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2023 bootstrap built with Go 1.24, go 1.24: PQ by default",
+   "doc": "src/03-go.md:20, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go125-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2023 bootstrap built with Go 1.25, go 1.25: PQ by default",
+   "doc": "src/03-go.md:19, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.25.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2023 bootstrap built with Go 1.26, go 1.26: PQ by default",
+   "doc": "src/03-go.md:18, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2023 bootstrap built with Go 1.27, go 1.27: PQ by default",
+   "doc": "src/03-go.md:17, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go123-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "provided.al2023 Go 1.23 bootstrap + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go123-pqtls-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "provided.al2023 Go 1.23 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER: wrapper has no Go branch, Go ignores OPENSSL_CONF -> no effect",
+   "doc": "kit/java-v2/pq-tls-layer/wrapper (no provided.* branch); src/03-go.md:7 (OpenSSL plays no part)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go123-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2 bootstrap built with Go 1.23, go 1.23: no ML-KEM (Kyber draft offered)",
+   "doc": "src/03-go.md:21, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go124-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2 bootstrap built with Go 1.24, go 1.24: PQ by default",
+   "doc": "src/03-go.md:20, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go125-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2 bootstrap built with Go 1.25, go 1.25: PQ by default",
+   "doc": "src/03-go.md:19, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.25.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go126-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2 bootstrap built with Go 1.26, go 1.26: PQ by default",
+   "doc": "src/03-go.md:18, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go127-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "provided.al2 bootstrap built with Go 1.27, go 1.27: PQ by default",
+   "doc": "src/03-go.md:17, :53",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go123-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "provided.al2 Go 1.23 bootstrap + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go123-pqtls-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "provided.al2 Go 1.23 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER: wrapper has no Go branch, Go ignores OPENSSL_CONF -> no effect",
+   "doc": "kit/java-v2/pq-tls-layer/wrapper (no provided.* branch); src/03-go.md:7 (OpenSSL plays no part)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-pqtls-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "provided.al2023 Go 1.27 + pq-tls layer: no effect, still PQ",
+   "doc": "kit/java-v2/pq-tls-layer/wrapper; src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go123-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "Go 1.23 + ONE combined layer (wrapper + extension), extension env: PQ via the extension",
+   "doc": "src/03-go.md",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go123-combined-wrapper",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "Go 1.23 + combined layer, wrapper path only (no extension env): no effect",
+   "doc": "src/03-go.md",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-mod123",
+   "compute": "lambda",
+   "mode": "go-line",
+   "title": "Go 1.27 toolchain, go 1.23 line: tlsmlkem=0 -> classical (most common miss)",
+   "doc": "src/03-go.md:39, :559",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27-go1.23.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-mod123",
+   "compute": "lambda",
+   "mode": "go-line",
+   "title": "Go 1.26, go 1.23 line: classical",
+   "doc": "src/03-go.md:42",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-go1.23.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go125-mod123",
+   "compute": "lambda",
+   "mode": "go-line",
+   "title": "Go 1.25, go 1.23 line: classical",
+   "doc": "src/03-go.md:44",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.25-go1.23.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go124-mod123",
+   "compute": "lambda",
+   "mode": "go-line",
+   "title": "Go 1.24, go 1.23 line: classical",
+   "doc": "src/03-go.md:46, :20",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24-go1.23.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-mod125",
+   "compute": "lambda",
+   "mode": "go-line",
+   "title": "Go 1.26, go 1.25 line: X25519MLKEM768 but no SecP hybrids (tlssecpmlkem=0)",
+   "doc": "src/03-go.md:41, :565",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-go1.25.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go124-mod123-godebug-env",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.24 go 1.23 + GODEBUG=tlsmlkem=1 in function env: PQ, no rebuild",
+   "doc": "src/03-go.md:20, :65, :347",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24-go1.23.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "tlsmlkem=1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-mod123-godebug-env",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.26 go 1.23 + GODEBUG=tlsmlkem=1,tlssecpmlkem=1 (template.yaml / lambda.tf value): PQ incl. SecP hybrids",
+   "doc": "src/03-go.md:481, :857",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-go1.23.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "tlsmlkem=1,tlssecpmlkem=1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-mod123-godebug-gomod",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.26 go 1.23 + go.mod godebug (tlsmlkem=1, tlssecpmlkem=1) block (configs/go/go.variant2.mod)",
+   "doc": "src/03-go.md:63, :617-626",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-go1.23-godebug.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go124-mod123-godebug-gomod",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.24 go 1.23 + go.mod 'godebug tlsmlkem=1' (tlssecpmlkem unknown to 1.24: build fails, see build log)",
+   "doc": "src/03-go.md:63, :628",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24-go1.23-godebug.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-mod123-directive",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.27 go 1.23 + //go:debug tlsmlkem=1 above package main: X25519MLKEM768 only (tlssecpmlkem stays 0)",
+   "doc": "src/03-go.md:63",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27-go1.23-directive.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-tlsmlkem0",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.27 + GODEBUG=tlsmlkem=0 at run time: PQ off",
+   "doc": "src/03-go.md:65, :346",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "tlsmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go124-tlsmlkem0",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.24 + GODEBUG=tlsmlkem=0: PQ off",
+   "doc": "src/03-go.md:65, :346",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "tlsmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-tlssecpmlkem0",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Go 1.26 + GODEBUG=tlssecpmlkem=0: X25519MLKEM768 only",
+   "doc": "src/03-go.md:521",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "tlssecpmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-rollback",
+   "compute": "lambda",
+   "mode": "godebug",
+   "title": "Rollback: GODEBUG=tlsmlkem=0,tlssecpmlkem=0 on a PQ build -> classical",
+   "doc": "src/03-go.md:467, :583",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "tlsmlkem=0,tlssecpmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-curves-classical",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "CurvePreferences {X25519, P256}: classical, PQ-only server fails",
+   "doc": "src/03-go.md:341",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "X25519"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CURVES": "classical"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-curves-hybrid",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "CurvePreferences {X25519MLKEM768, X25519, P256}: PQ",
+   "doc": "src/03-go.md:342",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CURVES": "hybrid"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-curves-hybrid-tlsmlkem0",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "Go 1.26: explicit hybrid list + GODEBUG=tlsmlkem=0 -> hybrid dropped from the explicit list",
+   "doc": "src/03-go.md:67, :342, :569",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CURVES": "hybrid",
+     "GODEBUG": "tlsmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-curves-hybrid-tlsmlkem0",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "Go 1.27: explicit hybrid list beats GODEBUG=tlsmlkem=0",
+   "doc": "src/03-go.md:17, :67",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CURVES": "hybrid",
+     "GODEBUG": "tlsmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-max12",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "MaxVersion TLS 1.2: never PQ, PQ-only server: protocol version",
+   "doc": "src/03-go.md:343",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "protocol version"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_VERSION": "max12"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-min13",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "MinVersion TLS 1.3: PQ (TLS 1.2-only server then refused)",
+   "doc": "src/03-go.md:344",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "protocol version"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_VERSION": "min13"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-ciphers12",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "CipherSuites (TLS 1.2 list): doesn't touch TLS 1.3, PQ",
+   "doc": "src/03-go.md:345",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CIPHERS": "tls12"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go123-curve4588",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "Go 1.23 with X25519MLKEM768 listed by number (4588): every handshake fails, even to classical",
+   "doc": "src/03-go.md:348",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "CurvePreferences includes unsupported curve"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "CurvePreferences includes unsupported curve"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "CurvePreferences includes unsupported curve"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "CurvePreferences includes unsupported curve"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "CurvePreferences includes unsupported curve"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CURVES": "hybrid"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-mlkem1024",
+   "compute": "lambda",
+   "mode": "settings",
+   "title": "Go 1.27: pure MLKEM1024 only when listed (offered), hybrid still negotiated",
+   "doc": "src/03-go.md:49",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "MLKEM1024",
+      "X25519"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CURVES": "mlkem1024"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-trust-ssl-cert-file",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "RootCAs nil + SSL_CERT_FILE=<private CA>: PQ",
+   "doc": "src/03-go.md:241",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "env",
+     "SSL_CERT_FILE": "/var/task/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go127-trust-ssl-cert-dir",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "RootCAs nil + SSL_CERT_DIR=<dir with CA>: PQ",
+   "doc": "src/03-go.md:242",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "env",
+     "SSL_CERT_DIR": "/var/task/certs"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-trust-none",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "RootCAs nil, no SSL_CERT_*: private CA unknown (negative)",
+   "doc": "src/03-go.md:243",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "unknown authority"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-trust-system-plus-ca",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "SystemCertPool() + AppendCertsFromPEM(ca): PQ",
+   "doc": "src/03-go.md:244",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "system+ca"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-trust-empty",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "RootCAs = empty pool (negative)",
+   "doc": "src/03-go.md:246",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "unknown authority"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "empty"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go124-trust-ssl-cert-file",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "Go 1.24: SSL_CERT_FILE trust, PQ",
+   "doc": "src/03-go.md:237",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "env",
+     "SSL_CERT_FILE": "/var/task/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go123-trust-ssl-cert-file",
+   "compute": "lambda",
+   "mode": "trust",
+   "title": "Go 1.23: same trust, classical (trust was never the cause)",
+   "doc": "src/03-go.md:311",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_TRUST": "env",
+     "SSL_CERT_FILE": "/var/task/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-clientcert-callback",
+   "compute": "lambda",
+   "mode": "mtls",
+   "title": "GetClientCertificate callback: PQ, mTLS OK",
+   "doc": "src/03-go.md:321",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CLIENTCERT": "callback"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-clientcert-env-pem",
+   "compute": "lambda",
+   "mode": "mtls",
+   "title": "Client cert + key PEM injected as env vars (tls.X509KeyPair(os.Getenv)): PQ",
+   "doc": "src/03-go.md:157, :180",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CLIENTCERT": "env-pem",
+     "PQC_GO_CERT_PEM": "-----BEGIN CERTIFICATE-----\nMIIDFDCCAfygAwIBAgIUC0srCxw49BXsVran14J1g8yOLIcwDQYJKoZIhvcNAQEL\nBQAwGjEYMBYGA1UEAwwPcHFjLWUyZSB0ZXN0IENBMB4XDTI2MTExNTAwMjMyMVoX\nDTI5MDIxNzAwMjMyMVowFTETMBEGA1UEAwwKcHFjLWNsaWVudDCCASIwDQYJKoZI\nhvcNAQEBBQADggEPADCCAQoCggEBAK1aB6Gu5dlLbN7ofSJ6RjWT4IIZeeknqRtr\nEaxdrQj6+fcMkiFTc6vIAqhETlIk+qlfKpwifcl7HzOLz8Ew0J+EEMIEXJsh9W3Z\nc7qtvB1DZcEe95SIhfMk/6tPZkugy25esxlSUuDGqGMqS0OKPCLnfP+Y1iNSNAeu\nkgJdS18BOLSrJQOlpfCN3N6ygKAGgvoEjru00HZIzKDrEO/0SmUlWQgfcgxEX1eT\nu3mWf5+Ss2OBmmKKQh9OUogTtUlTeLuHxt2ohmhcUxfk1zmUkwv+RHBWSqh4idK3\no0Rckzvn3kXni+7JbNs6cXk4jZNWM8qp13mP1ZsZCk3LG9Q5w4cCAwEAAaNXMFUw\nEwYDVR0lBAwwCgYIKwYBBQUHAwIwHQYDVR0OBBYEFOTsoE7J2Onuc/JqdlWx3es7\nEnJ3MB8GA1UdIwQYMBaAFI0moGrvznkmrFAabey9QL7nrkbSMA0GCSqGSIb3DQEB\nCwUAA4IBAQB873sv24y+Elzb8bz7ooLliXpYx8vNnq2/J8cAFKoCjqCmxblLBxwS\nRULDJLgoN8+xgsd2URjhGuVfXB7Z2u28nmR1kWoppb0irRaubVuFha0vqoHcxrr2\nnxQwkCQ/AEJuEe/WnGQo2J7E8jJWFrhx9AoQl6n4/cFQ2txOuLvOHI2jYh5ky7Bt\nRpl6YpGY7hCdKBjxRtx/oLkPRYVDifUd0VbuHrrwkd3zlPcnNKPXJdB3KDniYYsP\nzUaHB5sX8jc3exYcfE2UgBcyhwItmNMjO4DGWgg/vEjm1cUchyXIuAhm01NWrTEb\n46ywMdPGns+jWEL5FjPR3kFs8YxnP56p\n-----END CERTIFICATE-----\n",
+     "PQC_GO_KEY_PEM": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCtWgehruXZS2ze\n6H0iekY1k+CCGXnpJ6kbaxGsXa0I+vn3DJIhU3OryAKoRE5SJPqpXyqcIn3Jex8z\ni8/BMNCfhBDCBFybIfVt2XO6rbwdQ2XBHveUiIXzJP+rT2ZLoMtuXrMZUlLgxqhj\nKktDijwi53z/mNYjUjQHrpICXUtfATi0qyUDpaXwjdzesoCgBoL6BI67tNB2SMyg\n6xDv9EplJVkIH3IMRF9Xk7t5ln+fkrNjgZpiikIfTlKIE7VJU3i7h8bdqIZoXFMX\n5Nc5lJML/kRwVkqoeInSt6NEXJM7595F54vuyWzbOnF5OI2TVjPKqdd5j9WbGQpN\nyxvUOcOHAgMBAAECggEAMmdUg7r2YvWO3Mttowo5gteR9lIRA+1/upSpqVv9dXiA\nGMijbqQ0pFR+DU37FeBhr8CXg5l1yJEPk+3JhQs8Bb2hH8Cj6ol3sq6A+10LrtiL\nbBkkdKAzjmyKGFX4UPIaZGeNnMW2ilvI1ziTdLprXNzBGBJo5RFARqGIG77jrOYT\ngVlKhaK6sp1jT/78qHjjyzE8zvTkKkUpUeuNsbb8Lsjh9nowQNLqPJ9+H6EUhWEC\nksUKTBldgjqRhwPHb+HS4xuHhWLqI/o5Qi3i/izeEc2J9zwfGZkArJye5hmW4poh\nWnvxgCViRiJj5RG05P4NUlDAmkkLDtxAv8E0GQPGcQKBgQDm3q3pNYZaT/e5efZq\n8Y6sEfqnU3fhHkvlGTJMuh+RQ08uCR5HFjGzHgMpPRPtUGlV7qYd6lMLFfyAFbT2\ni46c5n9/MZEeLTaGCYVkZg5JKrASALDLGSkblUjJ2vAXRU5THoCbu/IS+1UIDsP2\nlyLi+C+zkCTuYFycfNlDWrAbsQKBgQDAOJLokPxGKVyDH0ZNiSc/2TMuZhzaEybz\n+CgCQO6ek0vZr6AIoRx8XTkvAFB1g1ctWcdakpePArV2PQSPcXN9Scdc7vEsIHZD\nb14Yl89zA5olICkSGYkuf6ydLO9zOLsJRmDAfd/GifC8k1k3tJbA069qaJRPb1rF\nxXjq3st4twKBgHSpn94R0xN+B2Ntcwz1hbAD4dJ+Bjz2z0k0o0tMXjlMdw1/RBKN\n741gpB5Jo/EuyhvHXaAOUepvMMoUrf5L5UP54gGHLZq/JCc1Vne2bo+gh5qBSNVI\noJI0rLR78wj/V6X+6uRHY/sdkAljVLkeBF4HJiupsk/W19Wn7S3w/L7xAoGAQ2gT\nbGbbcKc0f+7Jsor0Lpm2LwE0AO1SbZ+KODAY/ZbdtHq3/g6xdJMkaG0NygfC3G5t\nUD+z0jy68bm4Da1VOIxU0ywfer/vePpm3uztnIGY3ogGnwhBaQLwvzVwytEMFdaO\nOzJo9LCOsTJiyPwVGY2iKAiAadK83DnBi2uRosUCgYEAuOYAfUQ/DpWKeQfX+/Tl\nE5L/aY7lyVfs4TT1rVCeyVWcd7JLXASFLCJDJntUcKrgjkvJyy8XRiRdclwOmi2k\nLwwWsJ5j11BnAeXpD404+lGOJ47pb//tBPv6CiRksmZf9zBfywyDd5L3ODujPsv0\nKLp/z1d+qcxz4RyhTpYiAOo=\n-----END PRIVATE KEY-----\n"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-clientcert-none",
+   "compute": "lambda",
+   "mode": "mtls",
+   "title": "No client cert (negative): mTLS server refuses, rest PQ",
+   "doc": "src/03-go.md:323, :579",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "certificate required"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CLIENTCERT": "none"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go123-clientcert-callback",
+   "compute": "lambda",
+   "mode": "mtls",
+   "title": "Go 1.23 GetClientCertificate: mTLS OK, classical",
+   "doc": "src/03-go.md:319",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.23.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CLIENTCERT": "callback"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-p12-sslmate",
+   "compute": "lambda",
+   "mode": "mtls",
+   "title": "Client cert from OpenSSL 3 default PKCS#12 via sslmate go-pkcs12 DecodeChain: PQ",
+   "doc": "src/03-go.md:154",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-extras.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CLIENTCERT": "p12-sslmate"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-p12-xcrypto",
+   "compute": "lambda",
+   "mode": "mtls",
+   "title": "Same PKCS#12 via frozen x/crypto/pkcs12 Decode: load fails (unknown digest algorithm), mTLS target fails",
+   "doc": "src/03-go.md:156, :573",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "unknown digest algorithm: 2\\.16\\.840\\.1\\.101\\.3\\.4\\.2\\.1"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-extras.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_CLIENTCERT": "p12-xcrypto"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-pin-ca",
+   "compute": "lambda",
+   "mode": "pinning",
+   "title": "VerifyConnection SPKI pin (CA key): passes over X25519MLKEM768",
+   "doc": "src/03-go.md:438",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_PIN": "ca"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-pin-wrong",
+   "compute": "lambda",
+   "mode": "pinning",
+   "title": "Wrong SPKI pin: fails with the app's error (negative)",
+   "doc": "src/03-go.md:438",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "SPKI pin mismatch"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "SPKI pin mismatch"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "SPKI pin mismatch"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "SPKI pin mismatch"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "SPKI pin mismatch"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_PIN": "wrong"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go124-fips140-on",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.24 GODEBUG=fips140=on: no PQ, no X25519",
+   "doc": "src/03-go.md:371",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab says 'P-256 only' (src/03-go.md:371, :374); the client offers P-256, P-384 and P-521 (crypto/tls defaultCurvePreferencesFIPS / allowedCurvePreferencesFIPS) and the server picked P-256. No PQ, no X25519 as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go124-fips140-only",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.24 GODEBUG=fips140=only: same as on",
+   "doc": "src/03-go.md:372",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=only"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab says 'P-256 only' (src/03-go.md:371, :374); the client offers P-256, P-384 and P-521 (crypto/tls defaultCurvePreferencesFIPS / allowedCurvePreferencesFIPS) and the server picked P-256. No PQ, no X25519 as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go124-gofips140",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.24 built GOFIPS140=latest: no PQ",
+   "doc": "src/03-go.md:363, :523",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.24-fips.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab says 'P-256 only' (src/03-go.md:371, :374); the client offers P-256, P-384 and P-521 (crypto/tls defaultCurvePreferencesFIPS / allowedCurvePreferencesFIPS) and the server picked P-256. No PQ, no X25519 as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go125-fips140-on",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.25 fips140=on: X25519MLKEM768 + NIST curves",
+   "doc": "src/03-go.md:19, :371",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.25.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go125-fips140-only",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.25 fips140=only: every handshake fails",
+   "doc": "src/03-go.md:19, :372",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "use of X25519 is not allowed in FIPS 140-only mode"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "use of X25519 is not allowed in FIPS 140-only mode"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "use of X25519 is not allowed in FIPS 140-only mode"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "use of X25519 is not allowed in FIPS 140-only mode"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "use of X25519 is not allowed in FIPS 140-only mode"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.25.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=only"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-fips140-on",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.26 fips140=on: three hybrids + NIST curves",
+   "doc": "src/03-go.md:17-18, :371-372",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-fips140-only",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.26 fips140=only: three hybrids + NIST curves",
+   "doc": "src/03-go.md:17-18, :371-372",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=only"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-fips140-on",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.27 fips140=on: three hybrids + NIST curves",
+   "doc": "src/03-go.md:17-18, :371-372",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-fips140-only",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.27 fips140=only: three hybrids + NIST curves",
+   "doc": "src/03-go.md:17-18, :371-372",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27.zip",
+    "layers": [],
+    "env": {
+     "GODEBUG": "fips140=only"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-gofips140-v1260",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.26 GOFIPS140=v1.26.0 build (Dockerfile.fips): PQ",
+   "doc": "src/03-go.md:365, :489, :831",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-fips-v1.26.0.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2-go126-gofips140-v100",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.26 GOFIPS140=v1.0.0 (CMVP #5247 module): group policy follows the toolchain, SecP hybrids offered",
+   "doc": "src/03-go.md:377",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-fips-v1.0.0.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-gofips140",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.27 GOFIPS140=latest build: PQ",
+   "doc": "src/03-go.md:17",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27-fips.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-boring",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.26 GOEXPERIMENT=boringcrypto, no fipsonly: same as non-FIPS (PQ)",
+   "doc": "src/03-go.md:373",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-boring.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go125-boring-fipsonly",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.25 boringcrypto + crypto/tls/fipsonly: no PQ",
+   "doc": "src/03-go.md:374",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.25-boring-fipsonly.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab says 'P-256 only' (src/03-go.md:371, :374); the client offers P-256, P-384 and P-521 (crypto/tls defaultCurvePreferencesFIPS / allowedCurvePreferencesFIPS) and the server picked P-256. No PQ, no X25519 as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-boring-fipsonly",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.26 boringcrypto + crypto/tls/fipsonly: no PQ",
+   "doc": "src/03-go.md:374",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-boring-fipsonly.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab says 'P-256 only' (src/03-go.md:371, :374); the client offers P-256, P-384 and P-521 (crypto/tls defaultCurvePreferencesFIPS / allowedCurvePreferencesFIPS) and the server picked P-256. No PQ, no X25519 as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-boring-fipsonly",
+   "compute": "lambda",
+   "mode": "fips",
+   "title": "Go 1.27 boringcrypto + crypto/tls/fipsonly: no PQ",
+   "doc": "src/03-go.md:374",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27-boring-fipsonly.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab says 'P-256 only' (src/03-go.md:371, :374); the client offers P-256, P-384 and P-521 (crypto/tls defaultCurvePreferencesFIPS / allowedCurvePreferencesFIPS) and the server picked P-256. No PQ, no X25519 as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-awssdk",
+   "compute": "lambda",
+   "mode": "library",
+   "title": "aws-sdk-go-v2 v1.48.0 BuildableClient (CA + client cert): PQ outside FIPS",
+   "doc": "src/03-go.md:93, :387",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-extras.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_STACK": "awssdk"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-awssdk-fips",
+   "compute": "lambda",
+   "mode": "library",
+   "title": "aws-sdk-go-v2 in FIPS mode (fips140=on): SDK forces P-256/P-384/P-521 -> no PQ",
+   "doc": "src/03-go.md:94, :405",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "CurveP256",
+     "offered_groups": [
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "group": "CurveP256"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-extras.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_STACK": "awssdk",
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go126-awssdk-fips-fix",
+   "compute": "lambda",
+   "mode": "library",
+   "title": "aws-sdk-go-v2 FIPS + the tab's WithTransportOptions fix (hybrids put back): PQ",
+   "doc": "src/03-go.md:405-415, :657-665",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "CurveP256",
+      "CurveP384"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.26-extras.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_STACK": "awssdk-fipsfix",
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-al2023-go127-awssdk-tlsmlkem0",
+   "compute": "lambda",
+   "mode": "library",
+   "title": "aws-sdk-go-v2 + GODEBUG=tlsmlkem=0: fails to PQ-only",
+   "doc": "src/03-go.md:387",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "provided.al2023",
+    "handler": "bootstrap",
+    "zip": "go/probe-1.27-extras.zip",
+    "layers": [],
+    "env": {
+     "PQC_GO_STACK": "awssdk",
+     "GODEBUG": "tlsmlkem=0"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-image-go126",
+   "compute": "lambda",
+   "mode": "image",
+   "title": "Lambda container image (configs/go/Dockerfile.lambda -> provided:al2023), golang:1.26 builder, go 1.26: PQ",
+   "doc": "src/03-go.md:54, :483, :809-822",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-go-lambda:go126",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-lambda-image-go123",
+   "compute": "lambda",
+   "mode": "image",
+   "title": "Lambda container image (configs/go/Dockerfile.lambda -> provided:al2023), golang:1.23 builder: classical",
+   "doc": "src/03-go.md:54, :483, :809-822",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-go-lambda:go123",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-go123",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 2023.12.20261109, Go 1.23 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.23",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-go124",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 2023.12.20261109, Go 1.24 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.24",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.24"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-go127",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 2023.12.20261109, Go 1.27 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.27",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-scratch-go123",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate scratch (no OS, no CA bundle), Go 1.23 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:scratch probe-1.23",
+   "ecs": {
+    "image": "pqc-go:scratch",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-scratch-go124",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate scratch (no OS, no CA bundle), Go 1.24 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:scratch probe-1.24",
+   "ecs": {
+    "image": "pqc-go:scratch",
+    "command": [
+     "/app/bin/probe-1.24"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-scratch-go127",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate scratch (no OS, no CA bundle), Go 1.27 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:scratch probe-1.27",
+   "ecs": {
+    "image": "pqc-go:scratch",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-distroless-go123",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate distroless/static-debian12:nonroot, Go 1.23 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:distroless probe-1.23",
+   "ecs": {
+    "image": "pqc-go:distroless",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-distroless-go124",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate distroless/static-debian12:nonroot, Go 1.24 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:distroless probe-1.24",
+   "ecs": {
+    "image": "pqc-go:distroless",
+    "command": [
+     "/app/bin/probe-1.24"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-distroless-go127",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate distroless/static-debian12:nonroot, Go 1.27 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:distroless probe-1.27",
+   "ecs": {
+    "image": "pqc-go:distroless",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-golang-go123",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate golang:1.27 (Debian 13, OpenSSL 3.5 PQ by default), Go 1.23 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:golang probe-1.23",
+   "ecs": {
+    "image": "pqc-go:golang",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-golang-go124",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate golang:1.27 (Debian 13, OpenSSL 3.5 PQ by default), Go 1.24 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:golang probe-1.24",
+   "ecs": {
+    "image": "pqc-go:golang",
+    "command": [
+     "/app/bin/probe-1.24"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-golang-go127",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate golang:1.27 (Debian 13, OpenSSL 3.5 PQ by default), Go 1.27 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:golang probe-1.27",
+   "ecs": {
+    "image": "pqc-go:golang",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-policy-go123",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 with update-crypto-policies DEFAULT:PQ, Go 1.23: policy changes nothing",
+   "doc": "src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023-policy probe-1.23",
+   "ecs": {
+    "image": "pqc-go:al2023-policy",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2-go123",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate Amazon Linux 2 (OpenSSL 1.0.2) base, Go 1.23: OS TLS library plays no part",
+   "doc": "src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2 probe-1.23",
+   "ecs": {
+    "image": "pqc-go:al2",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-policy-go127",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 with update-crypto-policies DEFAULT:PQ, Go 1.27: policy changes nothing",
+   "doc": "src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023-policy probe-1.27",
+   "ecs": {
+    "image": "pqc-go:al2023-policy",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2-go127",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate Amazon Linux 2 (OpenSSL 1.0.2) base, Go 1.27: OS TLS library plays no part",
+   "doc": "src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2 probe-1.27",
+   "ecs": {
+    "image": "pqc-go:al2",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-go126-mod123-taskdef-godebug",
+   "compute": "ecs-fargate",
+   "mode": "godebug",
+   "title": "Fargate Go 1.26 go 1.23 + task-def GODEBUG=tlsmlkem=1,tlssecpmlkem=1 (configs/go/taskdef.json)",
+   "doc": "src/03-go.md:485, :931",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.26-go1.23",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.26-go1.23"
+    ],
+    "env": {
+     "GODEBUG": "tlsmlkem=1,tlssecpmlkem=1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-scratch-go127-ssl-cert-file",
+   "compute": "ecs-fargate",
+   "mode": "trust",
+   "title": "Fargate scratch: SSL_CERT_FILE with the private CA, RootCAs nil: PQ",
+   "doc": "src/03-go.md:261, :292",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:scratch probe-1.27",
+   "ecs": {
+    "image": "pqc-go:scratch",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {
+     "PQC_GO_TRUST": "env",
+     "SSL_CERT_FILE": "/app/bin/certs/ca.crt"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-scratch-go127-no-bundle",
+   "compute": "ecs-fargate",
+   "mode": "trust",
+   "title": "Fargate scratch, RootCAs nil and no bundle: unknown authority (negative)",
+   "doc": "src/03-go.md:292",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "unknown authority"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "unknown authority"
+    }
+   },
+   "runtime_label": "pqc-go:scratch probe-1.27",
+   "ecs": {
+    "image": "pqc-go:scratch",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {
+     "PQC_GO_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-doc-dockerfile",
+   "compute": "ecs-fargate",
+   "mode": "image",
+   "title": "Fargate image from configs/go/Dockerfile (golang:1.26 -> distroless nonroot): PQ",
+   "doc": "src/03-go.md:485, :788-807",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:doc-dockerfile (ENTRYPOINT)",
+   "ecs": {
+    "image": "pqc-go:doc-dockerfile",
+    "command": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-doc-dockerfile-fips",
+   "compute": "ecs-fargate",
+   "mode": "fips",
+   "title": "Fargate image from configs/go/Dockerfile.fips (GOFIPS140=v1.26.0): PQ in FIPS mode",
+   "doc": "src/03-go.md:489, :824-836",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "runtime_label": "pqc-go:doc-dockerfile-fips (ENTRYPOINT)",
+   "ecs": {
+    "image": "pqc-go:doc-dockerfile-fips",
+    "command": [],
+    "env": {}
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-fargate-al2023-go126-boring-fips140-on",
+   "compute": "ecs-fargate",
+   "mode": "fips",
+   "title": "boringcrypto build + GODEBUG=fips140=on: panics at start (probe -wrap records the crash)",
+   "doc": "src/03-go.md:375, :830",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.26-boring",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.27",
+     "-wrap",
+     "/app/bin/probe-1.26-boring"
+    ],
+    "env": {
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ecsec2-al2023-go123",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, AL2023 2023.12.20261109, Go 1.23 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.23",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.23"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ecsec2-al2023-go127",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, AL2023 2023.12.20261109, Go 1.27 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:al2023 probe-1.27",
+   "ecs": {
+    "image": "pqc-go:al2023",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ecsec2-scratch-go127",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, scratch (no OS, no CA bundle), Go 1.27 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:scratch probe-1.27",
+   "ecs": {
+    "image": "pqc-go:scratch",
+    "command": [
+     "/app/bin/probe-1.27"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ecsec2-distroless-go124",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, distroless/static-debian12:nonroot, Go 1.24 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:distroless probe-1.24",
+   "ecs": {
+    "image": "pqc-go:distroless",
+    "command": [
+     "/app/bin/probe-1.24"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ecsec2-golang-go126",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, golang:1.27 (Debian 13, OpenSSL 3.5 PQ by default), Go 1.26 binary",
+   "doc": "src/03-go.md:13, :55",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-go:golang probe-1.26",
+   "ecs": {
+    "image": "pqc-go:golang",
+    "command": [
+     "/app/bin/probe-1.26"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go123",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, prebuilt Go 1.23 binary, default crypto policy",
+   "doc": "src/03-go.md:56, :487",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.23",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.23",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go124",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, prebuilt Go 1.24 binary, default crypto policy",
+   "doc": "src/03-go.md:56, :487",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.24",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.24",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go125",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, prebuilt Go 1.25 binary, default crypto policy",
+   "doc": "src/03-go.md:56, :487",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.25",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.25",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go126",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, prebuilt Go 1.26 binary, default crypto policy",
+   "doc": "src/03-go.md:56, :487",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.26",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.26",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go127",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, prebuilt Go 1.27 binary, default crypto policy",
+   "doc": "src/03-go.md:56, :487",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.27",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.27",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go123-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 host update-crypto-policies --set DEFAULT:PQ, Go 1.23: no change (Go ignores the policy)",
+   "doc": "src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.23",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.23",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go127-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 host update-crypto-policies --set DEFAULT:PQ, Go 1.27: no change (Go ignores the policy)",
+   "doc": "src/03-go.md:7",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.27",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.27",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-distro-golang",
+   "compute": "ec2",
+   "mode": "distro-toolchain",
+   "title": "EC2 AL2023: probe built on the AMI with dnf golang (1.26.10), go 1.26: PQ incl. SecP hybrids",
+   "doc": "src/03-go.md:7 (distro toolchain)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-distro",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-distro",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go124-mod123-systemd-godebug",
+   "compute": "ec2",
+   "mode": "godebug",
+   "title": "EC2 AL2023 Go 1.24 go 1.23 + Environment=GODEBUG=tlsmlkem=1 (systemd unit equivalent): PQ",
+   "doc": "src/03-go.md:487, :1015",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.24-go1.23",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.24-go1.23",
+    "setup": [],
+    "env": {
+     "GODEBUG": "tlsmlkem=1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2023-go127-fips140-on",
+   "compute": "ec2",
+   "mode": "fips",
+   "title": "EC2 AL2023 Go 1.27 fips140=on: PQ",
+   "doc": "src/03-go.md:17",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2",
+     "group": "CurveP256"
+    }
+   },
+   "runtime_label": "pqc-al2023 probe-1.27",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/go/bin/probe-1.27",
+    "setup": [],
+    "env": {
+     "GODEBUG": "fips140=on"
+    }
+   },
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Tab lists the FIPS groups as hybrids + 'P-256' (src/03-go.md:17, :371); the client also offers P-384 and P-521. PQ as claimed.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2-go123",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 Amazon Linux 2 (OpenSSL 1.0.2, no TLS 1.3 in the OS), prebuilt Go 1.23 binary",
+   "doc": "src/03-go.md:7, :56",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false,
+     "group": "X25519",
+     "offered_groups": [
+      "X25519Kyber768Draft00",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "handshake failure"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 probe-1.23",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/opt/pqc/go/bin/probe-1.23",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2-go126",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 Amazon Linux 2 (OpenSSL 1.0.2, no TLS 1.3 in the OS), prebuilt Go 1.26 binary",
+   "doc": "src/03-go.md:7, :56",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 probe-1.26",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/opt/pqc/go/bin/probe-1.26",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2-go127",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 Amazon Linux 2 (OpenSSL 1.0.2, no TLS 1.3 in the OS), prebuilt Go 1.27 binary",
+   "doc": "src/03-go.md:7, :56",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 probe-1.27",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/opt/pqc/go/bin/probe-1.27",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "go-ec2-al2-distro-golang",
+   "compute": "ec2",
+   "mode": "distro-toolchain",
+   "title": "EC2 Amazon Linux 2: probe built on the AMI with yum golang (1.26.10): PQ",
+   "doc": "src/03-go.md:7 (distro toolchain)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true,
+     "offered_groups": [
+      "X25519MLKEM768",
+      "SecP256r1MLKEM768",
+      "SecP384r1MLKEM1024",
+      "X25519",
+      "CurveP256",
+      "CurveP384",
+      "CurveP521"
+     ]
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 probe-distro",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "/opt/pqc/go/bin/probe-distro",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  }
+ ]
+}
