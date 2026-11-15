@@ -38,14 +38,28 @@ if [ "${PQ_TLS_DISABLE:-0}" != "1" ]; then
         *) export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Djava.security.properties=/opt/pq-tls/pq-tls.security" ;;
       esac
       export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -javaagent:/opt/pq-tls/pq-tls-agent.jar"
-      # Java 8 clients default to TLS 1.2; ML-KEM exists only in TLS 1.3.
+      # The Lambda Java 8 runtime limits clients to TLS 1.2; ML-KEM exists only in TLS 1.3.
       case "$AWS_EXECUTION_ENV:$JAVA_TOOL_OPTIONS" in
         *java8*:*jdk.tls.client.protocols*) ;;
         *java8*:*) export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2" ;;
       esac
+      # JDK 8's HttpsURLConnection opens the socket without a host name, and BCJSSE then fails
+      # endpoint identification ("No hostname specified for HTTPS endpoint ID check", bc-java#1656).
+      case "$AWS_EXECUTION_ENV:$JAVA_TOOL_OPTIONS" in
+        *java8*:*assumeOriginalHostName*) ;;
+        *java8*:*) export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true" ;;
+      esac
       echo "pq-tls: java: Bouncy Castle JSSE agent v2, JAVA_TOOL_OPTIONS=$JAVA_TOOL_OPTIONS" ;;
+    *dotnet*)
+      # dotnet8/dotnet10 use the AL2023 system OpenSSL 3.5; the crypto policy leaves ML-KEM out.
+      if [ -z "${OPENSSL_CONF:-}" ]; then
+        export OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf
+        echo "pq-tls: dotnet: OPENSSL_CONF=$OPENSSL_CONF"
+      else
+        echo "pq-tls: dotnet: function sets OPENSSL_CONF=$OPENSSL_CONF; left unchanged"
+      fi ;;
     *)
-      # java25+: PQ by default. python3.11, nodejs18/20: no in-process path (OpenSSL < 3.5).
+      # java25+: PQ by default. nodejs18/20: no in-process path (OpenSSL without ML-KEM).
       echo "pq-tls: ${AWS_EXECUTION_ENV:-unknown}: no change" ;;
   esac
 fi

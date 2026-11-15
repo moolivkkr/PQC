@@ -2,7 +2,7 @@
 
 ## Problem statement
 
-Most Node.js services on AWS already negotiate hybrid post-quantum key exchange (X25519MLKEM768) without any change, but three groups don't: Lambda nodejs22.x/24.x functions, anything on Node 20 or older (or 22.0–22.19, 24.0–24.4), and code that pins TLS groups or caps TLS at 1.2. On those paths the session keys come from classical X25519 or P-256 alone. An attacker who records the traffic today can decrypt it once a large quantum computer exists ("harvest now, decrypt later"). Data with a long confidentiality life (credentials, personal data, payment data) is at risk now, not later.
+Most Node.js services on AWS already negotiate hybrid post-quantum key exchange (X25519MLKEM768) without any change, but three groups don't: Lambda nodejs22.x/24.x functions, official Node builds 20 or older (or 22.0–22.19, 24.0–24.4), and code that pins TLS groups or caps TLS at 1.2. On those paths the session keys come from classical X25519 or P-256 alone. An attacker who records the traffic today can decrypt it once a large quantum computer exists ("harvest now, decrypt later"). Data with a long confidentiality life (credentials, personal data, payment data) is at risk now, not later.
 
 Who controls the handshake: the OpenSSL inside the `node` process (bundled in official builds, the system library in distro builds), then the OpenSSL config file Node reads, then the TLS options in code. The OS crypto policy matters only for distro-built Node. Certificates, private keys, key stores, CA bundles and client certificates do not take part in the key-exchange choice: every existing-certificate, custom-trust and mutual-TLS setup tested below kept working unchanged (cases C, D, E).
 
@@ -22,8 +22,8 @@ Tested 2026-11-14 against an OpenSSL 3.5.7 PQ-only server (`-groups X25519MLKEM7
 | Official 22.20+ (tested 22.20.0, 22.23.5) | Bundled OpenSSL 3.5.x (22.23.5 = 3.5.9) | Lambda `nodejs22.x`: **No** / `node:22` images: Yes / EC2: Yes | Yes; Lambda No | same | same | same | Tested |
 | Official 26.x (tested 26.13.1) | Bundled OpenSSL 3.5.9 | `nodejs26.x` preview: not tested / `node:26-slim`: Yes / EC2: Yes | Yes | same | same | nothing | Tested (container) |
 | Official 22.0–22.19, 24.0–24.4 | Bundled OpenSSL 3.0.x | No / No / No | No | `ecdhCurve`; a PQ-first string throws `ERR_CRYPTO_OPERATION_FAILED` | n/a | Upgrade to 22.20+ or 24.9+ | Tested (22.19.0, 24.4.1) |
-| 20.x, 18.x (`nodejs20.x` deprecated Apr 30 2026) | Bundled OpenSSL 3.0.x | No / No / No | No | as above, PQ-first throws | n/a | Upgrade; no setting adds PQ | Tested (`node:20-slim`, `node:20-alpine` 20.20.2) |
-| AL2023 `dnf install nodejs22` (22.23.4) | System OpenSSL 3.5.8 + crypto policy | n/a / No / No until `update-crypto-policies --set DEFAULT:PQ` | No (same policy) | as above, plus the crypto policy | AL2023 FIPS mode uses the system FIPS provider; ML-KEM there not tested | `DEFAULT:PQ`, or `OPENSSL_CONF` = `openssl-pq-node-system.cnf` | Tested (`amazonlinux:2023`) |
+| Official 20.x, 18.x (`nodejs20.x` deprecated Apr 30 2026) | Bundled OpenSSL without ML-KEM: 3.0.x in `node:20-slim`/`-alpine`; Lambda `nodejs18.x` 3.1.8, `nodejs20.x` 3.2.6 | No / No / No | No | as above, PQ-first throws | n/a | Upgrade; no setting adds PQ (the config file and `pq-tls` layer leave it classical without breaking startup) | Tested (`node:20-slim`, `node:20-alpine` 20.20.2; e2e `node-lambda-n18-*`, `node-lambda-n20-*`) |
+| AL2023 `dnf install nodejs20` / `nodejs22` / `nodejs24` (20.20.2, 22.23.4, 24.22.1) | System OpenSSL 3.5.8 + crypto policy (Node 20 included: it links the system library, so it is fixable like 22/24) | n/a / No / No until `update-crypto-policies --set DEFAULT:PQ` | No (same policy) | as above, plus the crypto policy | AL2023 FIPS mode uses the system FIPS provider; ML-KEM there not tested | `DEFAULT:PQ`, or `OPENSSL_CONF` = `openssl-pq-node-system.cnf` | Tested (`amazonlinux:2023`; e2e `node-fargate-al2023-n20-conf`, `-policy`, `node-ec2-al2023-n20-*` on AL2023 2023.12.20261109) |
 | Debian 13 `apt install nodejs` (20.19.2) | System OpenSSL 3.5.7 | n/a / Yes / Yes | Yes | as above | not tested | nothing (check `process.versions.openssl`, not the major) | Tested (`debian:trixie-slim`) |
 | Alpine 3.22 `apk add nodejs` (22.23.5) | System OpenSSL 3.5.9 | n/a / Yes / n/a | Yes | as above | not tested | nothing | Tested (`alpine:3.22`) |
 | Deno 2.9.8 / Bun 1.4.4 | rustls / BoringSSL | n/a / Yes (client) / Yes | not tested | runtime-specific | not tested | nothing | Tested (client, `denoland/deno`, `oven/bun`) |
@@ -35,7 +35,8 @@ Version floor: AWS's SDK guide says 22.20 and 24.9.0 ([AWS SDK PQ TLS guide](htt
 Decision guide:
 
 - Lambda `nodejs22.x` or `nodejs24.x`: set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf` (or attach the `pq-tls` layer). Nothing else in the function changes.
-- Lambda `nodejs18.x`/`nodejs20.x`, or any Node below 22.20 / 24.5: upgrade the runtime or base image. There is no setting.
+- Lambda `nodejs18.x`/`nodejs20.x`, or any official Node build below 22.20 / 24.5: upgrade the runtime or base image. There is no setting.
+- Distro Node that links a system OpenSSL 3.5 (AL2023 `nodejs20`, Debian 13 `nodejs` 20.19): no upgrade needed; it takes the same fix as other distro Node below. Decide by `process.versions.openssl`, not by the Node major.
 - Container or EC2 on official Node 22.20+/24.5+: nothing to change. Run the CI check (case F) to make sure no code pins groups or TLS 1.2.
 - Distro Node on AL2023: set the host or image crypto policy to `DEFAULT:PQ`, or ship the system config file.
 - Your code sets `ecdhCurve`, `tls.DEFAULT_ECDH_CURVE`, `maxVersion: 'TLSv1.2'`, `secureProtocol: 'TLSv1_2_method'` or `--tls-max-v1.2`: change it (case F).
@@ -49,7 +50,7 @@ Find your situation below. Each case names who it applies to, what happens today
 
 **Who this is:** you call `fetch`, axios, got, node-fetch, the AWS SDK v3, a database or cache driver, and pass no TLS options. `grep -rnE "ecdhCurve|DEFAULT_ECDH_CURVE|maxVersion|secureProtocol|tls-max-v1" src/` finds nothing.
 
-**What happens today:** PQ on official Node 22.20+/24.5+ in containers and EC2; classical on Lambda nodejs22/24 until the config is overridden; classical on Node 20 and older. Every tested library inherits Node's defaults (Tested).
+**What happens today:** PQ on official Node 22.20+/24.5+ in containers and EC2; classical on Lambda nodejs22/24 until the config is overridden; classical on official Node 20 and older (distro Node 20 on a system OpenSSL 3.5, such as AL2023 `nodejs20`, takes the config fix). Every tested library inherits Node's defaults (Tested).
 
 **What to change:** nothing, except on Lambda (see Solution and automation) and on old runtimes (upgrade).
 
@@ -449,7 +450,7 @@ Results of this run, 2026-11-14: about 170 checks on each of 6 runtime setups (n
 | Lambda bootstrap config | nodejs22/24 stay classical | ship `openssl-pq-node.cnf` | Tested |
 | Function already sets `OPENSSL_CONF` (FIPS, custom engine) | your file would replace theirs | merge the `Groups` line into their file | Unverified (not tested with a FIPS config) |
 | AL2023 `dnf` Node | follows the system crypto policy; classical by default | `DEFAULT:PQ` or `OPENSSL_CONF` | Tested |
-| "Node 20 is never PQ" | wrong for Debian 13's 20.19.2 on system OpenSSL 3.5.7 | check `process.versions.openssl`, not the major version | Tested |
+| "Node 20 is never PQ" | wrong for Debian 13's 20.19.2 on system OpenSSL 3.5.7, and for AL2023 `dnf install nodejs20` (20.20.2, OpenSSL 3.5.8) once `DEFAULT:PQ` or `OPENSSL_CONF` is set | check `process.versions.openssl`, not the major version | Tested |
 | Bun reports `process.versions.openssl` = `1.1.0` | version-based posture checks misread it | live test instead | Tested (Bun 1.4.4 is PQ) |
 | Lambda runtime pinned in Manual update mode | could stay below 22.20 | check the runtime version ARN | Unverified |
 | Larger ClientHello (about 1.2 KB more key share) | some middleboxes drop it | live test through the real network path | not observed here |

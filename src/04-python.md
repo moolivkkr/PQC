@@ -464,7 +464,17 @@ No config file helps the `ssl` family here. python3.10 was deprecated on 31 Oct 
 
 1.  **Preferred:** change `Runtime` to `python3.13` and follow the section above.
 
-2.  **Bridge:** add `pq-tls/pyshim/sitecustomize.py`, plus `pyopenssl` and `cryptography` built for the function's architecture (`pip install --platform manylinux2014_aarch64 --only-binary=:all: --target build pyopenssl cryptography`). Set `PYTHONPATH=/var/task/pq-tls/pyshim`. Covers urllib3, requests and boto3 (Tested on the 3.9 and 3.11 Lambda images).
+2.  **Bridge:** add `pq-tls/pyshim/sitecustomize.py`, plus `pyopenssl`, `cryptography` **and `idna`**, installed inside the Lambda image of the same Python version and architecture:
+
+    ```bash
+    docker run --rm --entrypoint sh -v "$PWD/build:/out" public.ecr.aws/lambda/python:3.11 \
+      -c 'pip install --target /out cryptography==50.0.2 pyOpenSSL==26.4.0 idna==3.20'
+    ```
+
+    Set `PYTHONPATH=/var/task/pq-tls/pyshim`. Covers urllib3, requests and boto3 (Tested on the 3.9, 3.10 and 3.11 Lambda images; e2e `py-lambda-py39/310/311-bundled-shim`). For a layer, install into `python/lib/python3.X/site-packages` instead of the package root.
+
+    - **`idna` is required.** pyOpenSSL's urllib3 integration uses it to encode the host name and the Lambda runtime doesn't ship it. Without it the shim still logs `urllib3 -> pyOpenSSL`, then every urllib3, requests and boto3 request raises `ModuleNotFoundError: No module named 'idna'` (Tested: e2e `py-lambda-py311-shim-noidna`). Check for `idna` in the package before rollout.
+    - **Build once per Python version.** The cryptography wheel pip picks on 3.11 is abi3 and fails to import on 3.9 and 3.10 (`PyType_GetName`). `pip install --platform manylinux2014_...` also hides cryptography 50.x. Installing inside each version's image avoids both.
 
 3.  Bundled-TLS wheels (grpcio, awscrt, confluent-kafka, psycopg binary) don't need either step: see the tables in "Versions and native support".
 

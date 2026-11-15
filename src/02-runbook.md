@@ -53,7 +53,7 @@ Every language tab follows the same page template, built for application teams t
 | `pq-tls-agent.jar` (kit v2) plus Bouncy Castle 1.87 jars (`bcprov`, `bctls`, `bcutil`) | Java 8 to 21 | Makes Bouncy Castle JSSE the TLS provider and enables the ML-KEM group; sets the `PKIX` key manager unless the app chose one |
 | `pq-tls.security` | Java 8 to 21 servers | One line, `ssl.KeyManagerFactory.algorithm=PKIX`, passed with `-Djava.security.properties=`, for EC server and client certificates under Bouncy Castle |
 | `ci/java-pq-check.sh` and each language's lint script | CI | Fails builds on settings that block PQ (pinned groups, TLS 1.2 maximum, hard-coded `SunX509`) |
-| `pyshim/sitecustomize.py` plus pyOpenSSL and cryptography | Python 3.9 to 3.11 on Lambda only | Routes requests and boto3 through pyOpenSSL's newer OpenSSL |
+| `pyshim/sitecustomize.py` plus pyOpenSSL, cryptography and idna (built per Python version) | Python 3.9 to 3.11 on Lambda only | Routes requests and boto3 through pyOpenSSL's newer OpenSSL |
 
 The kit is versioned once and pulled in by the shared build template, so a fix to a file reaches every workload on its next release.
 

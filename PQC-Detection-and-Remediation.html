@@ -257,7 +257,9 @@ Distro Node follows the system OpenSSL: AL2023
 <td>No in-process fix: bundled OpenSSL is older than 3.5. Upgrade the
 runtime</td>
 <td>Upgrade Node, or use a distro Node linked to a system OpenSSL 3.5
-(Debian 13's Node 20 negotiated PQ). Don't put X25519MLKEM768 first in
+(Debian 13's Node 20 and AL2023's <code>dnf install nodejs20</code>
+negotiated PQ, the AL2023 one after <code>DEFAULT:PQ</code> or
+<code>OPENSSL_CONF</code>). Don't put X25519MLKEM768 first in
 <code>ecdhCurve</code> on the bundled Node 20: it crashes</td>
 <td>Tested (Lambda, Debian 13)</td>
 </tr>
@@ -265,7 +267,9 @@ runtime</td>
 <td>Java 8, 11, 17, 21</td>
 <td>Ship the Bouncy Castle JSSE agent jar and set
 <code>JAVA_TOOL_OPTIONS=-javaagent:...</code>. Java 8 also needs
-<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code>. Servers with an
+<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> (on Lambda) and
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>
+(everywhere; the <code>pq-tls</code> layer adds both). Servers with an
 EC certificate also need
 <code>ssl.KeyManagerFactory.algorithm=PKIX</code> (kit v2 sets it)</td>
 <td>Same agent, or a static <code>java.security</code> BCJSSE entry (17,
@@ -524,8 +528,12 @@ Castle 1.87 as the first JSSE provider and sets
 unless already set. Set
 <code>JAVA_TOOL_OPTIONS=-javaagent:/var/task/pq-tls/pq-tls-agent.jar</code>.</li>
 <li><strong>Java 8 only:</strong> also add
-<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code>, since its
-client defaults to TLS 1.2.</li>
+<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code>, since the
+Lambda Java 8 runtime limits clients to TLS 1.2, and
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>,
+without which Bouncy Castle rejects every
+<code>HttpsURLConnection</code> handshake ("No hostname specified for
+HTTPS endpoint ID check").</li>
 <li><strong>Why an agent:</strong> the Lambda Java bootstrap's system
 classpath is <code>/var/runtime/lib</code> only, so providers registered
 through <code>java.security</code> from other paths are silently
@@ -1062,8 +1070,8 @@ script</td>
 maximum, hard-coded <code>SunX509</code>)</td>
 </tr>
 <tr>
-<td><code>pyshim/sitecustomize.py</code> plus pyOpenSSL and
-cryptography</td>
+<td><code>pyshim/sitecustomize.py</code> plus pyOpenSSL, cryptography
+and idna (built per Python version)</td>
 <td>Python 3.9 to 3.11 on Lambda only</td>
 <td>Routes requests and boto3 through pyOpenSSL's newer OpenSSL</td>
 </tr>
@@ -1138,7 +1146,7 @@ SecP256r1MLKEM768 and SecP384r1MLKEM1024 when <code>go</code> ≥
 <code>tlsmlkem=0</code>); <code>GODEBUG</code> <code>tlsmlkem</code>,
 <code>tlssecpmlkem</code>; opt-in <code>MLKEM1024</code></td>
 <td><code>fips140=on</code>/<code>only</code>: the three hybrids +
-P-256</td>
+P-256, P-384, P-521</td>
 <td>Keep; set <code>go 1.26</code>+</td>
 <td>Tested (2026-11-14, first pass)</td>
 </tr>
@@ -1159,8 +1167,8 @@ P-256</td>
 <td>Yes if <code>go</code> ≥ 1.24, X25519MLKEM768 only</td>
 <td>Yes</td>
 <td>same as 1.26</td>
-<td><code>on</code>: X25519MLKEM768 + P-256; <code>only</code>:
-<strong>every handshake fails</strong></td>
+<td><code>on</code>: X25519MLKEM768 + P-256, P-384, P-521;
+<code>only</code>: <strong>every handshake fails</strong></td>
 <td>Upgrade to 1.26</td>
 <td>Tested</td>
 </tr>
@@ -1172,8 +1180,8 @@ P-256</td>
 <td>Same rule: a <code>go 1.22</code> server refused a PQ-only client
 (Tested this pass)</td>
 <td>same</td>
-<td><code>on</code>/<code>only</code>: P-256 only, <strong>no
-PQ</strong></td>
+<td><code>on</code>/<code>only</code>: P-256, P-384, P-521 only,
+<strong>no PQ</strong></td>
 <td>Upgrade; interim <code>GODEBUG=tlsmlkem=1</code> (Tested client and
 server)</td>
 <td>Tested</td>
@@ -2035,7 +2043,8 @@ fix.</p>
 <code>GODEBUG=fips140=on</code>). <code>crypto/tls</code> silently drops
 non-approved groups (<a
 href="https://go.dev/doc/security/fips140">Documented</a>). Client
-results:</p>
+results (groups offered; a server that prefers P-256 negotiates P-256.
+Tested: e2e <code>go-*-fips*</code>, Lambda, Fargate and EC2):</p>
 <table>
 <thead>
 <tr>
@@ -2049,14 +2058,15 @@ results:</p>
 <tbody>
 <tr>
 <td><code>fips140=on</code></td>
-<td>P-256 only: <strong>no PQ</strong>, no X25519</td>
-<td>X25519MLKEM768, P-256</td>
-<td>X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024, P-256</td>
+<td>P-256, P-384, P-521 only: <strong>no PQ</strong>, no X25519</td>
+<td>X25519MLKEM768, P-256, P-384, P-521</td>
+<td>X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024, P-256, P-384,
+P-521</td>
 <td>Same as 1.26</td>
 </tr>
 <tr>
 <td><code>fips140=only</code></td>
-<td>P-256 only</td>
+<td>P-256, P-384, P-521 only</td>
 <td><strong>Every handshake fails</strong>:
 <code>crypto/ecdh: use of X25519 is not allowed in FIPS 140-only mode</code></td>
 <td>Same as <code>on</code></td>
@@ -2073,9 +2083,9 @@ results:</p>
 <tr>
 <td>boringcrypto + <code>import _ "crypto/tls/fipsonly"</code></td>
 <td>not run</td>
-<td>P-256 only, no PQ</td>
-<td>P-256 only, no PQ</td>
-<td>P-256 only, no PQ</td>
+<td>P-256, P-384, P-521 only, no PQ</td>
+<td>Same</td>
+<td>Same</td>
 </tr>
 <tr>
 <td>boringcrypto + <code>fips140=on</code></td>
@@ -2946,7 +2956,7 @@ for f in $src; do
   fi
   grep -nE &#39;MaxVersion[[:space:]]*[:=][[:space:]]*tls\.VersionTLS1[0-2]&#39; &quot;$f&quot; | while read -r l; do fail &quot;$f:$l  (TLS 1.2 cap: no PQ)&quot;; done
   grep -nE &#39;^//go:debug.*(tlsmlkem=0|tlssecpmlkem=0|tlskyber)&#39; &quot;$f&quot; | while read -r l; do fail &quot;$f:$l&quot;; done
-  grep -nE &#39;crypto/tls/fipsonly&#39; &quot;$f&quot; | while read -r l; do fail &quot;$f:$l  (boringcrypto fipsonly: P-256 only, no PQ)&quot;; done
+  grep -nE &#39;crypto/tls/fipsonly&#39; &quot;$f&quot; | while read -r l; do fail &quot;$f:$l  (boringcrypto fipsonly: NIST curves only, no PQ)&quot;; done
 done
 
 # 3. Deployment config: GODEBUG overrides and the retired go1.x Lambda runtime
@@ -5079,11 +5089,33 @@ runtimes</a>).</p>
 <li><p><strong>Preferred:</strong> change <code>Runtime</code> to
 <code>python3.13</code> and follow the section above.</p></li>
 <li><p><strong>Bridge:</strong> add
-<code>pq-tls/pyshim/sitecustomize.py</code>, plus <code>pyopenssl</code>
-and <code>cryptography</code> built for the function's architecture
-(<code>pip install --platform manylinux2014_aarch64 --only-binary=:all: --target build pyopenssl cryptography</code>).
-Set <code>PYTHONPATH=/var/task/pq-tls/pyshim</code>. Covers urllib3,
-requests and boto3 (Tested on the 3.9 and 3.11 Lambda images).</p></li>
+<code>pq-tls/pyshim/sitecustomize.py</code>, plus
+<code>pyopenssl</code>, <code>cryptography</code> <strong>and
+<code>idna</code></strong>, installed inside the Lambda image of the
+same Python version and architecture:</p>
+<pre class="bash"><code>docker run --rm --entrypoint sh -v &quot;$PWD/build:/out&quot; public.ecr.aws/lambda/python:3.11 \
+  -c &#39;pip install --target /out cryptography==50.0.2 pyOpenSSL==26.4.0 idna==3.20&#39;</code></pre>
+<p>Set <code>PYTHONPATH=/var/task/pq-tls/pyshim</code>. Covers urllib3,
+requests and boto3 (Tested on the 3.9, 3.10 and 3.11 Lambda images; e2e
+<code>py-lambda-py39/310/311-bundled-shim</code>). For a layer, install
+into <code>python/lib/python3.X/site-packages</code> instead of the
+package root.</p>
+<ul>
+<li><strong><code>idna</code> is required.</strong> pyOpenSSL's urllib3
+integration uses it to encode the host name and the Lambda runtime
+doesn't ship it. Without it the shim still logs
+<code>urllib3 -&gt; pyOpenSSL</code>, then every urllib3, requests and
+boto3 request raises
+<code>ModuleNotFoundError: No module named 'idna'</code> (Tested: e2e
+<code>py-lambda-py311-shim-noidna</code>). Check for <code>idna</code>
+in the package before rollout.</li>
+<li><strong>Build once per Python version.</strong> The cryptography
+wheel pip picks on 3.11 is abi3 and fails to import on 3.9 and 3.10
+(<code>PyType_GetName</code>).
+<code>pip install --platform manylinux2014_...</code> also hides
+cryptography 50.x. Installing inside each version's image avoids
+both.</li>
+</ul></li>
 <li><p>Bundled-TLS wheels (grpcio, awscrt, confluent-kafka, psycopg
 binary) don't need either step: see the tables in "Versions and native
 support".</p></li>
@@ -5875,13 +5907,13 @@ echo &quot;$r2 classical client ($T): $(echo &quot;$cl&quot; | grep -E &#39;Prot
 <h2 id="t4-problem-statement">Problem statement</h2>
 <p>Most Node.js services on AWS already negotiate hybrid post-quantum
 key exchange (X25519MLKEM768) without any change, but three groups
-don't: Lambda nodejs22.x/24.x functions, anything on Node 20 or older
-(or 22.0–22.19, 24.0–24.4), and code that pins TLS groups or caps TLS at
-1.2. On those paths the session keys come from classical X25519 or P-256
-alone. An attacker who records the traffic today can decrypt it once a
-large quantum computer exists ("harvest now, decrypt later"). Data with
-a long confidentiality life (credentials, personal data, payment data)
-is at risk now, not later.</p>
+don't: Lambda nodejs22.x/24.x functions, official Node builds 20 or
+older (or 22.0–22.19, 24.0–24.4), and code that pins TLS groups or caps
+TLS at 1.2. On those paths the session keys come from classical X25519
+or P-256 alone. An attacker who records the traffic today can decrypt it
+once a large quantum computer exists ("harvest now, decrypt later").
+Data with a long confidentiality life (credentials, personal data,
+payment data) is at risk now, not later.</p>
 <p>Who controls the handshake: the OpenSSL inside the <code>node</code>
 process (bundled in official builds, the system library in distro
 builds), then the OpenSSL config file Node reads, then the TLS options
@@ -5978,19 +6010,26 @@ configure; official builds ship none. ML-KEM under FIPS: not tested</td>
 <td>Tested (22.19.0, 24.4.1)</td>
 </tr>
 <tr>
-<td>20.x, 18.x (<code>nodejs20.x</code> deprecated Apr 30 2026)</td>
-<td>Bundled OpenSSL 3.0.x</td>
+<td>Official 20.x, 18.x (<code>nodejs20.x</code> deprecated Apr 30
+2026)</td>
+<td>Bundled OpenSSL without ML-KEM: 3.0.x in
+<code>node:20-slim</code>/<code>-alpine</code>; Lambda
+<code>nodejs18.x</code> 3.1.8, <code>nodejs20.x</code> 3.2.6</td>
 <td>No / No / No</td>
 <td>No</td>
 <td>as above, PQ-first throws</td>
 <td>n/a</td>
-<td>Upgrade; no setting adds PQ</td>
+<td>Upgrade; no setting adds PQ (the config file and <code>pq-tls</code>
+layer leave it classical without breaking startup)</td>
 <td>Tested (<code>node:20-slim</code>, <code>node:20-alpine</code>
-20.20.2)</td>
+20.20.2; e2e <code>node-lambda-n18-*</code>,
+<code>node-lambda-n20-*</code>)</td>
 </tr>
 <tr>
-<td>AL2023 <code>dnf install nodejs22</code> (22.23.4)</td>
-<td>System OpenSSL 3.5.8 + crypto policy</td>
+<td>AL2023 <code>dnf install nodejs20</code> / <code>nodejs22</code> /
+<code>nodejs24</code> (20.20.2, 22.23.4, 24.22.1)</td>
+<td>System OpenSSL 3.5.8 + crypto policy (Node 20 included: it links the
+system library, so it is fixable like 22/24)</td>
 <td>n/a / No / No until
 <code>update-crypto-policies --set DEFAULT:PQ</code></td>
 <td>No (same policy)</td>
@@ -5999,7 +6038,9 @@ configure; official builds ship none. ML-KEM under FIPS: not tested</td>
 tested</td>
 <td><code>DEFAULT:PQ</code>, or <code>OPENSSL_CONF</code> =
 <code>openssl-pq-node-system.cnf</code></td>
-<td>Tested (<code>amazonlinux:2023</code>)</td>
+<td>Tested (<code>amazonlinux:2023</code>; e2e
+<code>node-fargate-al2023-n20-conf</code>, <code>-policy</code>,
+<code>node-ec2-al2023-n20-*</code> on AL2023 2023.12.20261109)</td>
 </tr>
 <tr>
 <td>Debian 13 <code>apt install nodejs</code> (20.19.2)</td>
@@ -6059,9 +6100,13 @@ runtimes</a>.</p>
 <code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf</code> (or
 attach the <code>pq-tls</code> layer). Nothing else in the function
 changes.</li>
-<li>Lambda <code>nodejs18.x</code>/<code>nodejs20.x</code>, or any Node
-below 22.20 / 24.5: upgrade the runtime or base image. There is no
-setting.</li>
+<li>Lambda <code>nodejs18.x</code>/<code>nodejs20.x</code>, or any
+official Node build below 22.20 / 24.5: upgrade the runtime or base
+image. There is no setting.</li>
+<li>Distro Node that links a system OpenSSL 3.5 (AL2023
+<code>nodejs20</code>, Debian 13 <code>nodejs</code> 20.19): no upgrade
+needed; it takes the same fix as other distro Node below. Decide by
+<code>process.versions.openssl</code>, not by the Node major.</li>
 <li>Container or EC2 on official Node 22.20+/24.5+: nothing to change.
 Run the CI check (case F) to make sure no code pins groups or TLS
 1.2.</li>
@@ -6096,8 +6141,9 @@ TLS options.
 finds nothing.</p>
 <p><strong>What happens today:</strong> PQ on official Node 22.20+/24.5+
 in containers and EC2; classical on Lambda nodejs22/24 until the config
-is overridden; classical on Node 20 and older. Every tested library
-inherits Node's defaults (Tested).</p>
+is overridden; classical on official Node 20 and older (distro Node 20
+on a system OpenSSL 3.5, such as AL2023 <code>nodejs20</code>, takes the
+config fix). Every tested library inherits Node's defaults (Tested).</p>
 <p><strong>What to change:</strong> nothing, except on Lambda (see
 Solution and automation) and on old runtimes (upgrade).</p>
 <p><strong>Side effects:</strong> the ClientHello grows by about 1.2 KB
@@ -7365,7 +7411,9 @@ engine)</td>
 </tr>
 <tr>
 <td>"Node 20 is never PQ"</td>
-<td>wrong for Debian 13's 20.19.2 on system OpenSSL 3.5.7</td>
+<td>wrong for Debian 13's 20.19.2 on system OpenSSL 3.5.7, and for
+AL2023 <code>dnf install nodejs20</code> (20.20.2, OpenSSL 3.5.8) once
+<code>DEFAULT:PQ</code> or <code>OPENSSL_CONF</code> is set</td>
 <td>check <code>process.versions.openssl</code>, not the major
 version</td>
 <td>Tested</td>
@@ -8376,15 +8424,18 @@ mTLS not tested</td>
 </tr>
 <tr>
 <td>JDK 8</td>
-<td>SunJSSE, TLS 1.2 client default</td>
+<td>SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only
+(plain Corretto 8u512 offers TLS 1.3)</td>
 <td>No</td>
 <td>No</td>
 <td>Same</td>
 <td>Not tested</td>
-<td>Kit v2 +
-<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code></td>
-<td>Tested on Lambda <code>java8.al2023</code> (kit v1, client); server
-and mTLS not tested</td>
+<td>Kit v2 + <code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> +
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code></td>
+<td>Tested: e2e Lambda <code>java8.al2</code> zip/layer,
+<code>lambda/java:8.al2023</code> image, Fargate and ECS-EC2
+<code>amazoncorretto:8</code> (8u512, HttpsURLConnection, mTLS); server
+not tested</td>
 </tr>
 <tr>
 <td>Any JDK + Netty tcnative-boringssl-static 2.0.85</td>
@@ -8470,12 +8521,14 @@ Unverified</td>
 </tr>
 <tr>
 <td>8</td>
-<td>Agent + <code>jdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> gives
-PQ</td>
+<td>Agent + <code>jdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> +
+<code>assumeOriginalHostName=true</code> gives PQ. Without the host-name
+flag every <code>HttpsURLConnection</code> handshake fails</td>
+<td>Same (protocols flag not needed off Lambda)</td>
 <td>Same</td>
 <td>Same</td>
-<td>Same</td>
-<td>Tested on Lambda <code>java8.al2023</code> (kit)</td>
+<td>Tested (e2e <code>java-*-j8-*</code>,
+<code>java-fargate-corretto8-*</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -9357,7 +9410,15 @@ off, on JDK 25 too and for Netty tcnative too (Tested)</td>
 </tr>
 <tr>
 <td><code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code></td>
-<td>Java 8 only (8 defaults clients to TLS 1.2)</td>
+<td>Java 8 on Lambda (the Lambda Java 8 runtime sets
+<code>jdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1</code>); harmless
+elsewhere</td>
+</tr>
+<tr>
+<td><code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code></td>
+<td>Java 8 only: BCJSSE fails endpoint identification on sockets JDK 8's
+<code>HttpsURLConnection</code> opens without a host name (<a
+href="https://github.com/bcgit/bc-java/issues/1656">bc-java#1656</a>)</td>
 </tr>
 <tr>
 <td><code>-javaagent:&lt;dir&gt;/pq-tls-agent.jar</code></td>
@@ -9605,7 +9666,14 @@ in this file was not run separately)</td>
 replace it. APM agents (Datadog, New Relic, OpenTelemetry Java agent)
 often live there.</p></li>
 <li><p>On Java 8 add
-<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code>.</p></li>
+<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> (required on
+Lambda, whose Java 8 runtime limits clients to TLS 1.2) and
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>
+(required everywhere: without it BCJSSE rejects every
+<code>HttpsURLConnection</code> handshake with
+<code>certificate_unknown</code> / "No hostname specified for HTTPS
+endpoint ID check"). The <code>pq-tls</code> layer wrapper adds
+both.</p></li>
 <li><p>Distroless images have no shell, but the JVM reads
 <code>JAVA_TOOL_OPTIONS</code> itself, so <code>ENV</code>
 works.</p></li>
@@ -9910,14 +9978,28 @@ if [ &quot;${PQ_TLS_DISABLE:-0}&quot; != &quot;1&quot; ]; then
         *) export JAVA_TOOL_OPTIONS=&quot;${JAVA_TOOL_OPTIONS:-} -Djava.security.properties=/opt/pq-tls/pq-tls.security&quot; ;;
       esac
       export JAVA_TOOL_OPTIONS=&quot;$JAVA_TOOL_OPTIONS -javaagent:/opt/pq-tls/pq-tls-agent.jar&quot;
-      # Java 8 clients default to TLS 1.2; ML-KEM exists only in TLS 1.3.
+      # The Lambda Java 8 runtime limits clients to TLS 1.2; ML-KEM exists only in TLS 1.3.
       case &quot;$AWS_EXECUTION_ENV:$JAVA_TOOL_OPTIONS&quot; in
         *java8*:*jdk.tls.client.protocols*) ;;
         *java8*:*) export JAVA_TOOL_OPTIONS=&quot;$JAVA_TOOL_OPTIONS -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2&quot; ;;
       esac
+      # JDK 8&#39;s HttpsURLConnection opens the socket without a host name, and BCJSSE then fails
+      # endpoint identification (&quot;No hostname specified for HTTPS endpoint ID check&quot;, bc-java#1656).
+      case &quot;$AWS_EXECUTION_ENV:$JAVA_TOOL_OPTIONS&quot; in
+        *java8*:*assumeOriginalHostName*) ;;
+        *java8*:*) export JAVA_TOOL_OPTIONS=&quot;$JAVA_TOOL_OPTIONS -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true&quot; ;;
+      esac
       echo &quot;pq-tls: java: Bouncy Castle JSSE agent v2, JAVA_TOOL_OPTIONS=$JAVA_TOOL_OPTIONS&quot; ;;
+    *dotnet*)
+      # dotnet8/dotnet10 use the AL2023 system OpenSSL 3.5; the crypto policy leaves ML-KEM out.
+      if [ -z &quot;${OPENSSL_CONF:-}&quot; ]; then
+        export OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf
+        echo &quot;pq-tls: dotnet: OPENSSL_CONF=$OPENSSL_CONF&quot;
+      else
+        echo &quot;pq-tls: dotnet: function sets OPENSSL_CONF=$OPENSSL_CONF; left unchanged&quot;
+      fi ;;
     *)
-      # java25+: PQ by default. python3.11, nodejs18/20: no in-process path (OpenSSL &lt; 3.5).
+      # java25+: PQ by default. nodejs18/20: no in-process path (OpenSSL without ML-KEM).
       echo &quot;pq-tls: ${AWS_EXECUTION_ENV:-unknown}: no change&quot; ;;
   esac
 fi
@@ -10190,7 +10272,7 @@ Resources:
         Variables:
           JAVA_TOOL_OPTIONS: !If
             - IsJava8
-            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2
+            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true
             - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar</code></pre>
 <p><code>template-layer.yaml</code> (SAM, layer v2)</p>
 <pre class="yaml"><code>AWSTemplateFormatVersion: &#39;2010-09-09&#39;
@@ -10925,8 +11007,14 @@ adds PQ. Scripts and output: <code>deep/dotnet/run-tests.sh</code>,
 <td>AL2023, OpenSSL 3.5, crypto policy without ML-KEM</td>
 <td>No</td>
 <td>Ship <code>pq-tls/openssl-pq.cnf</code>, set
-<code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code></td>
-<td>Tested (Lambda images, 2026-11-12)</td>
+<code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code>. Fleet option:
+the kit's <code>pq-tls</code> layer with
+<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code> (its dotnet
+branch sets <code>OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf</code> unless
+the function sets one)</td>
+<td>Tested (Lambda images, 2026-11-12; e2e
+<code>dotnet-lambda-dotnet8/10-bundled-conf</code>,
+<code>-layer-wrapper</code>, <code>-layer-conf</code>)</td>
 </tr>
 <tr>
 <td>Lambda image <code>public.ecr.aws/lambda/dotnet:8</code> /
@@ -11488,9 +11576,18 @@ store, pick by client" behaviour as in Java; if you need both, use SNI
 or two endpoints.</li>
 <li><strong>X509Store on Linux:</strong> CurrentUser/My lives under
 <code>~/.dotnet/corefx/cryptography/x509stores/my/</code>; it must be
-persisted (volume or image layer) or re-imported at start.
-LocalMachine/My is not writable on Linux. Root/CA stores on Linux are a
-read-only view of the OpenSSL trust files (<a
+persisted (volume or image layer) or re-imported at start. On Lambda the
+passwd home (<code>/home/sbx_user…</code>) is read-only, so importing
+there fails with
+<code>CryptographicException: The X509 certificate could not be added to the store</code>
+(<code>UnauthorizedAccessException</code>): set <code>HOME=/tmp</code>
+(function environment variable, or an exec wrapper that exports it)
+before the first <code>X509Store</code> use, or load the PFX/PEM
+directly (E1, E2). Tested: e2e
+<code>dotnet-lambda-dotnet8/10-store-clientcert</code> (PQ with
+<code>HOME=/tmp</code>); without it the import fails before any
+handshake. LocalMachine/My is not writable on Linux. Root/CA stores on
+Linux are a read-only view of the OpenSSL trust files (<a
 href="https://github.com/dotnet/runtime/issues/32875">discussion</a>).
 Not a PQ issue.</li>
 <li><strong>Windows certificate store (Schannel):</strong> works the

@@ -27,7 +27,7 @@ Oracle has said it will bring PQC to its LTS releases 21, 17, 11 and 8 ([Oracle 
 | JDK 21 (21.0.13) | SunJSSE | No (Lambda, container, EC2) | No | `jdk.tls.namedGroups` (no ML-KEM names) | Not tested | pq-tls kit v2 (agent + `pq-tls.security`), or upgrade to 25 | Tested |
 | JDK 17 (17.0.21) | SunJSSE | No | No | Same | Not tested | Kit v2, or upgrade | Tested |
 | JDK 11 | SunJSSE | No | No | Same | Not tested | Kit v2 | Tested on Lambda `java11` (kit v1, client); server and mTLS not tested |
-| JDK 8 | SunJSSE, TLS 1.2 client default | No | No | Same | Not tested | Kit v2 + `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` | Tested on Lambda `java8.al2023` (kit v1, client); server and mTLS not tested |
+| JDK 8 | SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only (plain Corretto 8u512 offers TLS 1.3) | No | No | Same | Not tested | Kit v2 + `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Tested: e2e Lambda `java8.al2` zip/layer, `lambda/java:8.al2023` image, Fargate and ECS-EC2 `amazoncorretto:8` (8u512, HttpsURLConnection, mTLS); server not tested |
 | Any JDK + Netty tcnative-boringssl-static 2.0.85 | BoringSSL | Yes | Yes | `OpenSslContextOption.GROUPS`; also reads `jdk.tls.namedGroups` | n/a | Nothing (keep it) | Tested |
 | Any JDK + AWS SDK v2 CRT client (2.35.11+) | s2n-tls | Yes, AWS API calls only | n/a | n/a | Not tested | Nothing; CRT before 2.35.11: upgrade | Tested (2.59.1); Documented |
 
@@ -41,7 +41,7 @@ All "Tested" rows ran on 2026-11-14 in containers (arm64) against an OpenSSL 3.5
 | 21 (21.0.13) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static `java.security` gives PQ | Same as containers | Tested |
 | 17 (17.0.21) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static gives PQ | Same as containers | Tested |
 | 11 | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Agent gives PQ | Same as containers | Tested on Lambda `java11` (kit); containers Unverified |
-| 8 | Agent + `jdk.tls.client.protocols=TLSv1.3,TLSv1.2` gives PQ | Same | Same | Same | Tested on Lambda `java8.al2023` (kit) |
+| 8 | Agent + `jdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `assumeOriginalHostName=true` gives PQ. Without the host-name flag every `HttpsURLConnection` handshake fails | Same (protocols flag not needed off Lambda) | Same | Same | Tested (e2e `java-*-j8-*`, `java-fargate-corretto8-*`) |
 
 ### Decision guide
 
@@ -373,7 +373,8 @@ Before 2.35.11 the CRT builder needed `.postQuantumTlsEnabled(true)` ([AWS Secur
 | Flag | Effect |
 |----|----|
 | `-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1` | Group order. A list without `X25519MLKEM768` turns PQ off, on JDK 25 too and for Netty tcnative too (Tested) |
-| `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` | Java 8 only (8 defaults clients to TLS 1.2) |
+| `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` | Java 8 on Lambda (the Lambda Java 8 runtime sets `jdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1`); harmless elsewhere |
+| `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Java 8 only: BCJSSE fails endpoint identification on sockets JDK 8's `HttpsURLConnection` opens without a host name ([bc-java#1656](https://github.com/bcgit/bc-java/issues/1656)) |
 | `-javaagent:<dir>/pq-tls-agent.jar` | JDK 8 to 21: BCJSSE first + group list |
 | `-Djava.security.properties=<file>` | Static BC registration (containers and EC2, not Lambda) |
 | `-Djava.security.properties=<dir>/pq-tls.security` | Kit v2: `ssl.KeyManagerFactory.algorithm=PKIX`, needed for EC certs under BCJSSE (Tested) |
@@ -442,7 +443,7 @@ Rules that apply everywhere:
 
 - Append to an existing `JAVA_TOOL_OPTIONS`; don't replace it. APM agents (Datadog, New Relic, OpenTelemetry Java agent) often live there.
 
-- On Java 8 add `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2`.
+- On Java 8 add `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` (required on Lambda, whose Java 8 runtime limits clients to TLS 1.2) and `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` (required everywhere: without it BCJSSE rejects every `HttpsURLConnection` handshake with `certificate_unknown` / "No hostname specified for HTTPS endpoint ID check"). The `pq-tls` layer wrapper adds both.
 
 - Distroless images have no shell, but the JVM reads `JAVA_TOOL_OPTIONS` itself, so `ENV` works.
 
@@ -648,14 +649,28 @@ if [ "${PQ_TLS_DISABLE:-0}" != "1" ]; then
         *) export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Djava.security.properties=/opt/pq-tls/pq-tls.security" ;;
       esac
       export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -javaagent:/opt/pq-tls/pq-tls-agent.jar"
-      # Java 8 clients default to TLS 1.2; ML-KEM exists only in TLS 1.3.
+      # The Lambda Java 8 runtime limits clients to TLS 1.2; ML-KEM exists only in TLS 1.3.
       case "$AWS_EXECUTION_ENV:$JAVA_TOOL_OPTIONS" in
         *java8*:*jdk.tls.client.protocols*) ;;
         *java8*:*) export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2" ;;
       esac
+      # JDK 8's HttpsURLConnection opens the socket without a host name, and BCJSSE then fails
+      # endpoint identification ("No hostname specified for HTTPS endpoint ID check", bc-java#1656).
+      case "$AWS_EXECUTION_ENV:$JAVA_TOOL_OPTIONS" in
+        *java8*:*assumeOriginalHostName*) ;;
+        *java8*:*) export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true" ;;
+      esac
       echo "pq-tls: java: Bouncy Castle JSSE agent v2, JAVA_TOOL_OPTIONS=$JAVA_TOOL_OPTIONS" ;;
+    *dotnet*)
+      # dotnet8/dotnet10 use the AL2023 system OpenSSL 3.5; the crypto policy leaves ML-KEM out.
+      if [ -z "${OPENSSL_CONF:-}" ]; then
+        export OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf
+        echo "pq-tls: dotnet: OPENSSL_CONF=$OPENSSL_CONF"
+      else
+        echo "pq-tls: dotnet: function sets OPENSSL_CONF=$OPENSSL_CONF; left unchanged"
+      fi ;;
     *)
-      # java25+: PQ by default. python3.11, nodejs18/20: no in-process path (OpenSSL < 3.5).
+      # java25+: PQ by default. nodejs18/20: no in-process path (OpenSSL without ML-KEM).
       echo "pq-tls: ${AWS_EXECUTION_ENV:-unknown}: no change" ;;
   esac
 fi
@@ -959,7 +974,7 @@ Resources:
         Variables:
           JAVA_TOOL_OPTIONS: !If
             - IsJava8
-            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2
+            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true
             - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar
 ```
 

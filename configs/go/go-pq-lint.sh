@@ -22,7 +22,7 @@ for f in $src; do
   fi
   grep -nE 'MaxVersion[[:space:]]*[:=][[:space:]]*tls\.VersionTLS1[0-2]' "$f" | while read -r l; do fail "$f:$l  (TLS 1.2 cap: no PQ)"; done
   grep -nE '^//go:debug.*(tlsmlkem=0|tlssecpmlkem=0|tlskyber)' "$f" | while read -r l; do fail "$f:$l"; done
-  grep -nE 'crypto/tls/fipsonly' "$f" | while read -r l; do fail "$f:$l  (boringcrypto fipsonly: P-256 only, no PQ)"; done
+  grep -nE 'crypto/tls/fipsonly' "$f" | while read -r l; do fail "$f:$l  (boringcrypto fipsonly: NIST curves only, no PQ)"; done
 done
 
 # 3. Deployment config: GODEBUG overrides and the retired go1.x Lambda runtime

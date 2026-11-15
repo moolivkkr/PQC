@@ -21,5 +21,5 @@ Resources:
         Variables:
           JAVA_TOOL_OPTIONS: !If
             - IsJava8
-            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2
+            - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true
             - -Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar

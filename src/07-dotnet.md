@@ -38,7 +38,7 @@ Tested 2026-11-14 on arm64: a .NET client (SslStream and HttpClient) against a P
 
 | Compute | OS TLS library | PQ by default | Fix | Evidence |
 |----|----|----|----|----|
-| Lambda zip, `dotnet8` / `dotnet10` | AL2023, OpenSSL 3.5, crypto policy without ML-KEM | No | Ship `pq-tls/openssl-pq.cnf`, set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf` | Tested (Lambda images, 2026-11-12) |
+| Lambda zip, `dotnet8` / `dotnet10` | AL2023, OpenSSL 3.5, crypto policy without ML-KEM | No | Ship `pq-tls/openssl-pq.cnf`, set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf`. Fleet option: the kit's `pq-tls` layer with `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` (its dotnet branch sets `OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf` unless the function sets one) | Tested (Lambda images, 2026-11-12; e2e `dotnet-lambda-dotnet8/10-bundled-conf`, `-layer-wrapper`, `-layer-conf`) |
 | Lambda image `public.ecr.aws/lambda/dotnet:8` / `:10` | Same | No | Same file and `ENV` in the Dockerfile | Tested |
 | Lambda Native AOT on `provided.al2023` | Same; the AOT binary still loads the system `libssl.so.3` | No | Same file and env var | Tested (AOT build of .NET 8.0.33 run in `provided:al2023`) |
 | Fargate, ECS, EKS (Linux) | Whatever the image ships | Depends on image (next table) | Use an `-alpine` or `-resolute` tag, or AL2023 + config file | Tested |
@@ -199,7 +199,7 @@ Notes for this case:
 
 - **RSA and EC:** both work with PQ. The key type changes only the signature (RSA-PSS or ECDSA), not the key exchange.
 - **Several certificates:** Kestrel serves one certificate per endpoint unless you use `ServerCertificateSelector` or the `Sni` section. Both select by SNI, and both worked with PQ. There is no "RSA+EC in one store, pick by client" behaviour as in Java; if you need both, use SNI or two endpoints.
-- **X509Store on Linux:** CurrentUser/My lives under `~/.dotnet/corefx/cryptography/x509stores/my/`; it must be persisted (volume or image layer) or re-imported at start. LocalMachine/My is not writable on Linux. Root/CA stores on Linux are a read-only view of the OpenSSL trust files ([discussion](https://github.com/dotnet/runtime/issues/32875)). Not a PQ issue.
+- **X509Store on Linux:** CurrentUser/My lives under `~/.dotnet/corefx/cryptography/x509stores/my/`; it must be persisted (volume or image layer) or re-imported at start. On Lambda the passwd home (`/home/sbx_user…`) is read-only, so importing there fails with `CryptographicException: The X509 certificate could not be added to the store` (`UnauthorizedAccessException`): set `HOME=/tmp` (function environment variable, or an exec wrapper that exports it) before the first `X509Store` use, or load the PFX/PEM directly (E1, E2). Tested: e2e `dotnet-lambda-dotnet8/10-store-clientcert` (PQ with `HOME=/tmp`); without it the import fails before any handshake. LocalMachine/My is not writable on Linux. Root/CA stores on Linux are a read-only view of the OpenSSL trust files ([discussion](https://github.com/dotnet/runtime/issues/32875)). Not a PQ issue.
 - **Windows certificate store (Schannel):** works the same way in principle: the curve order is machine-wide and separate from the certificate. Not tested here (Documented only for Schannel groups).
 - **HSM, TPM or KMS keys:** see case I.
 
