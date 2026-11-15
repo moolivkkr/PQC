@@ -40,6 +40,16 @@ Output:
 - Lambda: the handler **returns** `{"case_id","lang","runtime","tls_lib","compute","mode","results":{target:{ok,tls_version,group,pq,offered_pq,error,stack}}}`
 - CLI (ECS, EC2): the same object printed as one line: `PQC_RESULT <json>`
 
+## Server role (load balancer target leg)
+
+`cases/server.py` sets `"role": "server"` and `targets: ["alb-pq", "alb-classic"]`. The server probe
+(`clients/server/`) listens on `PQC_SERVER_PORT` (9443) with `server-rsa.crt`/`.key` (`server.p12` for Java), calls
+`GET http://pq-observer:8080/dialback?id=<case>&port=9443&policy=<target>` for each target, and prints the same
+`tls_handshake` lines (plus `"role":"server"`) and `PQC_RESULT` line. The observer's answer is the result per target:
+`ok`, `tls_version`, `group`, `pq`, `offered_pq`. Server-role results are left out of the server-side detection check
+(the observer is the client there) but are included in the CloudWatch check: the target logging its own handshake is
+how the target leg is made visible.
+
 ## Case JSON (see cases/python.py)
 
 `compute` is one of `lambda`, `ecs-fargate`, `ecs-ec2`, `ec2`, with a matching key:

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="pqc-e2e" id="final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106)">
+<testsuites name="pqc-e2e" id="final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537)">
 <testsuite name="dotnet.cloudwatch-logs" tests="1" failures="0" errors="0">
 <testcase classname="dotnet.cloudwatch-logs" name="detect-cloudwatch-nonpq-dotnet" time="10.8">
 <system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 114, found 114</system-out></testcase>
@@ -20,7 +20,7 @@
 <testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net10-policy-store-clientcert" time="41.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="dotnet.ecs-ec2" tests="6" failures="0" errors="0">
+<testsuite name="dotnet.ecs-ec2" tests="7" failures="0" errors="0">
 <testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-debian8-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-alpine10-baseline" time="2.1">
@@ -33,8 +33,10 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-al2023-net10-policy" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-ec2" name="srv-dotnet-ecsec2-runtime-100-alpine" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="dotnet.ecs-fargate" tests="25" failures="0" errors="0">
+<testsuite name="dotnet.ecs-fargate" tests="31" failures="0" errors="0">
 <testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-80" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-80-alpine" time="2.1">
@@ -85,6 +87,18 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-sysca-conf" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="srv-dotnet-fargate-runtime-80" time="2.0">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="srv-dotnet-fargate-runtime-100-alpine" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="srv-dotnet-fargate-aspnet-100-resolute" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="srv-dotnet-fargate-al2023-net8-baseline" time="2.0">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="srv-dotnet-fargate-al2023-net8-conf" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="srv-dotnet-fargate-al2023-net8-policy" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="dotnet.lambda" tests="33" failures="0" errors="0">
 <testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-baseline" time="3.3">
@@ -193,7 +207,7 @@
 <testcase classname="go.ec2" name="go-ec2-al2-distro-golang" time="41.2">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="go.ecs-ec2" tests="5" failures="0" errors="0">
+<testsuite name="go.ecs-ec2" tests="6" failures="0" errors="0">
 <testcase classname="go.ecs-ec2" name="go-ecsec2-al2023-go123" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="go.ecs-ec2" name="go-ecsec2-al2023-go127" time="2.1">
@@ -204,8 +218,10 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="go.ecs-ec2" name="go-ecsec2-golang-go126" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-ec2" name="srv-go-ecsec2-go126" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="go.ecs-fargate" tests="22" failures="0" errors="0">
+<testsuite name="go.ecs-fargate" tests="26" failures="0" errors="0">
 <testcase classname="go.ecs-fargate" name="go-fargate-al2023-go123" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="go.ecs-fargate" name="go-fargate-al2023-go124" time="2.1">
@@ -250,6 +266,14 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
 <testcase classname="go.ecs-fargate" name="go-fargate-al2023-go126-boring-fips140-on" time="2.1">
 <system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="srv-go-fargate-go126" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="srv-go-fargate-go126-mod123" time="2.1">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="srv-go-fargate-go126-mod123-godebug" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="srv-go-fargate-go123" time="2.0">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="go.lambda" tests="77" failures="0" errors="0">
 <testcase classname="go.lambda" name="go-lambda-al2023-go123-baseline" time="4.3">
@@ -443,7 +467,7 @@
 <testcase classname="java.ec2" name="java-ec2-al2-j17-agent" time="35.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="java.ecs-ec2" tests="5" failures="0" errors="0">
+<testsuite name="java.ecs-ec2" tests="6" failures="0" errors="0">
 <testcase classname="java.ecs-ec2" name="java-ecsec2-corretto21-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="java.ecs-ec2" name="java-ecsec2-corretto21-agent" time="2.1">
@@ -454,8 +478,10 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="java.ecs-ec2" name="java-ecsec2-corretto8-agent" time="4.1">
 <system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="java.ecs-ec2" name="srv-java-ecsec2-corretto21-agent" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="java.ecs-fargate" tests="21" failures="0" errors="0">
+<testsuite name="java.ecs-fargate" tests="27" failures="0" errors="0">
 <testcase classname="java.ecs-fargate" name="java-fargate-corretto8-baseline" time="2.1">
 <system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
 <testcase classname="java.ecs-fargate" name="java-fargate-corretto8-agent" time="4.1">
@@ -498,6 +524,18 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="java.ecs-fargate" name="java-fargate-al2023-j21-agent" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="srv-java-fargate-corretto21-baseline" time="2.0">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="srv-java-fargate-corretto21-agent" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="srv-java-fargate-corretto17-agent" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="srv-java-fargate-corretto8-baseline" time="2.0">
+<system-out>alb-pq=classical/CurveP256 alb-classic=classical/CurveP256</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="srv-java-fargate-corretto8-agent" time="4.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="srv-java-fargate-corretto25" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="java.lambda" tests="57" failures="0" errors="0">
 <testcase classname="java.lambda" name="java-lambda-j8-baseline" time="4.2">
@@ -649,7 +687,7 @@
 <testcase classname="node.ec2" name="node-ec2-al2023-official24-host-default-pq" time="38.3">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="node.ecs-ec2" tests="5" failures="0" errors="0">
+<testsuite name="node.ecs-ec2" tests="6" failures="0" errors="0">
 <testcase classname="node.ecs-ec2" name="node-ecsec2-al2023-n22-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="node.ecs-ec2" name="node-ecsec2-al2023-n22-conf" time="2.1">
@@ -660,8 +698,10 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="node.ecs-ec2" name="node-ecsec2-lib-20-slim" time="2.0">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-ec2" name="srv-node-ecsec2-lib-24-slim" time="2.0">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="node.ecs-fargate" tests="28" failures="0" errors="0">
+<testsuite name="node.ecs-fargate" tests="34" failures="0" errors="0">
 <testcase classname="node.ecs-fargate" name="node-fargate-al2023-n20-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="node.ecs-fargate" name="node-fargate-al2023-n20-conf" time="2.1">
@@ -718,6 +758,18 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim-tls-max-12" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="srv-node-fargate-lib-24-slim" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="srv-node-fargate-lib-20-slim" time="2.1">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="srv-node-fargate-al2023-n22-baseline" time="2.1">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="srv-node-fargate-al2023-n22-conf" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="srv-node-fargate-al2023-n20-conf" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="srv-node-fargate-al2023-n22-policy" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="node.lambda" tests="48" failures="0" errors="0">
 <testcase classname="node.lambda" name="node-lambda-n18-baseline" time="3.4">
@@ -843,15 +895,17 @@
 <testcase classname="python.ec2" name="py-ec2-al2-py3-baseline" time="44.2">
 <system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
 </testsuite>
-<testsuite name="python.ecs-ec2" tests="3" failures="0" errors="0">
+<testsuite name="python.ecs-ec2" tests="4" failures="0" errors="0">
 <testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-conf" time="2.0">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-ec2" name="py-ecsec2-lib-313-slim-trixie" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-ec2" name="srv-python-ecsec2-al2023-py312-conf" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
-<testsuite name="python.ecs-fargate" tests="13" failures="0" errors="0">
+<testsuite name="python.ecs-fargate" tests="18" failures="0" errors="0">
 <testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-conf" time="2.1">
@@ -878,6 +932,16 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-fargate" name="py-fargate-lib-312-slim-bookworm" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="srv-python-fargate-al2023-py312-baseline" time="2.1">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="srv-python-fargate-al2023-py312-conf" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="srv-python-fargate-al2023-py312-policy" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="srv-python-fargate-trixie-py313" time="2.1">
+<system-out>alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="srv-python-fargate-bookworm-py312" time="2.1">
+<system-out>alb-pq=classical/X25519 alb-classic=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="python.lambda" tests="35" failures="0" errors="0">
 <testcase classname="python.lambda" name="py-lambda-py39-baseline" time="3.2">
@@ -954,5 +1018,13 @@
 <testsuite name="python.observer" tests="1" failures="0" errors="0">
 <testcase classname="python.observer" name="detect-server-handshake-log-python" time="0">
 <system-out>268 handshakes, 124 classical, 61 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
+</testsuite>
+<testsuite name="server.cloudwatch-logs" tests="1" failures="0" errors="0">
+<testcase classname="server.cloudwatch-logs" name="detect-cloudwatch-nonpq-server" time="11.7">
+<system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 42, found 42</system-out></testcase>
+</testsuite>
+<testsuite name="server.observer" tests="1" failures="0" errors="0">
+<testcase classname="server.observer" name="detect-server-handshake-log-server" time="0">
+<system-out>0 handshakes, 0 classical, 0 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
 </testsuite>
 </testsuites>

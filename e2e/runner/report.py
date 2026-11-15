@@ -46,8 +46,23 @@ def write(out_dir, run_id, results, meta):
           "PASS = the observed behaviour matched the expectation in the case file (which is the documented behaviour); "
           "it does not mean PQ was negotiated. Cells: what the client negotiated against each observer listener "
           "(hybrid :8443, pqonly :8444, mtls :8445, eccert :8446, tls12 :8447).", ""]
+    srv = [r for r in results if r.get("role") == "server"]
+    if srv:
+        md += ["## Load balancer target leg (server role)", "",
+               "The workload is the TLS server; the observer connects to it like an ALB/NLB TLS listener connects to an "
+               "HTTPS target. alb-pq = backend policy used with a PQ listener policy (ELBSecurityPolicy-TLS13-1-0-PQ-2025-09), "
+               "alb-classic = backend policy used with any other listener policy (ELBSecurityPolicy-2016-08). "
+               "A model of AWS's client, not AWS's TLS stack.", "",
+               "| Case | Lang | Compute | Runtime | Mode | alb-pq | alb-classic | Verdict |", "|---|---|---|---|---|---|---|---|"]
+        for r in sorted(srv, key=lambda r: (r["lang"], r["compute"], r["id"])):
+            md.append("| %s | %s | %s | %s | %s | %s | %s | %s |" % (
+                r["id"], r["lang"], r["compute"], r.get("runtime") or r.get("runtime_label") or "", r["mode"],
+                _cell(r, "alb-pq"), _cell(r, "alb-classic"), r["verdict"] if r["verdict"] == "PASS" else "**%s**" % r["verdict"]))
+        md.append("")
     for lang in sorted({r["lang"] for r in results}):
-        rs = [r for r in results if r["lang"] == lang]
+        rs = [r for r in results if r["lang"] == lang and r.get("role") != "server"]
+        if not rs:
+            continue
         md += ["## %s" % lang, "",
                "| Case | Compute | Runtime | Mode | hybrid | pqonly | mtls | eccert | tls12 | Verdict |",
                "|---|---|---|---|---|---|---|---|---|---|"]

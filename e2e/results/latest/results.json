@@ -1,5 +1,5 @@
 {
- "run_id": "final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106)",
+ "run_id": "final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537)",
  "meta": {
   "run_id": "r1115024129",
   "localstack": "pro 2026.10.6:5fe8a776",
@@ -171859,6 +171859,3978 @@
    "file": "(runner)",
    "full_id": "r1115030106",
    "summary": "516 handshakes, 218 classical, 113 TLS1.2; all client-reported classical handshakes present",
+   "seconds": 0
+  },
+  {
+   "id": "srv-python-fargate-al2023-py312-baseline",
+   "lang": "python",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "AL2023 image, Python 3.12, no fix: target leg stays classical under a PQ listener policy",
+   "doc": "src/04-python.md B. Simple server",
+   "full_id": "r1115034537-srv-python-fargate-al2023-py312-baseline",
+   "file": "server.json",
+   "runtime_label": "pqc-server:python-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-python-fargate-al2023-py312-baseline",
+    "lang": "python",
+    "role": "server",
+    "runtime": "3.12.16",
+    "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:38.335038926Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-python-fargate-al2023-py312-baseline",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:38.338191759Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-python-fargate-al2023-py312-baseline",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "3.12.16",
+   "tls_lib": "OpenSSL 3.5.8 25 Aug 2026",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-python-fargate-al2023-py312-conf",
+   "lang": "python",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 image + OPENSSL_CONF=openssl-pq.cnf in the task definition",
+   "doc": "src/04-python.md B. Simple server",
+   "full_id": "r1115034537-srv-python-fargate-al2023-py312-conf",
+   "file": "server.json",
+   "runtime_label": "pqc-server:python-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-python-fargate-al2023-py312-conf",
+    "lang": "python",
+    "role": "server",
+    "runtime": "3.12.16",
+    "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+    "compute": "ecs-fargate",
+    "mode": "config",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:38.335065426Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-python-fargate-al2023-py312-conf",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:38.338130509Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-python-fargate-al2023-py312-conf",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "3.12.16",
+   "tls_lib": "OpenSSL 3.5.8 25 Aug 2026",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-python-fargate-al2023-py312-policy",
+   "lang": "python",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "AL2023 image with DEFAULT:PQ crypto policy",
+   "doc": "src/04-python.md B. Simple server",
+   "full_id": "r1115034537-srv-python-fargate-al2023-py312-policy",
+   "file": "server.json",
+   "runtime_label": "pqc-server:python-al2023-policy",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-python-fargate-al2023-py312-policy",
+    "lang": "python",
+    "role": "server",
+    "runtime": "3.12.16",
+    "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+    "compute": "ecs-fargate",
+    "mode": "crypto-policy",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:38.335047967Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-python-fargate-al2023-py312-policy",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:38.338022176Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-python-fargate-al2023-py312-policy",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "3.12.16",
+   "tls_lib": "OpenSSL 3.5.8 25 Aug 2026",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-python-fargate-trixie-py313",
+   "lang": "python",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "python:3.13-slim-trixie (OpenSSL 3.5): PQ with no change",
+   "doc": "src/04-python.md B. Simple server",
+   "full_id": "r1115034537-srv-python-fargate-trixie-py313",
+   "file": "server.json",
+   "runtime_label": "pqc-server:python-lib-3.13-slim-trixie",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-python-fargate-trixie-py313",
+    "lang": "python",
+    "role": "server",
+    "runtime": "3.13.18",
+    "openssl": "OpenSSL 3.5.7 9 Jun 2026",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:40.44763551Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-python-fargate-trixie-py313",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:40.450590593Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-python-fargate-trixie-py313",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "3.13.18",
+   "tls_lib": "OpenSSL 3.5.7 9 Jun 2026",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-python-fargate-bookworm-py312",
+   "lang": "python",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "python:3.12-slim-bookworm (OpenSSL 3.0): classical; fix = change base image",
+   "doc": "src/04-python.md B. Simple server",
+   "full_id": "r1115034537-srv-python-fargate-bookworm-py312",
+   "file": "server.json",
+   "runtime_label": "pqc-server:python-lib-3.12-slim-bookworm",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-python-fargate-bookworm-py312",
+    "lang": "python",
+    "role": "server",
+    "runtime": "3.12.16",
+    "openssl": "OpenSSL 3.0.22 25 Aug 2026",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:40.512828469Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-python-fargate-bookworm-py312",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:40.515832552Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-python-fargate-bookworm-py312",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "3.12.16",
+   "tls_lib": "OpenSSL 3.0.22 25 Aug 2026",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-python-ecsec2-al2023-py312-conf",
+   "lang": "python",
+   "compute": "ecs-ec2",
+   "mode": "config",
+   "title": "ECS on EC2: AL2023 image + OPENSSL_CONF",
+   "doc": "src/04-python.md B. Simple server",
+   "full_id": "r1115034537-srv-python-ecsec2-al2023-py312-conf",
+   "file": "server.json",
+   "runtime_label": "pqc-server:python-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-python-ecsec2-al2023-py312-conf",
+    "lang": "python",
+    "role": "server",
+    "runtime": "3.12.16",
+    "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+    "compute": "ecs-ec2",
+    "mode": "config",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:40.266703177Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-python-ecsec2-al2023-py312-conf",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:40.270749385Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-python-ecsec2-al2023-py312-conf",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "3.12.16",
+   "tls_lib": "OpenSSL 3.5.8 25 Aug 2026",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-fargate-lib-24-slim",
+   "lang": "node",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "node:24-slim (bundled OpenSSL 3.5): PQ with no change",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-fargate-lib-24-slim",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-lib-24-slim",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-fargate-lib-24-slim",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v24.22.3",
+    "openssl": "3.5.9",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:42.367587761Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-node-fargate-lib-24-slim",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:42.374334303Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-node-fargate-lib-24-slim",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v24.22.3",
+   "tls_lib": "3.5.9",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-fargate-lib-20-slim",
+   "lang": "node",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "node:20-slim (bundled OpenSSL 3.0): classical; fix = upgrade",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-fargate-lib-20-slim",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-lib-20-slim",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-fargate-lib-20-slim",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v20.20.2",
+    "openssl": "3.0.19",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:42.406136511Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-node-fargate-lib-20-slim",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:42.411446719Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-node-fargate-lib-20-slim",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v20.20.2",
+   "tls_lib": "3.0.19",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-fargate-al2023-n22-baseline",
+   "lang": "node",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "AL2023 dnf nodejs22, no fix: classical",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-fargate-al2023-n22-baseline",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-fargate-al2023-n22-baseline",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v22.23.4",
+    "openssl": "3.5.8",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:42.553481094Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n22-baseline",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:42.558417803Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n22-baseline",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v22.23.4",
+   "tls_lib": "3.5.8",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-fargate-al2023-n22-conf",
+   "lang": "node",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 dnf nodejs22 + OPENSSL_CONF=openssl-pq-node-system.cnf",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-fargate-al2023-n22-conf",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-fargate-al2023-n22-conf",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v22.23.4",
+    "openssl": "3.5.8",
+    "compute": "ecs-fargate",
+    "mode": "config",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:44.522372304Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n22-conf",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:44.529152012Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n22-conf",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v22.23.4",
+   "tls_lib": "3.5.8",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-fargate-al2023-n20-conf",
+   "lang": "node",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 dnf nodejs20 (system OpenSSL 3.5.8) + OPENSSL_CONF: PQ",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-fargate-al2023-n20-conf",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-fargate-al2023-n20-conf",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v20.20.2",
+    "openssl": "3.5.8",
+    "compute": "ecs-fargate",
+    "mode": "config",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:44.56490947Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n20-conf",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:44.57169822Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n20-conf",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v20.20.2",
+   "tls_lib": "3.5.8",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-fargate-al2023-n22-policy",
+   "lang": "node",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "AL2023 dnf nodejs22 with DEFAULT:PQ crypto policy",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-fargate-al2023-n22-policy",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-al2023-policy",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-fargate-al2023-n22-policy",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v22.23.4",
+    "openssl": "3.5.8",
+    "compute": "ecs-fargate",
+    "mode": "crypto-policy",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:44.54713422Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n22-policy",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:44.557045095Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-node-fargate-al2023-n22-policy",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v22.23.4",
+   "tls_lib": "3.5.8",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-node-ecsec2-lib-24-slim",
+   "lang": "node",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS on EC2: node:24-slim",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "full_id": "r1115034537-srv-node-ecsec2-lib-24-slim",
+   "file": "server.json",
+   "runtime_label": "pqc-server:node-lib-24-slim",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-node-ecsec2-lib-24-slim",
+    "lang": "node",
+    "role": "server",
+    "runtime": "v24.22.3",
+    "openssl": "3.5.9",
+    "compute": "ecs-ec2",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:46.485772805Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-node-ecsec2-lib-24-slim",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:46.49346768Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-node-ecsec2-lib-24-slim",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "v24.22.3",
+   "tls_lib": "3.5.9",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-go-fargate-go126",
+   "lang": "go",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Go 1.26 toolchain, go 1.26 line: PQ by default",
+   "doc": "src/03-go.md B. Simple server",
+   "full_id": "r1115034537-srv-go-fargate-go126",
+   "file": "server.json",
+   "runtime_label": "pqc-server:go-distroless",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-go-fargate-go126",
+    "compute": "ecs-fargate",
+    "godebug": "",
+    "lang": "go",
+    "mode": "baseline",
+    "results": {
+     "alb-classic": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "alb-pq": {
+      "group": "X25519MLKEM768",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": true,
+      "pq_status": "pq",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.3"
+     }
+    },
+    "role": "server",
+    "runtime": "go1.26.11"
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "group": "X25519MLKEM768",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": true,
+      "pq_status": "pq",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.3"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:46.804887097Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-go-fargate-go126",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:46.808623222Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-go-fargate-go126",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "go1.26.11",
+   "tls_lib": null,
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-go-fargate-go126-mod123",
+   "lang": "go",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Go 1.26 toolchain, go 1.23 line (tlsmlkem=0): classical",
+   "doc": "src/03-go.md B. Simple server",
+   "full_id": "r1115034537-srv-go-fargate-go126-mod123",
+   "file": "server.json",
+   "runtime_label": "pqc-server:go-distroless",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-go-fargate-go126-mod123",
+    "compute": "ecs-fargate",
+    "godebug": "",
+    "lang": "go",
+    "mode": "baseline",
+    "results": {
+     "alb-classic": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "alb-pq": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.3"
+     }
+    },
+    "role": "server",
+    "runtime": "go1.26.11"
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.3"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:46.815069347Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-go-fargate-go126-mod123",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:46.818139347Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-go-fargate-go126-mod123",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "go1.26.11",
+   "tls_lib": null,
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-go-fargate-go126-mod123-godebug",
+   "lang": "go",
+   "compute": "ecs-fargate",
+   "mode": "godebug",
+   "title": "Same binary + GODEBUG=tlsmlkem=1,tlssecpmlkem=1 in the task definition",
+   "doc": "src/03-go.md B. Simple server",
+   "full_id": "r1115034537-srv-go-fargate-go126-mod123-godebug",
+   "file": "server.json",
+   "runtime_label": "pqc-server:go-distroless",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-go-fargate-go126-mod123-godebug",
+    "compute": "ecs-fargate",
+    "godebug": "tlsmlkem=1,tlssecpmlkem=1",
+    "lang": "go",
+    "mode": "godebug",
+    "results": {
+     "alb-classic": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.3:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "alb-pq": {
+      "group": "X25519MLKEM768",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": true,
+      "pq_status": "pq",
+      "target_addr": "10.250.0.3:9443",
+      "tls_version": "TLSv1.3"
+     }
+    },
+    "role": "server",
+    "runtime": "go1.26.11"
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "group": "X25519MLKEM768",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": true,
+      "pq_status": "pq",
+      "target_addr": "10.250.0.3:9443",
+      "tls_version": "TLSv1.3"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:48.767166541Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-go-fargate-go126-mod123-godebug",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.3:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:48.769880041Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-go-fargate-go126-mod123-godebug",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "go1.26.11",
+   "tls_lib": null,
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-go-fargate-go123",
+   "lang": "go",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Go 1.23 (Kyber draft only): classical; fix = rebuild with 1.26",
+   "doc": "src/03-go.md B. Simple server",
+   "full_id": "r1115034537-srv-go-fargate-go123",
+   "file": "server.json",
+   "runtime_label": "pqc-server:go-distroless",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-go-fargate-go123",
+    "compute": "ecs-fargate",
+    "godebug": "",
+    "lang": "go",
+    "mode": "baseline",
+    "results": {
+     "alb-classic": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "alb-pq": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.3"
+     }
+    },
+    "role": "server",
+    "runtime": "go1.23.12"
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.3"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:48.830548333Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-go-fargate-go123",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.4:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:48.833135333Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-go-fargate-go123",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "go1.23.12",
+   "tls_lib": null,
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-go-ecsec2-go126",
+   "lang": "go",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS on EC2: Go 1.26",
+   "doc": "src/03-go.md B. Simple server",
+   "full_id": "r1115034537-srv-go-ecsec2-go126",
+   "file": "server.json",
+   "runtime_label": "pqc-server:go-distroless",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-go-ecsec2-go126",
+    "compute": "ecs-ec2",
+    "godebug": "",
+    "lang": "go",
+    "mode": "baseline",
+    "results": {
+     "alb-classic": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "alb-pq": {
+      "group": "X25519MLKEM768",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": true,
+      "pq_status": "pq",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.3"
+     }
+    },
+    "role": "server",
+    "runtime": "go1.26.11"
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "group": "X25519MLKEM768",
+      "http_status": "200",
+      "offered_pq": true,
+      "ok": true,
+      "pq": true,
+      "pq_status": "pq",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.3"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:48.837696833Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-go-ecsec2-go126",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "group": "X25519",
+      "http_status": "200",
+      "offered_pq": false,
+      "ok": true,
+      "pq": false,
+      "pq_status": "classical",
+      "target_addr": "10.250.0.5:9443",
+      "tls_version": "TLSv1.2"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:48.840477792Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-go-ecsec2-go126",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "go1.26.11",
+   "tls_lib": null,
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-java-fargate-corretto21-baseline",
+   "lang": "java",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Corretto 21, no kit: classical",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-fargate-corretto21-baseline",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto21",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-fargate-corretto21-baseline",
+    "lang": "java",
+    "role": "server",
+    "runtime": "21.0.13",
+    "tls_lib": "SunJSSE",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:50.965429626Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto21-baseline",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:51.032430251Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto21-baseline",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "21.0.13",
+   "tls_lib": "SunJSSE",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-java-fargate-corretto21-agent",
+   "lang": "java",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Corretto 21 + kit v2 in JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-fargate-corretto21-agent",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto21",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": [
+     "Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar",
+     "pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX"
+    ]
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-fargate-corretto21-agent",
+    "lang": "java",
+    "role": "server",
+    "runtime": "21.0.13",
+    "tls_lib": "BCJSSE",
+    "compute": "ecs-fargate",
+    "mode": "agent",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:51.387609709Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto21-agent",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:51.408598793Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto21-agent",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "21.0.13",
+   "tls_lib": "BCJSSE",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-java-fargate-corretto17-agent",
+   "lang": "java",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Corretto 17 + kit v2",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-fargate-corretto17-agent",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto17",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": [
+     "Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar",
+     "pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX"
+    ]
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-fargate-corretto17-agent",
+    "lang": "java",
+    "role": "server",
+    "runtime": "17.0.21",
+    "tls_lib": "BCJSSE",
+    "compute": "ecs-fargate",
+    "mode": "agent",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:51.476017251Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto17-agent",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:51.499490834Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto17-agent",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "17.0.21",
+   "tls_lib": "BCJSSE",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-java-fargate-corretto8-baseline",
+   "lang": "java",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Corretto 8u512, no kit: classical",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-fargate-corretto8-baseline",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto8",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-fargate-corretto8-baseline",
+    "lang": "java",
+    "role": "server",
+    "runtime": "1.8.0_512",
+    "tls_lib": "SunJSSE",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "CurveP256",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "CurveP256",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "CurveP256",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:52.926345085Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto8-baseline",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "CurveP256",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "CurveP256",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:52.98659496Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto8-baseline",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "CurveP256",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "1.8.0_512",
+   "tls_lib": "SunJSSE",
+   "summary": "alb-pq=classical/CurveP256 alb-classic=classical/CurveP256",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-java-fargate-corretto8-agent",
+   "lang": "java",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Corretto 8 + kit v2 with the Java 8 flags (server side not covered by the tab before this case)",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-fargate-corretto8-agent",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto8",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": [
+     "Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true",
+     "pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX"
+    ]
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-fargate-corretto8-agent",
+    "lang": "java",
+    "role": "server",
+    "runtime": "1.8.0_512",
+    "tls_lib": "BCJSSE",
+    "compute": "ecs-fargate",
+    "mode": "agent",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:55.280892253Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto8-agent",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:55.295979795Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto8-agent",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "1.8.0_512",
+   "tls_lib": "BCJSSE",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 4.1
+  },
+  {
+   "id": "srv-java-fargate-corretto25",
+   "lang": "java",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Corretto 25.0.5: PQ by default",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-fargate-corretto25",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto25",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-fargate-corretto25",
+    "lang": "java",
+    "role": "server",
+    "runtime": "25.0.5",
+    "tls_lib": "SunJSSE",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:53.074255627Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto25",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:53.138696502Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-java-fargate-corretto25",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "25.0.5",
+   "tls_lib": "SunJSSE",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.1
+  },
+  {
+   "id": "srv-java-ecsec2-corretto21-agent",
+   "lang": "java",
+   "compute": "ecs-ec2",
+   "mode": "agent",
+   "title": "ECS on EC2: Corretto 21 + kit v2",
+   "doc": "src/06-java.md B. Simple server",
+   "full_id": "r1115034537-srv-java-ecsec2-corretto21-agent",
+   "file": "server.json",
+   "runtime_label": "pqc-server:java-corretto21",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": [
+     "Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar",
+     "pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,x25519,secp256r1,secp384r1, ssl.KeyManagerFactory.algorithm=PKIX"
+    ]
+   },
+   "client": {
+    "case_id": "r1115034537-srv-java-ecsec2-corretto21-agent",
+    "lang": "java",
+    "role": "server",
+    "runtime": "21.0.13",
+    "tls_lib": "BCJSSE",
+    "compute": "ecs-ec2",
+    "mode": "agent",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:55.330242545Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-java-ecsec2-corretto21-agent",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:55.34501242Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-java-ecsec2-corretto21-agent",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "21.0.13",
+   "tls_lib": "BCJSSE",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-fargate-runtime-80",
+   "lang": "dotnet",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "mcr runtime:8.0 (Debian 12, OpenSSL 3.0): classical; fix = change image",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-fargate-runtime-80",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-mcr-runtime-8.0",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-fargate-runtime-80",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "8.0.34",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:55.038182419Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-runtime-80",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:55.052764003Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-runtime-80",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "8.0.34",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-fargate-runtime-100-alpine",
+   "lang": "dotnet",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "mcr runtime:10.0-alpine (OpenSSL 3.5): PQ with no change",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-fargate-runtime-100-alpine",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-mcr-runtime-10.0-alpine",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-fargate-runtime-100-alpine",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "10.0.15",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:56.74545492Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-runtime-100-alpine",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:56.757835504Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-runtime-100-alpine",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "10.0.15",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-fargate-aspnet-100-resolute",
+   "lang": "dotnet",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "mcr aspnet:10.0-resolute (Ubuntu 26.04): PQ with no change",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-fargate-aspnet-100-resolute",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-mcr-aspnet-10.0-resolute",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-fargate-aspnet-100-resolute",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "10.0.15",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:56.909521587Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-aspnet-100-resolute",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:56.922307254Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-aspnet-100-resolute",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "10.0.15",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-fargate-al2023-net8-baseline",
+   "lang": "dotnet",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "AL2023 + .NET 8, no fix: classical",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-fargate-al2023-net8-baseline",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-baseline",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "8.0.33",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-fargate",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:56.881856129Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-baseline",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:56.894206837Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-baseline",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "8.0.33",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=classical/X25519 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-fargate-al2023-net8-conf",
+   "lang": "dotnet",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 + .NET 8 + OPENSSL_CONF",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-fargate-al2023-net8-conf",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-al2023",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-conf",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "8.0.33",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-fargate",
+    "mode": "config",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:58.779276796Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-conf",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.3:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:58.79318988Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.3:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-conf",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "8.0.33",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-fargate-al2023-net8-policy",
+   "lang": "dotnet",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "AL2023 + .NET 8 with DEFAULT:PQ",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-fargate-al2023-net8-policy",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-al2023-policy",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-policy",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "8.0.33",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-fargate",
+    "mode": "crypto-policy",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:58.91919913Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-policy",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.4:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:58.932634671Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.4:9443",
+      "case_id": "r1115034537-srv-dotnet-fargate-al2023-net8-policy",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "8.0.33",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "srv-dotnet-ecsec2-runtime-100-alpine",
+   "lang": "dotnet",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS on EC2: 10.0-alpine",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "full_id": "r1115034537-srv-dotnet-ecsec2-runtime-100-alpine",
+   "file": "server.json",
+   "runtime_label": "pqc-server:dotnet-mcr-runtime-10.0-alpine",
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "finding": null,
+   "role": "server",
+   "extra": {
+    "task_status": "STOPPED",
+    "stopped_reason": null,
+    "exit_codes": [
+     0
+    ],
+    "log_tail": null,
+    "log_notes": []
+   },
+   "client": {
+    "case_id": "r1115034537-srv-dotnet-ecsec2-runtime-100-alpine",
+    "lang": "dotnet",
+    "role": "server",
+    "runtime": "10.0.15",
+    "tls_lib": "SslStream/OpenSSL",
+    "compute": "ecs-ec2",
+    "mode": "baseline",
+    "results": {
+     "alb-pq": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "alb-classic": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     }
+    }
+   },
+   "targets": {
+    "alb-pq": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true,
+      "offered_pq": true,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "pq"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:58.878962088Z",
+      "kind": "dialback",
+      "listener": "alb-pq",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-dotnet-ecsec2-runtime-100-alpine",
+      "offered_pq": true,
+      "tls_version": "TLSv1.3",
+      "group": "X25519MLKEM768",
+      "pq": true
+     },
+     "observer_offered_pq": true,
+     "observer_offered_groups": null
+    },
+    "alb-classic": {
+     "client": {
+      "ok": true,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false,
+      "offered_pq": false,
+      "http_status": "200",
+      "target_addr": "10.250.0.5:9443",
+      "pq_status": "classical"
+     },
+     "observer_request": {
+      "time": "2026-11-15T03:45:58.893383255Z",
+      "kind": "dialback",
+      "listener": "alb-classic",
+      "remote": "10.250.0.5:9443",
+      "case_id": "r1115034537-srv-dotnet-ecsec2-runtime-100-alpine",
+      "offered_pq": false,
+      "tls_version": "TLSv1.2",
+      "group": "X25519",
+      "pq": false
+     },
+     "observer_offered_pq": false,
+     "observer_offered_groups": null
+    }
+   },
+   "mismatches": [],
+   "verdict": "PASS",
+   "runtime": "10.0.15",
+   "tls_lib": "SslStream/OpenSSL",
+   "summary": "alb-pq=PQ/X25519MLKEM768 alb-classic=classical/X25519",
+   "seconds": 2.0
+  },
+  {
+   "id": "detect-cloudwatch-nonpq-server",
+   "lang": "server",
+   "compute": "cloudwatch-logs",
+   "mode": "detection",
+   "title": "CloudWatch Logs filter finds every classical handshake reported by Lambda/ECS clients",
+   "verdict": "PASS",
+   "file": "(runner)",
+   "full_id": "r1115034537",
+   "summary": "pattern { ($.event = \"tls_handshake\") && ($.pq_status = \"classical\") }: expected 42, found 42",
+   "seconds": 11.7
+  },
+  {
+   "id": "detect-server-handshake-log-server",
+   "lang": "server",
+   "compute": "observer",
+   "mode": "detection",
+   "title": "Server-side handshake log flags every non-PQ and TLS 1.2 handshake",
+   "verdict": "PASS",
+   "file": "(runner)",
+   "full_id": "r1115034537",
+   "summary": "0 handshakes, 0 classical, 0 TLS1.2; all client-reported classical handshakes present",
    "seconds": 0
   }
  ]

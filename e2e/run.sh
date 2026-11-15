@@ -2,11 +2,12 @@
 # PQC end-to-end suite on an isolated LocalStack (pqc-e2e-localstack, 127.0.0.1:4600, network pqc-e2e).
 #   ./run.sh                      build everything and run all cases
 #   ./run.sh --lang python        only Python (build + run)
+#   ./run.sh --lang server        load balancer target-leg cases (after the five languages are built)
 #   ./run.sh --skip-build --compute lambda --id 'py-lambda-py312*'
 #   ./run.sh down                 stop this suite's containers (never volumes, never other LocalStacks)
 set -euo pipefail
 source "$(dirname "$0")/env.sh"; cd "$E2E_DIR"
-LANGS="python node java dotnet go"; BUILD=1; ARGS=()
+LANGS="python node java dotnet go server"   # server = load balancer target cases (needs the five language images); BUILD=1; ARGS=()
 if [ "${1:-}" = down ]; then
   docker run --rm --network pqc-e2e -v "$E2E_DIR":/e2e pqc-e2e/runner:local cleanup || true
   docker compose stop; exit 0

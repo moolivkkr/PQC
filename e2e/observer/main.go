@@ -8,6 +8,14 @@
 //	:8446 eccert   like hybrid, ECDSA P-256 server certificate     -> EC certificate chains
 //	:8447 tls12    TLS 1.2 only, classical                         -> legacy server: client must not break, visibility flags it
 //
+// Load balancer target leg (admin port, GET /dialback?id=<case>&port=<p>&policy=<alb-pq|alb-classic>): the observer
+// becomes the TLS client and dials back to the caller's IP, the way an ALB/NLB TLS listener connects to an HTTPS
+// target. alb-pq offers what AWS documents for the backend policy used with a PQ listener policy
+// (ELBSecurityPolicy-TLS13-1-0-PQ-2025-09: TLS 1.0-1.3, X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024 plus
+// classical groups); alb-classic is the backend policy used with any other listener policy (ELBSecurityPolicy-2016-08:
+// TLS 1.0-1.2). Like the load balancer, it does not verify the target's certificate. This is a model of AWS's client,
+// not AWS's TLS stack (s2n-tls): it shows what the workload's server side negotiates when offered those groups.
+//
 // Every ClientHello is logged (even if the handshake later fails) with the offered groups, so a client that
 // fails against :8444 is still visible as "did not offer PQ". Records are kept in memory and served on
 // http://:8080/events?id=<case-id> for the test runner; each record is also written to stdout as JSON.
@@ -209,6 +217,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(out)
 	})
+	admin.HandleFunc("/dialback", dialback)
 	admin.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 	admin.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		// ?id=<case>: requests carrying that case id, plus every ClientHello from the same client IPs within
@@ -263,4 +272,59 @@ func hostOf(addr string) string {
 		return addr
 	}
 	return h
+}
+
+// ALB backend-policy models (see header).
+var dialPolicies = map[string]*tls.Config{
+	"alb-pq": {MinVersion: tls.VersionTLS10, MaxVersion: tls.VersionTLS13, InsecureSkipVerify: true,
+		CurvePreferences: []tls.CurveID{tls.X25519MLKEM768, tls.SecP256r1MLKEM768, tls.SecP384r1MLKEM1024, tls.X25519, tls.CurveP256, tls.CurveP384}},
+	"alb-classic": {MinVersion: tls.VersionTLS10, MaxVersion: tls.VersionTLS12, InsecureSkipVerify: true,
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256, tls.CurveP384}},
+}
+
+type DialResult struct {
+	OK         bool   `json:"ok"`
+	TLSVersion string `json:"tls_version,omitempty"`
+	Group      string `json:"group,omitempty"`
+	PQ         bool   `json:"pq"`
+	OfferedPQ  bool   `json:"offered_pq"`
+	Status     string `json:"http_status,omitempty"`
+	Target     string `json:"target_addr"`
+	Error      string `json:"error,omitempty"`
+}
+
+func dialback(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id, port, policy := q.Get("id"), q.Get("port"), q.Get("policy")
+	base, ok := dialPolicies[policy]
+	if !ok || port == "" {
+		http.Error(w, "need policy=alb-pq|alb-classic and port", http.StatusBadRequest)
+		return
+	}
+	addr := net.JoinHostPort(hostOf(r.RemoteAddr), port)
+	res := DialResult{Target: addr, OfferedPQ: policy == "alb-pq"}
+	cfg := base.Clone()
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 10 * time.Second}, "tcp", addr, cfg)
+	if err != nil {
+		res.Error = err.Error()
+	} else {
+		cs := conn.ConnectionState()
+		res.TLSVersion, res.Group, res.PQ = versionName(cs.Version), groupName(cs.CurveID), pqGroups[cs.CurveID]
+		conn.SetDeadline(time.Now().Add(10 * time.Second))
+		fmt.Fprintf(conn, "GET /probe?id=%s HTTP/1.1\r\nHost: target\r\nConnection: close\r\n\r\n", id)
+		buf := make([]byte, 64)
+		n, rerr := conn.Read(buf)
+		if n > 12 {
+			res.Status = string(buf[9:12])
+		}
+		res.OK = res.Status == "200"
+		if !res.OK {
+			res.Error = fmt.Sprintf("no HTTP 200 from target (read %q, %v)", string(buf[:n]), rerr)
+		}
+		conn.Close()
+	}
+	record(Event{Kind: "dialback", Listener: policy, Remote: addr, CaseID: id, OfferedPQ: res.OfferedPQ,
+		TLSVersion: res.TLSVersion, Group: res.Group, PQ: res.PQ})
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }

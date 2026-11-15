@@ -93,6 +93,7 @@ class Env:
 
 
 def _env_for(case, full_id):
+    # server-role cases (load balancer target leg) use the same variables; PQC_TARGETS = alb-pq,alb-classic
     e = {"PQC_COMPUTE": case["compute"], "PQC_MODE": case.get("mode", "baseline"), "PQC_CASE_ID": full_id,
          "PQC_TARGETS": ",".join(case["targets"]), "PQC_OBSERVER": "pq-observer"}
     e.update(case.get(case["compute"].split("-")[0], {}).get("env", {}))
@@ -326,7 +327,7 @@ def run_case(env, case):
            "title": case.get("title", ""), "doc": case.get("doc", ""), "full_id": full_id, "file": case["_file"],
            "runtime_label": case.get("runtime_label") or case.get("lambda", {}).get("runtime")
            or case.get("ecs", {}).get("image") or case.get("ec2", {}).get("ami"),
-           "expect": case.get("expect", {}), "finding": case.get("finding")}
+           "expect": case.get("expect", {}), "finding": case.get("finding"), "role": case.get("role", "client")}
     try:
         client, extra = EXEC[case["compute"]](env, case, full_id)
         out.update(extra=extra, client=client)
@@ -398,10 +399,10 @@ def run_detection(env, results):
                     "seconds": round(time.time() - t0, 1)})
     # D2: observer side
     evs = _obs("/events") or []
-    run_reqs = [e for e in evs if str(e.get("case_id", "")).startswith(env.run_id + "-")]
+    run_reqs = [e for e in evs if str(e.get("case_id", "")).startswith(env.run_id + "-") and e.get("kind") == "request"]
     classical = [e for e in run_reqs if not e.get("pq")]
     tls12 = [e for e in run_reqs if e.get("tls_version") == "TLSv1.2"]
-    reported = {(r["full_id"], t) for r in results if r.get("client") for t, v in (r["client"].get("results") or {}).items()
+    reported = {(r["full_id"], t) for r in results if r.get("client") and r.get("role") != "server" for t, v in (r["client"].get("results") or {}).items()
                 if v.get("ok") and not v.get("pq")}
     seen = {(e["case_id"], e["listener"]) for e in classical}
     missing = sorted(reported - seen)

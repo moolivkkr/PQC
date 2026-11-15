@@ -35,7 +35,10 @@ def load_cases(args):
     if dup:
         sys.exit("duplicate case ids: %s" % sorted(dup))
     if args.lang:
-        cases = [c for c in cases if c["lang"] in args.lang.split(",")]
+        # "server" selects the load balancer target-leg cases (cases/server.json); a language name selects its client cases
+        langs = args.lang.split(",")
+        cases = [c for c in cases if (c.get("role") == "server" and "server" in langs)
+                 or (c.get("role") != "server" and c["lang"] in langs)]
     if args.compute:
         cases = [c for c in cases if c["compute"] in args.compute.split(",")]
     if args.id:

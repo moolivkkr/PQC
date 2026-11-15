@@ -54,9 +54,10 @@ e2e/run.sh --lang python
 3. `build/common.sh`: builds the runner image and the `pq-egress` extension, and lays out the `pq-tls` layer files.
 4. `build/<lang>.sh`: builds Lambda zips, pushes images to LocalStack ECR and writes the EC2 files.
 5. `build/layers.sh`: zips the three layers (`pq-tls`, `pq-egress`, `pq-tls-combined`).
-6. `build/ami.sh`: builds the golden AMIs `pqc-al2023` (AL2023 `2023.12.20261109.0`) and `pqc-al2` (Amazon Linux 2).
-7. Generates `cases/<lang>.json` from `cases/<lang>.py`.
-8. Runs the cases and prints one line per case: `PASS`, `FAIL` or `ERROR`, then what was negotiated per listener.
+6. `build/server.sh` (full runs, `--lang server`): the load balancer target probes, layered on the five languages' images.
+7. `build/ami.sh`: builds the golden AMIs `pqc-al2023` (AL2023 `2023.12.20261109.0`) and `pqc-al2` (Amazon Linux 2).
+8. Generates `cases/<lang>.json` from `cases/<lang>.py`.
+9. Runs the cases and prints one line per case: `PASS`, `FAIL` or `ERROR`, then what was negotiated per listener.
 
 The first build of a language pulls several GB of images. Later builds reuse them.
 
@@ -133,6 +134,17 @@ still shows up.
 
 Every client trusts only the suite's test CA (`e2e/.work/certs/ca.crt`, or `truststore.p12` for Java). The `mtls`
 listener needs `client.crt`/`client.key`, or `client.p12` (password `changeit`).
+
+Load balancer target cases (`srv-*`, `--lang server`) visit two other targets instead. The workload is the server and
+the observer connects to it on port 9443 as a load balancer would:
+
+| Target | Offered by the observer | An unfixed target | A fixed target |
+|---|---|---|---|
+| `alb-pq` | TLS 1.0-1.3 with the three ML-KEM hybrids first (PQ backend policy) | TLS 1.3, classical | TLS 1.3, X25519MLKEM768 |
+| `alb-classic` | TLS 1.0-1.2 (`ELBSecurityPolicy-2016-08` backend) | TLS 1.2, classical | TLS 1.2, classical |
+
+Run them after the five languages are built: `PQC_JOBS=3 e2e/run.sh --lang server`, or with `--skip-build --id 'srv-*'`
+when the images are already in ECR.
 
 ## 6. Per-language guide
 

@@ -1,0 +1,1109 @@
+{
+ "lang": "server",
+ "generated_by": "cases/server.py",
+ "default_targets": [
+  "alb-pq",
+  "alb-classic"
+ ],
+ "cases": [
+  {
+   "id": "srv-python-fargate-al2023-py312-baseline",
+   "lang": "python",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "AL2023 image, Python 3.12, no fix: target leg stays classical under a PQ listener policy",
+   "doc": "src/04-python.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:python-al2023",
+    "command": [
+     "python3.12",
+     "/srv-pqc/server.py"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-python-fargate-al2023-py312-conf",
+   "lang": "python",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 image + OPENSSL_CONF=openssl-pq.cnf in the task definition",
+   "doc": "src/04-python.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:python-al2023",
+    "command": [
+     "python3.12",
+     "/srv-pqc/server.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   }
+  },
+  {
+   "id": "srv-python-fargate-al2023-py312-policy",
+   "lang": "python",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "AL2023 image with DEFAULT:PQ crypto policy",
+   "doc": "src/04-python.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:python-al2023-policy",
+    "command": [
+     "python3.12",
+     "/srv-pqc/server.py"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-python-fargate-trixie-py313",
+   "lang": "python",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "python:3.13-slim-trixie (OpenSSL 3.5): PQ with no change",
+   "doc": "src/04-python.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:python-lib-3.13-slim-trixie",
+    "command": [
+     "python",
+     "/srv-pqc/server.py"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-python-fargate-bookworm-py312",
+   "lang": "python",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "python:3.12-slim-bookworm (OpenSSL 3.0): classical; fix = change base image",
+   "doc": "src/04-python.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:python-lib-3.12-slim-bookworm",
+    "command": [
+     "python",
+     "/srv-pqc/server.py"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-python-ecsec2-al2023-py312-conf",
+   "lang": "python",
+   "role": "server",
+   "compute": "ecs-ec2",
+   "mode": "config",
+   "title": "ECS on EC2: AL2023 image + OPENSSL_CONF",
+   "doc": "src/04-python.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:python-al2023",
+    "command": [
+     "python3.12",
+     "/srv-pqc/server.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   }
+  },
+  {
+   "id": "srv-node-fargate-lib-24-slim",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "node:24-slim (bundled OpenSSL 3.5): PQ with no change",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-lib-24-slim",
+    "command": [
+     "node",
+     "/srv-pqc/server.js"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-node-fargate-lib-20-slim",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "node:20-slim (bundled OpenSSL 3.0): classical; fix = upgrade",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-lib-20-slim",
+    "command": [
+     "node",
+     "/srv-pqc/server.js"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-node-fargate-al2023-n22-baseline",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "AL2023 dnf nodejs22, no fix: classical",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-al2023",
+    "command": [
+     "node-22",
+     "/srv-pqc/server.js"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-node-fargate-al2023-n22-conf",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 dnf nodejs22 + OPENSSL_CONF=openssl-pq-node-system.cnf",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-al2023",
+    "command": [
+     "node-22",
+     "/srv-pqc/server.js"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
+    }
+   }
+  },
+  {
+   "id": "srv-node-fargate-al2023-n20-conf",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 dnf nodejs20 (system OpenSSL 3.5.8) + OPENSSL_CONF: PQ",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-al2023",
+    "command": [
+     "node-20",
+     "/srv-pqc/server.js"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
+    }
+   }
+  },
+  {
+   "id": "srv-node-fargate-al2023-n22-policy",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "AL2023 dnf nodejs22 with DEFAULT:PQ crypto policy",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-al2023-policy",
+    "command": [
+     "node-22",
+     "/srv-pqc/server.js"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-node-ecsec2-lib-24-slim",
+   "lang": "node",
+   "role": "server",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS on EC2: node:24-slim",
+   "doc": "src/05-nodejs.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:node-lib-24-slim",
+    "command": [
+     "node",
+     "/srv-pqc/server.js"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-go-fargate-go126",
+   "lang": "go",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Go 1.26 toolchain, go 1.26 line: PQ by default",
+   "doc": "src/03-go.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:go-distroless",
+    "command": [
+     "/srv-pqc/server-1.26"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-go-fargate-go126-mod123",
+   "lang": "go",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Go 1.26 toolchain, go 1.23 line (tlsmlkem=0): classical",
+   "doc": "src/03-go.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:go-distroless",
+    "command": [
+     "/srv-pqc/server-1.26-go1.23"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-go-fargate-go126-mod123-godebug",
+   "lang": "go",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "godebug",
+   "title": "Same binary + GODEBUG=tlsmlkem=1,tlssecpmlkem=1 in the task definition",
+   "doc": "src/03-go.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:go-distroless",
+    "command": [
+     "/srv-pqc/server-1.26-go1.23"
+    ],
+    "env": {
+     "GODEBUG": "tlsmlkem=1,tlssecpmlkem=1"
+    }
+   }
+  },
+  {
+   "id": "srv-go-fargate-go123",
+   "lang": "go",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Go 1.23 (Kyber draft only): classical; fix = rebuild with 1.26",
+   "doc": "src/03-go.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:go-distroless",
+    "command": [
+     "/srv-pqc/server-1.23"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-go-ecsec2-go126",
+   "lang": "go",
+   "role": "server",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS on EC2: Go 1.26",
+   "doc": "src/03-go.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:go-distroless",
+    "command": [
+     "/srv-pqc/server-1.26"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-java-fargate-corretto21-baseline",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Corretto 21, no kit: classical",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-java-fargate-corretto21-agent",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Corretto 21 + kit v2 in JAVA_TOOL_OPTIONS",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   }
+  },
+  {
+   "id": "srv-java-fargate-corretto17-agent",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Corretto 17 + kit v2",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto17",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   }
+  },
+  {
+   "id": "srv-java-fargate-corretto8-baseline",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Corretto 8u512, no kit: classical",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-java-fargate-corretto8-agent",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "agent",
+   "title": "Corretto 8 + kit v2 with the Java 8 flags (server side not covered by the tab before this case)",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto8",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar -Djdk.tls.client.protocols=TLSv1.3,TLSv1.2 -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
+    }
+   }
+  },
+  {
+   "id": "srv-java-fargate-corretto25",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Corretto 25.0.5: PQ by default",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto25",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {}
+   }
+  },
+  {
+   "id": "srv-java-ecsec2-corretto21-agent",
+   "lang": "java",
+   "role": "server",
+   "compute": "ecs-ec2",
+   "mode": "agent",
+   "title": "ECS on EC2: Corretto 21 + kit v2",
+   "doc": "src/06-java.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:java-corretto21",
+    "command": [
+     "java",
+     "-cp",
+     "/srv-pqc",
+     "Server"
+    ],
+    "env": {
+     "JAVA_TOOL_OPTIONS": "-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"
+    }
+   }
+  },
+  {
+   "id": "srv-dotnet-fargate-runtime-80",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "mcr runtime:8.0 (Debian 12, OpenSSL 3.0): classical; fix = change image",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-mcr-runtime-8.0",
+    "command": [
+     "/srv-pqc/net8/server.dll"
+    ],
+    "env": {},
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  },
+  {
+   "id": "srv-dotnet-fargate-runtime-100-alpine",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "mcr runtime:10.0-alpine (OpenSSL 3.5): PQ with no change",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-mcr-runtime-10.0-alpine",
+    "command": [
+     "/srv-pqc/net10/server.dll"
+    ],
+    "env": {},
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  },
+  {
+   "id": "srv-dotnet-fargate-aspnet-100-resolute",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "mcr aspnet:10.0-resolute (Ubuntu 26.04): PQ with no change",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-mcr-aspnet-10.0-resolute",
+    "command": [
+     "/srv-pqc/net10/server.dll"
+    ],
+    "env": {},
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  },
+  {
+   "id": "srv-dotnet-fargate-al2023-net8-baseline",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "AL2023 + .NET 8, no fix: classical",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-al2023",
+    "command": [
+     "/srv-pqc/net8/server.dll"
+    ],
+    "env": {},
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  },
+  {
+   "id": "srv-dotnet-fargate-al2023-net8-conf",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "AL2023 + .NET 8 + OPENSSL_CONF",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-al2023",
+    "command": [
+     "/srv-pqc/net8/server.dll"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    },
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  },
+  {
+   "id": "srv-dotnet-fargate-al2023-net8-policy",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "AL2023 + .NET 8 with DEFAULT:PQ",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-al2023-policy",
+    "command": [
+     "/srv-pqc/net8/server.dll"
+    ],
+    "env": {},
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  },
+  {
+   "id": "srv-dotnet-ecsec2-runtime-100-alpine",
+   "lang": "dotnet",
+   "role": "server",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS on EC2: 10.0-alpine",
+   "doc": "src/07-dotnet.md B. Simple server",
+   "targets": [
+    "alb-pq",
+    "alb-classic"
+   ],
+   "expect": {
+    "alb-pq": {
+     "ok": true,
+     "pq": true,
+     "tls_version": "TLSv1.3"
+    },
+    "alb-classic": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "ecs": {
+    "image": "pqc-server:dotnet-mcr-runtime-10.0-alpine",
+    "command": [
+     "/srv-pqc/net10/server.dll"
+    ],
+    "env": {},
+    "entrypoint": [
+     "dotnet"
+    ]
+   }
+  }
+ ]
+}

@@ -1,8 +1,47 @@
-# PQC end-to-end results - run final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106)
+# PQC end-to-end results - run final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537)
 
-LocalStack: pro 2026.10.6:5fe8a776. 446 of 447 cases passed.
+LocalStack: pro 2026.10.6:5fe8a776. 480 of 481 cases passed.
 
 PASS = the observed behaviour matched the expectation in the case file (which is the documented behaviour); it does not mean PQ was negotiated. Cells: what the client negotiated against each observer listener (hybrid :8443, pqonly :8444, mtls :8445, eccert :8446, tls12 :8447).
+
+## Load balancer target leg (server role)
+
+The workload is the TLS server; the observer connects to it like an ALB/NLB TLS listener connects to an HTTPS target. alb-pq = backend policy used with a PQ listener policy (ELBSecurityPolicy-TLS13-1-0-PQ-2025-09), alb-classic = backend policy used with any other listener policy (ELBSecurityPolicy-2016-08). A model of AWS's client, not AWS's TLS stack.
+
+| Case | Lang | Compute | Runtime | Mode | alb-pq | alb-classic | Verdict |
+|---|---|---|---|---|---|---|---|
+| srv-dotnet-ecsec2-runtime-100-alpine | dotnet | ecs-ec2 | 10.0.15 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-dotnet-fargate-al2023-net8-baseline | dotnet | ecs-fargate | 8.0.33 | baseline | classical | classical 1.2 | PASS |
+| srv-dotnet-fargate-al2023-net8-conf | dotnet | ecs-fargate | 8.0.33 | config | **PQ** | classical 1.2 | PASS |
+| srv-dotnet-fargate-al2023-net8-policy | dotnet | ecs-fargate | 8.0.33 | crypto-policy | **PQ** | classical 1.2 | PASS |
+| srv-dotnet-fargate-aspnet-100-resolute | dotnet | ecs-fargate | 10.0.15 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-dotnet-fargate-runtime-100-alpine | dotnet | ecs-fargate | 10.0.15 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-dotnet-fargate-runtime-80 | dotnet | ecs-fargate | 8.0.34 | baseline | classical | classical 1.2 | PASS |
+| srv-go-ecsec2-go126 | go | ecs-ec2 | go1.26.11 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-go-fargate-go123 | go | ecs-fargate | go1.23.12 | baseline | classical | classical 1.2 | PASS |
+| srv-go-fargate-go126 | go | ecs-fargate | go1.26.11 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-go-fargate-go126-mod123 | go | ecs-fargate | go1.26.11 | baseline | classical | classical 1.2 | PASS |
+| srv-go-fargate-go126-mod123-godebug | go | ecs-fargate | go1.26.11 | godebug | **PQ** | classical 1.2 | PASS |
+| srv-java-ecsec2-corretto21-agent | java | ecs-ec2 | 21.0.13 | agent | **PQ** | classical 1.2 | PASS |
+| srv-java-fargate-corretto17-agent | java | ecs-fargate | 17.0.21 | agent | **PQ** | classical 1.2 | PASS |
+| srv-java-fargate-corretto21-agent | java | ecs-fargate | 21.0.13 | agent | **PQ** | classical 1.2 | PASS |
+| srv-java-fargate-corretto21-baseline | java | ecs-fargate | 21.0.13 | baseline | classical | classical 1.2 | PASS |
+| srv-java-fargate-corretto25 | java | ecs-fargate | 25.0.5 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-java-fargate-corretto8-agent | java | ecs-fargate | 1.8.0_512 | agent | **PQ** | classical 1.2 | PASS |
+| srv-java-fargate-corretto8-baseline | java | ecs-fargate | 1.8.0_512 | baseline | classical | classical 1.2 | PASS |
+| srv-node-ecsec2-lib-24-slim | node | ecs-ec2 | v24.22.3 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-node-fargate-al2023-n20-conf | node | ecs-fargate | v20.20.2 | config | **PQ** | classical 1.2 | PASS |
+| srv-node-fargate-al2023-n22-baseline | node | ecs-fargate | v22.23.4 | baseline | classical | classical 1.2 | PASS |
+| srv-node-fargate-al2023-n22-conf | node | ecs-fargate | v22.23.4 | config | **PQ** | classical 1.2 | PASS |
+| srv-node-fargate-al2023-n22-policy | node | ecs-fargate | v22.23.4 | crypto-policy | **PQ** | classical 1.2 | PASS |
+| srv-node-fargate-lib-20-slim | node | ecs-fargate | v20.20.2 | baseline | classical | classical 1.2 | PASS |
+| srv-node-fargate-lib-24-slim | node | ecs-fargate | v24.22.3 | baseline | **PQ** | classical 1.2 | PASS |
+| srv-python-ecsec2-al2023-py312-conf | python | ecs-ec2 | 3.12.16 | config | **PQ** | classical 1.2 | PASS |
+| srv-python-fargate-al2023-py312-baseline | python | ecs-fargate | 3.12.16 | baseline | classical | classical 1.2 | PASS |
+| srv-python-fargate-al2023-py312-conf | python | ecs-fargate | 3.12.16 | config | **PQ** | classical 1.2 | PASS |
+| srv-python-fargate-al2023-py312-policy | python | ecs-fargate | 3.12.16 | crypto-policy | **PQ** | classical 1.2 | PASS |
+| srv-python-fargate-bookworm-py312 | python | ecs-fargate | 3.12.16 | baseline | classical | classical 1.2 | PASS |
+| srv-python-fargate-trixie-py313 | python | ecs-fargate | 3.13.18 | baseline | **PQ** | classical 1.2 | PASS |
 
 ## dotnet
 
@@ -475,6 +514,13 @@ PASS = the observed behaviour matched the expectation in the case file (which is
 | py-lambda-py39-extension | lambda | 3.9.23 | extension | **PQ** | **PQ** | **PQ** | **PQ** | classical 1.2 | PASS |
 | py-lambda-py39-layer | lambda | 3.9.23 | layer | **PQ** | **PQ** | **PQ** | **PQ** | classical 1.2 | PASS |
 | detect-server-handshake-log-python | observer | | detection | 268 handshakes, 124 classical, 61 TLS1.2; all client-reported classical handshakes present | | | | | PASS |
+
+## server
+
+| Case | Compute | Runtime | Mode | hybrid | pqonly | mtls | eccert | tls12 | Verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| detect-cloudwatch-nonpq-server | cloudwatch-logs | | detection | pattern { ($.event = "tls_handshake") && ($.pq_status = "classical") }: expected 42, found 42 | | | | | PASS |
+| detect-server-handshake-log-server | observer | | detection | 0 handshakes, 0 classical, 0 TLS1.2; all client-reported classical handshakes present | | | | | PASS |
 
 ## Findings (observed behaviour differs from the document or a kit file)
 
