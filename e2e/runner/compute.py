@@ -115,6 +115,22 @@ def _parse_result(text, full_id=None):
 
 
 # ---------------------------------------------------------------- executors
+def _wait_for_handshake_logs(env, group, full_id, want, timeout=20):
+    """Deleting the function right after invoke can drop its last stdout line before LocalStack ships it to
+    CloudWatch Logs (seen once: the final target's tls_handshake line never arrived). Wait until every handshake
+    line of this invocation is in the log group, so the CloudWatch detection check sees what the client logged."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            evs = env.logs.filter_log_events(logGroupName=group, filterPattern='"%s"' % full_id).get("events", [])
+        except Exception:
+            evs = []
+        if sum('"tls_handshake"' in e["message"] and full_id in e["message"] for e in evs) >= want:
+            return True
+        time.sleep(1)
+    return False
+
+
 def _run_lambda(env, case, full_id):
     spec = case["lambda"]
     fn = _short(case["id"])
@@ -142,6 +158,8 @@ def _run_lambda(env, case, full_id):
         if isinstance(client, str):
             client = json.loads(client)
     notes = [l.strip() for l in log.splitlines() if "pq-tls" in l or "pq-egress" in l][:6]
+    if client:
+        _wait_for_handshake_logs(env, "/aws/lambda/" + fn, full_id, len(client.get("results") or {}))
     if not spec.get("keep"):
         env.lam.delete_function(FunctionName=fn)
     return client, {"function_error": r.get("FunctionError"), "payload": payload[:2000] if r.get("FunctionError") else None,
