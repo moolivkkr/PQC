@@ -2315,8 +2315,10 @@ the sidecar, the mesh decides (see Service mesh).</li>
 <tr>
 <td>ALB (HTTPS listener)</td>
 <td>The ALB security policy</td>
-<td>Only the ALB-to-target leg. Whether ALB offers ML-KEM to targets is
-not confirmed.</td>
+<td>Only the ALB-to-target leg. With a PQ listener policy the ALB uses
+<code>ELBSecurityPolicy-TLS13-1-0-PQ-2025-09</code> towards HTTPS
+targets (Documented), so a PQ-capable Go target negotiates ML-KEM on
+that leg.</td>
 </tr>
 <tr>
 <td>NLB, TCP listener (passthrough)</td>

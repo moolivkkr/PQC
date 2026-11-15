@@ -93,6 +93,7 @@ Every item below is kept as a regression case, so a revert to the old text or ki
   OpenSSL configuration are AWS's.
 - ECS on EC2 runs tasks without registered container instances, so the ECS-optimized AMI host isn't exercised. A
   container's TLS comes from its own image, so this doesn't change client results.
+- ALB/NLB listener security policies can't be tested on LocalStack. Probe on 2026-11-15 (throwaway LocalStack 2026.10.6, `elbv2` + `acm`): an HTTPS listener with `ELBSecurityPolicy-2016-08` and an imported RSA certificate served LocalStack's own `localhost.localstack.cloud` certificate and negotiated `X25519MLKEM768`. A LocalStack ALB case would pass whatever policy is set, so the suite has none. Verify listener policies on real AWS (connection logs field 13 `tls_keyexchange`).
 - AWS-managed TLS endpoints (ALB/NLB, API Gateway, CloudFront, KMS, SSM, Secrets Manager) are not tested: LocalStack's
   endpoints don't use AWS's TLS stacks. The AWS Parameters and Secrets Lambda Extension can't be downloaded offline.
   `pq-egress` stands in for that pattern.

@@ -11,7 +11,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | [PQC-Detection-and-Remediation.pdf](PQC-Detection-and-Remediation.pdf) | All 22 sections: Overview, Runbook, Go, Python, Node.js, Java, .NET, twelve infrastructure sections, Enforcement and guardrails, Configuration file index |
 | [PQC-Detection-and-Remediation.docx](PQC-Detection-and-Remediation.docx) | Same content in Word; import into Google Docs with Drive > Upload, then Open with Google Docs |
 | [PQC-Detection-and-Remediation.html](PQC-Detection-and-Remediation.html) | Same content as one HTML page |
-| [PQC-Summary.pptx](PQC-Summary.pptx) | 18-slide summary: problem, status by language, existing keystores, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
+| [PQC-Summary.pptx](PQC-Summary.pptx) | 34-slide summary: problem, status by language, three detail slides per language (what decides PQ, versions and compute types, pitfalls and e2e evidence), existing keystores, ALB/NLB policy, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
 
 ## End-to-end verification (2026-11-15)
 
@@ -45,7 +45,7 @@ bash build/build.sh
 python3 -I build/extract-configs.py .
 ```
 
-PPTX: `docker run --rm -v "$PWD":/d -w /d pandoc/core@sha256:5b8a29d9b70d5d8ca766e5d1dcfc41916b23ab79276a80527be70516110f4c1e src/deck/summary-deck.md -t pptx --slide-level=2 -o PQC-Summary.pptx`
+PPTX: `docker run --rm -v "$PWD":/d -w /d pandoc/core@sha256:5b8a29d9b70d5d8ca766e5d1dcfc41916b23ab79276a80527be70516110f4c1e src/deck/summary-deck.md -t pptx --slide-level=2 --reference-doc=build/deck-reference.pptx -o PQC-Summary.pptx`
 
 ## Earlier files
 
