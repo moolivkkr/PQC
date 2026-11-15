@@ -1,0 +1,74 @@
+# PQC end-to-end test environment.
+# Isolated from any other LocalStack on this machine: own container name, host port, network and volume.
+# Start: source env.sh && docker compose up -d --wait
+name: pqc-e2e
+
+networks:
+  pqc-e2e:
+    name: pqc-e2e
+    labels: { project: pqc-e2e }
+    ipam:
+      config:
+        - subnet: 10.250.0.0/24
+
+volumes:
+  ls-state:
+    name: pqc-e2e-ls-state
+    labels: { project: pqc-e2e }
+
+x-addhost: &addhost "--add-host pq-observer:10.250.0.20 --label project=pqc-e2e"
+
+services:
+  localstack:
+    image: localstack/localstack-pro@sha256:f94401988db4c01a5b2634d37d698a9b11c93f74c1ad0f7a8849f5ebd73dcbdc  # 2026.10.6
+    container_name: pqc-e2e-localstack
+    labels: { project: pqc-e2e }
+    ports:
+      - "127.0.0.1:${PQC_LS_PORT:-4600}:4566"
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?LOCALSTACK_AUTH_TOKEN not set - source env.sh}
+      MAIN_CONTAINER_NAME: pqc-e2e-localstack
+      MAIN_DOCKER_NETWORK: pqc-e2e
+      LOCALSTACK_HOST: localhost.localstack.cloud:${PQC_LS_PORT:-4600}
+      SERVICES: lambda,ecs,ecr,ec2,logs,iam,sts,s3,ssm,cloudwatch,secretsmanager
+      PERSISTENCE: "0"
+      DEBUG: "0"
+      # Lambda: AWS base images (public.ecr.aws/lambda/*) on the test network, arm64 native
+      LAMBDA_DOCKER_NETWORK: pqc-e2e
+      LAMBDA_DOCKER_FLAGS: *addhost
+      LAMBDA_IGNORE_ARCHITECTURE: "1"
+      LAMBDA_REMOVE_CONTAINERS: "1"
+      # ECS (Fargate and EC2 launch types both run as containers)
+      ECS_DOCKER_FLAGS: *addhost
+      ECS_REMOVE_CONTAINERS: "1"
+      # EC2: docker VM manager; never touch shared AMI tags or other projects' instances
+      EC2_VM_MANAGER: docker
+      EC2_DOCKER_FLAGS: *addhost
+      EC2_REMOVE_CONTAINERS: "0"
+      EC2_DOWNLOAD_DEFAULT_IMAGES: "0"
+    volumes:
+      - ls-state:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      pqc-e2e:
+        ipv4_address: 10.250.0.10
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4566/_localstack/health', timeout=3)"]
+      interval: 5s
+      retries: 30
+
+  observer:
+    build: ./observer
+    image: pqc-e2e/observer:local
+    container_name: pqc-e2e-observer
+    labels: { project: pqc-e2e }
+    volumes:
+      - ./.work/certs:/certs:ro
+    networks:
+      pqc-e2e:
+        ipv4_address: 10.250.0.20
+        aliases: [pq-observer]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 3s
+      retries: 20
