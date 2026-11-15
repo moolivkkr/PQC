@@ -44,6 +44,9 @@ After the cases run, two checks test visibility of non-PQ handshakes:
 
 ## Run it
 
+Step-by-step instructions for every language, reading results and troubleshooting: [RUNNING.md](RUNNING.md).
+
+
 ```bash
 e2e/run.sh                         # build everything, run every language
 e2e/run.sh --lang python           # one language
