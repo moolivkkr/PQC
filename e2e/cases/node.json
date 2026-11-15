@@ -1,0 +1,4650 @@
+{
+ "lang": "node",
+ "generated_by": "cases/node.py",
+ "default_targets": [
+  "hybrid",
+  "pqonly",
+  "mtls",
+  "eccert",
+  "tls12"
+ ],
+ "cases": [
+  {
+   "id": "node-lambda-n18-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "nodejs18.x zip, no change: bootstrap's classical file / old OpenSSL -> classical, PQ-only server fails",
+   "doc": "src/05-nodejs.md version table l.21-25, Lambda zip l.352",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs18.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Outcome as documented (classical, no fix), but the library differs: on Lambda nodejs18.x process.versions.openssl is 3.1.8, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking startup (cases node-lambda-n18-bundled-*).",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n18-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs18.x + pq-tls/openssl-pq-node.cnf in package + OPENSSL_CONF (no fix on 18/20: library has no ML-KEM; tab l.38, l.383)",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs18.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n18-bundled-flag",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs18.x + NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf (no fix on 18/20: library has no ML-KEM; tab l.38, l.383)",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs18.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "NODE_OPTIONS": "--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n18-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "nodejs18.x + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER (wrapper: no change on 18/20)",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs18.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n18-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs18.x + pq-egress extension layer: extension originates PQ TLS (works on 18/20 too)",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs18.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n18-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs18.x + ONE combined layer (wrapper + extension), extension mode",
+   "doc": "e2e/lambda/extension/pq-egress + src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs18.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "nodejs20.x zip, no change: bootstrap's classical file / old OpenSSL -> classical, PQ-only server fails",
+   "doc": "src/05-nodejs.md version table l.21-25, Lambda zip l.352",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "finding": "Outcome as documented (classical, no fix), but the library differs: on Lambda nodejs20.x process.versions.openssl is 3.2.6, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking startup (cases node-lambda-n20-bundled-*).",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs20.x + pq-tls/openssl-pq-node.cnf in package + OPENSSL_CONF (no fix on 18/20: library has no ML-KEM; tab l.38, l.383)",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-bundled-flag",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs20.x + NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf (no fix on 18/20: library has no ML-KEM; tab l.38, l.383)",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "NODE_OPTIONS": "--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "nodejs20.x + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER (wrapper: no change on 18/20)",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs20.x + pq-egress extension layer: extension originates PQ TLS (works on 18/20 too)",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs20.x + ONE combined layer (wrapper + extension), extension mode",
+   "doc": "e2e/lambda/extension/pq-egress + src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "nodejs22.x zip, no change: bootstrap's classical file / old OpenSSL -> classical, PQ-only server fails",
+   "doc": "src/05-nodejs.md version table l.21-25, Lambda zip l.352",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs22.x + pq-tls/openssl-pq-node.cnf in package + OPENSSL_CONF",
+   "doc": "src/05-nodejs.md Lambda zip l.356",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-bundled-flag",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs22.x + NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf",
+   "doc": "src/05-nodejs.md Lambda zip l.357",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "NODE_OPTIONS": "--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "nodejs22.x + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs22.x + pq-egress extension layer: extension originates PQ TLS (works on 18/20 too)",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs22.x + ONE combined layer (wrapper + extension), extension mode",
+   "doc": "e2e/lambda/extension/pq-egress + src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "nodejs24.x zip, no change: bootstrap's classical file / old OpenSSL -> classical, PQ-only server fails",
+   "doc": "src/05-nodejs.md version table l.21-25, Lambda zip l.352",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x + pq-tls/openssl-pq-node.cnf in package + OPENSSL_CONF",
+   "doc": "src/05-nodejs.md Lambda zip l.356",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-bundled-flag",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x + NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf",
+   "doc": "src/05-nodejs.md Lambda zip l.357",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "NODE_OPTIONS": "--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "nodejs24.x + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs24.x + pq-egress extension layer: extension originates PQ TLS (works on 18/20 too)",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-combined",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "nodejs24.x + ONE combined layer (wrapper + extension), extension mode",
+   "doc": "e2e/lambda/extension/pq-egress + src/05-nodejs.md l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-devnull",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs22.x OPENSSL_CONF=/dev/null (AWS's opt-in): OpenSSL built-in defaults",
+   "doc": "src/05-nodejs.md Lambda zip l.358",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/dev/null"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-devnull",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x OPENSSL_CONF=/dev/null (AWS's opt-in): OpenSSL built-in defaults",
+   "doc": "src/05-nodejs.md Lambda zip l.358",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/dev/null"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-code-ecdh",
+   "compute": "lambda",
+   "mode": "code",
+   "title": "nodejs24.x, AWS's file, app code sets tls.DEFAULT_ECDH_CURVE PQ-first (NODE_OPTIONS=--require preload)",
+   "doc": "src/05-nodejs.md Lambda zip l.359, l.306",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-extra.zip",
+    "layers": [],
+    "env": {
+     "NODE_OPTIONS": "--require /var/task/preload/ecdh-pq.js"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-combined-wrapper",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "nodejs24.x + ONE combined layer, wrapper path only",
+   "doc": "src/05-nodejs.md Lambda zip (nodejs22.x, nodejs24.x) (l.350-383)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-layer-ownconf",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "function already sets OPENSSL_CONF (its own classical file): wrapper leaves it alone -> stays classical",
+   "doc": "src/05-nodejs.md l.383, l.450",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-extra.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "OPENSSL_CONF": "/var/task/conf/app-openssl.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-layer-chain",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "existing exec wrapper chained with PQ_TLS_NEXT_WRAPPER: both run, PQ on",
+   "doc": "kit/java-v2/pq-tls-layer/wrapper",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe-extra.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "PQ_TLS_NEXT_WRAPPER": "/var/task/app-wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-layer-disabled",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "rollback switch PQ_TLS_DISABLE=1 with layer still attached: back to classical",
+   "doc": "src/05-nodejs.md rollback l.463",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "PQ_TLS_DISABLE": "1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-code-ecdh-classical",
+   "compute": "lambda",
+   "mode": "code",
+   "title": "PITFALL: PQ file set, but app code sets tls.DEFAULT_ECDH_CURVE='X25519:P-256' -> classical, PQ-only fails",
+   "doc": "src/05-nodejs.md case F l.282, l.306",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-extra.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "NODE_OPTIONS": "--require /var/task/preload/ecdh-classical.js"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-tls-max-12",
+   "compute": "lambda",
+   "mode": "code",
+   "title": "PITFALL: PQ file set + NODE_OPTIONS=--tls-max-v1.2 -> no TLS 1.3, no ML-KEM, PQ-only server: protocol version alert",
+   "doc": "src/05-nodejs.md case F l.288, l.448",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "protocol version|alert"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "NODE_OPTIONS": "--tls-max-v1.2"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-nec-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs22.x PQ file + NODE_EXTRA_CA_CERTS (no ca: in code): PQ, verified, mTLS works",
+   "doc": "src/05-nodejs.md case D l.206, l.220",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "NODE_EXTRA_CA_CERTS": "/var/task/certs/ca.crt",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-nec-bundled",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x PQ file + NODE_EXTRA_CA_CERTS (no ca: in code): PQ, verified, mTLS works",
+   "doc": "src/05-nodejs.md case D l.206, l.220",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "NODE_EXTRA_CA_CERTS": "/var/task/certs/ca.crt",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-nec-aws",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "nodejs24.x AWS default config + NODE_EXTRA_CA_CERTS: classical",
+   "doc": "src/05-nodejs.md case D l.221",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {
+     "NODE_EXTRA_CA_CERTS": "/var/task/certs/ca.crt",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-nec-none",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "NEGATIVE: PQ file, no ca: and no NODE_EXTRA_CA_CERTS -> every target fails verification",
+   "doc": "src/05-nodejs.md case D l.222",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_GET_ISSUER"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_GET_ISSUER"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_GET_ISSUER"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_GET_ISSUER"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_GET_ISSUER"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-nec-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "nodejs22.x pq-tls layer + NODE_EXTRA_CA_CERTS: PQ, verified",
+   "doc": "src/05-nodejs.md case D l.199, l.383",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "NODE_EXTRA_CA_CERTS": "/var/task/certs/ca.crt",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-fetch-nec",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x global fetch (bundled undici) + PQ file + NODE_EXTRA_CA_CERTS: fetch inherits Node's defaults",
+   "doc": "src/05-nodejs.md case A l.63, case D l.206",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "PQC_NODE_STACK": "fetch",
+     "NODE_EXTRA_CA_CERTS": "/var/task/certs/ca.crt",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-pfx",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x PQ file, mTLS with pfx: client.p12 (AES-256/PBKDF2)",
+   "doc": "src/05-nodejs.md case E l.250",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "PQC_NODE_CLIENT_CERT": "pfx"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-pfx-legacy",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x legacy RC2-40/3DES PFX for mTLS: Unsupported PKCS12 PFX data (not PQ-related); other targets unaffected",
+   "doc": "src/05-nodejs.md case C l.161, l.178, l.456",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "Unsupported PKCS12 PFX data"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "PQC_NODE_CLIENT_CERT": "pfx-legacy"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n22-pfx-legacy",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs22.x legacy RC2-40/3DES PFX for mTLS: Unsupported PKCS12 PFX data (not PQ-related); other targets unaffected",
+   "doc": "src/05-nodejs.md case C l.161, l.178, l.456",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "Unsupported PKCS12 PFX data"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs22.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "PQC_NODE_CLIENT_CERT": "pfx-legacy"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n20-pfx-legacy",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "nodejs20.x legacy RC2-40/3DES PFX for mTLS: Unsupported PKCS12 PFX data (not PQ-related); other targets unaffected",
+   "doc": "src/05-nodejs.md case C l.161, l.178, l.456",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "Unsupported PKCS12 PFX data"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs20.x",
+    "handler": "index.handler",
+    "zip": "node/probe.zip",
+    "layers": [],
+    "env": {
+     "PQC_NODE_CLIENT_CERT": "pfx-legacy"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-n24-pfx-legacy-provider",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "nodejs24.x legacy PFX + --openssl-legacy-provider: Lambda image cannot load the legacy provider -> mTLS still fails",
+   "doc": "src/05-nodejs.md case C l.178, l.456",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "Unsupported PKCS12 PFX data"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "nodejs24.x",
+    "handler": "index.handler",
+    "zip": "node/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq-node.cnf",
+     "PQC_NODE_CLIENT_CERT": "pfx-legacy",
+     "NODE_OPTIONS": "--openssl-legacy-provider"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-image-n22-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda container image nodejs:22 (no change)",
+   "doc": "src/05-nodejs.md Lambda container image l.385-387",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-node-lambda:nodejs22-baseline",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-image-n22-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda container image nodejs:22 (Dockerfile.lambda COPY + ENV OPENSSL_CONF)",
+   "doc": "src/05-nodejs.md Lambda container image l.385-387",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-node-lambda:nodejs22-fixed",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-image-n24-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda container image nodejs:24 (no change)",
+   "doc": "src/05-nodejs.md Lambda container image l.385-387",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-node-lambda:nodejs24-baseline",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-lambda-image-n24-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda container image nodejs:24 (Dockerfile.lambda COPY + ENV OPENSSL_CONF)",
+   "doc": "src/05-nodejs.md Lambda container image l.385-387",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-node-lambda:nodejs24-fixed",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n20-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 dnf nodejs20 (system OpenSSL 3.5): DEFAULT crypto policy omits ML-KEM",
+   "doc": "src/05-nodejs.md version table l.26",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-20",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-20",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n20-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 dnf nodejs20 + task-def OPENSSL_CONF=openssl-pq-node-system.cnf",
+   "doc": "src/05-nodejs.md l.25, l.38 (Node 20: no setting adds PQ)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-20",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-20",
+     "/app/index.js"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
+    }
+   },
+   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n20-policy",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 dnf nodejs20, image with update-crypto-policies --set DEFAULT:PQ (Dockerfile.al2023)",
+   "doc": "src/05-nodejs.md l.25, l.38 (Node 20: no setting adds PQ)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023-policy node-20",
+   "ecs": {
+    "image": "pqc-node:al2023-policy",
+    "command": [
+     "node-20",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n22-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 dnf nodejs22 (system OpenSSL 3.5): DEFAULT crypto policy omits ML-KEM",
+   "doc": "src/05-nodejs.md version table l.26",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-22",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-22",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n22-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 dnf nodejs22 + task-def OPENSSL_CONF=openssl-pq-node-system.cnf",
+   "doc": "src/05-nodejs.md l.26, l.393",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-22",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-22",
+     "/app/index.js"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n22-policy",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 dnf nodejs22, image with update-crypto-policies --set DEFAULT:PQ (Dockerfile.al2023)",
+   "doc": "src/05-nodejs.md l.26, l.393",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023-policy node-22",
+   "ecs": {
+    "image": "pqc-node:al2023-policy",
+    "command": [
+     "node-22",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n24-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 dnf nodejs24 (system OpenSSL 3.5): DEFAULT crypto policy omits ML-KEM",
+   "doc": "src/05-nodejs.md version table l.26",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-24",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-24",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n24-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 dnf nodejs24 + task-def OPENSSL_CONF=openssl-pq-node-system.cnf",
+   "doc": "src/05-nodejs.md l.26, l.393",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-24",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-24",
+     "/app/index.js"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-al2023-n24-policy",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 dnf nodejs24, image with update-crypto-policies --set DEFAULT:PQ (Dockerfile.al2023)",
+   "doc": "src/05-nodejs.md l.26, l.393",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023-policy node-24",
+   "ecs": {
+    "image": "pqc-node:al2023-policy",
+    "command": [
+     "node-24",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-20-slim",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:20-slim - Node 20, bundled OpenSSL 3.0: no ML-KEM",
+   "doc": "src/05-nodejs.md version table l.25",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-20-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-20-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-20-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:20-alpine - Node 20, bundled OpenSSL 3.0: no ML-KEM",
+   "doc": "src/05-nodejs.md version table l.25",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-20-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-20-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-22-slim",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:22-slim - Node 22.20+, bundled OpenSSL 3.5: PQ out of the box",
+   "doc": "src/05-nodejs.md version table l.22, l.391",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-22-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-22-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-22-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:22-alpine - Node 22.20+, bundled OpenSSL 3.5: PQ out of the box",
+   "doc": "src/05-nodejs.md version table l.22, l.391",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-22-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-22-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-slim",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24-slim - Node 24.5+, bundled OpenSSL 3.5: PQ out of the box",
+   "doc": "src/05-nodejs.md version table l.21, l.391",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24-alpine - Node 24.5+, bundled OpenSSL 3.5: PQ out of the box",
+   "doc": "src/05-nodejs.md version table l.21, l.391",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-24-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-26-slim",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:26-slim - Node 26, bundled OpenSSL 3.5.9",
+   "doc": "src/05-nodejs.md version table l.23",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-26-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-26-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-2219-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:22.19-alpine - 22.19 = bundled OpenSSL 3.0: below the floor",
+   "doc": "src/05-nodejs.md version table l.24",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-22.19-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-22.19-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-2220-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:22.20-alpine - 22.20 = first 22.x with OpenSSL 3.5",
+   "doc": "src/05-nodejs.md version table l.22, l.33",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-22.20-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-22.20-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-244-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24.4-alpine - 24.4 = bundled OpenSSL 3.0: below the floor",
+   "doc": "src/05-nodejs.md version table l.24",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24.4-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-24.4-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-245-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24.5-alpine - 24.5 = first 24.x with OpenSSL 3.5 (don't flag 24.5-24.8 as classical)",
+   "doc": "src/05-nodejs.md version table l.21, l.33",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24.5-alpine node",
+   "ecs": {
+    "image": "pqc-node:lib-24.5-alpine",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-distro-debian13",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate debian:trixie-slim apt nodejs (20.19.x on system OpenSSL 3.5): 'Node 20 is never PQ' is wrong",
+   "doc": "src/05-nodejs.md version table l.27, pitfall l.452",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:distro-debian13 node",
+   "ecs": {
+    "image": "pqc-node:distro-debian13",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-distro-alpine322",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate alpine:3.22 apk nodejs (system OpenSSL 3.5)",
+   "doc": "src/05-nodejs.md version table l.28",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:distro-alpine322 node",
+   "ecs": {
+    "image": "pqc-node:distro-alpine322",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-slim-nec",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24-slim, trust via NODE_EXTRA_CA_CERTS (no ca: in code)",
+   "doc": "src/05-nodejs.md case D l.206",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {
+     "NODE_EXTRA_CA_CERTS": "/app/certs/ca.crt",
+     "PQC_NODE_TRUST": "env"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-22-slim-fetch",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:22-slim global fetch + NODE_EXTRA_CA_CERTS",
+   "doc": "src/05-nodejs.md case A l.63",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-22-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-22-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {
+     "NODE_EXTRA_CA_CERTS": "/app/certs/ca.crt",
+     "PQC_NODE_TRUST": "env",
+     "PQC_NODE_STACK": "fetch"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-slim-pfx",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24-slim mTLS with pfx client.p12",
+   "doc": "src/05-nodejs.md case E l.250",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {
+     "PQC_NODE_CLIENT_CERT": "pfx"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-slim-pfx-legacy",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24-slim legacy RC2/3DES PFX: Unsupported PKCS12 PFX data",
+   "doc": "src/05-nodejs.md case C l.161",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "Unsupported PKCS12 PFX data"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {
+     "PQC_NODE_CLIENT_CERT": "pfx-legacy"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-slim-pfx-legacy-provider",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate node:24-slim legacy PFX + --openssl-legacy-provider: loads on official Node",
+   "doc": "src/05-nodejs.md case C l.178",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {
+     "PQC_NODE_CLIENT_CERT": "pfx-legacy",
+     "NODE_OPTIONS": "--openssl-legacy-provider"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-fargate-lib-24-slim-tls-max-12",
+   "compute": "ecs-fargate",
+   "mode": "code",
+   "title": "PITFALL: node:24-slim with NODE_OPTIONS=--tls-max-v1.2: no TLS 1.3, no ML-KEM",
+   "doc": "src/05-nodejs.md case F l.288, l.448",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "protocol version|alert"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {
+     "NODE_OPTIONS": "--tls-max-v1.2"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ecsec2-al2023-n22-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, AL2023 dnf nodejs22",
+   "doc": "src/05-nodejs.md l.26",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-22",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-22",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ecsec2-al2023-n22-conf",
+   "compute": "ecs-ec2",
+   "mode": "config",
+   "title": "ECS EC2 launch type, AL2023 dnf nodejs22 + OPENSSL_CONF system file",
+   "doc": "src/05-nodejs.md l.393",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023 node-22",
+   "ecs": {
+    "image": "pqc-node:al2023",
+    "command": [
+     "node-22",
+     "/app/index.js"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ecsec2-al2023-n24-policy",
+   "compute": "ecs-ec2",
+   "mode": "crypto-policy",
+   "title": "ECS EC2 launch type, AL2023 dnf nodejs24, image crypto policy DEFAULT:PQ",
+   "doc": "src/05-nodejs.md l.393",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:al2023-policy node-24",
+   "ecs": {
+    "image": "pqc-node:al2023-policy",
+    "command": [
+     "node-24",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ecsec2-lib-24-slim",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, node:24-slim: PQ, host policy not involved",
+   "doc": "src/05-nodejs.md l.391",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-24-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-24-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ecsec2-lib-20-slim",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, node:20-slim: classical",
+   "doc": "src/05-nodejs.md l.25",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-node:lib-20-slim node",
+   "ecs": {
+    "image": "pqc-node:lib-20-slim",
+    "command": [
+     "node",
+     "/app/index.js"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n20-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 dnf nodejs20, default crypto policy",
+   "doc": "src/05-nodejs.md l.26, l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-20",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-20 /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n20-service-conf",
+   "compute": "ec2",
+   "mode": "config",
+   "title": "EC2 AL2023 dnf nodejs20: one service with OPENSSL_CONF=openssl-pq-node-system.cnf (systemd Environment=)",
+   "doc": "src/05-nodejs.md l.25, l.38 (Node 20: no setting adds PQ)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-20",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-20 /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {
+     "OPENSSL_CONF": "/opt/pqc/node/etc-app/openssl-pq-node-system.cnf"
+    }
+   },
+   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n20-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 dnf nodejs20: host-wide update-crypto-policies --set DEFAULT:PQ",
+   "doc": "src/05-nodejs.md l.25, l.38 (Node 20: no setting adds PQ)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-20",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-20 /opt/pqc/node/index.js",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n22-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 dnf nodejs22, default crypto policy",
+   "doc": "src/05-nodejs.md l.26, l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-22",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-22 /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n22-service-conf",
+   "compute": "ec2",
+   "mode": "config",
+   "title": "EC2 AL2023 dnf nodejs22: one service with OPENSSL_CONF=openssl-pq-node-system.cnf (systemd Environment=)",
+   "doc": "src/05-nodejs.md l.397, orders.service l.837",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-22",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-22 /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {
+     "OPENSSL_CONF": "/opt/pqc/node/etc-app/openssl-pq-node-system.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n22-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 dnf nodejs22: host-wide update-crypto-policies --set DEFAULT:PQ",
+   "doc": "src/05-nodejs.md l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-22",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-22 /opt/pqc/node/index.js",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n24-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 dnf nodejs24, default crypto policy",
+   "doc": "src/05-nodejs.md l.26, l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-24",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-24 /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n24-service-conf",
+   "compute": "ec2",
+   "mode": "config",
+   "title": "EC2 AL2023 dnf nodejs24: one service with OPENSSL_CONF=openssl-pq-node-system.cnf (systemd Environment=)",
+   "doc": "src/05-nodejs.md l.397, orders.service l.837",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-24",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-24 /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {
+     "OPENSSL_CONF": "/opt/pqc/node/etc-app/openssl-pq-node-system.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-n24-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 dnf nodejs24: host-wide update-crypto-policies --set DEFAULT:PQ",
+   "doc": "src/05-nodejs.md l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 node-24",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "node-24 /opt/pqc/node/index.js",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-official22-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, official Node 22 linux-arm64 binary (bundled OpenSSL 3.5): PQ by default",
+   "doc": "src/05-nodejs.md l.21-22, l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/node/official-22/bin/node",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/node/official-22/bin/node /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-official24-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023, official Node 24 linux-arm64 binary (bundled OpenSSL 3.5): PQ by default",
+   "doc": "src/05-nodejs.md l.21-22, l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/node/official-24/bin/node",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/node/official-24/bin/node /opt/pqc/node/index.js",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "node-ec2-al2023-official24-host-default-pq",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023, official Node 24 binary with host DEFAULT:PQ: crypto policy not involved, still PQ",
+   "doc": "src/05-nodejs.md l.397",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 /opt/pqc/node/official-24/bin/node",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "/opt/pqc/node/official-24/bin/node /opt/pqc/node/index.js",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  }
+ ]
+}
