@@ -17618,7 +17618,9 @@ rule below</td>
 <p><strong>Custom Guard rule</strong> (<code>lambda-pq-tls.guard</code>,
 Config custom policy rule, runtime <code>guard-2.x.x</code>): blocks
 nodejs18.x/20.x, python3.8, java8, dotnet6; python3.12+, nodejs22+ and
-dotnet8+ need <code>OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf</code> or
+dotnet8+ need <code>OPENSSL_CONF</code> set to
+<code>/var/task/pq-tls/openssl-pq*.cnf</code> (bundled) or
+<code>/opt/pq-tls/openssl-pq*.cnf</code> (layer), or
 <code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code>; java8.al2 to
 java21 need the agent in <code>JAVA_TOOL_OPTIONS</code> or the wrapper;
 GODEBUG must not contain <code>tlsmlkem=0</code>. Image functions are
@@ -17689,7 +17691,8 @@ Hook in the account as the last line.</p>
 <tr>
 <td>PQ-L2</td>
 <td>Lambda python3.12-3.14, nodejs22/24, dotnet8/10</td>
-<td><code>OPENSSL_CONF</code> = pq-tls conf, or
+<td><code>OPENSSL_CONF</code> = <code>/var/task/pq-tls/</code> or
+<code>/opt/pq-tls/</code> <code>openssl-pq*.cnf</code>, or
 <code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code></td>
 </tr>
 <tr>
@@ -17770,10 +17773,13 @@ present (PQ-I2: check the language runtime instead) and on Amazon Linux
 2023 (PQ-I3: needs <code>DEFAULT:PQ</code> or the conf).</li>
 <li>Go binaries: <code>check-go-pq.sh &lt;binary&gt;...</code> runs
 <code>go version -m</code> and fails a toolchain below 1.24 or
-<code>tlsmlkem=0</code> in DefaultGODEBUG. It cannot see an explicit
-<code>CurvePreferences</code> in code; add
-<code>grep -rn 'CurvePreferences' --include=*.go .</code> and require
-X25519MLKEM768 in every hit (see Go).</li>
+<code>tlsmlkem=0</code> in DefaultGODEBUG. 1.24 is the PQ floor
+(X25519MLKEM768 by default), so the check fails only binaries with no
+PQ; the Go tab's target, 1.26 with <code>go 1.26</code>, adds the two
+NIST hybrids and is still in support. Raise the floor to 1.26 when the
+fleet allows. It cannot see an explicit <code>CurvePreferences</code> in
+code; add <code>grep -rn 'CurvePreferences' --include=*.go .</code> and
+require X25519MLKEM768 in every hit (see Go).</li>
 <li>JDK: <code>check-jdk-pq.sh &lt;image&gt;</code> reads the JDK
 <code>release</code> file without running the image; JDK 25+ passes,
 8-21 warns unless <code>JAVA_TOOL_OPTIONS</code> loads the agent (see
@@ -17782,9 +17788,10 @@ Java).</li>
 <p><strong>Dockerfile lint</strong>
 (<code>dockerfile/pq_dockerfile.rego</code>, conftest's built-in
 Dockerfile parser): warns on classical base images (debian:bookworm,
-ubuntu 22.04/24.04, node:18/20, python 3.9-3.11, golang 1.22/1.23, JDK
-17/21 images, amazonlinux:2); denies
-<code>ENV GODEBUG=...tlsmlkem=0</code>,
+ubuntu 22.04/24.04, node:18/20 and Node tags pinned below 22.20 / 24.5,
+python <code>-bookworm</code>/<code>-bullseye</code> tags (default
+python tags are trixie and PQ), golang 1.22/1.23, JDK 17/21 images,
+amazonlinux:2); denies <code>ENV GODEBUG=...tlsmlkem=0</code>,
 <code>OPENSSL_CONF=/dev/null</code>, <code>jdk.tls.namedGroups</code>
 without X25519MLKEM768, and
 <code>update-crypto-policies --set DEFAULT</code> without
@@ -18006,6 +18013,21 @@ tests in AWS.</p>
 <td>cfn-good / cfn-bad / sam-bad templates</td>
 <td>good PASS (9 pass, 5 skip); bad FAIL (11 rules fail); SAM FAIL
 (Globals runtime, py legacy)</td>
+</tr>
+<tr>
+<td>Retest 2026-11-15 (cfn-guard 3.2.1, OPA, conftest)</td>
+<td>PQ-L2 with <code>OPENSSL_CONF</code> at
+<code>/var/task/pq-tls/</code> (python3.13, nodejs22.x),
+<code>/opt/pq-tls/</code> (dotnet8), and
+<code>/var/task/other.cnf</code>; Dockerfile <code>FROM</code> for 12
+tags</td>
+<td>Bundled and layer paths PASS, other path FAIL (cfn-guard and OPA,
+12/12 Rego tests). Dockerfile: <code>python:3.11-slim</code>,
+<code>3.13-trixie</code>, <code>node:22</code>, <code>22.20.0</code>,
+<code>24.10-alpine</code> pass;
+<code>python:*-bookworm</code>/<code>-bullseye</code>,
+<code>node:22.19.0-slim</code>, <code>node:24.4</code>,
+<code>node:20-slim</code>, <code>golang:1.23</code> warn</td>
 </tr>
 <tr>
 <td>cfn-guard Config Guard rule</td>
@@ -18332,7 +18354,7 @@ Resources:
           let blocked = [ &quot;nodejs18.x&quot;, &quot;nodejs20.x&quot;, &quot;python3.8&quot;, &quot;java8&quot;, &quot;dotnet6&quot; ]
           let needs_conf = [ &quot;python3.12&quot;, &quot;python3.13&quot;, &quot;python3.14&quot;, &quot;nodejs22.x&quot;, &quot;nodejs24.x&quot;, &quot;dotnet8&quot;, &quot;dotnet10&quot; ]
           let needs_agent = [ &quot;java8.al2&quot;, &quot;java11&quot;, &quot;java17&quot;, &quot;java21&quot; ]
-          let pq_confs = [ &quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot; ]
+          let pq_confs = [ &quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq-node.cnf&quot; ]
           rule lambda_runtime_has_pq_path when configuration.packageType != &quot;Image&quot; {
             configuration.runtime not in %blocked
           }
@@ -18392,7 +18414,7 @@ let lambda_runtimes_java_agent = [ &quot;java8.al2&quot;, &quot;java11&quot;, &q
 # OpenSSL 1.1.1 Python: shim covers urllib3/botocore only (partial). Warn-level rule.
 let lambda_runtimes_py_legacy = [ &quot;python3.9&quot;, &quot;python3.10&quot;, &quot;python3.11&quot; ]
 
-let pq_conf_paths = [ &quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot; ]
+let pq_conf_paths = [ &quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq-node.cnf&quot; ]
 
 let lambda_zip = Resources.*[
   Type == &quot;AWS::Lambda::Function&quot;
@@ -18421,8 +18443,8 @@ rule PQ_LAMBDA_OPENSSL_CONF when %lambda_zip !empty {
       Properties.Environment.Variables.AWS_LAMBDA_EXEC_WRAPPER == &quot;/opt/pq-tls/wrapper&quot;
       &lt;&lt;
         PQ-L2: python3.12+/nodejs22+/dotnet8+ on AL2023 omit ML-KEM from the default group list.
-        Fix: attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf)
-        or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
+        Fix: bundle pq-tls/ in the package and set OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf),
+        or attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/... or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
       &gt;&gt;
     }
   }
@@ -18632,7 +18654,7 @@ conf_runtimes := {&quot;python3.12&quot;, &quot;python3.13&quot;, &quot;python3.
 
 agent_runtimes := {&quot;java8.al2&quot;, &quot;java11&quot;, &quot;java17&quot;, &quot;java21&quot;}
 
-pq_confs := {&quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot;}
+pq_confs := {&quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq-node.cnf&quot;}
 
 # Resources being created or updated, with their planned values.
 changed contains rc if {
@@ -18689,7 +18711,7 @@ deny contains msg if {
     rc.change.after.runtime in conf_runtimes
     not conf_ok(env_vars(rc))
     not has_exception(rc)
-    msg := sprintf(&quot;PQ-L2 %s: %s needs OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper&quot;, [rc.address, rc.change.after.runtime])
+    msg := sprintf(&quot;PQ-L2 %s: %s needs OPENSSL_CONF=/var/task/pq-tls/openssl-pq*.cnf (bundled) or /opt/pq-tls/openssl-pq*.cnf (layer), or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper&quot;, [rc.address, rc.change.after.runtime])
 }
 
 deny contains msg if {
@@ -18759,6 +18781,14 @@ test_listener_exception_tag if {
 
 test_lambda_python_conf_ok if {
     count(pq_tls.deny) == 0 with input as {&quot;resource_changes&quot;: [rc(&quot;aws_lambda_function&quot;, {&quot;runtime&quot;: &quot;python3.13&quot;, &quot;environment&quot;: [{&quot;variables&quot;: {&quot;OPENSSL_CONF&quot;: &quot;/opt/pq-tls/openssl-pq.cnf&quot;}}]})]}
+}
+
+test_lambda_python_bundled_conf_ok if {
+    count(pq_tls.deny) == 0 with input as {&quot;resource_changes&quot;: [rc(&quot;aws_lambda_function&quot;, {&quot;runtime&quot;: &quot;python3.13&quot;, &quot;environment&quot;: [{&quot;variables&quot;: {&quot;OPENSSL_CONF&quot;: &quot;/var/task/pq-tls/openssl-pq.cnf&quot;}}]})]}
+}
+
+test_lambda_python_other_conf_denied if {
+    count(pq_tls.deny) == 1 with input as {&quot;resource_changes&quot;: [rc(&quot;aws_lambda_function&quot;, {&quot;runtime&quot;: &quot;python3.13&quot;, &quot;environment&quot;: [{&quot;variables&quot;: {&quot;OPENSSL_CONF&quot;: &quot;/var/task/other.cnf&quot;}}]})]}
 }
 
 test_lambda_python_no_conf_denied if {
@@ -18838,7 +18868,7 @@ definition:
       resource_types: [ aws_lambda_function ]
       attribute: environment.variables.OPENSSL_CONF
       operator: within
-      value: [ &quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot; ]
+      value: [ &quot;/opt/pq-tls/openssl-pq.cnf&quot;, &quot;/opt/pq-tls/openssl-pq-node.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq.cnf&quot;, &quot;/var/task/pq-tls/openssl-pq-node.cnf&quot; ]
     - cond_type: attribute
       resource_types: [ aws_lambda_function ]
       attribute: environment.variables.AWS_LAMBDA_EXEC_WRAPPER
@@ -18961,7 +18991,7 @@ import rego.v1
 # Base images whose system OpenSSL is &lt; 3.5 or whose runtime has no PQ (warn: upgrade the base).
 classical_bases := [
     &quot;debian:bookworm&quot;, &quot;debian:12&quot;, &quot;ubuntu:22.04&quot;, &quot;ubuntu:24.04&quot;, &quot;ubuntu:jammy&quot;, &quot;ubuntu:noble&quot;,
-    &quot;node:18&quot;, &quot;node:20&quot;, &quot;python:3.9&quot;, &quot;python:3.10&quot;, &quot;python:3.11&quot;,
+    &quot;node:18&quot;, &quot;node:20&quot;,
     &quot;amazonlinux:2&quot;, &quot;public.ecr.aws/lambda/nodejs:20&quot;, &quot;public.ecr.aws/lambda/nodejs:18&quot;,
     &quot;public.ecr.aws/lambda/python:3.11&quot;, &quot;public.ecr.aws/lambda/python:3.10&quot;, &quot;public.ecr.aws/lambda/python:3.9&quot;,
     &quot;golang:1.22&quot;, &quot;golang:1.23&quot;, &quot;eclipse-temurin:17&quot;, &quot;eclipse-temurin:21&quot;, &quot;amazoncorretto:17&quot;, &quot;amazoncorretto:21&quot;,
@@ -18992,7 +19022,23 @@ warn contains msg if {
     some img in from_images
     some base in classical_bases
     base_match(img, base)
-    msg := sprintf(&quot;PQ-D1: base image %s has no PQ by default (OpenSSL &lt; 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22+, golang:1.24+, JDK 25.&quot;, [img])
+    msg := sprintf(&quot;PQ-D1: base image %s has no PQ by default (OpenSSL &lt; 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22.20+/24.5+, golang:1.26+, JDK 25.&quot;, [img])
+}
+
+# Official python images default to Debian trixie (OpenSSL 3.5, PQ) for every tag, 3.9 to 3.15;
+# only the explicit -bookworm (OpenSSL 3.0) and -bullseye (1.1.1) variants are classical.
+warn contains msg if {
+    some img in from_images
+    regex.match(`^python:[^@]*-(bookworm|bullseye)([-@]|$)`, img)
+    msg := sprintf(&quot;PQ-D1: base image %s is Debian bookworm/bullseye (OpenSSL &lt; 3.5, no PQ). Use the default tag or -trixie.&quot;, [img])
+}
+
+# Official Node bundles OpenSSL 3.5 from 22.20.0 and 24.5.0; a tag pinned below that is classical.
+# Floating tags (node:22, node:24) resolve to current releases and pass.
+warn contains msg if {
+    some img in from_images
+    regex.match(`^node:(22\.([0-9]|1[0-9])|24\.[0-4])([.@-]|$)`, img)
+    msg := sprintf(&quot;PQ-D1: base image %s pins Node below 22.20 / 24.5 (bundled OpenSSL 3.0, no PQ). Use 22.20+ or 24.9+.&quot;, [img])
 }
 
 deny contains msg if {

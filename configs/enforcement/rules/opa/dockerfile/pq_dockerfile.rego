@@ -8,7 +8,7 @@ import rego.v1
 # Base images whose system OpenSSL is < 3.5 or whose runtime has no PQ (warn: upgrade the base).
 classical_bases := [
 	"debian:bookworm", "debian:12", "ubuntu:22.04", "ubuntu:24.04", "ubuntu:jammy", "ubuntu:noble",
-	"node:18", "node:20", "python:3.9", "python:3.10", "python:3.11",
+	"node:18", "node:20",
 	"amazonlinux:2", "public.ecr.aws/lambda/nodejs:20", "public.ecr.aws/lambda/nodejs:18",
 	"public.ecr.aws/lambda/python:3.11", "public.ecr.aws/lambda/python:3.10", "public.ecr.aws/lambda/python:3.9",
 	"golang:1.22", "golang:1.23", "eclipse-temurin:17", "eclipse-temurin:21", "amazoncorretto:17", "amazoncorretto:21",
@@ -39,7 +39,23 @@ warn contains msg if {
 	some img in from_images
 	some base in classical_bases
 	base_match(img, base)
-	msg := sprintf("PQ-D1: base image %s has no PQ by default (OpenSSL < 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22+, golang:1.24+, JDK 25.", [img])
+	msg := sprintf("PQ-D1: base image %s has no PQ by default (OpenSSL < 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22.20+/24.5+, golang:1.26+, JDK 25.", [img])
+}
+
+# Official python images default to Debian trixie (OpenSSL 3.5, PQ) for every tag, 3.9 to 3.15;
+# only the explicit -bookworm (OpenSSL 3.0) and -bullseye (1.1.1) variants are classical.
+warn contains msg if {
+	some img in from_images
+	regex.match(`^python:[^@]*-(bookworm|bullseye)([-@]|$)`, img)
+	msg := sprintf("PQ-D1: base image %s is Debian bookworm/bullseye (OpenSSL < 3.5, no PQ). Use the default tag or -trixie.", [img])
+}
+
+# Official Node bundles OpenSSL 3.5 from 22.20.0 and 24.5.0; a tag pinned below that is classical.
+# Floating tags (node:22, node:24) resolve to current releases and pass.
+warn contains msg if {
+	some img in from_images
+	regex.match(`^node:(22\.([0-9]|1[0-9])|24\.[0-4])([.@-]|$)`, img)
+	msg := sprintf("PQ-D1: base image %s pins Node below 22.20 / 24.5 (bundled OpenSSL 3.0, no PQ). Use 22.20+ or 24.9+.", [img])
 }
 
 deny contains msg if {

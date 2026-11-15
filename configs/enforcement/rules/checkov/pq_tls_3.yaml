@@ -14,7 +14,7 @@ definition:
       resource_types: [ aws_lambda_function ]
       attribute: environment.variables.OPENSSL_CONF
       operator: within
-      value: [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+      value: [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
     - cond_type: attribute
       resource_types: [ aws_lambda_function ]
       attribute: environment.variables.AWS_LAMBDA_EXEC_WRAPPER

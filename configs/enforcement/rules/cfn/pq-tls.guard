@@ -41,7 +41,7 @@ let lambda_runtimes_java_agent = [ "java8.al2", "java11", "java17", "java21" ]
 # OpenSSL 1.1.1 Python: shim covers urllib3/botocore only (partial). Warn-level rule.
 let lambda_runtimes_py_legacy = [ "python3.9", "python3.10", "python3.11" ]
 
-let pq_conf_paths = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+let pq_conf_paths = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
 
 let lambda_zip = Resources.*[
   Type == "AWS::Lambda::Function"
@@ -70,8 +70,8 @@ rule PQ_LAMBDA_OPENSSL_CONF when %lambda_zip !empty {
       Properties.Environment.Variables.AWS_LAMBDA_EXEC_WRAPPER == "/opt/pq-tls/wrapper"
       <<
         PQ-L2: python3.12+/nodejs22+/dotnet8+ on AL2023 omit ML-KEM from the default group list.
-        Fix: attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf)
-        or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
+        Fix: bundle pq-tls/ in the package and set OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf),
+        or attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/... or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
       >>
     }
   }

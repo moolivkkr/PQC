@@ -31,7 +31,7 @@ conf_runtimes := {"python3.12", "python3.13", "python3.14", "nodejs22.x", "nodej
 
 agent_runtimes := {"java8.al2", "java11", "java17", "java21"}
 
-pq_confs := {"/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf"}
+pq_confs := {"/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf"}
 
 # Resources being created or updated, with their planned values.
 changed contains rc if {
@@ -88,7 +88,7 @@ deny contains msg if {
 	rc.change.after.runtime in conf_runtimes
 	not conf_ok(env_vars(rc))
 	not has_exception(rc)
-	msg := sprintf("PQ-L2 %s: %s needs OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper", [rc.address, rc.change.after.runtime])
+	msg := sprintf("PQ-L2 %s: %s needs OPENSSL_CONF=/var/task/pq-tls/openssl-pq*.cnf (bundled) or /opt/pq-tls/openssl-pq*.cnf (layer), or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper", [rc.address, rc.change.after.runtime])
 }
 
 deny contains msg if {

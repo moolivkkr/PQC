@@ -26,6 +26,14 @@ test_lambda_python_conf_ok if {
 	count(pq_tls.deny) == 0 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.13", "environment": [{"variables": {"OPENSSL_CONF": "/opt/pq-tls/openssl-pq.cnf"}}]})]}
 }
 
+test_lambda_python_bundled_conf_ok if {
+	count(pq_tls.deny) == 0 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.13", "environment": [{"variables": {"OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"}}]})]}
+}
+
+test_lambda_python_other_conf_denied if {
+	count(pq_tls.deny) == 1 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.13", "environment": [{"variables": {"OPENSSL_CONF": "/var/task/other.cnf"}}]})]}
+}
+
 test_lambda_python_no_conf_denied if {
 	count(pq_tls.deny) == 1 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.12", "environment": []})]}
 }

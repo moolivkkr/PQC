@@ -70,7 +70,7 @@ API Gateway limits: HTTP and WebSocket APIs support only `TLS_1_2`, so no SCP ca
 | [cloudfront-ssl-policy-check](https://docs.aws.amazon.com/config/latest/developerguide/cloudfront-ssl-policy-check.html) | `securityPolicies` = TLSv1.2\_2021, TLSv1.2\_2025, TLSv1.3\_2025 | us-east-1 only; viewer PQ is on by default, origin leg is classical |
 | [lambda-function-settings-check](https://docs.aws.amazon.com/config/latest/developerguide/lambda-function-settings-check.html) | Not used | It also checks `memorySize` (default 128) and `timeout` (default 3), so most functions fail; use the Guard rule below |
 
-**Custom Guard rule** (`lambda-pq-tls.guard`, Config custom policy rule, runtime `guard-2.x.x`): blocks nodejs18.x/20.x, python3.8, java8, dotnet6; python3.12+, nodejs22+ and dotnet8+ need `OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf` or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`; java8.al2 to java21 need the agent in `JAVA_TOOL_OPTIONS` or the wrapper; GODEBUG must not contain `tlsmlkem=0`. Image functions are skipped (the pipeline checks the image). Before enforcing, pull one real configuration item (`aws configservice get-resource-config-history --resource-type AWS::Lambda::Function --resource-id <name> --limit 1`) and confirm the variables sit under `configuration.environment.variables`; I could not confirm that path from docs.
+**Custom Guard rule** (`lambda-pq-tls.guard`, Config custom policy rule, runtime `guard-2.x.x`): blocks nodejs18.x/20.x, python3.8, java8, dotnet6; python3.12+, nodejs22+ and dotnet8+ need `OPENSSL_CONF` set to `/var/task/pq-tls/openssl-pq*.cnf` (bundled) or `/opt/pq-tls/openssl-pq*.cnf` (layer), or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`; java8.al2 to java21 need the agent in `JAVA_TOOL_OPTIONS` or the wrapper; GODEBUG must not contain `tlsmlkem=0`. Image functions are skipped (the pipeline checks the image). Before enforcing, pull one real configuration item (`aws configservice get-resource-config-history --resource-type AWS::Lambda::Function --resource-id <name> --limit 1`) and confirm the variables sit under `configuration.environment.variables`; I could not confirm that path from docs.
 
 **AWS PQC Readiness Scanner (May 2026).** AWS Security Blog, 2026-05-14, [Automating post-quantum cryptography readiness using AWS Config](https://aws.amazon.com/blogs/security/automating-post-quantum-cryptography-readiness-using-aws-config/); code at [aws-samples/sample-PQC-Readiness-using-AWS-Config](https://github.com/aws-samples/sample-PQC-Readiness-using-AWS-Config). It is a sample, not a managed rule. Four custom rules on two Lambda functions (`pqc-elb-pqc-compliance-*`, `pqc-elb-legacy-tls-*`, `pqc-apigateway-pqc-compliance-*`, `pqc-apigateway-legacy-tls-*`) cover ALB/NLB HTTPS/TLS listeners and REST (Regional, private), HTTP and WebSocket APIs. Tier 1 = TLS 1.3 only with PQ; Tier 2 = TLS 1.2 + 1.3 with PQ; Tier 3 = no PQ (high priority). CloudFront and Classic LB are out of scope. Org deploy: StackSet `pqc-readiness-lambda-functions`, then `aws configservice put-organization-conformance-pack --organization-conformance-pack-name pqc-legacy-tls-compliance` with `conformance-packs/pqc-legacy-tls-conformance-pack.yaml`. Run it next to the managed rules: it adds execute-api endpoints and the tier view. Documented (blog); not deployed here.
 
@@ -87,7 +87,7 @@ Run every check on the PR (fast feedback) and again in the deploy job (the gate)
 | Rule | Resource | Check |
 | --- | --- | --- |
 | PQ-L1 | Lambda, SAM function, SAM `Globals.Function.Runtime` | Runtime not nodejs18.x/20.x, python3.8, java8, dotnet6 |
-| PQ-L2 | Lambda python3.12-3.14, nodejs22/24, dotnet8/10 | `OPENSSL_CONF` = pq-tls conf, or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` |
+| PQ-L2 | Lambda python3.12-3.14, nodejs22/24, dotnet8/10 | `OPENSSL_CONF` = `/var/task/pq-tls/` or `/opt/pq-tls/` `openssl-pq*.cnf`, or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` |
 | PQ-L3 | Lambda java8.al2, java11/17/21 | `JAVA_TOOL_OPTIONS` loads `pq-tls-agent.jar`, or the wrapper |
 | PQ-L4 (warn) | Lambda python3.9-3.11 | Wrapper set (shim covers urllib3/botocore only) |
 | PQ-L5 | Lambda | GODEBUG has no `tlsmlkem=0` |
@@ -115,10 +115,10 @@ Same rule IDs. Exceptions: tag `pq-tls-exception = "EXC-nnnn"`. The AWS provider
 **Container images.**
 
 - OpenSSL in the image: `syft <image> -o syft-json > sbom.json`, then `conftest test --policy rules/opa/image --namespace image.openssl sbom.json`. Fails libssl/openssl below 3.5 (PQ-I1), warns when no system OpenSSL is present (PQ-I2: check the language runtime instead) and on Amazon Linux 2023 (PQ-I3: needs `DEFAULT:PQ` or the conf).
-- Go binaries: `check-go-pq.sh <binary>...` runs `go version -m` and fails a toolchain below 1.24 or `tlsmlkem=0` in DefaultGODEBUG. It cannot see an explicit `CurvePreferences` in code; add `grep -rn 'CurvePreferences' --include=*.go .` and require X25519MLKEM768 in every hit (see Go).
+- Go binaries: `check-go-pq.sh <binary>...` runs `go version -m` and fails a toolchain below 1.24 or `tlsmlkem=0` in DefaultGODEBUG. 1.24 is the PQ floor (X25519MLKEM768 by default), so the check fails only binaries with no PQ; the Go tab's target, 1.26 with `go 1.26`, adds the two NIST hybrids and is still in support. Raise the floor to 1.26 when the fleet allows. It cannot see an explicit `CurvePreferences` in code; add `grep -rn 'CurvePreferences' --include=*.go .` and require X25519MLKEM768 in every hit (see Go).
 - JDK: `check-jdk-pq.sh <image>` reads the JDK `release` file without running the image; JDK 25+ passes, 8-21 warns unless `JAVA_TOOL_OPTIONS` loads the agent (see Java).
 
-**Dockerfile lint** (`dockerfile/pq_dockerfile.rego`, conftest's built-in Dockerfile parser): warns on classical base images (debian:bookworm, ubuntu 22.04/24.04, node:18/20, python 3.9-3.11, golang 1.22/1.23, JDK 17/21 images, amazonlinux:2); denies `ENV GODEBUG=...tlsmlkem=0`, `OPENSSL_CONF=/dev/null`, `jdk.tls.namedGroups` without X25519MLKEM768, and `update-crypto-policies --set DEFAULT` without `:PQ`. hadolint has no custom-rule mechanism, so this rule lives in conftest:
+**Dockerfile lint** (`dockerfile/pq_dockerfile.rego`, conftest's built-in Dockerfile parser): warns on classical base images (debian:bookworm, ubuntu 22.04/24.04, node:18/20 and Node tags pinned below 22.20 / 24.5, python `-bookworm`/`-bullseye` tags (default python tags are trixie and PQ), golang 1.22/1.23, JDK 17/21 images, amazonlinux:2); denies `ENV GODEBUG=...tlsmlkem=0`, `OPENSSL_CONF=/dev/null`, `jdk.tls.namedGroups` without X25519MLKEM768, and `update-crypto-policies --set DEFAULT` without `:PQ`. hadolint has no custom-rule mechanism, so this rule lives in conftest:
 
 ```bash
 conftest test --parser dockerfile --policy rules/opa/dockerfile --namespace dockerfile.pq_tls Dockerfile
@@ -186,6 +186,7 @@ All runs on 2026-11-14 in containers on this machine, images pinned by digest; s
 | Check | Inputs | Result |
 | --- | --- | --- |
 | cfn-guard 3.2.1 `pq-tls.guard` | cfn-good / cfn-bad / sam-bad templates | good PASS (9 pass, 5 skip); bad FAIL (11 rules fail); SAM FAIL (Globals runtime, py legacy) |
+| Retest 2026-11-15 (cfn-guard 3.2.1, OPA, conftest) | PQ-L2 with `OPENSSL_CONF` at `/var/task/pq-tls/` (python3.13, nodejs22.x), `/opt/pq-tls/` (dotnet8), and `/var/task/other.cnf`; Dockerfile `FROM` for 12 tags | Bundled and layer paths PASS, other path FAIL (cfn-guard and OPA, 12/12 Rego tests). Dockerfile: `python:3.11-slim`, `3.13-trixie`, `node:22`, `22.20.0`, `24.10-alpine` pass; `python:*-bookworm`/`-bullseye`, `node:22.19.0-slim`, `node:24.4`, `node:20-slim`, `golang:1.23` warn |
 | cfn-guard Config Guard rule | 5 sample configuration items | good PASS; each of 4 bad items FAILs on the expected rule |
 | cfn-lint 1.60.1 | org-config-rules, guard-hook, cloudtrail-alarm, samples | 0 errors (it caught `PolicyRuntime`, fixed to `Runtime`) |
 | conftest verify | 10 Rego unit tests | 10/10 pass |
@@ -427,7 +428,7 @@ Resources:
           let blocked = [ "nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6" ]
           let needs_conf = [ "python3.12", "python3.13", "python3.14", "nodejs22.x", "nodejs24.x", "dotnet8", "dotnet10" ]
           let needs_agent = [ "java8.al2", "java11", "java17", "java21" ]
-          let pq_confs = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+          let pq_confs = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
           rule lambda_runtime_has_pq_path when configuration.packageType != "Image" {
             configuration.runtime not in %blocked
           }
@@ -492,7 +493,7 @@ let lambda_runtimes_java_agent = [ "java8.al2", "java11", "java17", "java21" ]
 # OpenSSL 1.1.1 Python: shim covers urllib3/botocore only (partial). Warn-level rule.
 let lambda_runtimes_py_legacy = [ "python3.9", "python3.10", "python3.11" ]
 
-let pq_conf_paths = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+let pq_conf_paths = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
 
 let lambda_zip = Resources.*[
   Type == "AWS::Lambda::Function"
@@ -521,8 +522,8 @@ rule PQ_LAMBDA_OPENSSL_CONF when %lambda_zip !empty {
       Properties.Environment.Variables.AWS_LAMBDA_EXEC_WRAPPER == "/opt/pq-tls/wrapper"
       <<
         PQ-L2: python3.12+/nodejs22+/dotnet8+ on AL2023 omit ML-KEM from the default group list.
-        Fix: attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf)
-        or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
+        Fix: bundle pq-tls/ in the package and set OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf (Node: openssl-pq-node.cnf),
+        or attach the pq-tls layer and set OPENSSL_CONF=/opt/pq-tls/... or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper.
       >>
     }
   }
@@ -740,7 +741,7 @@ conf_runtimes := {"python3.12", "python3.13", "python3.14", "nodejs22.x", "nodej
 
 agent_runtimes := {"java8.al2", "java11", "java17", "java21"}
 
-pq_confs := {"/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf"}
+pq_confs := {"/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf"}
 
 # Resources being created or updated, with their planned values.
 changed contains rc if {
@@ -797,7 +798,7 @@ deny contains msg if {
 	rc.change.after.runtime in conf_runtimes
 	not conf_ok(env_vars(rc))
 	not has_exception(rc)
-	msg := sprintf("PQ-L2 %s: %s needs OPENSSL_CONF=/opt/pq-tls/openssl-pq*.cnf or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper", [rc.address, rc.change.after.runtime])
+	msg := sprintf("PQ-L2 %s: %s needs OPENSSL_CONF=/var/task/pq-tls/openssl-pq*.cnf (bundled) or /opt/pq-tls/openssl-pq*.cnf (layer), or AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper", [rc.address, rc.change.after.runtime])
 }
 
 deny contains msg if {
@@ -871,6 +872,14 @@ test_listener_exception_tag if {
 
 test_lambda_python_conf_ok if {
 	count(pq_tls.deny) == 0 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.13", "environment": [{"variables": {"OPENSSL_CONF": "/opt/pq-tls/openssl-pq.cnf"}}]})]}
+}
+
+test_lambda_python_bundled_conf_ok if {
+	count(pq_tls.deny) == 0 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.13", "environment": [{"variables": {"OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"}}]})]}
+}
+
+test_lambda_python_other_conf_denied if {
+	count(pq_tls.deny) == 1 with input as {"resource_changes": [rc("aws_lambda_function", {"runtime": "python3.13", "environment": [{"variables": {"OPENSSL_CONF": "/var/task/other.cnf"}}]})]}
 }
 
 test_lambda_python_no_conf_denied if {
@@ -962,7 +971,7 @@ definition:
       resource_types: [ aws_lambda_function ]
       attribute: environment.variables.OPENSSL_CONF
       operator: within
-      value: [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf" ]
+      value: [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
     - cond_type: attribute
       resource_types: [ aws_lambda_function ]
       attribute: environment.variables.AWS_LAMBDA_EXEC_WRAPPER
@@ -1105,7 +1114,7 @@ import rego.v1
 # Base images whose system OpenSSL is < 3.5 or whose runtime has no PQ (warn: upgrade the base).
 classical_bases := [
 	"debian:bookworm", "debian:12", "ubuntu:22.04", "ubuntu:24.04", "ubuntu:jammy", "ubuntu:noble",
-	"node:18", "node:20", "python:3.9", "python:3.10", "python:3.11",
+	"node:18", "node:20",
 	"amazonlinux:2", "public.ecr.aws/lambda/nodejs:20", "public.ecr.aws/lambda/nodejs:18",
 	"public.ecr.aws/lambda/python:3.11", "public.ecr.aws/lambda/python:3.10", "public.ecr.aws/lambda/python:3.9",
 	"golang:1.22", "golang:1.23", "eclipse-temurin:17", "eclipse-temurin:21", "amazoncorretto:17", "amazoncorretto:21",
@@ -1136,7 +1145,23 @@ warn contains msg if {
 	some img in from_images
 	some base in classical_bases
 	base_match(img, base)
-	msg := sprintf("PQ-D1: base image %s has no PQ by default (OpenSSL < 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22+, golang:1.24+, JDK 25.", [img])
+	msg := sprintf("PQ-D1: base image %s has no PQ by default (OpenSSL < 3.5 or runtime too old). Use debian:trixie, alpine:3.22+, node:22.20+/24.5+, golang:1.26+, JDK 25.", [img])
+}
+
+# Official python images default to Debian trixie (OpenSSL 3.5, PQ) for every tag, 3.9 to 3.15;
+# only the explicit -bookworm (OpenSSL 3.0) and -bullseye (1.1.1) variants are classical.
+warn contains msg if {
+	some img in from_images
+	regex.match(`^python:[^@]*-(bookworm|bullseye)([-@]|$)`, img)
+	msg := sprintf("PQ-D1: base image %s is Debian bookworm/bullseye (OpenSSL < 3.5, no PQ). Use the default tag or -trixie.", [img])
+}
+
+# Official Node bundles OpenSSL 3.5 from 22.20.0 and 24.5.0; a tag pinned below that is classical.
+# Floating tags (node:22, node:24) resolve to current releases and pass.
+warn contains msg if {
+	some img in from_images
+	regex.match(`^node:(22\.([0-9]|1[0-9])|24\.[0-4])([.@-]|$)`, img)
+	msg := sprintf("PQ-D1: base image %s pins Node below 22.20 / 24.5 (bundled OpenSSL 3.0, no PQ). Use 22.20+ or 24.9+.", [img])
 }
 
 deny contains msg if {
