@@ -168,6 +168,7 @@ def _run_ecs(env, case, full_id):
               launchType="FARGATE" if fargate else "EC2", tags=[{"key": "project", "value": "pqc-e2e"}])
     if fargate:
         kw["networkConfiguration"] = {"awsvpcConfiguration": {"subnets": [env.subnet], "assignPublicIp": "ENABLED"}}
+    started = time.time()
     t = env.ecs.run_task(**kw)
     if t.get("failures"):
         raise RuntimeError("run_task failures: %s" % t["failures"])
@@ -180,8 +181,17 @@ def _run_ecs(env, case, full_id):
             break
         time.sleep(2)
     text = ""
-    for _ in range(10):
-        evs = env.logs.filter_log_events(logGroupName=ECS_LOG_GROUP, logStreamNamePrefix=fam + "/").get("events", [])
+    # The log group is shared by every ECS case and LocalStack ignores logStreamNamePrefix, so page through all of
+    # it (from this task's start) - a single call returns only the first page and can miss this case's lines.
+    since = int((started - 5) * 1000)
+    for _ in range(20):
+        evs, kw2 = [], {"logGroupName": ECS_LOG_GROUP, "logStreamNamePrefix": fam + "/", "startTime": since}
+        for _page in range(50):
+            resp = env.logs.filter_log_events(**kw2)
+            evs += resp.get("events", [])
+            if not resp.get("nextToken") or resp.get("nextToken") == kw2.get("nextToken"):
+                break
+            kw2["nextToken"] = resp["nextToken"]
         evs = [e for e in evs if e.get("logStreamName", "").startswith(fam + "/")] or evs
         text = "\n".join(e["message"] for e in evs if full_id in e["message"] or "pq-tls" in e["message"])
         if _parse_result(text, full_id):
