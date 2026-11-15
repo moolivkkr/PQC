@@ -1,47 +1,864 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="pqc-e2e" id="r1115005115">
-<testsuite name="all.cloudwatch-logs" tests="1" failures="0" errors="0">
-<testcase classname="all.cloudwatch-logs" name="detect-cloudwatch-nonpq" time="5.9">
+<testsuites name="pqc-e2e" id="final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106)">
+<testsuite name="dotnet.cloudwatch-logs" tests="1" failures="0" errors="0">
+<testcase classname="dotnet.cloudwatch-logs" name="detect-cloudwatch-nonpq-dotnet" time="10.8">
+<system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 114, found 114</system-out></testcase>
+</testsuite>
+<testsuite name="dotnet.ec2" tests="7" failures="0" errors="0">
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net8-baseline" time="45.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net8-service-conf" time="46.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net8-host-policy" time="44.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net10-baseline" time="45.2">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net10-service-conf" time="42.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net10-host-policy" time="42.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ec2" name="dotnet-ec2-al2023-net10-policy-store-clientcert" time="41.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="dotnet.ecs-ec2" tests="6" failures="0" errors="0">
+<testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-debian8-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-alpine10-baseline" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-resolute-baseline" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-al2023-net10-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-al2023-net8-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-ec2" name="dotnet-ecsec2-al2023-net10-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="dotnet.ecs-fargate" tests="25" failures="0" errors="0">
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-80" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-80-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-80-noble" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-100" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-100-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-runtime-100-azurelinux30" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-aspnet-100-noble-chiseled" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-aspnet-100-resolute" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-aspnet-100-resolute-chiseled" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-resolute-sysca" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-alpine-sysca" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-resolute-ssl-cert-file" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-resolute-store-clientcert" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-resolute-pem-clientcert" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-resolute-tls12-pin" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-alpine8-callback-trust" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-debian8-store-clientcert" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-net8-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-net8-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-net8-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-net10-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-net10-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-net10-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-fixed-net8" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.ecs-fargate" name="dotnet-fargate-al2023-sysca-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="dotnet.lambda" tests="33" failures="0" errors="0">
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-baseline" time="3.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-bundled-conf" time="3.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-layer-wrapper" time="5.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-layer-conf" time="5.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-extension" time="3.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-combined" time="4.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-combined-conf" time="4.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-store-clientcert" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-store-clientcert-nohome" time="3.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet8-ssl-cert-file" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-baseline" time="2.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-bundled-conf" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-layer-wrapper" time="4.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-layer-conf" time="4.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-extension" time="3.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-combined" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-combined-conf" time="4.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-store-clientcert" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-store-clientcert-nohome" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-ssl-cert-file" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-callback-trust" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-ssl-cert-dir" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-no-ca" time="3.0">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-pem-clientcert" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-hch-p12-clientcert" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-tls12-pin" time="2.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-dotnet10-tls12-tls13" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-aot-baseline" time="2.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-aot-bundled-conf" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-image-dotnet8-baseline" time="3.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-image-dotnet8-fixed" time="4.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-image-dotnet10-baseline" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="dotnet.lambda" name="dotnet-lambda-image-dotnet10-fixed" time="3.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="dotnet.observer" tests="1" failures="0" errors="0">
+<testcase classname="dotnet.observer" name="detect-server-handshake-log-dotnet" time="0">
+<system-out>329 handshakes, 127 classical, 76 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
+</testsuite>
+<testsuite name="go.cloudwatch-logs" tests="1" failures="1" errors="0">
+<testcase classname="go.cloudwatch-logs" name="detect-cloudwatch-nonpq-go" time="20.3">
+<failure message="pattern { ($.event = &quot;tls_handshake&quot;) &amp;&amp; ($.pq_status = &quot;classical&quot;) }: expected 195, found 194; missing [('r1115030106-go-lambda-al2023-go123-pqtls-layer', 'tls12')]; extra []; "/>
+<system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 195, found 194; missing [('r1115030106-go-lambda-al2023-go123-pqtls-layer', 'tls12')]; extra []; </system-out></testcase>
+</testsuite>
+<testsuite name="go.ec2" tests="14" failures="0" errors="0">
+<testcase classname="go.ec2" name="go-ec2-al2023-go123" time="47.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go124" time="49.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go125" time="48.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go126" time="49.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go127" time="47.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go123-host-policy" time="47.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go127-host-policy" time="45.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-distro-golang" time="45.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go124-mod123-systemd-godebug" time="48.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2023-go127-fips140-on" time="49.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2-go123" time="47.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2-go126" time="47.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2-go127" time="41.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ec2" name="go-ec2-al2-distro-golang" time="41.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="go.ecs-ec2" tests="5" failures="0" errors="0">
+<testcase classname="go.ecs-ec2" name="go-ecsec2-al2023-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-ec2" name="go-ecsec2-al2023-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-ec2" name="go-ecsec2-scratch-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-ec2" name="go-ecsec2-distroless-go124" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-ec2" name="go-ecsec2-golang-go126" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="go.ecs-fargate" tests="22" failures="0" errors="0">
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-go124" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-scratch-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-scratch-go124" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-scratch-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-distroless-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-distroless-go124" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-distroless-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-golang-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-golang-go124" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-golang-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-policy-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2-go123" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-policy-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2-go127" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-go126-mod123-taskdef-godebug" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-scratch-go127-ssl-cert-file" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-scratch-go127-no-bundle" time="2.1">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-doc-dockerfile" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-doc-dockerfile-fips" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.ecs-fargate" name="go-fargate-al2023-go126-boring-fips140-on" time="2.1">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+</testsuite>
+<testsuite name="go.lambda" tests="77" failures="0" errors="0">
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-baseline" time="4.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go124-baseline" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go125-baseline" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-baseline" time="4.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-baseline" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-extension" time="4.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-pqtls-layer" time="24.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go123-baseline" time="4.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go124-baseline" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go125-baseline" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go126-baseline" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go127-baseline" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go123-extension" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go123-pqtls-layer" time="5.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-pqtls-layer" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-combined" time="4.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-combined-wrapper" time="4.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-mod123" time="3.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-mod123" time="3.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go125-mod123" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go124-mod123" time="3.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-mod125" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go124-mod123-godebug-env" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-mod123-godebug-env" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-mod123-godebug-gomod" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go124-mod123-godebug-gomod" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-mod123-directive" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-tlsmlkem0" time="3.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go124-tlsmlkem0" time="3.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-tlssecpmlkem0" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-rollback" time="3.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-curves-classical" time="3.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-curves-hybrid" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-curves-hybrid-tlsmlkem0" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-curves-hybrid-tlsmlkem0" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-max12" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-min13" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=FAIL</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-ciphers12" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-curve4588" time="2.8">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-mlkem1024" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-trust-ssl-cert-file" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go127-trust-ssl-cert-dir" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-trust-none" time="4.0">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-trust-system-plus-ca" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-trust-empty" time="3.7">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go124-trust-ssl-cert-file" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go123-trust-ssl-cert-file" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-clientcert-callback" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-clientcert-env-pem" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-clientcert-none" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go123-clientcert-callback" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-p12-sslmate" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-p12-xcrypto" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-pin-ca" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-pin-wrong" time="3.9">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go124-fips140-on" time="3.9">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go124-fips140-only" time="3.7">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go124-gofips140" time="3.9">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go125-fips140-on" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go125-fips140-only" time="3.8">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-fips140-on" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-fips140-only" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-fips140-on" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-fips140-only" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-gofips140-v1260" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2-go126-gofips140-v100" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-gofips140" time="4.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-boring" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go125-boring-fipsonly" time="3.8">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-boring-fipsonly" time="3.8">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-boring-fipsonly" time="4.0">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-awssdk" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-awssdk-fips" time="3.8">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go126-awssdk-fips-fix" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-al2023-go127-awssdk-tlsmlkem0" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-image-go126" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="go.lambda" name="go-lambda-image-go123" time="4.5">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="go.observer" tests="1" failures="0" errors="0">
+<testcase classname="go.observer" name="detect-server-handshake-log-go" time="0">
+<system-out>516 handshakes, 218 classical, 113 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
+</testsuite>
+<testsuite name="java.cloudwatch-logs" tests="1" failures="0" errors="0">
+<testcase classname="java.cloudwatch-logs" name="detect-cloudwatch-nonpq-java" time="12.2">
+<system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 144, found 144</system-out></testcase>
+</testsuite>
+<testsuite name="java.ec2" tests="13" failures="0" errors="0">
+<testcase classname="java.ec2" name="java-ec2-al2023-j11-baseline" time="47.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j11-agent" time="47.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j17-baseline" time="46.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j17-agent" time="48.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j21-baseline" time="46.5">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j21-agent" time="46.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j25-baseline" time="46.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-default-java" time="46.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2023-j21-agent-ec" time="46.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2-j11-baseline" time="47.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2-j11-agent" time="45.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2-j17-baseline" time="46.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ec2" name="java-ec2-al2-j17-agent" time="35.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="java.ecs-ec2" tests="5" failures="0" errors="0">
+<testcase classname="java.ecs-ec2" name="java-ecsec2-corretto21-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-ec2" name="java-ecsec2-corretto21-agent" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-ec2" name="java-ecsec2-corretto25-baseline" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-ec2" name="java-ecsec2-corretto17-static" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-ec2" name="java-ecsec2-corretto8-agent" time="4.1">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+</testsuite>
+<testsuite name="java.ecs-fargate" tests="21" failures="0" errors="0">
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto8-baseline" time="2.1">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto8-agent" time="4.1">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto8-agent-hostfix" time="4.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto8-agent-noproto" time="4.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto11-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto11-agent" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto17-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto17-agent" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto21-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto21-agent" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto25-baseline" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto21-agent-ec" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto21-agent-image" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-temurin21-static" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto17-static" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto21-static" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-corretto21-static-ec" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-al2023-j17-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-al2023-j21-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-al2023-j25-baseline" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.ecs-fargate" name="java-fargate-al2023-j21-agent" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="java.lambda" tests="57" failures="0" errors="0">
+<testcase classname="java.lambda" name="java-lambda-j8-baseline" time="4.2">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-layer" time="7.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-bundled" time="6.2">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-extension" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-combined" time="7.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j11-baseline" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j11-layer" time="4.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j11-bundled" time="4.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j11-extension" time="3.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j11-combined" time="6.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-baseline" time="4.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-layer" time="5.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-bundled" time="4.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-extension" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-combined" time="4.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-baseline" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-layer" time="5.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-bundled" time="4.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-extension" time="3.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-combined" time="5.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-baseline" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-layer" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-extension" time="3.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-combined" time="5.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-combined-ext" time="5.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-bundled-hostfix" time="6.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-bundled-noproto" time="6.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j8-layer-hostfix" time="6.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-ks-ec-baseline" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-ks-ec-bundled" time="4.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-ks-ec-layer" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-ks-ec-sunx509" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-ks-rsa-sunx509" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j17-ks-ec-pkix" time="4.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-ks-ec-v1" time="4.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-layer-ownsec" time="5.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j11-layer-ownsec" time="4.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-sysprops-ec-baseline" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-sysprops-ec-bundled" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-sysprops-ec-baseline" time="3.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-sysprops-notrust-bundled" time="3.9">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-ks-ec-baseline" time="3.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j25-pin" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-layer-pin" time="4.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-layer-disabled" time="4.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-j21-static" time="3.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j8-baseline" time="4.3">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j8-fixed" time="6.2">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j11-baseline" time="4.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j11-fixed" time="4.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j17-baseline" time="4.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j17-fixed" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j21-baseline" time="4.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j21-fixed" time="4.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j25-baseline" time="4.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j8-layer" time="6.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="java.lambda" name="java-lambda-image-j8-layer-hostfix" time="5.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="java.observer" tests="1" failures="0" errors="0">
+<testcase classname="java.observer" name="detect-server-handshake-log-java" time="0">
+<system-out>426 handshakes, 172 classical, 100 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
+</testsuite>
+<testsuite name="node.cloudwatch-logs" tests="1" failures="0" errors="0">
+<testcase classname="node.cloudwatch-logs" name="detect-cloudwatch-nonpq-node" time="9.7">
+<system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 163, found 163</system-out></testcase>
+</testsuite>
+<testsuite name="node.ec2" tests="12" failures="0" errors="0">
+<testcase classname="node.ec2" name="node-ec2-al2023-n20-baseline" time="44.6">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n20-service-conf" time="43.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n20-host-policy" time="44.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n22-baseline" time="42.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n22-service-conf" time="43.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n22-host-policy" time="44.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n24-baseline" time="43.5">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n24-service-conf" time="42.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-n24-host-policy" time="39.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-official22-baseline" time="38.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-official24-baseline" time="39.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ec2" name="node-ec2-al2023-official24-host-default-pq" time="38.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="node.ecs-ec2" tests="5" failures="0" errors="0">
+<testcase classname="node.ecs-ec2" name="node-ecsec2-al2023-n22-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-ec2" name="node-ecsec2-al2023-n22-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-ec2" name="node-ecsec2-al2023-n24-policy" time="2.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-ec2" name="node-ecsec2-lib-24-slim" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-ec2" name="node-ecsec2-lib-20-slim" time="2.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="node.ecs-fargate" tests="28" failures="0" errors="0">
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n20-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n20-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n20-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n22-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n22-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n22-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n24-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n24-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-al2023-n24-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-20-slim" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-20-alpine" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-22-slim" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-22-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-26-slim" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-2219-alpine" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-2220-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-244-alpine" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-245-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-distro-debian13" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-distro-alpine322" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim-nec" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-22-slim-fetch" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim-pfx" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim-pfx-legacy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim-pfx-legacy-provider" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.ecs-fargate" name="node-fargate-lib-24-slim-tls-max-12" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="node.lambda" tests="48" failures="0" errors="0">
+<testcase classname="node.lambda" name="node-lambda-n18-baseline" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n18-bundled-conf" time="3.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n18-bundled-flag" time="3.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n18-layer" time="4.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n18-extension" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n18-combined" time="4.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-baseline" time="3.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-bundled-conf" time="3.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-bundled-flag" time="2.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-layer" time="3.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-extension" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-combined" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-baseline" time="2.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-bundled-conf" time="2.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-bundled-flag" time="2.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-layer" time="4.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-extension" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-combined" time="4.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-baseline" time="3.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-bundled-conf" time="2.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-bundled-flag" time="2.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-layer" time="3.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-extension" time="3.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-combined" time="3.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-devnull" time="3.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-devnull" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-code-ecdh" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-combined-wrapper" time="5.4">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-layer-ownconf" time="5.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-layer-chain" time="5.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-layer-disabled" time="5.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-code-ecdh-classical" time="2.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-tls-max-12" time="2.9">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-nec-bundled" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-nec-bundled" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-nec-aws" time="2.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-nec-none" time="2.8">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-nec-layer" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-fetch-nec" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-pfx" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-pfx-legacy" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n22-pfx-legacy" time="2.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n20-pfx-legacy" time="2.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=FAIL eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-n24-pfx-legacy-provider" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=FAIL eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-image-n22-baseline" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-image-n22-fixed" time="3.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-image-n24-baseline" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="node.lambda" name="node-lambda-image-n24-fixed" time="3.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="node.observer" tests="1" failures="0" errors="0">
+<testcase classname="node.observer" name="detect-server-handshake-log-node" time="0">
+<system-out>422 handshakes, 184 classical, 98 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
+</testsuite>
+<testsuite name="python.cloudwatch-logs" tests="1" failures="0" errors="0">
+<testcase classname="python.cloudwatch-logs" name="detect-cloudwatch-nonpq-python" time="5.5">
 <system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 101, found 101</system-out></testcase>
 </testsuite>
-<testsuite name="all.observer" tests="1" failures="0" errors="0">
-<testcase classname="all.observer" name="detect-server-handshake-log" time="0">
-<system-out>268 handshakes, 124 classical, 61 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
-</testsuite>
 <testsuite name="python.ec2" tests="8" failures="0" errors="0">
-<testcase classname="python.ec2" name="py-ec2-al2023-py311-baseline" time="55.5">
+<testcase classname="python.ec2" name="py-ec2-al2023-py311-baseline" time="44.0">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2023-py312-baseline" time="54.4">
+<testcase classname="python.ec2" name="py-ec2-al2023-py312-baseline" time="45.7">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2023-py313-baseline" time="53.8">
+<testcase classname="python.ec2" name="py-ec2-al2023-py313-baseline" time="45.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2023-py314-baseline" time="55.1">
+<testcase classname="python.ec2" name="py-ec2-al2023-py314-baseline" time="44.5">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2023-py312-service-conf" time="44.5">
+<testcase classname="python.ec2" name="py-ec2-al2023-py312-service-conf" time="45.4">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2023-py313-host-policy" time="44.7">
+<testcase classname="python.ec2" name="py-ec2-al2023-py313-host-policy" time="43.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2023-py311-host-policy" time="42.5">
+<testcase classname="python.ec2" name="py-ec2-al2023-py311-host-policy" time="43.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ec2" name="py-ec2-al2-py3-baseline" time="44.0">
+<testcase classname="python.ec2" name="py-ec2-al2-py3-baseline" time="44.2">
 <system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
 </testsuite>
 <testsuite name="python.ecs-ec2" tests="3" failures="0" errors="0">
-<testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-baseline" time="2.0">
+<testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-conf" time="2.0">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ecs-ec2" name="py-ecsec2-lib-313-slim-trixie" time="2.0">
+<testcase classname="python.ecs-ec2" name="py-ecsec2-lib-313-slim-trixie" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="python.ecs-fargate" tests="13" failures="0" errors="0">
-<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-baseline" time="4.1">
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-conf" time="2.0">
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-conf" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-conf" time="2.0">
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-conf" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-fargate" name="py-fargate-al2023-py313-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
@@ -49,7 +866,7 @@
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-fargate" name="py-fargate-al2023-py314-baseline" time="2.1">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py314-conf" time="2.0">
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py314-conf" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
 <testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-policy" time="2.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
@@ -63,75 +880,79 @@
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
 </testsuite>
 <testsuite name="python.lambda" tests="35" failures="0" errors="0">
-<testcase classname="python.lambda" name="py-lambda-py39-baseline" time="1.0">
+<testcase classname="python.lambda" name="py-lambda-py39-baseline" time="3.2">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py39-bundled-shim" time="6.0">
+<testcase classname="python.lambda" name="py-lambda-py39-bundled-shim" time="4.5">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py39-layer" time="7.8">
+<testcase classname="python.lambda" name="py-lambda-py39-layer" time="4.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py39-extension" time="4.5">
+<testcase classname="python.lambda" name="py-lambda-py39-extension" time="3.3">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py310-baseline" time="4.2">
+<testcase classname="python.lambda" name="py-lambda-py310-baseline" time="2.8">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py310-bundled-shim" time="6.0">
+<testcase classname="python.lambda" name="py-lambda-py310-bundled-shim" time="3.2">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py310-layer" time="6.9">
+<testcase classname="python.lambda" name="py-lambda-py310-layer" time="3.9">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py310-extension" time="3.5">
+<testcase classname="python.lambda" name="py-lambda-py310-extension" time="3.0">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-baseline" time="3.4">
+<testcase classname="python.lambda" name="py-lambda-py311-baseline" time="2.7">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-bundled-shim" time="4.0">
+<testcase classname="python.lambda" name="py-lambda-py311-bundled-shim" time="3.1">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-layer" time="4.3">
+<testcase classname="python.lambda" name="py-lambda-py311-layer" time="3.7">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-extension" time="3.6">
+<testcase classname="python.lambda" name="py-lambda-py311-extension" time="3.2">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-baseline" time="3.7">
+<testcase classname="python.lambda" name="py-lambda-py312-baseline" time="3.0">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-bundled-conf" time="3.7">
+<testcase classname="python.lambda" name="py-lambda-py312-bundled-conf" time="2.7">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-layer" time="4.6">
+<testcase classname="python.lambda" name="py-lambda-py312-layer" time="4.4">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-extension" time="3.0">
+<testcase classname="python.lambda" name="py-lambda-py312-extension" time="3.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py313-baseline" time="3.0">
+<testcase classname="python.lambda" name="py-lambda-py313-baseline" time="3.2">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py313-bundled-conf" time="2.9">
+<testcase classname="python.lambda" name="py-lambda-py313-bundled-conf" time="3.2">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py313-layer" time="4.6">
+<testcase classname="python.lambda" name="py-lambda-py313-layer" time="4.3">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py313-extension" time="3.2">
+<testcase classname="python.lambda" name="py-lambda-py313-extension" time="3.5">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py314-baseline" time="3.3">
+<testcase classname="python.lambda" name="py-lambda-py314-baseline" time="3.4">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py314-bundled-conf" time="3.3">
+<testcase classname="python.lambda" name="py-lambda-py314-bundled-conf" time="3.4">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py314-layer" time="5.0">
+<testcase classname="python.lambda" name="py-lambda-py314-layer" time="4.8">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py314-extension" time="3.5">
+<testcase classname="python.lambda" name="py-lambda-py314-extension" time="3.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-layer-stdlib" time="4.7">
+<testcase classname="python.lambda" name="py-lambda-py311-layer-stdlib" time="5.6">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-combined-ext-stdlib" time="8.9">
+<testcase classname="python.lambda" name="py-lambda-py311-combined-ext-stdlib" time="5.6">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py311-shim-noidna" time="4.5">
+<testcase classname="python.lambda" name="py-lambda-py311-shim-noidna" time="3.3">
 <system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py313-combined-wrapper" time="8.5">
+<testcase classname="python.lambda" name="py-lambda-py313-combined-wrapper" time="3.9">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-layer-ownconf" time="7.1">
+<testcase classname="python.lambda" name="py-lambda-py312-layer-ownconf" time="4.6">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-layer-chain" time="6.6">
+<testcase classname="python.lambda" name="py-lambda-py312-layer-chain" time="4.7">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-py312-layer-disabled" time="7.4">
+<testcase classname="python.lambda" name="py-lambda-py312-layer-disabled" time="4.4">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-image-py312-baseline" time="9.6">
+<testcase classname="python.lambda" name="py-lambda-image-py312-baseline" time="3.9">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-image-py312-fixed" time="6.3">
+<testcase classname="python.lambda" name="py-lambda-image-py312-fixed" time="3.3">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-image-py313-baseline" time="6.6">
+<testcase classname="python.lambda" name="py-lambda-image-py313-baseline" time="4.0">
 <system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
-<testcase classname="python.lambda" name="py-lambda-image-py313-fixed" time="7.0">
+<testcase classname="python.lambda" name="py-lambda-image-py313-fixed" time="3.7">
 <system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="python.observer" tests="1" failures="0" errors="0">
+<testcase classname="python.observer" name="detect-server-handshake-log-python" time="0">
+<system-out>268 handshakes, 124 classical, 61 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
 </testsuite>
 </testsuites>
