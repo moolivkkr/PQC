@@ -1,3 +1,4 @@
 .work/
 results/runs/
 *.zip
+__pycache__/
