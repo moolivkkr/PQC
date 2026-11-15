@@ -72,7 +72,7 @@ The first build of a language pulls several GB of images. Later builds reuse the
 | Rerun without rebuilding | `e2e/run.sh --skip-build --lang go` |
 | One compute type | `e2e/run.sh --skip-build --lang python --compute lambda` (also `ecs-fargate`, `ecs-ec2`, `ec2`) |
 | Matching case ids (glob, comma-separated) | `e2e/run.sh --skip-build --id 'py-lambda-py312*,node-lambda-n22*'` |
-| Fewer parallel jobs (slow machine) | `PQC_JOBS=3 e2e/run.sh --lang go` (default 6; EC2 cases use at most 4) |
+| Fewer parallel jobs (slow machine) | `PQC_JOBS=3 e2e/run.sh --lang go` (default 6; EC2 cases use at most 4). Run one suite at a time: several `run.sh` processes against the same LocalStack overload its EC2 service (section 8) |
 | List cases without running them | `source e2e/env.sh && docker run --rm --network pqc-e2e -v "$PWD/e2e":/e2e pqc-e2e/runner:local list --lang java` |
 | Delete this suite's functions and instances, stop its containers | `e2e/run.sh down` |
 
@@ -201,6 +201,8 @@ e2e/run.sh --skip-build --id 'java-*static*'                       # static java
 The build adds the agent jar and Bouncy Castle jars to the `pq-tls` layer. Run `e2e/run.sh --lang java` (not
 `--skip-build`) after any Python-only build.
 
+JDK 8 cases with `HttpsURLConnection` need `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` with the kit (the layer wrapper adds it). Cases `java-lambda-j8-bundled`, `-image-j8-fixed`, `java-fargate-corretto8-agent` and `java-ecsec2-corretto8-agent` keep the old instructions without it and are expected to fail every target: they are the regression check.
+
 ### .NET (`dotnet-`)
 
 | | |
@@ -210,7 +212,7 @@ The build adds the agent jar and Bouncy Castle jars to the `pq-tls` layer. Run `
 | Lambda | `dotnet8`, `dotnet10` zip; Native AOT on `provided.al2023`; container images on `lambda/dotnet:8` and `10` |
 | ECS (Fargate, EC2) | AL2023 + dnf .NET 8/10 (baseline, `OPENSSL_CONF`, `DEFAULT:PQ`, CA in the system store); MCR runtime and aspnet images (Debian, Alpine, Azure Linux 3.0, Ubuntu 24.04 chiseled, Ubuntu 26.04) |
 | EC2 | `pqc-al2023` with dnf .NET 8 and 10 |
-| Fixes tested | `OPENSSL_CONF` with the AL2023 config file; the pq-tls layer, both through its wrapper and with `OPENSSL_CONF` set directly; the pq-egress extension; `DEFAULT:PQ`; `SSL_CERT_DIR` and the system CA store |
+| Fixes tested | `OPENSSL_CONF` with the AL2023 config file; the pq-tls layer, both through its wrapper (dotnet branch sets `OPENSSL_CONF`) and with `OPENSSL_CONF` set directly; the pq-egress extension; `DEFAULT:PQ`; `SSL_CERT_DIR` and the system CA store |
 | Downloads | NuGet: Amazon.Lambda packages, restored inside the .NET SDK containers |
 
 ```bash
@@ -271,6 +273,8 @@ LocalStack's API is also on the host at `http://localhost:4600`, for example wit
 | LocalStack shows `unhealthy` but answers | Check `curl -s localhost:4600/_localstack/info`; `is_license_activated` must be `true` |
 | Many `ERROR` cases with `RepositoryNotFoundException` | LocalStack lost its ECR after a Docker or LocalStack restart (state isn't persisted). Run `bash e2e/build/repush.sh` to push the already-built images back, or run without `--skip-build` |
 | EC2 cases time out | The AMI lacks that language's files, or the instance didn't boot. Run `bash e2e/build/ami.sh` and rerun with `--compute ec2` |
+| EC2 cases hang, LocalStack logs `ec2.RunInstances => 500`, `Read timeout on endpoint URL: "http://localhost:4566/"` or `I/O operation on closed file` | LocalStack's EC2 service is overloaded. Each `RunInstances` triggers an internal `DescribeImages` that inspects the Docker images (about 20 s even when idle on Docker Desktop), and several suites launching instances at once push those calls past their timeout. Run **one language at a time**, EC2 cases with `PQC_JOBS=2`, and never run `build/ami.sh` while cases are running (it replaces the AMI images under running lookups). If it is already stuck: stop the runner containers (`docker ps --filter ancestor=pqc-e2e/runner:local`), wait for `aws ec2 describe-images --image-ids ami-0a2023111090` to answer, then rerun only the EC2 cases (`--id '<lang>-ec2-*'`, `py-ec2-*` for Python) |
+| `.NET` store case fails only in LocalStack with `Access to the path '/home/sbx_user…' is denied` and `HOME=/tmp` set as a function variable | LocalStack drops `HOME` from the function environment. AWS's own image under its runtime interface emulator honours it, and AWS doesn't reserve `HOME`. The `-store-clientcert` cases export it from an exec wrapper instead; `-store-clientcert-nohome` records the emulator's behaviour |
 | Java layer cases classical or failing after a Python-only build | `common.sh` rebuilt the layer without the Java jars. Run `e2e/run.sh --lang java` |
 | First Lambda case of a runtime is slow | LocalStack is pulling that runtime image; later cases reuse it |
 | `results/latest` shows only one language | `latest/` is the last run only. Older runs stay in `results/runs/` |

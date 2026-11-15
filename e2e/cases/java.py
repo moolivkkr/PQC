@@ -32,7 +32,8 @@ J8_HOST = " -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true"
 # JDK 8 + BCJSSE 1.87 + HttpsURLConnection: the JDK 8 HttpsClient creates the socket without a host name, and
 # BCJSSE (1.78+) refuses endpoint identification without one -> every handshake fails (see FINDING_J8).
 J8_FAIL = {t: {"ok": False, "error_match": "No hostname specified for HTTPS endpoint ID check"} for t in ALL}
-FINDING_J8 = ("src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + "
+FINDING_J8 = ("Fixed in the doc and kit on 2026-11-14; this case keeps the old instructions as a regression check. "
+              "src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + kit (agent + "
               "-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2) gives PQ. Observed on Corretto 8u512 (Lambda java8.al2, "
               "lambda/java:8.al2023 image, amazoncorretto:8 on ECS): with HttpsURLConnection every handshake fails, "
               "PQ and classical, with BCJSSE 'certificate_unknown(46) <- No hostname specified for HTTPS endpoint ID "
@@ -41,7 +42,8 @@ FINDING_J8 = ("src/06-java.md:30, :44 (and template.yaml at :962) say JDK 8 + ki
               "-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true to JAVA_TOOL_OPTIONS fixes it (PQ on all "
               "targets, case java-lambda-j8-bundled-hostfix). The tab's JDK 8 test used raw SSLSocket, not "
               "HttpsURLConnection. JDK 11+ is not affected.")
-FINDING_J8_PROTO = ("src/06-java.md:30 ('SunJSSE, TLS 1.2 client default'), :376 ('8 defaults clients to TLS 1.2') and :445 "
+FINDING_J8_PROTO = ("Fixed in the doc and kit on 2026-11-14; this case keeps the old instructions as a regression check. "
+                    "src/06-java.md:30 ('SunJSSE, TLS 1.2 client default'), :376 ('8 defaults clients to TLS 1.2') and :445 "
                     "state it for JDK 8 generally. Observed: only the Lambda Java 8 runtime sets "
                     "jdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1 (java8.al2 zip and the lambda/java:8.al2023 image, also "
                     "under the image's own RIE without LocalStack); a plain Corretto 8u512 (amazoncorretto:8, and /var/lang/bin/java "
@@ -87,29 +89,25 @@ for rt, v in RTS:
             PQ, zip="probe-agent.zip", env={"JAVA_TOOL_OPTIONS": KIT_ZIP + (J8 if v == "j8" else "")},
             doc=DOC + " Lambda: template.yaml (zip, kit v2)")
     if v == "j8":
-        for c in cases[-2:]:
-            j8finding(c)
+        cases[-2]["title"] += " (wrapper adds TLSv1.3 flag + assumeOriginalHostName)"
+        j8finding(cases[-1])  # bundled with the old JAVA_TOOL_OPTIONS (no host-name flag)
     lam("java-lambda-%s-extension" % v, rt, "extension", "%s + pq-egress extension layer: extension originates PQ TLS" % rt, PQ,
         layers=["pq-egress"], env=EGRESS_ENV, doc="e2e/lambda/extension/pq-egress (extension option)")
     lam("java-lambda-%s-combined" % v, rt, "layer", "%s + ONE combined layer (wrapper + extension), JVM path via wrapper" % rt, PQ,
         layers=["pq-tls-combined"], env=WRAP, doc=DOC + " Packaging table: Lambda layer")
-    if v == "j8":
-        j8finding(cases[-1])
 lam("java-lambda-j17-combined-ext", "java17", "extension", "java17 + combined layer, wrapper AND extension env: extension carries the call",
     PQ, layers=["pq-tls-combined"], env=dict(EGRESS_ENV, **WRAP), doc="e2e/lambda/extension/pq-egress (extension option)")
 
 # JDK 8 remedy for HttpsURLConnection under BCJSSE, and the TLS 1.3 flag question
 lam("java-lambda-j8-bundled-hostfix", "java8.al2", "bundled",
     "java8 + kit v2 + TLSv1.3 flag + -Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true: PQ", PQ,
-    zip="probe-agent.zip", env={"JAVA_TOOL_OPTIONS": KIT_ZIP + J8 + J8_HOST}, doc=DOC + " JDK 8 row (remedy for FINDING_J8)")
-cases[-1]["finding"] = FINDING_J8
+    zip="probe-agent.zip", env={"JAVA_TOOL_OPTIONS": KIT_ZIP + J8 + J8_HOST}, doc=DOC + " JDK 8 row (template.yaml as fixed)")
 lam("java-lambda-j8-bundled-noproto", "java8.al2", "bundled",
     "java8 + kit v2 WITHOUT -Djdk.tls.client.protocols (host-name fix on): Lambda's TLS 1.2 setting also binds BCJSSE",
     TLS12_ONLY, zip="probe-agent.zip", env={"JAVA_TOOL_OPTIONS": KIT_ZIP + J8_HOST},
     doc=DOC + " JVM flags: jdk.tls.client.protocols (Java 8 only); Rules: 'On Java 8 add -Djdk.tls.client.protocols'")
 lam("java-lambda-j8-layer-hostfix", "java8.al2", "layer", "java8 + layer v2 + function adds assumeOriginalHostName to JAVA_TOOL_OPTIONS: PQ",
-    PQ, layers=["pq-tls"], env=dict(WRAP, JAVA_TOOL_OPTIONS=J8_HOST.strip()), doc=DOC + " Lambda layer (remedy for FINDING_J8)")
-cases[-1]["finding"] = FINDING_J8
+    PQ, layers=["pq-tls"], env=dict(WRAP, JAVA_TOOL_OPTIONS=J8_HOST.strip()), doc=DOC + " Lambda layer: wrapper does not add the flag twice")
 
 # ---------------------------------------------------------------- existing keystores / truststores (cases C, D, E)
 lam("java-lambda-j21-ks-ec-baseline", "java21", "baseline", "java21, own SSLContext with EC client keystore, no kit: classical, mTLS works",
@@ -182,11 +180,9 @@ image("java-lambda-image-j25-baseline", "java25-baseline", "image-baseline", "La
 image("java-lambda-image-j8-layer", "java8-layer", "image-layer",
       "lambda/java:8.al2023 + pq-tls layer contents in /opt + AWS_LAMBDA_EXEC_WRAPPER (wrapper adds agent + TLSv1.3)", PQ,
       doc=DOC + " Packaging table: Lambda layer (java8.al2023)")
-j8finding(cases[-1])
 image("java-lambda-image-j8-layer-hostfix", "java8-layer", "image-layer",
       "lambda/java:8.al2023 + layer in /opt + wrapper, function adds assumeOriginalHostName", PQ,
-      doc=DOC + " Packaging table: Lambda layer (java8.al2023), remedy for FINDING_J8", env={"JAVA_TOOL_OPTIONS": J8_HOST.strip()})
-cases[-1]["finding"] = FINDING_J8
+      doc=DOC + " Packaging table: Lambda layer (java8.al2023): wrapper does not add the flag twice", env={"JAVA_TOOL_OPTIONS": J8_HOST.strip()})
 
 
 # ---------------------------------------------------------------- ECS (Fargate and EC2 launch type)
@@ -213,8 +209,7 @@ for v in ("8", "11", "17", "21", "25"):
             j8finding(cases[-1])
             ecs("java-fargate-corretto8-agent-hostfix", "ecs-fargate", img, CP, "agent",
                 "Fargate amazoncorretto:8 + kit v2 + TLSv1.3 flag + assumeOriginalHostName", PQ,
-                env={"JAVA_TOOL_OPTIONS": KIT_OPT + J8 + J8_HOST}, doc=DOC + " taskdef.json (remedy for FINDING_J8)")
-            cases[-1]["finding"] = FINDING_J8
+                env={"JAVA_TOOL_OPTIONS": KIT_OPT + J8 + J8_HOST}, doc=DOC + " taskdef.json (JVM flags as fixed)")
             ecs("java-fargate-corretto8-agent-noproto", "ecs-fargate", img, CP, "agent",
                 "Fargate amazoncorretto:8 + kit v2 + assumeOriginalHostName, WITHOUT the TLSv1.3 flag", PQ,
                 env={"JAVA_TOOL_OPTIONS": KIT_OPT + J8_HOST}, doc=DOC + " JVM flags: jdk.tls.client.protocols")

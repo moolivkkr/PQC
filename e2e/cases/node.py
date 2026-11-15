@@ -42,6 +42,7 @@ for rt in OLD + CUR:
         "%s zip, no change: bootstrap's classical file / old OpenSSL -> classical, PQ-only server fails" % rt, CLASSICAL,
         doc=DOC + " version table l.21-25, Lambda zip l.352",
         finding=None if fixable else (
+            "Fixed in the doc on 2026-11-14; kept as a regression check. "
             "Outcome as documented (classical, no fix), but the library differs: on Lambda %s process.versions.openssl is "
             "%s, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has "
             "ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking "
@@ -144,7 +145,8 @@ def ecs(id, compute, image, cmd, mode, title, expect, env=None, doc=DOC + " Farg
 
 
 SYSCONF = {"OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"}
-AL2023_N20_FINDING = (
+AL2023_N20_FINDING = ("Fixed in the doc on 2026-11-14; kept as a regression check. "
+    
     "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy "
     "is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: "
     "src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: "

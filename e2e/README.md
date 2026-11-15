@@ -72,6 +72,19 @@ See [CONTRACT.md](CONTRACT.md). An expectation is the document's claim. When rea
 is observed plus a `finding` explaining the gap, so the suite stays green and the summary lists every documented
 error.
 
+## What the suite found (fixed in the document on 2026-11-14)
+
+Every item below is kept as a regression case, so a revert to the old text or kit fails the run.
+
+| Tab | Was | Observed | Fixed in |
+|---|---|---|---|
+| Python | Legacy bridge: `pip install pyopenssl cryptography` | Lambda 3.9-3.11 lack `idna`: every urllib3/requests/boto3 request raises `ModuleNotFoundError`. The 3.11 abi3 cryptography wheel fails on 3.9/3.10 | `src/04-python.md` Bridge step: add `idna`, build in each version's Lambda image |
+| Node.js | "Node 20: no setting adds PQ" | AL2023 `dnf install nodejs20` links system OpenSSL 3.5.8 and is PQ with `OPENSSL_CONF` or `DEFAULT:PQ`. Lambda `nodejs18.x`/`20.x` bundle OpenSSL 3.1.8/3.2.6, not 3.0.x (still no ML-KEM) | `src/05-nodejs.md`, `src/01-overview.md` |
+| Java | JDK 8 + kit + `-Djdk.tls.client.protocols` gives PQ | With `HttpsURLConnection` every handshake fails (BCJSSE endpoint identification, bc-java#1656) until `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true`. The TLS 1.2 client default is the Lambda Java 8 runtime's, not JDK 8's | `src/06-java.md`, `src/01-overview.md`, `template.yaml`, layer `wrapper` (adds the flag) |
+| .NET / enforcement | Guard rule PQ-L2 accepts the `pq-tls` wrapper for dotnet8/10 | The wrapper had no dotnet branch: functions passed the guard and stayed classical | Layer `wrapper`: dotnet branch sets `OPENSSL_CONF` |
+| .NET | CurrentUser/My store only needs re-import at start | On Lambda the passwd home is read-only: the import fails before any handshake | `src/07-dotnet.md`: set `HOME=/tmp` on Lambda |
+| Go | FIPS modes: "P-256 only" / "hybrids + P-256" | The client also offers P-384 and P-521 | `src/03-go.md` FIPS tables, `go-pq-lint.sh` message |
+
 ## What this does not prove
 
 - EC2 instances are containers built from the AMI's release packages, not the AMI disk image. The kernel is Docker
@@ -84,5 +97,7 @@ error.
   endpoints don't use AWS's TLS stacks. The AWS Parameters and Secrets Lambda Extension can't be downloaded offline.
   `pq-egress` stands in for that pattern.
 - Everything ran on arm64 (Apple silicon). x86_64 runtimes are not exercised.
+- LocalStack drops `HOME` from a Lambda function's environment variables (AWS doesn't reserve it, and AWS's image under its own emulator honours it). Cases that need `HOME` export it from an exec wrapper.
+- LocalStack's EC2 service is slow under parallel load: run one suite at a time ([RUNNING.md](RUNNING.md), Troubleshooting).
 - LocalStack's CloudWatch Logs filters don't support boolean JSON comparisons (`$.pq IS FALSE`). The suite uses the
   string field `pq_status`, which works on both. LocalStack's Logs Insights ignored the `filter` clause.

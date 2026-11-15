@@ -46,7 +46,7 @@
     "layers": [],
     "env": {}
    },
-   "finding": "Outcome as documented (classical, no fix), but the library differs: on Lambda nodejs18.x process.versions.openssl is 3.1.8, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking startup (cases node-lambda-n18-bundled-*).",
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Outcome as documented (classical, no fix), but the library differs: on Lambda nodejs18.x process.versions.openssl is 3.1.8, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking startup (cases node-lambda-n18-bundled-*).",
    "targets": [
     "hybrid",
     "pqonly",
@@ -350,7 +350,7 @@
     "layers": [],
     "env": {}
    },
-   "finding": "Outcome as documented (classical, no fix), but the library differs: on Lambda nodejs20.x process.versions.openssl is 3.2.6, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking startup (cases node-lambda-n20-bundled-*).",
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. Outcome as documented (classical, no fix), but the library differs: on Lambda nodejs20.x process.versions.openssl is 3.2.6, not the 'Bundled OpenSSL 3.0.x' of src/05-nodejs.md l.25 (that is node:20-slim's 3.0.19). Neither has ML-KEM, and the bundled openssl-pq-node.cnf / --openssl-config / layer leave it classical without breaking startup (cases node-lambda-n20-bundled-*).",
    "targets": [
     "hybrid",
     "pqonly",
@@ -2511,7 +2511,7 @@
      "OPENSSL_CONF": "/etc/app/openssl-pq-node-system.cnf"
     }
    },
-   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
    "targets": [
     "hybrid",
     "pqonly",
@@ -2562,7 +2562,7 @@
     ],
     "env": {}
    },
-   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
    "targets": [
     "hybrid",
     "pqonly",
@@ -4150,7 +4150,7 @@
      "OPENSSL_CONF": "/opt/pqc/node/etc-app/openssl-pq-node-system.cnf"
     }
    },
-   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
    "targets": [
     "hybrid",
     "pqonly",
@@ -4201,7 +4201,7 @@
     ],
     "env": {}
    },
-   "finding": "AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
+   "finding": "Fixed in the doc on 2026-11-14; kept as a regression check. AL2023 dnf nodejs20 (20.20.2) links the system OpenSSL 3.5.8, so it negotiates X25519MLKEM768 once the crypto policy is DEFAULT:PQ or OPENSSL_CONF points at openssl-pq-node-system.cnf, exactly like nodejs22/24. The tab says the opposite: src/05-nodejs.md l.25 ('20.x ... No / No / No ... Upgrade; no setting adds PQ'), l.38 ('any Node below 22.20 / 24.5: upgrade ... There is no setting') and l.5 ('anything on Node 20 or older'). l.452 already notes this for Debian 13's Node 20; the l.26 AL2023 row should cover nodejs20 too, and the rule should be 'check process.versions.openssl'.",
    "targets": [
     "hybrid",
     "pqonly",
