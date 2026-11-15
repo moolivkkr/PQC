@@ -3,4 +3,4 @@ RUN pip install --no-cache-dir boto3==1.40.70 && apt-get update -qq && apt-get i
 WORKDIR /e2e
 ENV AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1 \
     AWS_ENDPOINT_URL=http://10.250.0.10:4566 PQC_OBSERVER_ADMIN=http://10.250.0.20:8080 PYTHONUNBUFFERED=1
-ENTRYPOINT ["python3", "-I", "-m", "runner"]
+ENTRYPOINT ["python3", "-m", "runner"]

@@ -1,0 +1,2939 @@
+{
+ "lang": "python",
+ "generated_by": "cases/python.py",
+ "default_targets": [
+  "hybrid",
+  "pqonly",
+  "mtls",
+  "eccert",
+  "tls12"
+ ],
+ "cases": [
+  {
+   "id": "py-lambda-py39-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "python3.9 zip, no change: classical, fails PQ-only server",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.9",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py39-bundled-shim",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "python3.9 + pyshim + pyOpenSSL/cryptography in package (urllib3)",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.9",
+    "handler": "probe.handler",
+    "zip": "python/probe-shim-py39.zip",
+    "layers": [],
+    "env": {
+     "PYTHONPATH": "/var/task/pq-tls/pyshim"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py39-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.9 + pq-tls layer: wrapper turns on the urllib3 shim",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.9",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py39-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.9 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.9",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py310-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "python3.10 zip, no change: classical, fails PQ-only server",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.10",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py310-bundled-shim",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "python3.10 + pyshim + pyOpenSSL/cryptography in package (urllib3)",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.10",
+    "handler": "probe.handler",
+    "zip": "python/probe-shim-py310.zip",
+    "layers": [],
+    "env": {
+     "PYTHONPATH": "/var/task/pq-tls/pyshim"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py310-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.10 + pq-tls layer: wrapper turns on the urllib3 shim",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.10",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py310-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.10 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.10",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "python3.11 zip, no change: classical, fails PQ-only server",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-bundled-shim",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "python3.11 + pyshim + pyOpenSSL/cryptography in package (urllib3)",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe-shim-py311.zip",
+    "layers": [],
+    "env": {
+     "PYTHONPATH": "/var/task/pq-tls/pyshim"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.11 + pq-tls layer: wrapper turns on the urllib3 shim",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.11 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "python3.12 zip, no change: classical, fails PQ-only server",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "python3.12 + pq-tls/openssl-pq.cnf in package + OPENSSL_CONF",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.12 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.12 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py313-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "python3.13 zip, no change: classical, fails PQ-only server",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.13",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py313-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "python3.13 + pq-tls/openssl-pq.cnf in package + OPENSSL_CONF",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.13",
+    "handler": "probe.handler",
+    "zip": "python/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py313-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.13 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.13",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py313-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.13 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.13",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py314-baseline",
+   "compute": "lambda",
+   "mode": "baseline",
+   "title": "python3.14 zip, no change: classical, fails PQ-only server",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.14",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py314-bundled-conf",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "python3.14 + pq-tls/openssl-pq.cnf in package + OPENSSL_CONF",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.14",
+    "handler": "probe.handler",
+    "zip": "python/probe-bundled.zip",
+    "layers": [],
+    "env": {
+     "OPENSSL_CONF": "/var/task/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py314-layer",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.14 + pq-tls layer + AWS_LAMBDA_EXEC_WRAPPER",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.14",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py314-extension",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.14 + pq-egress extension layer: extension originates PQ TLS",
+   "doc": "e2e/lambda/extension/pq-egress (extension option)",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.14",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-egress"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-layer-stdlib",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.11 + layer, stdlib http.client: shim does NOT cover it (documented limit)",
+   "doc": "src/04-python.md pyshim header: stdlib ssl not covered",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "PQC_PY_STACK": "stdlib"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-combined-ext-stdlib",
+   "compute": "lambda",
+   "mode": "extension",
+   "title": "python3.11 stdlib client via ONE combined layer (wrapper + extension): extension covers what the shim cannot",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "PQC_EGRESS_PORT": "2779",
+     "PQ_EGRESS_PORT": "2779",
+     "PQ_EGRESS_ROUTES": "hybrid=pq-observer:8443,pqonly=pq-observer:8444,mtls=pq-observer:8445;mtls,eccert=pq-observer:8446,tls12=pq-observer:8447",
+     "PQ_EGRESS_CA": "/var/task/certs/ca.crt",
+     "PQ_EGRESS_CERT": "/var/task/certs/client.crt",
+     "PQ_EGRESS_KEY": "/var/task/certs/client.key",
+     "PQC_PY_STACK": "stdlib",
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py311-shim-noidna",
+   "compute": "lambda",
+   "mode": "bundled",
+   "title": "PITFALL: bridge built with only 'pyopenssl cryptography' (as the tab says): urllib3 needs idna -> requests FAIL",
+   "doc": "src/04-python.md Bridge (pip install line)",
+   "expect": {
+    "hybrid": {
+     "ok": false,
+     "error_match": "idna"
+    },
+    "pqonly": {
+     "ok": false,
+     "error_match": "idna"
+    },
+    "mtls": {
+     "ok": false,
+     "error_match": "idna"
+    },
+    "eccert": {
+     "ok": false,
+     "error_match": "idna"
+    },
+    "tls12": {
+     "ok": false,
+     "error_match": "idna"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.11",
+    "handler": "probe.handler",
+    "zip": "python/probe-shim-noidna-py311.zip",
+    "layers": [],
+    "env": {
+     "PYTHONPATH": "/var/task/pq-tls/pyshim",
+     "PQC_PY_STRICT": "1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py313-combined-wrapper",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "python3.13 + ONE combined layer, wrapper path only",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.13",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls-combined"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-layer-ownconf",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "function already sets OPENSSL_CONF (classical file): wrapper leaves it alone -> stays classical until Groups merged",
+   "doc": "src/04-python.md 'If the function already sets OPENSSL_CONF'",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe-ownconf.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "OPENSSL_CONF": "/var/task/conf/app-openssl.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-layer-chain",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "existing exec wrapper chained with PQ_TLS_NEXT_WRAPPER: both run, PQ on",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe-chain.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "PQ_TLS_NEXT_WRAPPER": "/var/task/app-wrapper"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-py312-layer-disabled",
+   "compute": "lambda",
+   "mode": "layer",
+   "title": "rollback switch PQ_TLS_DISABLE=1 with layer still attached: back to classical",
+   "doc": "src/04-python.md Step 2: Lambda zip",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "runtime": "python3.12",
+    "handler": "probe.handler",
+    "zip": "python/probe.zip",
+    "layers": [
+     "pq-tls"
+    ],
+    "env": {
+     "AWS_LAMBDA_EXEC_WRAPPER": "/opt/pq-tls/wrapper",
+     "PQ_TLS_DISABLE": "1"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-image-py312-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda container image python:3.12 ",
+   "doc": "src/04-python.md Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-python-lambda:py312-baseline",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-image-py312-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda container image python:3.12 (Dockerfile.lambda ENV OPENSSL_CONF)",
+   "doc": "src/04-python.md Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-python-lambda:py312-fixed",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-image-py313-baseline",
+   "compute": "lambda",
+   "mode": "image-baseline",
+   "title": "Lambda container image python:3.13 ",
+   "doc": "src/04-python.md Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-python-lambda:py313-baseline",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-lambda-image-py313-fixed",
+   "compute": "lambda",
+   "mode": "image-fixed",
+   "title": "Lambda container image python:3.13 (Dockerfile.lambda ENV OPENSSL_CONF)",
+   "doc": "src/04-python.md Lambda container image",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "lambda": {
+    "image": "pqc-python-lambda:py313-fixed",
+    "runtime": "image"
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py311-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 python3.11: crypto policy omits ML-KEM",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.11",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.11",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py311-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 python3.11 + task-def OPENSSL_CONF (configs/python/ecs/taskdef.json)",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.11",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.11",
+     "/app/probe.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py312-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 python3.12: crypto policy omits ML-KEM",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.12",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.12",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py312-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 python3.12 + task-def OPENSSL_CONF (configs/python/ecs/taskdef.json)",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.12",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.12",
+     "/app/probe.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py313-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 python3.13: crypto policy omits ML-KEM",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.13",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.13",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py313-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 python3.13 + task-def OPENSSL_CONF (configs/python/ecs/taskdef.json)",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.13",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.13",
+     "/app/probe.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py314-baseline",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate AL2023 python3.14: crypto policy omits ML-KEM",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.14",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.14",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py314-conf",
+   "compute": "ecs-fargate",
+   "mode": "config",
+   "title": "Fargate AL2023 python3.14 + task-def OPENSSL_CONF (configs/python/ecs/taskdef.json)",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.14",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.14",
+     "/app/probe.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-al2023-py312-policy",
+   "compute": "ecs-fargate",
+   "mode": "crypto-policy",
+   "title": "Fargate AL2023 image with update-crypto-policies --set DEFAULT:PQ",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023-policy python3.12",
+   "ecs": {
+    "image": "pqc-python:al2023-policy",
+    "command": [
+     "python3.12",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-lib-312-slim-trixie",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate python:3.12-slim-trixie - Debian 13, OpenSSL 3.5: PQ out of the box",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:lib-3.12-slim-trixie python",
+   "ecs": {
+    "image": "pqc-python:lib-3.12-slim-trixie",
+    "command": [
+     "python",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-lib-313-slim-trixie",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate python:3.13-slim-trixie - Debian 13, OpenSSL 3.5: PQ out of the box",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:lib-3.13-slim-trixie python",
+   "ecs": {
+    "image": "pqc-python:lib-3.13-slim-trixie",
+    "command": [
+     "python",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-lib-312-alpine",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate python:3.12-alpine - Alpine, OpenSSL 3.5: PQ out of the box",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:lib-3.12-alpine python",
+   "ecs": {
+    "image": "pqc-python:lib-3.12-alpine",
+    "command": [
+     "python",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-fargate-lib-312-slim-bookworm",
+   "compute": "ecs-fargate",
+   "mode": "baseline",
+   "title": "Fargate python:3.12-slim-bookworm - Debian 12, OpenSSL 3.0: no ML-KEM, move base image",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:lib-3.12-slim-bookworm python",
+   "ecs": {
+    "image": "pqc-python:lib-3.12-slim-bookworm",
+    "command": [
+     "python",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ecsec2-al2023-py312-baseline",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, AL2023 python3.12",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.12",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.12",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ecsec2-al2023-py312-conf",
+   "compute": "ecs-ec2",
+   "mode": "config",
+   "title": "ECS EC2 launch type, AL2023 python3.12 + OPENSSL_CONF",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:al2023 python3.12",
+   "ecs": {
+    "image": "pqc-python:al2023",
+    "command": [
+     "python3.12",
+     "/app/probe.py"
+    ],
+    "env": {
+     "OPENSSL_CONF": "/etc/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ecsec2-lib-313-slim-trixie",
+   "compute": "ecs-ec2",
+   "mode": "baseline",
+   "title": "ECS EC2 launch type, python:3.13-slim-trixie",
+   "doc": "src/04-python.md Fargate, ECS and EKS",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-python:lib-3.13-slim-trixie python",
+   "ecs": {
+    "image": "pqc-python:lib-3.13-slim-trixie",
+    "command": [
+     "python",
+     "/app/probe.py"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py311-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 python3.11, default crypto policy",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.11",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.11 /opt/pqc/python/probe.py",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py312-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 python3.12, default crypto policy",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.12",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.12 /opt/pqc/python/probe.py",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py313-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 python3.13, default crypto policy",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.13",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.13 /opt/pqc/python/probe.py",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py314-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 AL2023 2023.12.20261109 python3.14, default crypto policy",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.3",
+     "offered_pq": false
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.14",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.14 /opt/pqc/python/probe.py",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py312-service-conf",
+   "compute": "ec2",
+   "mode": "config",
+   "title": "EC2 AL2023: one service with OPENSSL_CONF (systemd Environment= equivalent)",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.12",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.12 /opt/pqc/python/probe.py",
+    "setup": [],
+    "env": {
+     "OPENSSL_CONF": "/opt/pqc/python/pq-tls/openssl-pq.cnf"
+    }
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py313-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023: host-wide update-crypto-policies --set DEFAULT:PQ (SSM document step)",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.13",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.13 /opt/pqc/python/probe.py",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2023-py311-host-policy",
+   "compute": "ec2",
+   "mode": "crypto-policy",
+   "title": "EC2 AL2023 python3.11 (system OpenSSL 3.5, unlike Lambda's 3.11) + DEFAULT:PQ",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768",
+     "tls_version": "TLSv1.3",
+     "offered_pq": true
+    },
+    "pqonly": {
+     "ok": true,
+     "pq": true,
+     "group": "X25519MLKEM768"
+    },
+    "mtls": {
+     "ok": true,
+     "pq": true
+    },
+    "eccert": {
+     "ok": true,
+     "pq": true
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2023 python3.11",
+   "ec2": {
+    "ami": "pqc-al2023",
+    "run": "python3.11 /opt/pqc/python/probe.py",
+    "setup": [
+     "update-crypto-policies --set DEFAULT:PQ"
+    ],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  },
+  {
+   "id": "py-ec2-al2-py3-baseline",
+   "compute": "ec2",
+   "mode": "baseline",
+   "title": "EC2 Amazon Linux 2 python3.7, OpenSSL 1.0.2: no TLS 1.3 at all - migrate the host",
+   "doc": "src/04-python.md EC2",
+   "expect": {
+    "hybrid": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "pqonly": {
+     "ok": false
+    },
+    "mtls": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "eccert": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    },
+    "tls12": {
+     "ok": true,
+     "pq": false,
+     "tls_version": "TLSv1.2"
+    }
+   },
+   "runtime_label": "pqc-al2 python3",
+   "ec2": {
+    "ami": "pqc-al2",
+    "run": "python3 /opt/pqc/python/probe.py",
+    "setup": [],
+    "env": {}
+   },
+   "targets": [
+    "hybrid",
+    "pqonly",
+    "mtls",
+    "eccert",
+    "tls12"
+   ]
+  }
+ ]
+}

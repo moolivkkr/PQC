@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pqc-e2e" id="r1115005115">
+<testsuite name="all.cloudwatch-logs" tests="1" failures="0" errors="0">
+<testcase classname="all.cloudwatch-logs" name="detect-cloudwatch-nonpq" time="5.9">
+<system-out>pattern { ($.event = "tls_handshake") &amp;&amp; ($.pq_status = "classical") }: expected 101, found 101</system-out></testcase>
+</testsuite>
+<testsuite name="all.observer" tests="1" failures="0" errors="0">
+<testcase classname="all.observer" name="detect-server-handshake-log" time="0">
+<system-out>268 handshakes, 124 classical, 61 TLS1.2; all client-reported classical handshakes present</system-out></testcase>
+</testsuite>
+<testsuite name="python.ec2" tests="8" failures="0" errors="0">
+<testcase classname="python.ec2" name="py-ec2-al2023-py311-baseline" time="55.5">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2023-py312-baseline" time="54.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2023-py313-baseline" time="53.8">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2023-py314-baseline" time="55.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2023-py312-service-conf" time="44.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2023-py313-host-policy" time="44.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2023-py311-host-policy" time="42.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ec2" name="py-ec2-al2-py3-baseline" time="44.0">
+<system-out>hybrid=classical/CurveP256 pqonly=FAIL mtls=classical/CurveP256 eccert=classical/CurveP256 tls12=classical/CurveP256</system-out></testcase>
+</testsuite>
+<testsuite name="python.ecs-ec2" tests="3" failures="0" errors="0">
+<testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-baseline" time="2.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-ec2" name="py-ecsec2-al2023-py312-conf" time="2.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-ec2" name="py-ecsec2-lib-313-slim-trixie" time="2.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="python.ecs-fargate" tests="13" failures="0" errors="0">
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-baseline" time="4.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py311-conf" time="2.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-conf" time="2.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py313-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py313-conf" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py314-baseline" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py314-conf" time="2.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-al2023-py312-policy" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-lib-312-slim-trixie" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-lib-313-slim-trixie" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-lib-312-alpine" time="2.1">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.ecs-fargate" name="py-fargate-lib-312-slim-bookworm" time="2.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+<testsuite name="python.lambda" tests="35" failures="0" errors="0">
+<testcase classname="python.lambda" name="py-lambda-py39-baseline" time="1.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py39-bundled-shim" time="6.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py39-layer" time="7.8">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py39-extension" time="4.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py310-baseline" time="4.2">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py310-bundled-shim" time="6.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py310-layer" time="6.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py310-extension" time="3.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-baseline" time="3.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-bundled-shim" time="4.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-layer" time="4.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-extension" time="3.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-baseline" time="3.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-bundled-conf" time="3.7">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-layer" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-extension" time="3.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py313-baseline" time="3.0">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py313-bundled-conf" time="2.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py313-layer" time="4.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py313-extension" time="3.2">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py314-baseline" time="3.3">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py314-bundled-conf" time="3.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py314-layer" time="5.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py314-extension" time="3.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-layer-stdlib" time="4.7">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-combined-ext-stdlib" time="8.9">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py311-shim-noidna" time="4.5">
+<system-out>hybrid=FAIL pqonly=FAIL mtls=FAIL eccert=FAIL tls12=FAIL</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py313-combined-wrapper" time="8.5">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-layer-ownconf" time="7.1">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-layer-chain" time="6.6">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-py312-layer-disabled" time="7.4">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-image-py312-baseline" time="9.6">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-image-py312-fixed" time="6.3">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-image-py313-baseline" time="6.6">
+<system-out>hybrid=classical/X25519 pqonly=FAIL mtls=classical/X25519 eccert=classical/X25519 tls12=classical/X25519</system-out></testcase>
+<testcase classname="python.lambda" name="py-lambda-image-py313-fixed" time="7.0">
+<system-out>hybrid=PQ/X25519MLKEM768 pqonly=PQ/X25519MLKEM768 mtls=PQ/X25519MLKEM768 eccert=PQ/X25519MLKEM768 tls12=classical/X25519</system-out></testcase>
+</testsuite>
+</testsuites>

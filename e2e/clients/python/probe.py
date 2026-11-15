@@ -5,7 +5,7 @@ Targets (observer listeners): hybrid, pqonly, mtls, eccert, tls12. For each it r
 of the handshake (TLS version, negotiated group, pq) or the client-side error.
 
 Client stack: urllib3 when importable (requests/boto3 path, which the legacy-Python layer shim patches),
-else stdlib http.client. Trust: the test CA only (custom-CA case). mTLS: client.crt/client.key.
+else stdlib http.client; PQC_PY_STACK=stdlib forces http.client. Trust: the test CA only (custom-CA case). mTLS: client.crt/client.key.
 
 Every result is also printed as one JSON line {"event":"tls_handshake",...} - the detection pipeline
 (CloudWatch Logs filter) keys on that line.
@@ -19,6 +19,7 @@ import time
 
 TARGETS = {"hybrid": 8443, "pqonly": 8444, "mtls": 8445, "eccert": 8446, "tls12": 8447}
 HERE = os.path.dirname(os.path.abspath(__file__))
+_FALLBACK = None
 
 
 def _certs_dir():
@@ -41,6 +42,8 @@ def _fetch(host, name, port, case_id, certs):
     path = "/probe?id=%s" % case_id
     cert = (os.path.join(certs, "client.crt"), os.path.join(certs, "client.key")) if name == "mtls" else None
     try:
+        if os.environ.get("PQC_PY_STACK") == "stdlib":
+            raise ImportError("PQC_PY_STACK=stdlib")
         import urllib3  # noqa: F401  (requests / boto3 stack)
         kw = {"ca_certs": os.path.join(certs, "ca.crt"), "cert_reqs": "CERT_REQUIRED", "retries": False,
               "timeout": urllib3.Timeout(connect=5, read=10)}
@@ -49,14 +52,18 @@ def _fetch(host, name, port, case_id, certs):
         pool = urllib3.HTTPSConnectionPool(host, port, **kw)
         r = pool.request("GET", path)
         return json.loads(r.data), "urllib3-" + urllib3.__version__
-    except ImportError:
+    except ImportError as e:
+        if os.environ.get("PQC_PY_STRICT") == "1":  # behave like an app: no silent fallback
+            raise
+        global _FALLBACK
+        _FALLBACK = "%s: %s" % (type(e).__name__, e)
         import http.client
         ctx = ssl.create_default_context(cafile=os.path.join(certs, "ca.crt"))
         if cert:
             ctx.load_cert_chain(*cert)
         c = http.client.HTTPSConnection(host, port, context=ctx, timeout=10)
         c.request("GET", path)
-        return json.loads(c.getresponse().read()), "http.client"
+        return json.loads(c.getresponse().read()), "http.client" + (" (urllib3 unavailable: %s)" % _FALLBACK[:200] if _FALLBACK else "")
 
 
 def run(case_id=None, targets=None):
@@ -80,6 +87,8 @@ def run(case_id=None, targets=None):
         except Exception as e:  # handshake failure etc. - a result, not a crash
             res = {"ok": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
         res["ms"] = int((time.time() - t0) * 1000)
+        # string field for log filters: CloudWatch {$.pq_status = "classical"} (LocalStack lacks boolean JSON filters)
+        res["pq_status"] = "failed" if not res["ok"] else ("pq" if res.get("pq") else "classical")
         out["results"][name] = res
         print(json.dumps(dict(event="tls_handshake", case_id=case_id, lang="python", runtime=out["runtime"],
                               compute=out["compute"], mode=out["mode"], target=name, **res)), flush=True)
