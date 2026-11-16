@@ -11,7 +11,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | [PQC-Detection-and-Remediation.pdf](PQC-Detection-and-Remediation.pdf) | All 22 sections: Overview, Runbook, Go, Python, Node.js, Java, .NET, twelve infrastructure sections, Enforcement and guardrails, Configuration file index |
 | [PQC-Detection-and-Remediation.docx](PQC-Detection-and-Remediation.docx) | Same content in Word; import into Google Docs with Drive > Upload, then Open with Google Docs |
 | [PQC-Detection-and-Remediation.html](PQC-Detection-and-Remediation.html) | Same content as one HTML page |
-| [PQC-Summary.pptx](PQC-Summary.pptx) | 35-slide summary: problem, status by language, three detail slides per language (what decides PQ, versions and compute types, pitfalls and e2e evidence), existing keystores, ALB/NLB policy and the tested ALB-to-container leg, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
+| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 35-slide summary (PowerPoint and PDF): problem, status by language, three detail slides per language (what decides PQ, versions and compute types, pitfalls and e2e evidence), existing keystores, ALB/NLB policy and the tested ALB-to-container leg, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
 
 ## End-to-end verification (2026-11-15)
 
@@ -34,6 +34,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | `tests/lambda/` | The 2026-11-12 Lambda runtime matrix (Runtime Interface Emulator) |
 | `e2e/` | End-to-end suite on LocalStack: probes per language, observer, runner, cases, `pq-egress` extension, results ([README](e2e/README.md), [RUNNING](e2e/RUNNING.md), [CONTRACT](e2e/CONTRACT.md)) |
 | `build/build.sh` | Rebuilds HTML, PDF and DOCX from `src/` (Docker pandoc pinned by digest, Chrome headless) |
+| `build/deck.sh` | Rebuilds the deck as PPTX (pandoc) and PDF (LibreOffice) from `src/deck/summary-deck.md` |
 | `build/extract-configs.py` | Regenerates `configs/` from `src/` |
 | `artifacts/` | Review artifacts kept with the project, each as HTML and DOCX: the rollout plan (`PQC-TLS-rollout-plan.*`, source `.md` exported from the [Claude Doc](https://claude.ai/artifact/7uLzuHcyCSJ4WN13MkxBt8)) and the end-to-end findings page (`PQC-e2e-findings.*`). Rebuild with `bash artifacts/build.sh` |
 
@@ -46,7 +47,7 @@ bash build/build.sh
 python3 -I build/extract-configs.py .
 ```
 
-PPTX: `docker run --rm -v "$PWD":/d -w /d pandoc/core@sha256:5b8a29d9b70d5d8ca766e5d1dcfc41916b23ab79276a80527be70516110f4c1e src/deck/summary-deck.md -t pptx --slide-level=2 --reference-doc=build/deck-reference.pptx -o PQC-Summary.pptx`
+Deck (PPTX and PDF): `bash build/deck.sh`
 
 ## Earlier files
 
