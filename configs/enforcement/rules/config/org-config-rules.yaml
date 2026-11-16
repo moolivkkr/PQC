@@ -60,7 +60,7 @@ Resources:
         PolicyText: |
           let blocked = [ "nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6" ]
           let needs_conf = [ "python3.12", "python3.13", "python3.14", "nodejs22.x", "nodejs24.x", "dotnet8", "dotnet10" ]
-          let needs_agent = [ "java8.al2", "java11", "java17", "java21" ]
+          let needs_agent = [ "java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21" ]
           let pq_confs = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
           rule lambda_runtime_has_pq_path when configuration.packageType != "Image" {
             configuration.runtime not in %blocked

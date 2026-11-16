@@ -1,0 +1,6 @@
+# 2026-11-16: Envoy default ecdh_curves (no ecdh_curves set on either side), envoy-default-curves.yaml
+# origin: openssl s_server -groups X25519MLKEM768 -tls1_3 (OpenSSL 3.5, debian:trixie-slim)
+# envoyproxy/envoy:v1.40-latest sha256:8de97e654644827d62afdbf7e1d3dc9fee01a8690d410dd1c63a30dc6b6cecbb
+== envoy v1.40-latest: 1.40.2
+upstream via envoy (no ecdh_curves) to PQ-only origin: HTTP 200
+downstream PQ-only client (openssl s_client -groups X25519MLKEM768 -tls1_3): Negotiated TLS1.3 group: X25519MLKEM768

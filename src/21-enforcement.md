@@ -70,7 +70,7 @@ API Gateway limits: HTTP and WebSocket APIs support only `TLS_1_2`, so no SCP ca
 | [cloudfront-ssl-policy-check](https://docs.aws.amazon.com/config/latest/developerguide/cloudfront-ssl-policy-check.html) | `securityPolicies` = TLSv1.2\_2021, TLSv1.2\_2025, TLSv1.3\_2025 | us-east-1 only; viewer PQ is on by default, origin leg is classical |
 | [lambda-function-settings-check](https://docs.aws.amazon.com/config/latest/developerguide/lambda-function-settings-check.html) | Not used | It also checks `memorySize` (default 128) and `timeout` (default 3), so most functions fail; use the Guard rule below |
 
-**Custom Guard rule** (`lambda-pq-tls.guard`, Config custom policy rule, runtime `guard-2.x.x`): blocks nodejs18.x/20.x, python3.8, java8, dotnet6; python3.12+, nodejs22+ and dotnet8+ need `OPENSSL_CONF` set to `/var/task/pq-tls/openssl-pq*.cnf` (bundled) or `/opt/pq-tls/openssl-pq*.cnf` (layer), or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`; java8.al2 to java21 need the agent in `JAVA_TOOL_OPTIONS` or the wrapper; GODEBUG must not contain `tlsmlkem=0`. Image functions are skipped (the pipeline checks the image). Before enforcing, pull one real configuration item (`aws configservice get-resource-config-history --resource-type AWS::Lambda::Function --resource-id <name> --limit 1`) and confirm the variables sit under `configuration.environment.variables`; I could not confirm that path from docs.
+**Custom Guard rule** (`lambda-pq-tls.guard`, Config custom policy rule, runtime `guard-2.x.x`): blocks nodejs18.x/20.x, python3.8, java8, dotnet6; python3.12+, nodejs22+ and dotnet8+ need `OPENSSL_CONF` set to `/var/task/pq-tls/openssl-pq*.cnf` (bundled) or `/opt/pq-tls/openssl-pq*.cnf` (layer), or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`; java8.al2/al2023 to java21, including the `.al2023` variants of 11 and 17, need the agent in `JAVA_TOOL_OPTIONS` or the wrapper; GODEBUG must not contain `tlsmlkem=0`. Image functions are skipped (the pipeline checks the image). Before enforcing, pull one real configuration item (`aws configservice get-resource-config-history --resource-type AWS::Lambda::Function --resource-id <name> --limit 1`) and confirm the variables sit under `configuration.environment.variables`; I could not confirm that path from docs.
 
 **AWS PQC Readiness Scanner (May 2026).** AWS Security Blog, 2026-05-14, [Automating post-quantum cryptography readiness using AWS Config](https://aws.amazon.com/blogs/security/automating-post-quantum-cryptography-readiness-using-aws-config/); code at [aws-samples/sample-PQC-Readiness-using-AWS-Config](https://github.com/aws-samples/sample-PQC-Readiness-using-AWS-Config). It is a sample, not a managed rule. Four custom rules on two Lambda functions (`pqc-elb-pqc-compliance-*`, `pqc-elb-legacy-tls-*`, `pqc-apigateway-pqc-compliance-*`, `pqc-apigateway-legacy-tls-*`) cover ALB/NLB HTTPS/TLS listeners and REST (Regional, private), HTTP and WebSocket APIs. Tier 1 = TLS 1.3 only with PQ; Tier 2 = TLS 1.2 + 1.3 with PQ; Tier 3 = no PQ (high priority). CloudFront and Classic LB are out of scope. Org deploy: StackSet `pqc-readiness-lambda-functions`, then `aws configservice put-organization-conformance-pack --organization-conformance-pack-name pqc-legacy-tls-compliance` with `conformance-packs/pqc-legacy-tls-conformance-pack.yaml`. Run it next to the managed rules: it adds execute-api endpoints and the tier view. Documented (blog); not deployed here.
 
@@ -88,7 +88,7 @@ Run every check on the PR (fast feedback) and again in the deploy job (the gate)
 | --- | --- | --- |
 | PQ-L1 | Lambda, SAM function, SAM `Globals.Function.Runtime` | Runtime not nodejs18.x/20.x, python3.8, java8, dotnet6 |
 | PQ-L2 | Lambda python3.12-3.14, nodejs22/24, dotnet8/10 | `OPENSSL_CONF` = `/var/task/pq-tls/` or `/opt/pq-tls/` `openssl-pq*.cnf`, or `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` |
-| PQ-L3 | Lambda java8.al2, java11/17/21 | `JAVA_TOOL_OPTIONS` loads `pq-tls-agent.jar`, or the wrapper |
+| PQ-L3 | Lambda java8.al2, java8.al2023, java11, java11.al2023, java17, java17.al2023, java21 | `JAVA_TOOL_OPTIONS` loads `pq-tls-agent.jar`, or the wrapper |
 | PQ-L4 (warn) | Lambda python3.9-3.11 | Wrapper set (shim covers urllib3/botocore only) |
 | PQ-L5 | Lambda | GODEBUG has no `tlsmlkem=0` |
 | PQ-E1-E3 | ECS task definition | No GODEBUG `tlsmlkem=0`; `jdk.tls.namedGroups` includes X25519MLKEM768; no `OPENSSL_CONF=/dev/null` |
@@ -427,7 +427,7 @@ Resources:
         PolicyText: |
           let blocked = [ "nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6" ]
           let needs_conf = [ "python3.12", "python3.13", "python3.14", "nodejs22.x", "nodejs24.x", "dotnet8", "dotnet10" ]
-          let needs_agent = [ "java8.al2", "java11", "java17", "java21" ]
+          let needs_agent = [ "java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21" ]
           let pq_confs = [ "/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf" ]
           rule lambda_runtime_has_pq_path when configuration.packageType != "Image" {
             configuration.runtime not in %blocked
@@ -489,7 +489,7 @@ let lambda_runtimes_conf = [
   "dotnet8", "dotnet10"
 ]
 # JDK < 25: PQ needs the Bouncy Castle JSSE agent.
-let lambda_runtimes_java_agent = [ "java8.al2", "java11", "java17", "java21" ]
+let lambda_runtimes_java_agent = [ "java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21" ]
 # OpenSSL 1.1.1 Python: shim covers urllib3/botocore only (partial). Warn-level rule.
 let lambda_runtimes_py_legacy = [ "python3.9", "python3.10", "python3.11" ]
 
@@ -739,7 +739,7 @@ blocked_runtimes := {"nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6"
 
 conf_runtimes := {"python3.12", "python3.13", "python3.14", "nodejs22.x", "nodejs24.x", "dotnet8", "dotnet10"}
 
-agent_runtimes := {"java8.al2", "java11", "java17", "java21"}
+agent_runtimes := {"java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21"}
 
 pq_confs := {"/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf"}
 

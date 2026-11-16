@@ -6,7 +6,7 @@ Resources:
     Properties:
       LayerName: pq-tls
       ContentUri: build/pq-tls-layer.zip
-      CompatibleRuntimes: [java8.al2023, java11, java17, java21, python3.12, python3.13, nodejs22.x]
+      CompatibleRuntimes: [java8.al2, java8.al2023, java11, java11.al2023, java17, java17.al2023, java21, python3.12, python3.13, nodejs22.x]
       CompatibleArchitectures: [arm64, x86_64]
   Fn:
     Type: AWS::Serverless::Function

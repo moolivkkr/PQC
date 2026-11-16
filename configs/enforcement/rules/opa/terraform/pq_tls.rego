@@ -29,7 +29,7 @@ blocked_runtimes := {"nodejs18.x", "nodejs20.x", "python3.8", "java8", "dotnet6"
 
 conf_runtimes := {"python3.12", "python3.13", "python3.14", "nodejs22.x", "nodejs24.x", "dotnet8", "dotnet10"}
 
-agent_runtimes := {"java8.al2", "java11", "java17", "java21"}
+agent_runtimes := {"java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21"}
 
 pq_confs := {"/opt/pq-tls/openssl-pq.cnf", "/opt/pq-tls/openssl-pq-node.cnf", "/var/task/pq-tls/openssl-pq.cnf", "/var/task/pq-tls/openssl-pq-node.cnf"}
 

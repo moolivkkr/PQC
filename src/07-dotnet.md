@@ -60,7 +60,7 @@ Tested 2026-11-14 on arm64: a .NET client (SslStream and HttpClient) against a P
 | `10.0-resolute-chiseled` | Ubuntu 26.04, 3.5 | Yes | Yes | None (glibc, distroless) |
 | `amazonlinux:2023` + `dnf install aspnetcore-runtime-8.0` | AL2023.12, 3.5.8 | No | No | Config file or `DEFAULT:PQ` |
 | Same + `OPENSSL_CONF=openssl-pq.cnf` | AL2023.12, 3.5.8 | Yes | Yes |  |
-| Same + `update-crypto-policies --set DEFAULT:PQ` | AL2023.12, 3.5.8 | Yes | Not run |  |
+| Same + `update-crypto-policies --set DEFAULT:PQ` | AL2023.12, 3.5.8 | Yes | Yes (e2e target leg, `srv-dotnet-fargate-al2023-net8-policy`) |  |
 
 All rows Tested (.NET 8.0.33/8.0.34 and 10.0.15). The `-distroless` Azure Linux variant wasn't run; it shares the 3.0 base. As of 2026-11-14 there is no .NET 8 Ubuntu 26.04 tag and no Debian 13 tag for either version (checked with `docker manifest inspect`); for .NET 8 on glibc use AL2023 or move to .NET 10.
 

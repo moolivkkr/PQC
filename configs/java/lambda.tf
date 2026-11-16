@@ -20,7 +20,7 @@ resource "aws_lambda_layer_version" "pq_tls" {
   layer_name               = "pq-tls"
   filename                 = "build/pq-tls-layer.zip"
   source_code_hash         = filebase64sha256("build/pq-tls-layer.zip")
-  compatible_runtimes      = ["java8.al2023", "java11", "java17", "java21"]
+  compatible_runtimes      = ["java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21"]
   compatible_architectures = ["arm64", "x86_64"]
 }
 

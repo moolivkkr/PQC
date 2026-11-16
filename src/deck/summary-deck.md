@@ -243,6 +243,8 @@ subtitle: Detection and remediation summary, 2026-11-14 (end-to-end verified 202
 - **GnuTLS tools** (wget, git on Debian/Ubuntu): no ML-KEM in any Debian or Ubuntu GnuTLS yet; they fail against PQ-only servers. Use OpenSSL-linked tools. SSH is already PQ (OpenSSH 10).
 - **Security Hub ELB.17** passes six non-PQ policies. Use the org Config rule `pq-tls-elbv2-listener-policy` with a PQ-only list, plus the SCP.
 - **Kyverno 1.20** dropped legacy ClusterPolicy: admission checks are written as ValidatingPolicy (CEL).
+- **Guardrail PQ-L2** rejected the guide's own bundled `/var/task/pq-tls/` path; all four rule sets now accept it (retested).
+- **Envoy 1.40+** offers ML-KEM by default (Tested 1.40.2); older Envoy still needs `ecdh_curves`.
 
 # Rollout
 
@@ -257,7 +259,7 @@ Canary first; rollback is removing the variable or file in the next release.
 
 ## Open items
 
-- Node.js 18/20 and Python 3.9–3.11 on Lambda: upgrade before AWS block-update dates. Interim: the `pq-egress` extension (Tested in e2e; the app calls it over loopback).
+- Lambda nodejs18/20, python3.9–3.11, provided.al2, java8.al2/11/17 (AL2) and dotnet8: deprecated or deprecating; AWS blocks updates from 2027-08-31. Upgrade first. Interim: the `pq-egress` extension (Tested in e2e).
 - Lambda and Fargate outbound to non-AWS services: no AWS log shows the group.
 - API Gateway egress, CloudFront origin leg, IoT Core: classical by AWS design; record as exceptions.
 - IaC, guardrails and the e2e results not yet confirmed on a real AWS account: validate in a sandbox, start in audit mode.

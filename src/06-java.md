@@ -15,7 +15,7 @@ Three exceptions bypass JSSE and bring their own TLS library, so the JDK version
 
 - **Netty with `netty-tcnative-boringssl-static`** (`SslProvider.OPENSSL`): BoringSSL decides. Tested PQ by default on JDK 17 and 21.
 - **AWS SDK for Java v2 CRT HTTP client** (`AwsCrtHttpClient`): s2n-tls on Linux decides. PQ by default from SDK 2.35.11 ([AWS SDKs and Tools guide](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html)).
-- **Tomcat with the OpenSSL implementation** (Tomcat Native or the FFM OpenSSL connector): the linked OpenSSL decides (not tested here; see the Web servers and proxies tab for OpenSSL 3.5 group rules).
+- **Tomcat with the OpenSSL implementation** (Tomcat Native or the FFM OpenSSL connector): the linked OpenSSL decides (the Web servers and proxies tab tested Tomcat 11.0.29's OpenSSL connector on OpenSSL 3.5.5: PQ, set with `<OpenSSLConfCmd name="Groups">`).
 
 Oracle has said it will bring PQC to its LTS releases 21, 17, 11 and 8 ([Oracle Java blog, 2026-08](https://blogs.oracle.com/java/post-quantum-cryptography-in-long-term-support-jdk-releases)); secondary reports put 21/17 in H1 2027 and 11/8 in H2 2027 (Claimed, not shipped). Remove the kit when your vendor ships it.
 
@@ -26,7 +26,7 @@ Oracle has said it will bring PQC to its LTS releases 21, 17, 11 and 8 ([Oracle 
 | JDK 25.0.5+ (Corretto, Temurin) | SunJSSE | Yes on every compute type (Lambda `java25`, `lambda/java:25`, `amazoncorretto:25`, `eclipse-temurin:25`, Corretto 25 on AL2023) | Yes (Tomcat, Jetty, `HttpsServer`, Netty JDK provider) | `-Djdk.tls.namedGroups`, `SSLParameters.setNamedGroups` (JDK 20+), Tomcat `SSLHostConfig groups` | Depends on the FIPS provider in use; not tested | Upgrade. No other change. Optional: `ssl.KeyManagerFactory.algorithm=PKIX` if one keystore holds several certificates for SNI (see case C) | Tested (client, server, keystores, mTLS); Documented ([25.0.5 notes](https://builds.shipilev.net/backports-monitor/release-notes-25.0.5.txt)) |
 | JDK 21 (21.0.13) | SunJSSE | No (Lambda, container, EC2) | No | `jdk.tls.namedGroups` (no ML-KEM names) | Not tested | pq-tls kit v2 (agent + `pq-tls.security`), or upgrade to 25 | Tested |
 | JDK 17 (17.0.21) | SunJSSE | No | No | Same | Not tested | Kit v2, or upgrade | Tested |
-| JDK 11 | SunJSSE | No | No | Same | Not tested | Kit v2 | Tested on Lambda `java11` (kit v1, client); server and mTLS not tested |
+| JDK 11 | SunJSSE | No | No | Same | Not tested | Kit v2 | Tested: e2e Lambda `java11` zip, layer and extension, `lambda/java:11` image, Fargate `amazoncorretto:11`, EC2 AL2 and AL2023 (client, including mutual TLS; `java-*-j11-*`, `java-*-corretto11-*`). Server not tested on 11 |
 | JDK 8 | SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only (plain Corretto 8u512 offers TLS 1.3) | No | No | Same | Not tested | Kit v2 + `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Tested: e2e Lambda `java8.al2` zip/layer, `lambda/java:8.al2023` image, Fargate and ECS-EC2 `amazoncorretto:8` (8u512, HttpsURLConnection, mTLS); server: e2e `srv-java-fargate-corretto8-agent` (HttpsServer, kit v2) |
 | Any JDK + Netty tcnative-boringssl-static 2.0.85 | BoringSSL | Yes | Yes | `OpenSslContextOption.GROUPS`; also reads `jdk.tls.namedGroups` | n/a | Nothing (keep it) | Tested |
 | Any JDK + AWS SDK v2 CRT client (2.35.11+) | s2n-tls | Yes, AWS API calls only | n/a | n/a | Not tested | Nothing; CRT before 2.35.11: upgrade | Tested (2.59.1); Documented |
@@ -40,7 +40,7 @@ All "Tested" rows ran on 2026-11-14 in containers (arm64) against an OpenSSL 3.5
 | 25.0.5+ (Corretto, Temurin) | PQ: runtime `java25` | PQ: `lambda/java:25` | PQ: `amazoncorretto:25`, `eclipse-temurin:25` | PQ: Corretto 25 package | Tested (client and server); Documented ([25.0.5 release notes](https://builds.shipilev.net/backports-monitor/release-notes-25.0.5.txt)) |
 | 21 (21.0.13) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static `java.security` gives PQ | Same as containers | Tested |
 | 17 (17.0.21) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static gives PQ | Same as containers | Tested |
-| 11 | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Agent gives PQ | Same as containers | Tested on Lambda `java11` (kit); containers Unverified |
+| 11 | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Agent gives PQ | Same as containers | Tested (e2e `java-lambda-j11-*`, `java-lambda-image-j11-*`, `java-fargate-corretto11-*`, `java-ec2-*-j11-*`) |
 | 8 | Agent + `jdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `assumeOriginalHostName=true` gives PQ. Without the host-name flag every `HttpsURLConnection` handshake fails | Same (protocols flag not needed off Lambda) | Same | Same | Tested (e2e `java-*-j8-*`, `java-fargate-corretto8-*`) |
 
 ### Decision guide
@@ -436,7 +436,7 @@ Netty server code: see "Netty server (gRPC-Java, Reactor Netty, Vert.x)" under c
 | Compute | JDK 25.0.5+ | JDK 8 to 21: kit v2 | JDK 11 to 21: static `java.security` |
 | --- | --- | --- | --- |
 | Lambda zip | Runtime `java25` | `pq-tls/` at the zip root; `JAVA_TOOL_OPTIONS=-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar` | Doesn't work: the Lambda bootstrap class path is `/var/runtime/lib` only (Tested, kit) |
-| Lambda layer | Not needed | Layer v2 (`/opt/pq-tls/{wrapper,pq-tls-agent.jar,pq-tls.security}`, `/opt/java/lib/*.jar`) + `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`. The v2 wrapper adds the `pq-tls.security` flag unless the function passes its own `java.security.properties` (Tested in a container with `AWS_EXECUTION_ENV=AWS_Lambda_java21`; not on Lambda) | Doesn't work |
+| Lambda layer | Not needed | Layer v2 (`/opt/pq-tls/{wrapper,pq-tls-agent.jar,pq-tls.security}`, `/opt/java/lib/*.jar`) + `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`. The v2 wrapper adds the `pq-tls.security` flag unless the function passes its own `java.security.properties` (Tested in the LocalStack e2e suite on `java8.al2`, `java11`, `java17`, `java21` and `java25`, `java-lambda-*-layer*`; not on real AWS) | Doesn't work |
 | Lambda container image | `public.ecr.aws/lambda/java:25` | `COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/` + `ENV JAVA_TOOL_OPTIONS` (both flags) | Not tested |
 | Fargate, ECS, EKS | `amazoncorretto:25`, `eclipse-temurin:25` | `COPY pq-tls/ /opt/pq-tls/` + `ENV JAVA_TOOL_OPTIONS="-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"`, or the same in the task definition or pod spec | `bc-static.security` (now includes the PKIX line) + BC jars on `-cp` (Tested for clients on 17 and 21; the PKIX line in this file was not run separately) |
 | EC2 | Corretto 25 (`dnf install java-25-amazon-corretto-headless`) | systemd drop-in with both flags, or the SSM document | Same file via `ExecStart` |
@@ -921,7 +921,7 @@ final class AwsClients {
 
 ### Lambda
 
-Zip layout (kit v2; java8.al2023, java11, java17, java21):
+Zip layout (kit v2; java8.al2, java8.al2023, java11, java11.al2023, java17, java17.al2023, java21):
 
 ```text
 function.zip
@@ -991,7 +991,7 @@ Resources:
     Properties:
       LayerName: pq-tls
       ContentUri: build/pq-tls-layer.zip
-      CompatibleRuntimes: [java8.al2023, java11, java17, java21, python3.12, python3.13, nodejs22.x]
+      CompatibleRuntimes: [java8.al2, java8.al2023, java11, java11.al2023, java17, java17.al2023, java21, python3.12, python3.13, nodejs22.x]
       CompatibleArchitectures: [arm64, x86_64]
   Fn:
     Type: AWS::Serverless::Function
@@ -1057,7 +1057,7 @@ resource "aws_lambda_layer_version" "pq_tls" {
   layer_name               = "pq-tls"
   filename                 = "build/pq-tls-layer.zip"
   source_code_hash         = filebase64sha256("build/pq-tls-layer.zip")
-  compatible_runtimes      = ["java8.al2023", "java11", "java17", "java21"]
+  compatible_runtimes      = ["java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21"]
   compatible_architectures = ["arm64", "x86_64"]
 }
 

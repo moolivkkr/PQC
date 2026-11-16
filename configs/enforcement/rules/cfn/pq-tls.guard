@@ -37,7 +37,7 @@ let lambda_runtimes_conf = [
   "dotnet8", "dotnet10"
 ]
 # JDK < 25: PQ needs the Bouncy Castle JSSE agent.
-let lambda_runtimes_java_agent = [ "java8.al2", "java11", "java17", "java21" ]
+let lambda_runtimes_java_agent = [ "java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21" ]
 # OpenSSL 1.1.1 Python: shim covers urllib3/botocore only (partial). Warn-level rule.
 let lambda_runtimes_py_legacy = [ "python3.9", "python3.10", "python3.11" ]
 

@@ -1,5 +1,6 @@
 # /etc/envoy/envoy.yaml - standalone Envoy: PQ hybrid downstream (listener) and upstream (cluster) TLS.
-# Envoy default ecdh_curves is X25519, P-256 (no ML-KEM): you must set the list on BOTH sides.
+# Envoy before 1.40 defaults ecdh_curves to X25519, P-256 (no ML-KEM); 1.40+ adds X25519MLKEM768.
+# Set the list on BOTH sides anyway, so every Envoy version in the fleet behaves the same.
 admin:
   address: { socket_address: { address: 0.0.0.0, port_value: 9901 } }
 
