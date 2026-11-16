@@ -1,0 +1,19 @@
+<section id="lbleg" class="light" data-transition="fade">
+<p class="eyebrow">Load balancers</p>
+<h2>The load balancer is only half of the hop</h2>
+<table class="tbl">
+<tr class="h"><th style="width:12%">Container</th><th style="width:30%">No fix: classical</th><th style="width:30%">With the fix: PQ</th><th style="width:28%">No change needed</th></tr>
+<tr class="a"><td><b>Python</b></td><td>AL2023, bookworm</td><td class="ok">OPENSSL_CONF, DEFAULT:PQ</td><td>Trixie</td></tr>
+<tr class="b"><td><b>Node.js</b></td><td>node:20, AL2023 nodejs22</td><td class="ok">Config file or AL2023 policy</td><td>node:24</td></tr>
+<tr class="a"><td><b>Go</b></td><td>1.23, or 1.26 with go 1.23</td><td class="ok">GODEBUG=tlsmlkem=1</td><td>1.26 with go 1.26</td></tr>
+<tr class="b"><td><b>Java</b></td><td>Corretto 8, 21</td><td class="ok">Kit v2 on 8, 17, 21</td><td>Corretto 25.0.5</td></tr>
+<tr class="a"><td><b>.NET</b></td><td>runtime:8.0, AL2023</td><td class="ok">Config file or AL2023 policy</td><td>10.0-alpine, resolute</td></tr>
+</table>
+<p class="note warn"><b>Two policies, two legs.</b> A non-PQ listener policy leaves every client classical, and a classical container keeps the ALB-to-target leg classical. The listener leg needs real AWS: LocalStack ignores the policy.</p>
+<p class="foot">Post-quantum TLS on AWS · 11 · 32 target-leg cases, modelled on LocalStack</p>
+<aside>KEY MESSAGE: Setting a PQ policy on the ALB fixes the client leg only; the container behind it decides the second leg.
+• The ALB re-encrypts to the target. In that hop the ALB is the client and our container is the server, so the container’s TLS library decides.
+• Each row shows the same container failing without the fix and passing with it: 32 cases, all as expected.
+• The newest images need nothing: trixie, node:24, Go 1.26, Corretto 25.0.5, .NET 10 Alpine.
+• Caveat: LocalStack doesn’t apply listener policies, so the listener leg is in the Phase 0 sandbox test on real AWS.</aside>
+</section>

@@ -1,0 +1,21 @@
+<section id="iterations" class="alt" data-transition="fade">
+<p class="eyebrow">How we got here</p>
+<h2>Seven rounds of testing behind the guide</h2>
+<table class="tbl">
+<tr class="h"><th style="width:5%">#</th><th style="width:25%">Round</th><th style="width:34%">What we ran</th><th style="width:36%">What it proved</th></tr>
+<tr class="a"><td>1</td><td><b>Lambda runtime matrix</b></td><td>Every runtime in AWS’s own images</td><td>Python, Node.js, .NET, Java below 25: classical</td></tr>
+<tr class="b"><td>2</td><td><b>Per-language deep tests</b></td><td>Official images, versions, libraries</td><td>A fix per version; Java kit v1 broke EC certificates</td></tr>
+<tr class="a"><td>3</td><td><b>Infrastructure</b></td><td>Twelve components: ELB, mesh, proxies</td><td>Envoy 1.40+, Linkerd 2.19+ PQ by default</td></tr>
+<tr class="b"><td>4</td><td><b>Guardrails</b></td><td>cfn-guard, OPA, Checkov, Config, SCP</td><td>Rules catch non-PQ settings in unit tests</td></tr>
+<tr class="a"><td>5</td><td><b>End to end</b></td><td>437 real workloads on LocalStack</td><td>Every fix works; 6 errors in the guide</td></tr>
+<tr class="b"><td>6</td><td><b>Load balancer target</b></td><td>32 containers as HTTPS targets</td><td>Fixed targets PQ, certificates unchanged</td></tr>
+<tr class="a"><td>7</td><td><b>Document review</b></td><td>Every claim against the results</td><td>Guardrail path, Envoy default, Java runtimes</td></tr>
+</table>
+<p class="foot">Post-quantum TLS on AWS · 05 · Tested 12–16 November 2026</p>
+<aside>KEY MESSAGE: Each round tested what the previous one only claimed, and failing tests shaped the guide.
+• Round 1 was the surprise: AWS’s current Lambda runtimes are classical for every language except Go and Java 25.
+• Round 2 found the first real defect: our first Java kit broke EC server certificates. Version 2 fixed it.
+• Round 5 is the big one: 437 real workloads on LocalStack, graded against the guide. It found six errors, next slide.
+• Round 7, this week: every claim checked against the results. It fixed a guardrail that rejected our own bundled config, confirmed Envoy 1.40 is PQ by default, and added the AL2023 Java runtimes.
+• Everything is committed with its test, so any result can be re-run.</aside>
+</section>

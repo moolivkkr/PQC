@@ -1,0 +1,29 @@
+<section id="results" class="light" data-transition="fade">
+<p class="eyebrow">The outcome</p>
+<h2>What the tested fix delivers</h2>
+<div class="grid2">
+<div class="stat" style="--i:0">
+<p class="num">469 / 469</p>
+<p class="what">end-to-end cases pass: 437 clients on Lambda, Fargate, ECS on EC2 and EC2, plus 32 load balancer targets</p>
+</div>
+<div class="stat" style="--i:1">
+<p class="num">0 certificates</p>
+<p class="what">changed: own server certificates, private CA trust and mutual TLS keep working with PQ on</p>
+</div>
+<div class="stat" style="--i:2">
+<p class="num">6 errors</p>
+<p class="what">in the guide caught by testing before anyone shipped them, fixed and kept as regression cases</p>
+</div>
+<div class="stat" style="--i:3">
+<p class="num">11 of 12</p>
+<p class="what">detection checks find every classical handshake; the miss was a log line LocalStack dropped</p>
+</div>
+</div>
+<p class="foot">Post-quantum TLS on AWS · 04 · LocalStack Pro on arm64; real AWS not yet tested (slide 14)</p>
+<aside>KEY MESSAGE: The fix works on every language and compute type we run, it doesn’t touch certificates, and testing made the guide right.
+• 469 of 469: five languages, four compute types, Lambda zip, layer, extension and container image, plus the load balancer to container leg.
+• Zero certificate changes, tested with our own certificates, private CAs and mutual TLS.
+• Six errors in the written guide were found by the tests, not by a team in production. Each is now a regression case.
+• Detection works: 11 of 12 checks; the one miss was LocalStack dropping a log line under load, not a gap in the method.
+• Get ahead of it: all of this ran on LocalStack. Real AWS is Phase 0 of the plan, slide 14.</aside>
+</section>

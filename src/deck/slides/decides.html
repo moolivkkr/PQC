@@ -1,0 +1,41 @@
+<section id="decides" class="alt" data-transition="fade">
+<div class="zone" style="left:640px;top:300px;width:600px;height:500px"></div>
+<p class="eyebrow">Where PQ is decided</p>
+<h2>Whoever starts each TLS hop decides</h2>
+<p class="zone-label" style="left:672px;top:316px;width:540px">Our workloads · the language fix decides</p>
+<div class="box" style="left:128px;top:300px;width:400px;--i:0">
+<h3>Internet clients</h3>
+<p class="body">Browsers, partners, apps</p>
+</div>
+<div class="box" style="left:128px;top:520px;width:400px;--i:1">
+<h3>ALB / NLB listener</h3>
+<p class="body">Its security policy decides the client leg</p>
+</div>
+<div class="box" style="left:672px;top:364px;width:536px;--i:2">
+<h3>Containers</h3>
+<p class="body">ECS, EKS and EC2: the language runtime decides, also as an ALB target</p>
+</div>
+<div class="box" style="left:672px;top:600px;width:536px;--i:3">
+<h3>Lambda and Fargate</h3>
+<p class="body">Runtime plus OPENSSL_CONF or the pq-tls layer</p>
+</div>
+<div class="box" style="left:1352px;top:300px;width:440px;--i:4">
+<h3>AWS APIs</h3>
+<p class="body">KMS, STS, Secrets Manager, ACM, IAM: PQ today</p>
+</div>
+<div class="box warnbox" style="left:1352px;top:560px;width:440px;--i:5">
+<h3>Non-AWS services</h3>
+<p class="body">PQ only if the peer has ML-KEM; no AWS log shows it</p>
+</div>
+<x-connector x1="328" y1="430" x2="328" y2="520" head="end" style="color:#1F5F94;border-width:4px"></x-connector>
+<x-connector x1="528" y1="610" x2="672" y2="460" route="elbow" head="end" style="color:#1F5F94;border-width:4px"></x-connector>
+<x-connector x1="1240" y1="400" x2="1352" y2="400" head="end" style="color:#1F5F94;border-width:4px"></x-connector>
+<x-connector x1="1240" y1="660" x2="1352" y2="660" head="end" style="color:#D2652A;border-width:3px;border-style:dashed"></x-connector>
+<p class="legend" style="left:128px;top:836px;width:1664px"><span style="color:#1F5F94"><b>Solid:</b></span> PQ when both ends support it, and a log shows it. <span style="color:#A84A1C"><b>Dashed:</b></span> the blind spot, proven only by inventory or a sensor.</p>
+<p class="foot">Post-quantum TLS on AWS · 07</p>
+<aside>KEY MESSAGE: PQ is decided by the TLS library of whoever starts each hop, not by the compute type and not by the certificate.
+• Inbound: the load balancer’s security policy decides the client leg. Behind it, the container’s language runtime decides the target leg.
+• Our own code, on any compute: the language runtime and its config decide. That’s where almost all of the work is.
+• Calls to AWS APIs are PQ today from a fixed client, and CloudTrail records the key exchange, so we can prove them.
+• The orange dashed line is the blind spot: calls to non-AWS services from Lambda and Fargate. No AWS log shows the group, so we carry them on inventory until a sensor or app-side log exists.</aside>
+</section>

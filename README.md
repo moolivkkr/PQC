@@ -11,7 +11,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | [PQC-Detection-and-Remediation.pdf](PQC-Detection-and-Remediation.pdf) | All 22 sections: Overview, Runbook, Go, Python, Node.js, Java, .NET, twelve infrastructure sections, Enforcement and guardrails, Configuration file index |
 | [PQC-Detection-and-Remediation.docx](PQC-Detection-and-Remediation.docx) | Same content in Word; import into Google Docs with Drive > Upload, then Open with Google Docs |
 | [PQC-Detection-and-Remediation.html](PQC-Detection-and-Remediation.html) | Same content as one HTML page |
-| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 35-slide summary (PowerPoint and PDF): problem, status by language, three detail slides per language (what decides PQ, versions and compute types, pitfalls and e2e evidence), existing keystores, ALB/NLB policy and the tested ALB-to-container leg, end-to-end verification and the corrections it made, infrastructure, resolved risks, rollout, open items |
+| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 17-slide deck (PowerPoint and PDF), in the Secure Telemetry Tokenization deck's format: why now, baseline and target, tested outcome, seven test rounds and six corrections, what decides PQ, the fix per language, design choices, the AWS runtime deadline, load balancer leg, detection, infrastructure, scorecard, rollout, the ask. Speaker notes on every slide |
 
 ## End-to-end verification (2026-11-15)
 
@@ -27,14 +27,14 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 |------|------------|
 | `src/*.md` | **Source of truth.** One markdown file per section; edit these, then rebuild |
 | `src/html-infra/` | The twelve infrastructure child sections, as exported HTML (2026-11-14) |
-| `src/deck/summary-deck.md` | Source of the slide deck |
+| `src/deck/` | Source of the slide deck: `deck.json`, `deck.css` and one HTML file per slide (claude.ai Slides format) |
 | `configs/<section>/` | Every file listed in the Configuration file index, extracted from the sections' "Full configuration files". `configs/MANIFEST.md` lists them |
 | `kit/java-v2/` | Java pq-tls kit v2 sources: agent (`src/`), `pq-tls/pq-tls.security`, Lambda layer wrapper (covers Python, Node.js, Java and .NET runtimes), `ci/java-pq-check.sh`. Build the jar from source; Bouncy Castle 1.87 jars are not committed |
 | `tests/deep/<topic>/` | Test scripts, harnesses and outputs behind the Tested labels, per language and component |
 | `tests/lambda/` | The 2026-11-12 Lambda runtime matrix (Runtime Interface Emulator) |
 | `e2e/` | End-to-end suite on LocalStack: probes per language, observer, runner, cases, `pq-egress` extension, results ([README](e2e/README.md), [RUNNING](e2e/RUNNING.md), [CONTRACT](e2e/CONTRACT.md)) |
 | `build/build.sh` | Rebuilds HTML, PDF and DOCX from `src/` (Docker pandoc pinned by digest, Chrome headless) |
-| `build/deck.sh` | Rebuilds the deck as PPTX (pandoc) and PDF (LibreOffice) from `src/deck/summary-deck.md` |
+| `build/deck.sh` | Rebuilds the deck from `src/deck/`: checks every slide for overflow, prints the PDF with headless Chrome, and builds the PPTX (one image per slide plus speaker notes). Fonts are vendored in `build/fonts/` (OFL) |
 | `build/extract-configs.py` | Regenerates `configs/` from `src/` |
 | `artifacts/` | Review artifacts kept with the project, each as HTML and DOCX: the rollout plan (`PQC-TLS-rollout-plan.*`, source `.md` exported from the [Claude Doc](https://claude.ai/artifact/7uLzuHcyCSJ4WN13MkxBt8)) and the end-to-end findings page (`PQC-e2e-findings.*`). Rebuild with `bash artifacts/build.sh` |
 

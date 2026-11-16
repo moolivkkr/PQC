@@ -4,3 +4,5 @@ build/chrome-profile/
 build/tabs/
 build/pqc-combined.html
 build/pqc-for-docx.html
+build/deck.html
+build/deck-notes.json

@@ -1,0 +1,20 @@
+<section id="deadline" class="light" data-transition="fade">
+<p class="eyebrow">The one fixed date</p>
+<h2>AWS blocks Lambda updates on 31 August 2027</h2>
+<table class="tbl">
+<tr class="h"><th style="width:32%">Lambda runtime</th><th style="width:26%">AWS status</th><th style="width:42%">PQ without upgrading?</th></tr>
+<tr class="a"><td><b>nodejs18.x, nodejs20.x</b></td><td>Deprecated</td><td class="bad">No: OpenSSL 3.1 and 3.2 lack ML-KEM</td></tr>
+<tr class="b"><td><b>python3.9, python3.10</b></td><td>Deprecated</td><td>Bridge shim, requests and boto3 only</td></tr>
+<tr class="a"><td><b>python3.11</b></td><td>Deprecates 2027-06-30</td><td>Bridge shim, requests and boto3 only</td></tr>
+<tr class="b"><td><b>java8.al2, java11, java17</b></td><td>Deprecate 2027-06-30</td><td>Kit v2 works; the runtime still moves</td></tr>
+<tr class="a"><td><b>provided.al2, dotnet8</b></td><td>Deprecated</td><td>Go rebuild or OPENSSL_CONF works</td></tr>
+</table>
+<p class="note warn"><b>After 2027-08-31 no setting, layer or file can be applied</b> to these functions; creating them is blocked from 2027-07-29. So runtime upgrades start first and finish by 2027-06-30.</p>
+<p class="foot">Post-quantum TLS on AWS · 10 · AWS Lambda runtimes page, read 2026-11-16; AWS dates are forecasts and can move</p>
+<aside>KEY MESSAGE: The only date we don’t control is AWS’s: after 31 August 2027 we can’t change these functions at all.
+• Six runtimes are already deprecated; python3.11 and the Amazon Linux 2 Java runtimes follow on 30 June 2027.
+• For Node 18 and 20 there is no setting: their OpenSSL has no ML-KEM. Upgrade is the only path.
+• Python 3.9 to 3.11 have a bridge, but only for requests and boto3. Java and .NET fixes work, but the runtime has to move anyway.
+• That’s why runtime upgrades are Wave A, starting in December and finishing two months before the AWS block.
+• Re-read the AWS page each quarter: their dates are forecasts.</aside>
+</section>

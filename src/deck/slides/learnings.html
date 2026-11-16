@@ -1,0 +1,20 @@
+<section id="learnings" class="light" data-transition="fade">
+<p class="eyebrow">What we learned</p>
+<h2>Six things the guide got wrong, and what changed</h2>
+<table class="tbl">
+<tr class="h"><th style="width:22%">Area</th><th style="width:40%">What the test showed</th><th style="width:38%">What changed</th></tr>
+<tr class="a"><td><b>Python 3.9–3.11</b></td><td>The shim lacked idna: every request failed</td><td>Add idna; build in each version’s image</td></tr>
+<tr class="b"><td><b>Node.js 20</b></td><td>AL2023 nodejs20 links OpenSSL 3.5.8</td><td>Fixable with the config file</td></tr>
+<tr class="a"><td><b>Java 8 + kit</b></td><td>Every HttpsURLConnection handshake failed</td><td>Host-name flag; the layer adds it</td></tr>
+<tr class="b"><td><b>.NET guardrail</b></td><td>The layer had no .NET branch; the guard passed it</td><td>Layer sets OPENSSL_CONF for .NET</td></tr>
+<tr class="a"><td><b>.NET on Lambda</b></td><td>Certificate import failed: home is read-only</td><td>Set HOME=/tmp</td></tr>
+<tr class="b"><td><b>Go FIPS</b></td><td>Offers P-384 and P-521, not just P-256</td><td>FIPS tables and lint message</td></tr>
+</table>
+<p class="foot">Post-quantum TLS on AWS · 06 · Each kept as a regression case in e2e/</p>
+<aside>KEY MESSAGE: A guide nobody tests is a guide with errors in it. These six would each have reached production.
+• Python: the bridge for old Lambda runtimes was missing one package, so every request would have failed. Not a PQ failure, a total outage.
+• Node.js 20: we said nothing helps. On AL2023 it does, because it links the system OpenSSL.
+• Java 8: the kit alone broke every HttpsURLConnection handshake. One flag fixes it, and the layer now sets it.
+• .NET: the worst kind of bug. The guardrail approved functions that were still classical, because the layer had no .NET branch.
+• Takeaway: this is why every number in the deck comes from a test that can fail.</aside>
+</section>

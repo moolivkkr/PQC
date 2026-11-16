@@ -1,0 +1,28 @@
+<section id="problem" class="light" data-transition="fade">
+<p class="eyebrow">The problem</p>
+<h2>Why act now</h2>
+<div class="row">
+<div class="card" style="--i:0">
+<x-icon name="Clock" class="icon"></x-icon>
+<h3>Harvest now, decrypt later</h3>
+<p class="body">Traffic recorded today can be decrypted once a large quantum computer exists. Data that must stay private for years is exposed now.</p>
+</div>
+<div class="card" style="--i:1">
+<x-icon name="Warning" class="icon"></x-icon>
+<h3>Classical by default</h3>
+<p class="body">On Lambda and the AL2023 images, Python, Node.js, .NET and Java below 25 still negotiate classical X25519 unless we change something.</p>
+</div>
+<div class="card" style="--i:2">
+<x-icon name="Search" class="icon"></x-icon>
+<h3>It fails silently</h3>
+<p class="body">A connection that stays classical raises no error: the handshake falls back. Only logs and inventory show it.</p>
+</div>
+</div>
+<p class="goal"><b>Goal:</b> every TLS connection we own negotiates X25519MLKEM768, with the certificates we have today, and we can prove it from logs.</p>
+<p class="foot">Post-quantum TLS on AWS · 02</p>
+<aside>KEY MESSAGE: The risk is already running: anything recorded today can be read later, and most of our runtimes are still classical.
+• “Harvest now, decrypt later”: an attacker who records our traffic today decrypts it when a quantum computer arrives. Long-lived data is the exposure.
+• The surprise for most teams: being on a current runtime is not enough. Lambda’s Python, Node.js and .NET runtimes, and Java below 25, are classical by default.
+• Nothing breaks when a connection stays classical, so no one notices. That is why detection and proof are half of this plan.
+• Land the goal: the hybrid key exchange everywhere, same certificates, proven from logs.</aside>
+</section>

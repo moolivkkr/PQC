@@ -1,0 +1,32 @@
+<section id="baseline" class="alt" data-transition="fade">
+<p class="eyebrow">The baseline</p>
+<h2>What changes, and how we tested it</h2>
+<div class="row">
+<div class="card top-orange" style="--i:0;border-radius:12px">
+<p class="tag-orange">Today</p>
+<h3>Classical key exchange</h3>
+<ul>
+<li>X25519 or ECDHE agrees the session key</li>
+<li>Every TLS 1.2 connection is classical</li>
+<li>What most of our workloads negotiate now</li>
+</ul>
+</div>
+<div class="card top-blue" style="--i:1;border-radius:12px">
+<p class="tag-blue">Target</p>
+<h3>Hybrid X25519MLKEM768, TLS 1.3</h3>
+<ul>
+<li>ML-KEM plus X25519: at least as strong as today</li>
+<li>Only the key agreement changes</li>
+<li>Certificates, keystores and CA bundles stay</li>
+</ul>
+</div>
+</div>
+<p class="note"><b>Graded, not assumed:</b> each workload connects to a TLS observer that records the groups offered and negotiated, including a listener that accepts only X25519MLKEM768. Every claim in the guide is a test case.</p>
+<p class="foot">Post-quantum TLS on AWS · 03 · ML-DSA certificates are a separate, later programme</p>
+<aside>KEY MESSAGE: We change one thing, how the session key is agreed, and we test it against a server that refuses anything else.
+• Orange is today: classical X25519, and anything on TLS 1.2.
+• Blue is the target: the hybrid group X25519MLKEM768. It combines ML-KEM with X25519, so it is never weaker than what we run now.
+• Certificates do not change. We tested our own server certificates, private CA trust and mutual TLS with the fix in place.
+• The test method matters: an observer logs exactly what each client offered and negotiated, and a PQ-only listener fails anything that is not PQ.
+• Post-quantum certificates (ML-DSA) are a separate, later step.</aside>
+</section>

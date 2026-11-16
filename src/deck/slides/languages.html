@@ -1,0 +1,20 @@
+<section id="languages" class="light" data-transition="fade">
+<p class="eyebrow">The fix, by language</p>
+<h2>One small change per runtime</h2>
+<table class="tbl">
+<tr class="h"><th style="width:11%">Language</th><th style="width:33%">PQ by default today</th><th style="width:44%">Fix</th><th style="width:12%;text-align:right">e2e cases</th></tr>
+<tr class="a"><td><b>Go</b></td><td>1.24+ when go.mod says 1.24+</td><td>Build with 1.26+ and the go 1.26 line</td><td style="text-align:right">118 pass</td></tr>
+<tr class="b"><td><b>Python</b></td><td>Trixie, Alpine; not Lambda, AL2023</td><td>OPENSSL_CONF or the pq-tls layer; upgrade 3.9–3.11</td><td style="text-align:right">59 pass</td></tr>
+<tr class="a"><td><b>Node.js</b></td><td>Official 22.20+, 24.5+; not Lambda</td><td>Config file on Lambda; upgrade 18 and 20</td><td style="text-align:right">93 pass</td></tr>
+<tr class="b"><td><b>Java</b></td><td>JDK 25.0.5+</td><td>Kit v2 on JDK 8–21, or move to 25</td><td style="text-align:right">96 pass</td></tr>
+<tr class="a"><td><b>.NET</b></td><td>Alpine, Ubuntu 26.04; not Lambda, AL2023</td><td>PQ base image, OPENSSL_CONF or the layer</td><td style="text-align:right">71 pass</td></tr>
+</table>
+<p class="note"><b>Same in every language:</b> certificates and keystores do not change. Code that pins classical groups or TLS 1.2 overrides every fix, and the per-language CI checks find it.</p>
+<p class="foot">Post-quantum TLS on AWS · 08 · Detail per language, version and compute type: the guide’s language tabs</p>
+<aside>KEY MESSAGE: For every language the fix is one setting, one file, a rebuild or a version bump, and each is tested.
+• Go is the easiest: its own TLS library, so rebuild with 1.26 and set the go line. Most misses are an old go line with a new toolchain.
+• Python, Node.js and .NET use OpenSSL: on Lambda and AL2023 one config file turns PQ on; the newest base images are already PQ.
+• Java is the one that needs a kit until JDK 25: a Bouncy Castle agent plus a security file, tested from JDK 8 to 21.
+• The one rule for every team: remove code that pins old groups or TLS 1.2. CI flags it.
+• 437 client cases in total, all passing.</aside>
+</section>
