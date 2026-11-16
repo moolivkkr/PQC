@@ -2,7 +2,7 @@
 
 Post-quantum cryptography (PQC) migration notes for AWS workloads: how to detect non-post-quantum TLS connections and how to fix them, by language, compute type and infrastructure component.
 
-Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2026-11-15 in AWS Lambda base images or official container images, and in the end-to-end suite below), **Documented** (stated in vendor docs), **Claimed** (vendor plan, not shipped), or **Unverified**.
+Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2026-11-16 in AWS Lambda base images or official container images, and in the end-to-end suite below), **Documented** (stated in vendor docs), **Claimed** (vendor plan, not shipped), or **Unverified**.
 
 ## Final document (2026-11-14)
 
