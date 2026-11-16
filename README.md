@@ -35,6 +35,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | `e2e/` | End-to-end suite on LocalStack: probes per language, observer, runner, cases, `pq-egress` extension, results ([README](e2e/README.md), [RUNNING](e2e/RUNNING.md), [CONTRACT](e2e/CONTRACT.md)) |
 | `build/build.sh` | Rebuilds HTML, PDF and DOCX from `src/` (Docker pandoc pinned by digest, Chrome headless) |
 | `build/extract-configs.py` | Regenerates `configs/` from `src/` |
+| `artifacts/` | Review artifacts kept with the project, each as HTML and DOCX: the rollout plan (`PQC-TLS-rollout-plan.*`, source `.md` exported from the [Claude Doc](https://claude.ai/artifact/7uLzuHcyCSJ4WN13MkxBt8)) and the end-to-end findings page (`PQC-e2e-findings.*`). Rebuild with `bash artifacts/build.sh` |
 
 Test certificates, keys, jars, Go module caches and Python packages are not committed; the scripts regenerate or download them.
 

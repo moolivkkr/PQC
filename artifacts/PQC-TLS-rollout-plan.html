@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PQC TLS rollout plan</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 16px;line-height:1.5;color:#1a1a1a;background:#fff}table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.92rem}th,td{border:1px solid #d0d0d0;padding:6px 8px;vertical-align:top;text-align:left}th{background:#f2f2f2}code{font-family:Menlo,Consolas,monospace;font-size:.85em;background:#f2f2f2;padding:0 3px;word-break:break-word}h1{font-size:1.8rem}h2{margin-top:2rem;border-bottom:1px solid #ddd;padding-bottom:4px}</style>
+</head>
+<body>
+<h1 id="pqc-tls-rollout-plan">PQC TLS rollout plan</h1>
+<p>Nov 16, 2026 · Kishore Mooli</p>
+<p>We move TLS on our AWS workloads to the hybrid key exchange
+X25519MLKEM768 in six phases, with deprecated Lambda runtimes upgraded
+before AWS blocks updates on Aug 31, 2027. The fixes are known and
+tested; the plan is about order, guardrails and proof.</p>
+<h2 id="starting-point">Starting point</h2>
+<p>The fix for every language and compute type is known and tested in
+emulation; nothing has run on a real AWS account yet. The guide
+(<code>PQC-Detection-and-Remediation</code>, commit
+<code>c6e5cd3</code>) is the source for every change below.</p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>State today</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language fixes (Python, Node.js, Java, .NET, Go) on Lambda, Fargate,
+ECS on EC2, EC2</td>
+<td>Fix per runtime known; certificates and keystores do not change</td>
+<td>437 LocalStack e2e cases pass</td>
+</tr>
+<tr>
+<td>ALB/NLB to container (target leg)</td>
+<td>PQ when the listener has a PQ policy and the container has its
+fix</td>
+<td>32 e2e cases, modelled with Go's TLS client</td>
+</tr>
+<tr>
+<td>Guardrails (cfn-guard, OPA/conftest, Checkov, Config, SCP)</td>
+<td>Written and unit-tested</td>
+<td>cfn-guard 3.2.1, OPA 12/12, conftest; never applied to an
+account</td>
+</tr>
+<tr>
+<td>Detection (CloudWatch filter, server-side log)</td>
+<td>Finds classical handshakes</td>
+<td>11 of 12 checks; one log line dropped by LocalStack</td>
+</tr>
+<tr>
+<td>Client to ALB/NLB listener, API Gateway, CloudFront</td>
+<td>Policy names documented</td>
+<td>Not testable on LocalStack; needs real AWS</td>
+</tr>
+<tr>
+<td>KMS, STS, Secrets Manager endpoints; <code>pq-egress</code> with
+SigV4; x86_64; <code>java11.al2023</code>,
+<code>java17.al2023</code></td>
+<td>Expected to work</td>
+<td>Not tested</td>
+</tr>
+</tbody>
+</table>
+<p>The blind spot is outbound calls from Lambda and Fargate to non-AWS
+services: no AWS log shows their key exchange. Posture inventory carries
+those until a sensor or app-side log exists. How much of our traffic
+that is, we will know after Phase 1.</p>
+<h2 id="phases-and-gates">Phases and gates</h2>
+<table>
+<thead>
+<tr>
+<th>Track</th>
+<th>Window (proposed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 0. Prove on real AWS</td>
+<td>2026-11-23 to 2026-12-18</td>
+</tr>
+<tr>
+<td>Phase 1. Inventory and baseline</td>
+<td>2026-11-23 to 2027-01-15</td>
+</tr>
+<tr>
+<td>Wave A. Runtime upgrades</td>
+<td>2026-12-01 to 2027-06-30</td>
+</tr>
+<tr>
+<td>Phase 2. Guardrails in warn mode</td>
+<td>2027-01-04 to 2027-02-12</td>
+</tr>
+<tr>
+<td>Phase 3. Front doors</td>
+<td>2027-01-11 to 2027-03-12</td>
+</tr>
+<tr>
+<td>Phase 4. Workload waves B to D</td>
+<td>2027-02-01 to 2027-06-30</td>
+</tr>
+<tr>
+<td>Phase 5. Enforce</td>
+<td>2027-07-01 to 2027-09-30</td>
+</tr>
+<tr>
+<td>AWS: function create blocked (deprecated runtimes)</td>
+<td>2027-07-29</td>
+</tr>
+<tr>
+<td>AWS: function update blocked (deprecated runtimes)</td>
+<td>2027-08-31</td>
+</tr>
+</tbody>
+</table>
+<p>Phases 0 and 1 run together; runtime upgrades (Wave A) start in
+December because no setting fixes most of those runtimes and AWS blocks
+updates on 31 August 2027. Each phase ends at the exit gate in Phase
+detail.</p>
+<h2 id="phase-detail">Phase detail</h2>
+<p>Dates are a proposal for the steering group; the only fixed date is
+AWS's update block on 2027-08-31 for deprecated Lambda runtimes.</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Window (proposed)</th>
+<th>Work</th>
+<th>Exit gate</th>
+<th>Lead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0. Prove on real AWS</td>
+<td>2026-11-23 to 2026-12-18</td>
+<td>Sandbox account: ALB and NLB listeners on
+<code>ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code> with connection
+logs; a fixed Lambda per language calling KMS and Secrets Manager
+(CloudTrail <code>tlsDetails.keyExchange</code>); <code>pq-egress</code>
+with SigV4 calls; one x86_64 run of the e2e suite;
+<code>java11.al2023</code> and <code>java17.al2023</code>; guardrails
+applied in audit mode</td>
+<td>Every "not tested" row in Starting point is Tested or an accepted
+exception</td>
+<td>Security architecture</td>
+</tr>
+<tr>
+<td>1. Inventory and baseline</td>
+<td>2026-11-23 to 2027-01-15</td>
+<td>Posture inventory across all accounts: Lambda runtimes and env vars,
+ECR image SBOMs, SSM inventory, ELB and API Gateway policies; ALB/NLB
+connection logs and Athena tables; CloudTrail key-exchange queries;
+RemediationEngine PQC readiness findings</td>
+<td>Every workload sits in a guide matrix row with an owner; baseline
+share of classical handshakes recorded</td>
+<td>Platform engineering</td>
+</tr>
+<tr>
+<td>2. Guardrails in warn mode</td>
+<td>2027-01-04 to 2027-02-12</td>
+<td>cfn-guard, conftest and Checkov rules in every pipeline as warnings;
+Config rules in audit; ELB SCP on a sandbox OU</td>
+<td>Warnings visible on every pull request; no false positives open</td>
+<td>Security architecture</td>
+</tr>
+<tr>
+<td>3. Front doors</td>
+<td>2027-01-11 to 2027-03-12</td>
+<td>All ALB and NLB TLS listeners to the <code>Res-PQ</code> policy
+(classical and TLS 1.2 clients still connect); API Gateway REST to the
+PQ policy</td>
+<td>Listener posture 100% PQ policy; key-exchange mix from connection
+logs reported weekly</td>
+<td>Network engineering</td>
+</tr>
+<tr>
+<td>4. Workload waves</td>
+<td>2027-02-01 to 2027-06-30</td>
+<td>Shared build template carries the pq-tls kit; waves B to D (Order of
+work) ship on each service's normal release. Wave A, runtime upgrades,
+runs from 2026-12-01 to 2027-06-30 as its own track</td>
+<td>Each workload meets the definition of done</td>
+<td>Platform engineering with app teams</td>
+</tr>
+<tr>
+<td>5. Enforce</td>
+<td>2027-07-01 to 2027-09-30</td>
+<td>Guardrails fail builds; SCP denies non-PQ ELB policies; listeners
+whose TLS 1.2 traffic is zero move to <code>TLS13-1-3-PQ</code>;
+exceptions register reviewed</td>
+<td>No new non-PQ workload can ship; every remaining classical
+connection is a recorded exception</td>
+<td>Security architecture</td>
+</tr>
+</tbody>
+</table>
+<p>After Phase 5: JDK 25.0.5+ replaces the Java kit as teams upgrade,
+and ML-DSA certificates start as a separate programme.</p>
+<h2 id="order-of-work">Order of work</h2>
+<p>Waves are set by how hard the fix is; within a wave, workloads go by
+data sensitivity first, because recorded traffic stays decryptable for
+as long as the data matters.</p>
+<table>
+<thead>
+<tr>
+<th>Wave</th>
+<th>Workloads</th>
+<th>Fix</th>
+<th>Why this order</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A. Runtime upgrades</td>
+<td>Lambda <code>nodejs18.x</code>, <code>nodejs20.x</code>,
+<code>python3.9</code> to <code>3.11</code>, <code>provided.al2</code>,
+<code>java8.al2</code>, <code>java11</code>, <code>java17</code> (AL2),
+<code>dotnet8</code></td>
+<td>Upgrade the runtime, then apply the wave B fix;
+<code>pq-egress</code> only for calls that must be PQ sooner</td>
+<td>No setting works on most of these, and AWS blocks updates on
+2027-08-31: start first, finish by 2027-06-30</td>
+</tr>
+<tr>
+<td>B. Config only</td>
+<td>Python 3.12+, Node 22.20+/24, .NET 8/10 on Lambda and AL2023 images;
+Go rebuilt with 1.26 and <code>go 1.26</code></td>
+<td><code>OPENSSL_CONF</code> file or <code>DEFAULT:PQ</code> in the
+image; Go rebuild</td>
+<td>Lowest risk: one file and one variable, rolled back by removing
+them</td>
+</tr>
+<tr>
+<td>C. Java 8 to 21</td>
+<td>Every JVM below 25.0.5</td>
+<td>Kit v2: Bouncy Castle agent plus <code>pq-tls.security</code>; JDK
+25.0.5+ where the team can upgrade</td>
+<td>Replaces the TLS provider process-wide: canary each service, test
+keystores, mTLS and FIPS first</td>
+</tr>
+<tr>
+<td>D. Base images</td>
+<td>Debian 12 (<code>bookworm</code>), Ubuntu 24.04, Alpine before 3.22,
+<code>-bookworm</code> Python tags, pinned old Node</td>
+<td>Move to Debian 13, Alpine 3.24 or Ubuntu 26.04</td>
+<td>Larger change with its own testing; ride the team's next image
+refresh</td>
+</tr>
+</tbody>
+</table>
+<p>Two rules cut across the waves:</p>
+<ul>
+<li>Code that pins classical groups or TLS 1.2
+(<code>CurvePreferences</code>, <code>jdk.tls.namedGroups</code>,
+<code>ecdhCurve</code>, <code>SslProtocols.Tls12</code>) gets fixed in
+the same release; the per-language CI checks find it.</li>
+<li>FIPS workloads wait for Phase 0 evidence; do not add the Java kit or
+the generic config file to a FIPS host.</li>
+</ul>
+<h2 id="who-does-what">Who does what</h2>
+<p>App teams change almost nothing by hand: the platform ships the fix
+in the shared template and the app team releases it. Names are open
+until the steering group assigns them.</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Owns</th>
+<th>Phases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Security architecture</td>
+<td>The guide, the policy and the exceptions register; guardrail rules;
+Phase 0 tests on real AWS</td>
+<td>0, 2, 5</td>
+</tr>
+<tr>
+<td>Platform engineering</td>
+<td>The pq-tls kit, the Lambda layer, the shared build templates, base
+images; the posture inventory</td>
+<td>1, 4</td>
+</tr>
+<tr>
+<td>Network engineering</td>
+<td>ALB, NLB and API Gateway policies, connection logs and Athena
+queries, egress sensors</td>
+<td>3</td>
+</tr>
+<tr>
+<td>App teams</td>
+<td>Releasing the template bump; removing code pins; testing their
+keystores and mTLS; Java and runtime upgrades</td>
+<td>4</td>
+</tr>
+<tr>
+<td>RemediationEngine</td>
+<td>PQC readiness findings per workload from the guide, and automated
+change requests</td>
+<td>1, 4</td>
+</tr>
+<tr>
+<td>Steering group</td>
+<td>Dates, funding for Phase 0, FIPS policy, exception approvals</td>
+<td>All</td>
+</tr>
+</tbody>
+</table>
+<h2 id="measuring-done">Measuring done</h2>
+<p>A workload is done when its connections are observed using
+X25519MLKEM768, not when the change ships. Shipping without the
+observation leaves it in progress.</p>
+<p>Per workload, all three:</p>
+<ol type="1">
+<li><strong>Posture:</strong> the inventory puts it in a PQ row
+(runtime, image and settings match the guide's fix), and its CI checks
+pass.</li>
+<li><strong>Observed:</strong> at least one of CloudTrail
+<code>tlsDetails.keyExchange</code> for its AWS API calls, ALB/NLB
+connection logs for its inbound traffic, a sensor or app-side handshake
+log for other outbound calls shows the hybrid group.</li>
+<li><strong>Fallback intact:</strong> classical peers still connect; no
+error-rate change across the canary.</li>
+</ol>
+<p>Fleet metrics, reported weekly from Phase 1:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Source</th>
+<th>Target by end of Phase 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Workloads in a PQ posture row</td>
+<td>Posture inventory</td>
+<td>100%, less recorded exceptions</td>
+</tr>
+<tr>
+<td>Inbound handshakes using an ML-KEM group</td>
+<td>ALB/NLB connection logs (<code>tls_keyexchange</code>)</td>
+<td>Trend up; depends on clients</td>
+</tr>
+<tr>
+<td>AWS API calls using an ML-KEM group</td>
+<td>CloudTrail <code>tlsDetails.keyExchange</code> (KMS, STS, IAM,
+Secrets Manager, ACM)</td>
+<td>100% from fixed workloads</td>
+</tr>
+<tr>
+<td>TLS 1.2 connections per listener</td>
+<td>ALB connection logs</td>
+<td>Zero before a listener moves to TLS 1.3 only</td>
+</tr>
+<tr>
+<td>Open exceptions</td>
+<td>Exceptions register</td>
+<td>Each with an owner and a review date</td>
+</tr>
+</tbody>
+</table>
+<h2 id="risks-and-rollback">Risks and rollback</h2>
+<p>Every fix rolls back by removing a file or a variable in the next
+release, except runtime and base-image upgrades.</p>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Effect</th>
+<th>Mitigation</th>
+<th>Rollback</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Real AWS behaves differently from LocalStack</td>
+<td>A fix that passed e2e fails in production</td>
+<td>Phase 0 before any wave; canary per wave</td>
+<td>Remove <code>OPENSSL_CONF</code>, the agent or
+<code>GODEBUG</code></td>
+</tr>
+<tr>
+<td>Java kit replaces the TLS provider process-wide</td>
+<td>Keystore, mTLS or FIPS breakage</td>
+<td>Canary; kit v2 only (sets the <code>PKIX</code> key manager); no kit
+on FIPS JVMs</td>
+<td>Drop the agent from <code>JAVA_TOOL_OPTIONS</code>, or
+<code>PQ_TLS_DISABLE=1</code> with the layer</td>
+</tr>
+<tr>
+<td>Larger ClientHello (about 1.2 KB more)</td>
+<td>Old middleboxes drop it</td>
+<td>Test partner networks before TLS 1.3-only listeners</td>
+<td>Listener back to the <code>Res-PQ</code> policy</td>
+</tr>
+<tr>
+<td>Deprecated runtimes miss 2027-08-31</td>
+<td>No config change possible afterwards</td>
+<td>Wave A starts in Phase 1, tracked separately</td>
+<td>None: upgrade is the only path</td>
+</tr>
+<tr>
+<td>Node config file replaces AWS's</td>
+<td>Drift when AWS changes its Lambda file</td>
+<td>Pipeline diff against each new runtime image</td>
+<td>Remove the variable</td>
+</tr>
+<tr>
+<td>Guardrails block delivery</td>
+<td>Teams stall on false positives</td>
+<td>Warn mode for 30 days first; exceptions by tag</td>
+<td>Switch the rule back to warn</td>
+</tr>
+<tr>
+<td>No log shows outbound key exchange from Lambda and Fargate to
+non-AWS services</td>
+<td>Done cannot be proven for those calls</td>
+<td>App-side handshake logs or an egress sensor where the data warrants
+it</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h2 id="decisions-needed">Decisions needed</h2>
+<p>Phase 0 cannot start until the first decision is made.</p>
+<ul class="task-list">
+<li><label><input type="checkbox" />Fund a sandbox AWS account and about
+four weeks for Phase 0.</label></li>
+<li><label><input type="checkbox" />Approve the phase windows, or move
+them; keep Wave A ending by 2027-06-30.</label></li>
+<li><label><input type="checkbox" />Name a lead for each role in Who
+does what.</label></li>
+<li><label><input type="checkbox" />Java policy: kit v2 on 8 to 21 as
+the bridge, or require JDK 25.0.5+ (or wait for vendor backports to 17
+and 21, which Oracle says are planned for H1 2027 but has not
+shipped).</label></li>
+<li><label><input type="checkbox" />FIPS policy: which workloads must
+stay FIPS, and whether they wait for FIPS PQ evidence.</label></li>
+<li><label><input type="checkbox" />Exception rule: who approves a
+workload staying classical, and how often it is reviewed.</label></li>
+<li><label><input type="checkbox" />Which data classes rank first inside
+each wave.</label></li>
+</ul>
+<h2 id="sources">Sources</h2>
+<ul>
+<li>PQC Detection and Remediation guide, repo
+<code>moolivkkr/PQC</code>, commit <code>c6e5cd3</code> (overview,
+language tabs, Load balancers, Enforcement and guardrails)</li>
+<li>End-to-end results: <code>e2e/results/latest/summary.md</code> (run
+final-20261115)</li>
+<li><a
+href="https://claude.ai/artifact/1mrSswVXbaRLEftostDitr">Corrections
+from the end-to-end run and the document review</a></li>
+<li><a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">AWS
+Lambda runtimes and deprecation dates</a>, read 2026-11-16</li>
+<li><a
+href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html">ALB
+security policies</a></li>
+</ul>
+</body>
+</html>

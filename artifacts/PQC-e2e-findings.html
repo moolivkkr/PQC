@@ -1,0 +1,221 @@
+<title>PQC Guide E2E Findings</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: single reading column, a verdict strip, then a findings ledger with one row per correction. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --fg: #1b2230; --muted: #5a6474; --line: #dde1e8;
+  --accent: #2f5bd3; --pq: #13795b; --pq-bg: #e3f4ec; --warn: #9a5b00; --warn-bg: #fbf0dc;
+  --code-bg: #eef1f6;
+  --display: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11151c; --surface: #181d26; --fg: #e3e7ee; --muted: #98a2b3; --line: #2a313d;
+  --accent: #8aa8ff; --pq: #5fd3a5; --pq-bg: #163428; --warn: #f0b860; --warn-bg: #3a2c12;
+  --code-bg: #222935; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11151c; --surface: #181d26; --fg: #e3e7ee; --muted: #98a2b3; --line: #2a313d;
+  --accent: #8aa8ff; --pq: #5fd3a5; --pq-bg: #163428; --warn: #f0b860; --warn-bg: #3a2c12;
+  --code-bg: #222935; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 36px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; font-weight: 600; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+header { display: grid; gap: 10px; }
+.lede { color: var(--muted); font-size: 1.05rem; }
+code { font-family: var(--mono); font-size: .85em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+section { display: grid; gap: 14px; min-width: 0; }
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.strip div { background: var(--surface); padding: 16px 18px; display: grid; gap: 4px; }
+.strip b { font-family: var(--display); font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.strip span { color: var(--muted); font-size: .85rem; }
+.ledger { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 110px 1fr; gap: 6px 20px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.row > * { min-width: 0; }
+.tag { font-family: var(--mono); font-size: .8rem; font-weight: 500; color: var(--accent); padding-top: 2px; }
+.row h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 600; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+.pair > div { min-width: 0; }
+.k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; display: block; margin-bottom: 2px; }
+.fix { margin-top: 10px; font-size: .9rem; }
+.fix .k { display: inline; margin-right: 6px; }
+.pill { display: inline-block; font-size: .75rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; }
+.pill.ok { color: var(--pq); background: var(--pq-bg); }
+.pill.warn { color: var(--warn); background: var(--warn-bg); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 72ch; }
+.ask { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; display: grid; gap: 8px; }
+footer { color: var(--muted); font-size: .85rem; }
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr; }
+  .pair { grid-template-columns: 1fr; }
+  h1 { font-size: 1.6rem; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">PQC migration guide · end-to-end verification 2026-11-15 · document review 2026-11-16</span>
+    <h1>Corrections from the end-to-end run and the document review</h1>
+    <p class="lede">We ran every remediation in the guide against a TLS observer on an isolated LocalStack, across EC2, ECS Fargate, ECS on EC2 and Lambda, for all five languages. Six instructions did not behave as written. All six are now fixed in the guide sources, the kit and the generated configs, and each is kept as a regression case.</p>
+  </header>
+
+  <section aria-label="Result">
+    <div class="strip">
+      <div><b>437 / 437</b><span>client cases pass with the corrected guide</span></div>
+      <div><b>32 / 32</b><span>ALB-to-container target-leg cases pass</span></div>
+      <div><b>11 / 12</b><span>detection checks pass: server-side log 6 of 6, CloudWatch 5 of 6 (note below)</span></div>
+      <div><b>4</b><span>compute types: EC2, Fargate, ECS on EC2, Lambda</span></div>
+      <div><b>6 + 6</b><span>corrections: six from the run, six from the review</span></div>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem">A pass means the observed handshake matched what the guide says should happen. Baseline cases pass by staying classical. Each case is checked against five listeners: hybrid, PQ-only, mTLS, EC certificate, and TLS 1.2.</p>
+  </section>
+
+  <section>
+    <h2>What changed in the guide</h2>
+    <div class="ledger">
+
+      <div class="row">
+        <span class="tag">Java 8</span>
+        <div>
+          <h3>JDK 8 with the BouncyCastle kit fails every handshake through <code>HttpsURLConnection</code></h3>
+          <div class="pair">
+            <div><span class="k">Guide said</span>JDK 8 plus the kit plus <code>-Djdk.tls.client.protocols</code> gives PQ.</div>
+            <div><span class="k">Observed</span>BCJSSE endpoint identification raises "No hostname specified for HTTPS endpoint ID check" (bc-java#1656). The TLS 1.2-only default comes from the Lambda Java 8 runtime, not from JDK 8 itself.</div>
+          </div>
+          <p class="fix"><span class="k">Fix</span>Add <code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>. The layer wrapper now adds it automatically. Updated in <code>06-java.md</code>, <code>01-overview.md</code>, <code>template.yaml</code> and the wrapper.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="tag">.NET</span>
+        <div>
+          <h3>Guard rule PQ-L2 accepted a wrapper that did nothing for .NET</h3>
+          <div class="pair">
+            <div><span class="k">Guide said</span>The <code>pq-tls</code> layer wrapper covers dotnet8 and dotnet10, and PQ-L2 accepts it.</div>
+            <div><span class="k">Observed</span>The wrapper had no dotnet branch. Functions passed the guard and still negotiated classical key exchange.</div>
+          </div>
+          <p class="fix"><span class="k">Fix</span>The wrapper now has a dotnet branch that sets <code>OPENSSL_CONF</code> when it is unset. PQ-L2 is now accurate without a rule change.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="tag">.NET</span>
+        <div>
+          <h3>Client certificate import fails on Lambda before any handshake</h3>
+          <div class="pair">
+            <div><span class="k">Guide said</span>Re-import into the CurrentUser/My store at start-up.</div>
+            <div><span class="k">Observed</span>On Lambda the user's home directory is read-only, so <code>X509Store</code> cannot write.</div>
+          </div>
+          <p class="fix"><span class="k">Fix</span>Set <code>HOME=/tmp</code> on Lambda. Updated in <code>07-dotnet.md</code>.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="tag">Python</span>
+        <div>
+          <h3>The legacy bridge for Python 3.9 to 3.11 breaks every HTTP request</h3>
+          <div class="pair">
+            <div><span class="k">Guide said</span><code>pip install pyopenssl cryptography</code>.</div>
+            <div><span class="k">Observed</span>Lambda Python 3.9 to 3.11 lack <code>idna</code>, so every urllib3, requests and boto3 call raises <code>ModuleNotFoundError</code>. The 3.11 abi3 wheel also fails on 3.9 and 3.10.</div>
+          </div>
+          <p class="fix"><span class="k">Fix</span>Add <code>idna</code> and build the layer inside each version's Lambda image (pinned: <code>cryptography==50.0.2 pyOpenSSL==26.4.0 idna==3.20</code>). Updated in <code>04-python.md</code>, <code>02-runbook.md</code>, <code>22-config-index.md</code>.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="tag">Node.js</span>
+        <div>
+          <h3>"Node 20 is never PQ" is wrong on AL2023</h3>
+          <div class="pair">
+            <div><span class="k">Guide said</span>No setting adds PQ to Node 20.</div>
+            <div><span class="k">Observed</span>AL2023 <code>dnf install nodejs20</code> links the system OpenSSL 3.5.8 and negotiates PQ with <code>OPENSSL_CONF</code> or the <code>DEFAULT:PQ</code> policy. Lambda <code>nodejs18.x</code>/<code>20.x</code> bundle OpenSSL 3.1.8 and 3.2.6 (not 3.0.x) and have no ML-KEM.</div>
+          </div>
+          <p class="fix"><span class="k">Fix</span>Decide by <code>process.versions.openssl</code>, not the Node major version. On Lambda Node 18/20, use the <code>pq-egress</code> extension as the interim. Updated in <code>05-nodejs.md</code>, <code>01-overview.md</code>.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="tag">Go</span>
+        <div>
+          <h3>FIPS mode offers more curves than the guide listed</h3>
+          <div class="pair">
+            <div><span class="k">Guide said</span>FIPS modes offer "P-256 only" or "hybrids + P-256".</div>
+            <div><span class="k">Observed</span>The client also offers P-384 and P-521.</div>
+          </div>
+          <p class="fix"><span class="k">Fix</span>Tables in <code>03-go.md</code> and the <code>go-pq-lint.sh</code> message now say "P-256, P-384, P-521" and "NIST curves only, no PQ".</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Document review, 2026-11-16</h2>
+    <p>Every document and the deck were checked against the test results. Every e2e case the documents cite exists in the results. The deck's case counts match the results by language and compute type. These were wrong or out of date and are fixed (commits <code>42890f7</code>, <code>c6e5cd3</code>):</p>
+    <div class="ledger">
+      <div class="row"><span class="tag">Guardrail</span><div><h3>PQ-L2 rejected the guide's own Lambda fix</h3><p>The guide bundles the config at <code>/var/task/pq-tls/</code>; the Guard, Config, Rego and Checkov rules accepted only <code>/opt/pq-tls/</code>. All four accept both now. Retested with cfn-guard 3.2.1 and OPA (12/12). Found by the RemediationEngine team's read of the guide.</p></div></div>
+      <div class="row"><span class="tag">Guardrail</span><div><h3>Dockerfile rule warned on PQ Python images and missed old Node pins</h3><p><code>python:3.9</code> to <code>3.11</code> default to Debian trixie with OpenSSL 3.5, so they are PQ; only <code>-bookworm</code> and <code>-bullseye</code> tags are classical. Node tags pinned below 22.20 or 24.5 now warn. Tested with conftest on 12 base images.</p></div></div>
+      <div class="row"><span class="tag">Envoy</span><div><h3>"Envoy has no ML-KEM by default" is true only before 1.40</h3><p>Envoy 1.40.2 with no <code>ecdh_curves</code> negotiated X25519MLKEM768 with a PQ-only client and reached a PQ-only backend (tested). The Web servers, Service mesh and Network tabs now give the version.</p></div></div>
+      <div class="row"><span class="tag">Java</span><div><h3>Lambda now has java8/11/17 on AL2023 as well as AL2</h3><p>AWS lists <code>java8.al2023</code>, <code>java11.al2023</code> and <code>java17.al2023</code>. Guardrail PQ-L3 and the layer's compatible runtimes now include them. The e2e suite tested the AL2 variants and the <code>java:8.al2023</code> image; the newer 11 and 17 runtimes are marked untested.</p></div></div>
+      <div class="row"><span class="tag">Lambda</span><div><h3>Deprecation dates were "not confirmed"</h3><p>AWS's runtime page lists them: nodejs18/20, python3.9/3.10, provided.al2 and dotnet8 are already deprecated; python3.11 and the AL2 Java runtimes follow on 2027-06-30. Updates are blocked from 2027-08-31 for all of them.</p></div></div>
+      <div class="row"><span class="tag">Labels</span><div><h3>Evidence labels written before the e2e run</h3><p>Go on Fargate, ECS and EC2, JDK 11 with kit v2, the Java layer on Lambda, the .NET <code>DEFAULT:PQ</code> server and Tomcat's OpenSSL connector said "not run" or "Unverified" although tests now cover them. They cite the cases now. The overview's Tested label and evidence section include the LocalStack suite.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Coverage by language</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Language</th><th>Cases</th><th>Result</th><th>Run</th></tr></thead>
+        <tbody>
+          <tr><td>Python</td><td>59</td><td><span class="pill ok">all pass</span></td><td><code>r1115024129</code></td></tr>
+          <tr><td>Node.js</td><td>93</td><td><span class="pill ok">all pass</span></td><td><code>r1115024405</code></td></tr>
+          <tr><td>Java</td><td>96</td><td><span class="pill ok">all pass</span></td><td><code>r1115024739</code></td></tr>
+          <tr><td>.NET</td><td>71</td><td><span class="pill ok">all pass</span></td><td><code>r1115025234</code></td></tr>
+          <tr><td>Go</td><td>118</td><td><span class="pill ok">all pass</span></td><td><code>r1115030106</code></td></tr>
+          <tr><td>Load balancer target leg</td><td>32</td><td><span class="pill ok">all pass</span></td><td><code>r1115034537</code></td></tr>
+          <tr><td>Detection: server-side log</td><td>6</td><td><span class="pill ok">all pass</span></td><td>one per run</td></tr>
+          <tr><td>Detection: CloudWatch</td><td>6</td><td><span class="pill warn">5 of 6</span></td><td>one per run</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem">The one detection miss: under load, LocalStack dropped one Lambda log line of 195 before it reached CloudWatch. It does not reproduce at light load. We kept the check strict rather than loosen it. Full report: <code>e2e/results/latest/summary.md</code>.</p>
+  </section>
+
+  <section>
+    <h2>What this run does not prove</h2>
+    <ul>
+      <li>The ALB/NLB listener leg (client to load balancer). LocalStack's ALB ignores the security policy: a <code>ELBSecurityPolicy-2016-08</code> listener still negotiated X25519MLKEM768 with LocalStack's own certificate. API Gateway and CloudFront are not tested either. These need real AWS.</li>
+      <li>The load balancer to container leg <em>is</em> tested, as a model: 32 cases (<code>srv-*</code>) where the observer connects to each language's HTTPS container the way the ALB's PQ backend policy does. Unfixed containers stay classical, fixed ones negotiate X25519MLKEM768, and the certificate never changes. It models AWS's ClientHello with Go's TLS client, not AWS's s2n-tls.</li>
+      <li>KMS, SSM and Secrets Manager endpoints, and the AWS Parameters and Secrets Lambda Extension. <code>pq-egress</code> stands in for that pattern and has not been tested with SigV4 SDK calls.</li>
+      <li>The AMI disk image and kernel. EC2 cases use containers built from the AMI's release packages, so the TLS userland matches but the kernel is Docker Desktop's.</li>
+      <li>Lambda on Firecracker. Functions run in AWS's runtime images under LocalStack's emulation.</li>
+      <li>x86_64. Everything ran on arm64.</li>
+    </ul>
+    <p style="color:var(--muted);font-size:.9rem">Two LocalStack artefacts are documented so they are not mistaken for guide errors: it drops <code>HOME</code> from Lambda environment variables (AWS does not), and its EC2 service times out under parallel runs.</p>
+  </section>
+
+  <section class="ask">
+    <h2>For document owners</h2>
+    <ul>
+      <li>Review the corrections above in <code>src/*.md</code> (run: commits <code>1de44a6</code>, <code>821d40a</code>; review: <code>42890f7</code>, <code>c6e5cd3</code>). The HTML, PDF, DOCX and the 35-slide summary deck were rebuilt from those sources.</li>
+      <li>The older drafts (<code>PQ.docx</code>, <code>PQ.pdf</code>, root <code>pqc-combined.html</code>) predate these fixes and are marked as such. Do not circulate them.</li>
+      <li>Decide whether to fund a short real-AWS run for the listener leg and the managed-endpoint gaps.</li>
+    </ul>
+  </section>
+
+  <footer>LocalStack Pro 2026.10.6 · key exchange checked: X25519MLKEM768 over TLS 1.3 · suite and instructions in <code>e2e/README.md</code> and <code>e2e/RUNNING.md</code></footer>
+</div>
