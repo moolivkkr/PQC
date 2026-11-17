@@ -1,0 +1,19 @@
+<section id="blocked" class="light" data-transition="fade">
+<p class="eyebrow">Where AWS blocks us</p>
+<h2>Record it as an exception; don’t fight it</h2>
+<table class="tbl">
+<tr class="h"><th style="width:30%">Classical leg</th><th style="width:34%">Why</th><th style="width:36%">Compensating control</th></tr>
+<tr class="a"><td><b>CloudFront to origin</b></td><td>Origin leg classical by design</td><td>Private origin; short-lived data</td></tr>
+<tr class="b"><td><b>API Gateway HTTP, WebSocket, egress</b></td><td>TLS 1.2 policies only</td><td>CloudFront or a PQ ALB in front</td></tr>
+<tr class="a"><td><b>IoT Core devices</b></td><td>No PQ security policy</td><td>PQ gateway or broker; inventory</td></tr>
+<tr class="b"><td><b>Firewall inspection, AWS VPN</b></td><td>No documented PQ support</td><td>Zeek for visibility; recheck quarterly</td></tr>
+<tr class="a"><td><b>Managed data services</b></td><td>RDS Proxy, ElastiCache, MSK, OpenSearch</td><td>Private network path; data class</td></tr>
+</table>
+<p class="note warn"><b>Exception register:</b> one ID across every guardrail; 90 days at most, 180 when a vendor blocks; reviewed monthly and rechecked against AWS each quarter.</p>
+<p class="foot">Post-quantum TLS on AWS · 15 · Guide: Enforcement, exception register</p>
+<aside>KEY MESSAGE: Some legs can’t be PQ until AWS ships support. We name them, protect them another way, and recheck them, so they never hide inside a “done” number.
+• CloudFront to origin, API Gateway HTTP and WebSocket APIs and egress, IoT Core, Network Firewall TLS inspection and AWS VPN, and the managed data services.
+• Each gets an exception ID that every guardrail recognises: the same ID is a tag in Terraform and CloudFormation and an annotation in Kubernetes.
+• Each records the data on that path and how long it must stay confidential, because that is the harvest-now risk.
+• 90 days at most, 180 for vendor-blocked items, no renewal without a new exit date.</aside>
+</section>

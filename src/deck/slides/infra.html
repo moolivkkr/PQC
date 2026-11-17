@@ -1,29 +1,20 @@
 <section id="infra" class="light" data-transition="fade">
-<p class="eyebrow">The rest of the infrastructure</p>
-<h2>Most of it is a policy name, not a project</h2>
-<div class="grid2" style="margin-top:24px">
-<table class="tbl" style="width:816px">
-<tr class="h"><th style="width:42%">Component</th><th>PQ today</th></tr>
-<tr class="a"><td><b>ALB, NLB</b></td><td class="ok">Res-PQ security policy</td></tr>
-<tr class="b"><td><b>CloudFront</b></td><td class="ok">Viewer side; origin classical</td></tr>
-<tr class="a"><td><b>API Gateway REST</b></td><td class="ok">PQ security policy</td></tr>
-<tr class="b"><td><b>API Gateway HTTP, WS</b></td><td class="bad">None yet</td></tr>
-<tr class="a"><td><b>IoT Core</b></td><td class="bad">No PQ policy</td></tr>
+<p class="eyebrow">Infrastructure: edge and network</p>
+<h2>Front doors and the network path</h2>
+<table class="tbl">
+<tr class="h"><th style="width:17%">Area</th><th style="width:29%">PQ today</th><th style="width:30%">Our action</th><th style="width:24%">Blocked by AWS</th></tr>
+<tr class="a"><td><b>Load balancers</b></td><td class="ok">ALB, NLB opt-in</td><td>Res-PQ policy; SCP</td><td class="bad">Classic LB: migrate</td></tr>
+<tr class="b"><td><b>Edge and API</b></td><td class="ok">CloudFront viewer on; REST opt-in</td><td>REST PQ policy; front HTTP APIs with CloudFront</td><td class="bad">Origin leg, HTTP and WebSocket APIs</td></tr>
+<tr class="a"><td><b>AWS endpoints</b></td><td class="ok">KMS, STS, IAM, ACM, S3, DynamoDB</td><td>Client fixes; CloudTrail proves it</td><td class="bad">SSM, unlisted services</td></tr>
+<tr class="b"><td><b>Egress, network</b></td><td class="ok">Squid, Envoy, strongSwan 6.0.2+</td><td>PQ egress proxy; Zeek</td><td class="bad">Network Firewall TLS inspection, VPN</td></tr>
+<tr class="a"><td><b>WAF</b></td><td>Never terminates TLS</td><td>Set PQ on the resource it protects</td><td>Same as that resource</td></tr>
+<tr class="b"><td><b>IoT</b></td><td class="bad">Classical into IoT Core</td><td>PQ-capable stacks for new devices</td><td class="bad">IoT Core: no PQ policy</td></tr>
 </table>
-<table class="tbl" style="width:816px">
-<tr class="h"><th style="width:42%">Component</th><th>PQ today</th></tr>
-<tr class="a"><td><b>AWS endpoints</b></td><td class="ok">KMS, STS, Secrets, ACM, IAM</td></tr>
-<tr class="b"><td><b>Linkerd, Istio</b></td><td class="ok">2.19+; 1.27+ with pqc policy</td></tr>
-<tr class="a"><td><b>Envoy</b></td><td class="ok">1.40+ default; tested 1.40.2</td></tr>
-<tr class="b"><td><b>Debian 13, Ubuntu 26.04</b></td><td class="ok">Default</td></tr>
-<tr class="a"><td><b>AL2023 hosts</b></td><td class="ok">Crypto policy DEFAULT:PQ</td></tr>
-</table>
-</div>
-<p class="note"><b>Where AWS has no PQ option yet,</b> we record it as an exception with a review date, not as a failure.</p>
-<p class="foot">Post-quantum TLS on AWS · 13 · AWS service support checked 2026-11-16</p>
-<aside>KEY MESSAGE: For the shared infrastructure, PQ is mostly choosing the right policy or version; the gaps are AWS’s, and we track them.
-• ALB, NLB and API Gateway REST: switch to the PQ security policy. CloudFront is PQ to viewers; the origin leg is still classical.
-• AWS endpoints we call most (KMS, STS, Secrets Manager, ACM, IAM) already accept PQ from a fixed client.
-• Meshes: Linkerd 2.19+ by default; Istio 1.27+ with the PQC compliance policy, which enforces PQ and breaks non-PQ peers. Meshes cover their own legs only, not app-originated TLS. Envoy is PQ by default from 1.40, and we tested 1.40.2.
-• Gaps: API Gateway HTTP and WebSocket APIs, and IoT Core. These are exceptions with a review date.</aside>
+<p class="foot">Post-quantum TLS on AWS · 13 · Guide: Infrastructure tabs; AWS support checked 2026-11-16</p>
+<aside>KEY MESSAGE: At the edge most of the work is choosing the PQ policy; where AWS has no option, the leg is an exception, not a failure.
+• Load balancers and API Gateway REST: switch the policy. CloudFront is already PQ to viewers.
+• AWS endpoints: KMS, STS, IAM, ACM, S3 and DynamoDB accept PQ today. The work is on our client side, and CloudTrail proves KMS, STS, IAM, Secrets Manager and ACM calls.
+• Egress: Squid, Envoy and strongSwan 6.0.2+ can do PQ. An egress proxy carries calls from workloads that can’t upgrade yet. Zeek on traffic mirroring sees the group.
+• WAF never terminates TLS, so whatever it is attached to decides.
+• IoT Core has no PQ policy, so device connections stay classical until AWS adds one.</aside>
 </section>

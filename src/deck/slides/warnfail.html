@@ -1,0 +1,20 @@
+<section id="warnfail" class="light" data-transition="fade">
+<p class="eyebrow">Guardrails</p>
+<h2>Warn first, then fail, in five steps</h2>
+<div class="grid3" style="grid-template-columns:repeat(5,1fr)">
+<div class="card tight top-blue" style="--i:0"><p class="tag-blue">Week 0</p><h3>Inventory</h3><p class="body">Config rules, alarm and log tables on; every check warns only.</p></div>
+<div class="card tight top-blue" style="--i:1"><p class="tag-blue">Week 2</p><h3>New risk</h3><p class="body">SCP on new OUs; pipeline fails on changed resources only.</p></div>
+<div class="card tight top-orange" style="--i:2"><p class="tag-orange">Week 6</p><h3>All of CI</h3><p class="body">Fail every resource; Guard Hook FAIL, Kyverno Deny.</p></div>
+<div class="card tight top-orange" style="--i:3"><p class="tag-orange">Week 8</p><h3>Org-wide</h3><p class="body">SCP on every workload OU once Config is clean.</p></div>
+<div class="card tight top-purple" style="--i:4"><p class="tag-orange">Ongoing</p><h3>Trend down</h3><p class="body">Classical share per load balancer falls to the exceptions.</p></div>
+</div>
+<p class="note"><b>Every step reverses without touching a resource:</b> set the mode back to warn, audit or soft-fail, or detach the SCP, which takes effect in minutes.</p>
+<p class="foot">Post-quantum TLS on AWS · 17 · Guide: Enforcement, warn-then-fail rollout</p>
+<aside>KEY MESSAGE: Guardrails tighten in steps, so teams see warnings before anything blocks them, and any step can be undone in minutes.
+• Week 0: turn on detection and run every pipeline check in warn mode.
+• Week 2: block new risk: the SCP on sandbox and new-workload OUs, and the pipeline fails only on resources in the change.
+• Week 6: fail every resource in CI; anything left gets an exception.
+• Week 8: the SCP on all workload OUs, once Config shows nothing non-compliant outside the register.
+• Then: the classical share per load balancer trends down to the exception list.
+• In the rollout plan this runs as Phase 2 (warn) and Phase 5 (enforce).</aside>
+</section>

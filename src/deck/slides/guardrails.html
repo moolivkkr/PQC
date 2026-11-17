@@ -1,0 +1,21 @@
+<section id="guardrails" class="alt" data-transition="fade">
+<p class="eyebrow">Guardrails</p>
+<h2>Five layers keep it from slipping back</h2>
+<table class="tbl">
+<tr class="h"><th style="width:16%">Layer</th><th style="width:22%">Does</th><th style="width:44%">Tools</th><th style="width:18%">Evidence</th></tr>
+<tr class="a"><td><b>Organisation</b></td><td>Blocks the API call</td><td>SCP on ELB and API Gateway policies</td><td class="plan">JSON tested</td></tr>
+<tr class="b"><td><b>Account</b></td><td>Detects drift</td><td>Config rules, PQC readiness scanner</td><td>Documented</td></tr>
+<tr class="a"><td><b>Pipeline</b></td><td>Blocks merge, deploy</td><td>cfn-guard, Guard Hook, conftest, Checkov, image checks</td><td class="ok">Rules tested</td></tr>
+<tr class="b"><td><b>Cluster</b></td><td>Blocks admission</td><td>Kyverno ValidatingPolicy, Gatekeeper</td><td class="ok">Rules tested</td></tr>
+<tr class="a"><td><b>Runtime</b></td><td>Finds classical traffic</td><td>CloudTrail alarm, ELB log Athena, Zeek</td><td class="plan">Partly tested</td></tr>
+</table>
+<p class="note"><b>No AWS control can force ML-KEM.</b> Policy forces the setting: the load balancer policy, runtime, variable or image. Logs then measure what clients actually negotiate. Shared rule IDs mean one exception ID works in every layer.</p>
+<p class="foot">Post-quantum TLS on AWS · 16 · Rules ran in containers on sample inputs, 14–15 Nov 2026; not yet in an AWS account</p>
+<aside>KEY MESSAGE: Fixing a workload once isn’t enough. Five layers stop a classical setting from coming back, and every rule has been run against good and bad samples.
+• Organisation: an SCP denies non-PQ load balancer and API Gateway REST policies at the API, before anything is created.
+• Account: AWS Config rules and the AWS PQC readiness scanner sample flag drift. Note that Security Hub ELB.17 passes non-PQ policies, so it isn’t PQ coverage.
+• Pipeline: cfn-guard (14 rules), the CloudFormation Guard Hook, conftest on Terraform plans, Dockerfiles and SBOMs, Checkov, and Go and JDK binary checks.
+• Cluster: Kyverno 1.20 ValidatingPolicy for ALB Ingress, NLB Services, ingress-nginx, Istio and Pod variables.
+• Runtime: CloudTrail alarm on non-ML-KEM calls, ELB log reports, Zeek.
+• Honest status: rules tested in containers on sample inputs, never yet applied to an AWS account. That is in Phase 0.</aside>
+</section>

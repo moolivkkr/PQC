@@ -11,7 +11,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | [PQC-Detection-and-Remediation.pdf](PQC-Detection-and-Remediation.pdf) | All 22 sections: Overview, Runbook, Go, Python, Node.js, Java, .NET, twelve infrastructure sections, Enforcement and guardrails, Configuration file index |
 | [PQC-Detection-and-Remediation.docx](PQC-Detection-and-Remediation.docx) | Same content in Word; import into Google Docs with Drive > Upload, then Open with Google Docs |
 | [PQC-Detection-and-Remediation.html](PQC-Detection-and-Remediation.html) | Same content as one HTML page |
-| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 17-slide deck (PowerPoint and PDF), in the Secure Telemetry Tokenization deck's format: why now, baseline and target, tested outcome, seven test rounds and six corrections, what decides PQ, the fix per language, design choices, the AWS runtime deadline, load balancer leg, detection, infrastructure, scorecard, rollout, the ask. Speaker notes on every slide |
+| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 23-slide deck (PowerPoint and PDF), in the Secure Telemetry Tokenization deck's format: why now, baseline and target, tested outcome, seven test rounds and six corrections, what decides PQ, the fix per language, design choices, the AWS runtime deadline; infrastructure (ALB/NLB policy and the tested target leg, the twelve infrastructure areas, what AWS blocks and the exception register, five guardrail layers, warn-then-fail, detection, infrastructure traps); scorecard, rollout, the ask. Speaker notes on every slide |
 
 ## End-to-end verification (2026-11-15)
 

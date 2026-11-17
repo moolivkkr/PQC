@@ -9,7 +9,7 @@
 <tr class="b"><td><b>Posture</b></td><td>Runtime, env vars, layers</td><td>Image SBOM, OpenSSL version</td><td>Policy names</td></tr>
 </table>
 <p class="note warn"><b>The blind spot:</b> calls from Lambda and Fargate to non-AWS services. No AWS log records the group, so they stay on inventory until an app-side log or proxy exists.</p>
-<p class="foot">Post-quantum TLS on AWS · 12 · In e2e, 11 of 12 detection checks pass; the miss was a log line LocalStack dropped</p>
+<p class="foot">Post-quantum TLS on AWS · 18 · In e2e, 11 of 12 detection checks pass; the miss was a log line LocalStack dropped</p>
 <aside>KEY MESSAGE: We can prove most of the estate from logs AWS already writes; the rest we track honestly as posture.
 • CloudTrail records tlsDetails.keyExchange for every AWS API call. That covers the biggest share of outbound traffic.
 • ALB and NLB access logs record the key exchange on the client leg.

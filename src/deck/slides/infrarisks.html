@@ -1,0 +1,21 @@
+<section id="infrarisks" class="alt" data-transition="fade">
+<p class="eyebrow">Infrastructure gotchas</p>
+<h2>Six traps we found, and how we handle them</h2>
+<table class="tbl">
+<tr class="h"><th style="width:26%">Trap</th><th style="width:38%">Effect</th><th style="width:36%">What we do</th></tr>
+<tr class="a"><td><b>IaC default policy</b></td><td>New listeners land on classical 2016-08</td><td>Name the policy; the SCP enforces it</td></tr>
+<tr class="b"><td><b>Security Hub ELB.17</b></td><td>Passes six non-PQ policies</td><td>Org Config rule with a PQ-only list</td></tr>
+<tr class="a"><td><b>GnuTLS tools</b></td><td>wget, git on Debian fail PQ-only servers</td><td>Use OpenSSL-linked tools</td></tr>
+<tr class="b"><td><b>Kyverno 1.20</b></td><td>Legacy ClusterPolicy no longer runs</td><td>ValidatingPolicy (CEL) rules</td></tr>
+<tr class="a"><td><b>Envoy before 1.40</b></td><td>Classical unless ecdh_curves is set</td><td>1.40+ is PQ by default; tested 1.40.2</td></tr>
+<tr class="b"><td><b>Guardrail PQ-L2</b></td><td>Rejected the guide’s own bundled path</td><td>All four rule sets fixed, retested</td></tr>
+</table>
+<p class="foot">Post-quantum TLS on AWS · 19 · Each found while testing; details in the guide’s Enforcement tab</p>
+<aside>KEY MESSAGE: The infrastructure side had its own traps. Each would have produced a false “PQ” or a broken pipeline, and each is now handled.
+• The biggest: infrastructure as code defaults load balancers to a classical policy. Only the console defaults to PQ.
+• Security Hub’s ELB.17 control passes policies that aren’t PQ, so a green dashboard isn’t PQ coverage.
+• Debian’s GnuTLS has no ML-KEM, so wget and git fail against PQ-only servers. SSH is already PQ with OpenSSH 10.
+• Kyverno 1.20 removed the legacy policy type, so the admission rules are written in the new format.
+• Envoy 1.40+ is PQ by default; older Envoy needs ecdh_curves.
+• Our own guardrail rejected the guide’s bundled config path; all four rule sets were fixed and retested.</aside>
+</section>

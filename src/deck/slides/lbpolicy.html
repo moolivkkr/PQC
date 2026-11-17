@@ -1,0 +1,18 @@
+<section id="lbpolicy" class="light" data-transition="fade">
+<p class="eyebrow">Load balancers</p>
+<h2>The listener policy decides, not the certificate</h2>
+<div class="row">
+<div class="card tight top-orange" style="--i:0"><p class="tag-orange">Today</p><h3>Classical by default</h3><p class="body">CLI, CloudFormation and CDK create listeners on the 2016-08 policy. Only the console picks PQ.</p></div>
+<div class="card tight top-blue" style="--i:1"><p class="tag-blue">Set</p><h3>The Res-PQ policy</h3><p class="body">Hybrid for TLS 1.3 clients; TLS 1.2 clients still connect. TLS 1.3-only PQ later.</p></div>
+<div class="card tight top-blue" style="--i:2"><p class="tag-blue">Keep</p><h3>The certificate</h3><p class="body">The ACM certificate stays, RSA or ECDSA. Classic Load Balancer can’t do TLS 1.3: migrate.</p></div>
+<div class="card tight top-purple" style="--i:3"><p class="tag-blue">Prove</p><h3>From the logs</h3><p class="body">ALB connection logs and NLB access logs record tls_keyexchange per connection.</p></div>
+</div>
+<p class="note"><b>Policy:</b> <span class="code">ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</span><br><b>Guardrail:</b> an SCP on elasticloadbalancing:SecurityPolicy denies CreateListener and ModifyListener without a PQ policy.</p>
+<p class="foot">Post-quantum TLS on AWS · 11 · Guide: Load balancers tab</p>
+<aside>KEY MESSAGE: For ALB and NLB, PQ is one setting on the listener, but the tools we use for infrastructure as code pick the old policy unless we name the new one.
+• The certificate has nothing to do with key exchange. We keep every ACM certificate.
+• The trap: CloudFormation, the CLI and CDK default to ELBSecurityPolicy-2016-08. Only the console defaults to the PQ policy. So every template has to name the policy, and the SCP makes that mandatory.
+• The Res-PQ policy is hybrid for TLS 1.3 clients and still serves TLS 1.2 clients, so nothing breaks. Once logs show no TLS 1.2 traffic, move to the TLS 1.3-only PQ policy.
+• Classic Load Balancers can’t do TLS 1.3 at all: they move to ALB or NLB.
+• Proof is in the logs: the tls_keyexchange field per connection.</aside>
+</section>
