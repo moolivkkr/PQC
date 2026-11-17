@@ -70,4 +70,4 @@ Deck (PPTX and PDF): `bash build/deck.sh`
 
 ## Earlier files
 
-`PQ.pdf`, `PQ.docx` (2026-11-12 drafts), and `pqc-combined.html`, `pqc-for-docx.html`, `extract.py`, `combine.py` (the 2026-11-13 export from the online doc) are kept for reference only. They predate the end-to-end fixes and contain the errors listed above; use the final document.
+`pqc-combined.html`, `pqc-for-docx.html`, `extract.py`, `combine.py` (the 2026-11-13 export from the online doc) are kept for reference only. They predate the end-to-end fixes and contain the errors listed above; use the final document.
