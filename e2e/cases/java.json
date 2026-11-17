@@ -38,6 +38,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -53,8 +63,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j8-layer",
@@ -87,6 +112,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -106,8 +141,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j8-bundled",
@@ -135,6 +185,15 @@
     "tls12": {
      "ok": false,
      "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -153,8 +212,22 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j8-extension",
@@ -245,6 +318,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -264,8 +347,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j11-baseline",
@@ -295,6 +393,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -310,8 +418,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j11-layer",
@@ -344,6 +467,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -363,8 +496,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j11-bundled",
@@ -397,6 +545,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -414,8 +572,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j11-extension",
@@ -506,6 +679,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -525,8 +708,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-baseline",
@@ -556,6 +754,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -571,8 +779,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-layer",
@@ -605,6 +828,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -624,8 +857,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-bundled",
@@ -658,6 +906,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -675,8 +933,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-extension",
@@ -767,6 +1040,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -786,8 +1069,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-baseline",
@@ -817,6 +1115,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -832,8 +1140,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-layer",
@@ -866,6 +1189,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -885,8 +1218,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-bundled",
@@ -919,6 +1267,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -936,8 +1294,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-extension",
@@ -1028,6 +1401,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1047,8 +1430,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j25-baseline",
@@ -1081,6 +1479,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1096,8 +1504,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j25-layer",
@@ -1130,6 +1553,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1149,8 +1582,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j25-extension",
@@ -1241,6 +1689,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1260,8 +1718,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-combined-ext",
@@ -1353,6 +1826,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1370,8 +1853,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j8-bundled-noproto",
@@ -1402,6 +1900,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1419,8 +1927,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j8-layer-hostfix",
@@ -1453,6 +1976,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1473,8 +2006,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-ks-ec-baseline",
@@ -1504,6 +2052,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1521,8 +2079,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-ks-ec-bundled",
@@ -1555,6 +2128,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1573,8 +2156,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-ks-ec-layer",
@@ -1607,6 +2205,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1627,8 +2235,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-ks-ec-sunx509",
@@ -1661,6 +2284,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1680,8 +2313,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-ks-rsa-sunx509",
@@ -1714,6 +2362,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1732,8 +2390,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j17-ks-ec-pkix",
@@ -1766,6 +2439,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1785,8 +2468,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-ks-ec-v1",
@@ -1819,6 +2517,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1837,8 +2545,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-layer-ownsec",
@@ -1871,6 +2594,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1892,8 +2625,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j11-layer-ownsec",
@@ -1926,6 +2674,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1947,8 +2705,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-sysprops-ec-baseline",
@@ -1978,6 +2751,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1996,8 +2779,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-sysprops-ec-bundled",
@@ -2030,6 +2828,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2048,8 +2856,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j25-sysprops-ec-baseline",
@@ -2082,6 +2905,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2100,8 +2933,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-sysprops-notrust-bundled",
@@ -2129,6 +2977,16 @@
     "tls12": {
      "ok": false,
      "error_match": "(?i)certif|PKIX|trust"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2147,8 +3005,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j25-ks-ec-baseline",
@@ -2181,6 +3054,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2198,8 +3081,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j25-pin",
@@ -2229,6 +3127,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2246,8 +3154,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-layer-pin",
@@ -2277,6 +3200,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2297,8 +3230,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-layer-disabled",
@@ -2328,6 +3276,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2348,8 +3306,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-j21-static",
@@ -2379,6 +3352,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2396,8 +3379,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j8-baseline",
@@ -2428,6 +3426,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2441,8 +3449,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j8-fixed",
@@ -2470,6 +3493,15 @@
     "tls12": {
      "ok": false,
      "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2484,8 +3516,22 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j11-baseline",
@@ -2515,6 +3561,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2528,8 +3584,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j11-fixed",
@@ -2562,6 +3633,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2575,8 +3656,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j17-baseline",
@@ -2606,6 +3702,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2619,8 +3725,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j17-fixed",
@@ -2653,6 +3774,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2666,8 +3797,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j21-baseline",
@@ -2697,6 +3843,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2710,8 +3866,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j21-fixed",
@@ -2744,6 +3915,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2757,8 +3938,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j25-baseline",
@@ -2791,6 +3987,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2804,8 +4010,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j8-layer",
@@ -2838,6 +4059,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2851,8 +4082,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-lambda-image-j8-layer-hostfix",
@@ -2885,6 +4131,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2900,8 +4156,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto8-baseline",
@@ -2931,6 +4202,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto8 java",
@@ -2950,8 +4231,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto8-agent",
@@ -2979,6 +4275,15 @@
     "tls12": {
      "ok": false,
      "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto8 java",
@@ -3000,8 +4305,22 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto8-agent-hostfix",
@@ -3034,6 +4353,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto8 java",
@@ -3054,8 +4383,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto8-agent-noproto",
@@ -3088,6 +4432,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto8 java",
@@ -3109,8 +4463,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto11-baseline",
@@ -3140,6 +4509,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto11 java",
@@ -3158,8 +4537,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto11-agent",
@@ -3192,6 +4586,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto11 java",
@@ -3212,8 +4616,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto17-baseline",
@@ -3243,6 +4662,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto17 java",
@@ -3261,8 +4690,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto17-agent",
@@ -3295,6 +4739,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto17 java",
@@ -3315,8 +4769,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto21-baseline",
@@ -3346,6 +4815,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21 java",
@@ -3364,8 +4843,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto21-agent",
@@ -3398,6 +4892,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21 java",
@@ -3418,8 +4922,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto25-baseline",
@@ -3452,6 +4971,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto25 java",
@@ -3470,8 +4999,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto21-agent-ec",
@@ -3504,6 +5048,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21 java",
@@ -3525,8 +5079,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto21-agent-image",
@@ -3559,6 +5128,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21-agent-image java",
@@ -3577,8 +5156,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-temurin21-static",
@@ -3611,6 +5205,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:temurin21-static java",
@@ -3629,8 +5233,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto17-static",
@@ -3663,6 +5282,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto17-static java",
@@ -3681,8 +5310,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto21-static",
@@ -3715,6 +5359,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21-static java",
@@ -3733,8 +5387,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-corretto21-static-ec",
@@ -3767,6 +5436,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21-static java",
@@ -3787,8 +5466,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-al2023-j17-baseline",
@@ -3818,6 +5512,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-17/bin/java",
@@ -3836,8 +5540,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-al2023-j21-baseline",
@@ -3867,6 +5586,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-21/bin/java",
@@ -3885,8 +5614,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-al2023-j25-baseline",
@@ -3919,6 +5663,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-25/bin/java",
@@ -3937,8 +5691,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-fargate-al2023-j21-agent",
@@ -3971,6 +5740,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:al2023 /usr/lib/jvm/jre-21/bin/java",
@@ -3991,8 +5770,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ecsec2-corretto21-baseline",
@@ -4022,6 +5816,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21 java",
@@ -4040,8 +5844,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ecsec2-corretto21-agent",
@@ -4074,6 +5893,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto21 java",
@@ -4094,8 +5923,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ecsec2-corretto25-baseline",
@@ -4128,6 +5972,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto25 java",
@@ -4146,8 +6000,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ecsec2-corretto17-static",
@@ -4180,6 +6049,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto17-static java",
@@ -4198,8 +6077,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ecsec2-corretto8-agent",
@@ -4227,6 +6121,15 @@
     "tls12": {
      "ok": false,
      "error_match": "No hostname specified for HTTPS endpoint ID check"
+    },
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-java:corretto8 java",
@@ -4248,8 +6151,22 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j11-baseline",
@@ -4279,6 +6196,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-11/bin/java",
@@ -4293,8 +6220,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j11-agent",
@@ -4327,6 +6269,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-11/bin/java",
@@ -4343,8 +6295,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j17-baseline",
@@ -4374,6 +6341,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-17/bin/java",
@@ -4388,8 +6365,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j17-agent",
@@ -4422,6 +6414,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-17/bin/java",
@@ -4438,8 +6440,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j21-baseline",
@@ -4469,6 +6486,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-21/bin/java",
@@ -4483,8 +6510,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j21-agent",
@@ -4517,6 +6559,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-21/bin/java",
@@ -4533,8 +6585,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j25-baseline",
@@ -4567,6 +6634,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-25/bin/java",
@@ -4581,8 +6658,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-default-java",
@@ -4615,6 +6707,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 java",
@@ -4629,8 +6731,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2023-j21-agent-ec",
@@ -4663,6 +6780,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /usr/lib/jvm/jre-21/bin/java",
@@ -4680,8 +6807,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2-j11-baseline",
@@ -4711,6 +6853,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2 /usr/lib/jvm/jre-11/bin/java",
@@ -4725,8 +6877,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2-j11-agent",
@@ -4759,6 +6926,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2 /usr/lib/jvm/jre-11/bin/java",
@@ -4775,8 +6952,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2-j17-baseline",
@@ -4806,6 +6998,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2 /usr/lib/jvm/jre-17/bin/java",
@@ -4820,8 +7022,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "java-ec2-al2-j17-agent",
@@ -4854,6 +7071,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2 /usr/lib/jvm/jre-17/bin/java",
@@ -4870,8 +7097,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   }
  ]
 }

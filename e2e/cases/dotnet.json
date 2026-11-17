@@ -37,6 +37,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -51,8 +61,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-bundled-conf",
@@ -85,6 +110,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -101,8 +136,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-layer-wrapper",
@@ -135,6 +185,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -153,8 +213,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-layer-conf",
@@ -187,6 +262,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -205,8 +290,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-extension",
@@ -354,6 +454,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -372,8 +482,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-store-clientcert",
@@ -406,6 +531,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -424,8 +559,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-store-clientcert-nohome",
@@ -458,6 +608,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -476,8 +636,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet8-ssl-cert-file",
@@ -510,6 +685,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -528,8 +713,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-baseline",
@@ -559,6 +759,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -573,8 +783,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-bundled-conf",
@@ -607,6 +832,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -623,8 +858,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-layer-wrapper",
@@ -657,6 +907,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -675,8 +935,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-layer-conf",
@@ -709,6 +984,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -727,8 +1012,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-extension",
@@ -876,6 +1176,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -894,8 +1204,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-store-clientcert",
@@ -928,6 +1253,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -946,8 +1281,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-store-clientcert-nohome",
@@ -980,6 +1330,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -998,8 +1358,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-ssl-cert-file",
@@ -1032,6 +1407,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1050,8 +1435,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-callback-trust",
@@ -1084,6 +1484,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1101,8 +1511,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-ssl-cert-dir",
@@ -1135,6 +1560,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1153,8 +1588,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-no-ca",
@@ -1182,6 +1632,16 @@
     "tls12": {
      "ok": false,
      "error_match": "UntrustedRoot|RemoteCertificateChainErrors|PartialChain"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1199,8 +1659,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-pem-clientcert",
@@ -1233,6 +1708,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1250,8 +1735,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-hch-p12-clientcert",
@@ -1284,6 +1784,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1302,8 +1812,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-tls12-pin",
@@ -1334,6 +1859,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1351,8 +1886,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-dotnet10-tls12-tls13",
@@ -1385,6 +1935,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1402,8 +1962,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-aot-baseline",
@@ -1433,6 +2008,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1447,8 +2032,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-aot-bundled-conf",
@@ -1481,6 +2081,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1497,8 +2107,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-image-dotnet8-baseline",
@@ -1528,6 +2153,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1539,8 +2174,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-image-dotnet8-fixed",
@@ -1573,6 +2223,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1584,8 +2244,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-image-dotnet10-baseline",
@@ -1615,6 +2290,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1626,8 +2311,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-lambda-image-dotnet10-fixed",
@@ -1660,6 +2360,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1671,8 +2381,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-runtime-80",
@@ -1702,6 +2427,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-8.0 net8",
@@ -1720,8 +2455,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-runtime-80-alpine",
@@ -1754,6 +2504,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-8.0-alpine net8",
@@ -1772,8 +2534,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-runtime-80-noble",
@@ -1803,6 +2582,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-8.0-noble net8",
@@ -1821,8 +2610,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-runtime-100",
@@ -1852,6 +2656,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-10.0 net10",
@@ -1870,8 +2684,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-runtime-100-alpine",
@@ -1904,6 +2733,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-10.0-alpine net10",
@@ -1922,8 +2763,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-runtime-100-azurelinux30",
@@ -1953,6 +2811,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-10.0-azurelinux3.0 net10",
@@ -1971,8 +2839,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-aspnet-100-noble-chiseled",
@@ -2002,6 +2885,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-noble-chiseled net10",
@@ -2020,8 +2913,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-aspnet-100-resolute",
@@ -2054,6 +2962,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
@@ -2072,8 +2992,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-aspnet-100-resolute-chiseled",
@@ -2106,6 +3043,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute-chiseled net10",
@@ -2124,8 +3073,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-resolute-sysca",
@@ -2158,6 +3124,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute-sysca net10",
@@ -2178,8 +3156,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-alpine-sysca",
@@ -2212,6 +3207,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-10.0-alpine-sysca net10",
@@ -2232,8 +3239,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-resolute-ssl-cert-file",
@@ -2266,6 +3290,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
@@ -2287,8 +3323,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-resolute-store-clientcert",
@@ -2321,6 +3374,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
@@ -2342,8 +3407,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-resolute-pem-clientcert",
@@ -2376,6 +3458,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
@@ -2396,8 +3490,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-resolute-tls12-pin",
@@ -2428,6 +3539,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
@@ -2448,8 +3571,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-alpine8-callback-trust",
@@ -2482,6 +3622,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-8.0-alpine net8",
@@ -2503,8 +3655,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-debian8-store-clientcert",
@@ -2534,6 +3703,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-8.0 net8",
@@ -2555,8 +3734,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-net8-baseline",
@@ -2586,6 +3780,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023 net8",
@@ -2604,8 +3808,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-net8-conf",
@@ -2638,6 +3857,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023 net8",
@@ -2658,8 +3887,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-net8-policy",
@@ -2692,6 +3936,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
     }
    },
    "runtime_label": "pqc-dotnet:al2023-policy net8",
@@ -2710,8 +3966,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-net10-baseline",
@@ -2741,6 +4014,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023 net10",
@@ -2759,8 +4042,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-net10-conf",
@@ -2793,6 +4091,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023 net10",
@@ -2813,8 +4121,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-net10-policy",
@@ -2847,6 +4170,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:al2023-policy net10",
@@ -2865,8 +4200,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-fixed-net8",
@@ -2899,6 +4251,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023-fixed net8",
@@ -2917,8 +4279,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-fargate-al2023-sysca-conf",
@@ -2951,6 +4328,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023-sysca net10",
@@ -2972,8 +4359,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ecsec2-debian8-baseline",
@@ -3003,6 +4405,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-8.0 net8",
@@ -3021,8 +4433,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ecsec2-alpine10-baseline",
@@ -3055,6 +4482,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-runtime-10.0-alpine net10",
@@ -3073,8 +4512,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-ecsec2-resolute-baseline",
@@ -3107,6 +4563,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:mcr-aspnet-10.0-resolute net10",
@@ -3125,8 +4593,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-ecsec2-al2023-net10-baseline",
@@ -3156,6 +4641,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023 net10",
@@ -3174,8 +4669,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ecsec2-al2023-net8-conf",
@@ -3208,6 +4718,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-dotnet:al2023 net8",
@@ -3228,8 +4748,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ecsec2-al2023-net10-policy",
@@ -3262,6 +4797,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-dotnet:al2023-policy net10",
@@ -3280,8 +4827,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net8-baseline",
@@ -3311,6 +4875,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net8/probe.dll",
@@ -3325,8 +4899,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net8-service-conf",
@@ -3359,6 +4948,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net8/probe.dll",
@@ -3375,8 +4974,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net8-host-policy",
@@ -3409,6 +5023,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net8/probe.dll",
@@ -3426,8 +5052,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": false,
+     "error_match": "not a known key algorithm"
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net10-baseline",
@@ -3457,6 +5100,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
@@ -3471,8 +5124,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net10-service-conf",
@@ -3505,6 +5173,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
@@ -3521,8 +5199,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net10-host-policy",
@@ -3555,6 +5248,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
@@ -3572,8 +5277,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "dotnet-ec2-al2023-net10-policy-store-clientcert",
@@ -3606,6 +5328,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/dotnet/net10/probe.dll",
@@ -3625,8 +5359,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   }
  ]
 }

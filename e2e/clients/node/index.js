@@ -19,7 +19,11 @@ const path = require('node:path');
 const http = require('node:http');
 const https = require('node:https');
 
-const TARGETS = { hybrid: 8443, pqonly: 8444, mtls: 8445, eccert: 8446, tls12: 8447 };
+const TARGETS = { hybrid: 8443, pqonly: 8444, mtls: 8445, eccert: 8446, tls12: 8447,
+  'mldsa-dual': 8448, 'mldsa-only': 8449, 'mldsa-mtls': 8450 };
+// ML-DSA targets: always `ca: ca-both.crt` (test CA + ML-DSA test CA), whatever PQC_NODE_TRUST says, so they measure
+// ML-DSA support rather than the trust mechanism; mldsa-mtls presents client-mldsa.crt/.key.
+const PASS_THROUGH = ['server_cert', 'server_sigalg', 'client_cert', 'client_sigalg'];
 const env = process.env;
 
 function certsDir() {
@@ -51,8 +55,13 @@ function viaExtension(name, caseId) {
 
 function viaHttps(host, name, port, caseId, certs) {
   const opts = { host, port, path: `/probe?id=${encodeURIComponent(caseId)}`, method: 'GET', timeout: 10000 };
-  const trust = env.PQC_NODE_TRUST || 'ca';
-  if (trust === 'ca') opts.ca = fs.readFileSync(path.join(certs, 'ca.crt'));
+  const mldsa = name.startsWith('mldsa');
+  const trust = mldsa ? 'ca' : (env.PQC_NODE_TRUST || 'ca');
+  if (trust === 'ca') opts.ca = fs.readFileSync(path.join(certs, mldsa ? 'ca-both.crt' : 'ca.crt'));
+  if (name === 'mldsa-mtls') {
+    opts.cert = fs.readFileSync(path.join(certs, 'client-mldsa.crt'));
+    opts.key = fs.readFileSync(path.join(certs, 'client-mldsa.key'));
+  }
   if (name === 'mtls') {
     const cc = env.PQC_NODE_CLIENT_CERT || 'pem';
     if (cc === 'pem') {
@@ -115,10 +124,11 @@ async function run(caseId, targets) {
     try {
       let r;
       if (env.PQC_EGRESS_PORT) r = await viaExtension(name, caseId);
-      else if (env.PQC_NODE_STACK === 'fetch') r = await viaFetch(host, name, TARGETS[name], caseId);
+      else if (env.PQC_NODE_STACK === 'fetch' && !name.startsWith('mldsa')) r = await viaFetch(host, name, TARGETS[name], caseId);
       else r = await viaHttps(host, name, TARGETS[name], caseId, certs);
       const o = r.obs || {};
       res = { ok: true, tls_version: o.tls_version, group: o.group, pq: !!o.pq, offered_pq: !!o.offered_pq, stack: r.stack };
+      for (const k of PASS_THROUGH) if (k in o) res[k] = o[k];
       if (r.info) res.client_view = r.info; // getProtocol + getEphemeralKeyInfo, as the client sees it
     } catch (e) {
       res = { ok: false, error: errText(e), stack: (e && e.stack ? String(e.stack).split('\n').slice(0, 3).join(' | ') : undefined) };

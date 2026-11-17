@@ -2,7 +2,7 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 COPY ec2/al2/packages.d/ /tmp/packages.d/
 RUN yum -y -q install openssh-server openssh-clients $(cat /tmp/packages.d/*.txt | grep -v '^#') && yum clean all && rm -rf /var/cache/yum
-COPY .work/certs/ca.crt .work/certs/client.crt .work/certs/client.key .work/certs/client.p12 .work/certs/truststore.p12 /etc/pqc/certs/
+COPY .work/certs/ca.crt .work/certs/client.crt .work/certs/client.key .work/certs/client.p12 .work/certs/truststore.p12 .work/certs/truststore-both.p12 .work/certs/ca-both.crt .work/certs/client-mldsa.crt .work/certs/client-mldsa.key .work/certs/client-mldsa.p12 /etc/pqc/certs/
 COPY .work/artifacts/ec2/ /opt/pqc/
 COPY ec2/al2/setup.d/ /tmp/setup.d/
 RUN for s in /tmp/setup.d/*.sh; do [ -f "$s" ] && bash -eux "$s"; done; chmod -R a+rX /opt/pqc /etc/pqc

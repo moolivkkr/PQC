@@ -17,7 +17,10 @@ import ssl
 import sys
 import time
 
-TARGETS = {"hybrid": 8443, "pqonly": 8444, "mtls": 8445, "eccert": 8446, "tls12": 8447}
+TARGETS = {"hybrid": 8443, "pqonly": 8444, "mtls": 8445, "eccert": 8446, "tls12": 8447,
+           "mldsa-dual": 8448, "mldsa-only": 8449, "mldsa-mtls": 8450}
+# ML-DSA targets: trust = ca-both.crt (test CA + ML-DSA test CA); mldsa-mtls presents client-mldsa.crt/.key.
+PASS_THROUGH = ("server_cert", "server_sigalg", "client_cert", "client_sigalg")
 HERE = os.path.dirname(os.path.abspath(__file__))
 _FALLBACK = None
 
@@ -40,12 +43,15 @@ def _via_extension(name):
 
 def _fetch(host, name, port, case_id, certs):
     path = "/probe?id=%s" % case_id
+    ca = os.path.join(certs, "ca-both.crt" if name.startswith("mldsa") else "ca.crt")
     cert = (os.path.join(certs, "client.crt"), os.path.join(certs, "client.key")) if name == "mtls" else None
+    if name == "mldsa-mtls":
+        cert = (os.path.join(certs, "client-mldsa.crt"), os.path.join(certs, "client-mldsa.key"))
     try:
         if os.environ.get("PQC_PY_STACK") == "stdlib":
             raise ImportError("PQC_PY_STACK=stdlib")
         import urllib3  # noqa: F401  (requests / boto3 stack)
-        kw = {"ca_certs": os.path.join(certs, "ca.crt"), "cert_reqs": "CERT_REQUIRED", "retries": False,
+        kw = {"ca_certs": ca, "cert_reqs": "CERT_REQUIRED", "retries": False,
               "timeout": urllib3.Timeout(connect=5, read=10)}
         if cert:
             kw["cert_file"], kw["key_file"] = cert
@@ -58,7 +64,7 @@ def _fetch(host, name, port, case_id, certs):
         global _FALLBACK
         _FALLBACK = "%s: %s" % (type(e).__name__, e)
         import http.client
-        ctx = ssl.create_default_context(cafile=os.path.join(certs, "ca.crt"))
+        ctx = ssl.create_default_context(cafile=ca)
         if cert:
             ctx.load_cert_chain(*cert)
         c = http.client.HTTPSConnection(host, port, context=ctx, timeout=10)
@@ -84,6 +90,7 @@ def run(case_id=None, targets=None):
                 obs, stack = _fetch(host, name, TARGETS[name], case_id, certs)
             res = {"ok": True, "tls_version": obs.get("tls_version"), "group": obs.get("group"),
                    "pq": obs.get("pq", False), "offered_pq": obs.get("offered_pq", False), "stack": stack}
+            res.update({k: obs[k] for k in PASS_THROUGH if k in obs})
         except Exception as e:  # handshake failure etc. - a result, not a crash
             res = {"ok": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
         res["ms"] = int((time.time() - t0) * 1000)

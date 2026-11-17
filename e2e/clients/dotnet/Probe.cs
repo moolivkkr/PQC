@@ -27,7 +27,27 @@ namespace Probe;
 public static class Core
 {
     static readonly (string Name, int Port)[] Targets =
-        { ("hybrid", 8443), ("pqonly", 8444), ("mtls", 8445), ("eccert", 8446), ("tls12", 8447) };
+        { ("hybrid", 8443), ("pqonly", 8444), ("mtls", 8445), ("eccert", 8446), ("tls12", 8447),
+          ("mldsa-dual", 8448), ("mldsa-only", 8449), ("mldsa-mtls", 8450) };
+    static readonly string[] PassThrough = { "server_cert", "server_sigalg", "client_cert", "client_sigalg" };
+
+    // ML-DSA targets: SocketsHttpHandler with custom root trust = both roots in ca-both.crt (test CA + ML-DSA test CA),
+    // whatever PQC_DOTNET_TRUST says; mldsa-mtls presents client-mldsa.crt/.key (PEM). They measure ML-DSA support only.
+    static HttpMessageInvoker MldsaClient(string target, string certs)
+    {
+        var roots = new X509Certificate2Collection();
+        roots.ImportFromPemFile(Path.Combine(certs, "ca-both.crt"));
+        var sh = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(5), PooledConnectionLifetime = TimeSpan.Zero };
+        sh.SslOptions.CertificateChainPolicy = new X509ChainPolicy
+        {
+            TrustMode = X509ChainTrustMode.CustomRootTrust, RevocationMode = X509RevocationMode.NoCheck,
+        };
+        sh.SslOptions.CertificateChainPolicy.CustomTrustStore.AddRange(roots);
+        if (target == "mldsa-mtls")
+            sh.SslOptions.ClientCertificates = new X509CertificateCollection {
+                X509Certificate2.CreateFromPemFile(Path.Combine(certs, "client-mldsa.crt"), Path.Combine(certs, "client-mldsa.key")) };
+        return new HttpClient(sh) { Timeout = TimeSpan.FromSeconds(15) };
+    }
 
     static string Env(string k, string d = "") => Environment.GetEnvironmentVariable(k) is { Length: > 0 } v ? v : d;
 
@@ -184,7 +204,7 @@ public static class Core
                 else
                 {
                     var port = Targets.First(t => t.Name == name).Port;
-                    using var c = Client(name, certs, notes);
+                    using var c = name.StartsWith("mldsa") ? MldsaClient(name, certs) : Client(name, certs, notes);
                     obs = Get(c, $"https://{host}:{port}/probe?id={caseId}");
                 }
                 res["ok"] = true;
@@ -192,7 +212,8 @@ public static class Core
                 res["group"] = Str(obs, "group");
                 res["pq"] = Bool(obs, "pq");
                 res["offered_pq"] = Bool(obs, "offered_pq");
-                res["stack"] = stack;
+                foreach (var k in PassThrough) if (obs.TryGetProperty(k, out var pv) && pv.ValueKind == JsonValueKind.String) res[k] = pv.GetString();
+                res["stack"] = name.StartsWith("mldsa") && egress.Length == 0 ? "SocketsHttpHandler trust=custom(ca-both)" : stack;
             }
             catch (Exception e)
             {

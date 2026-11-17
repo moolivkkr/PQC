@@ -20,13 +20,16 @@ Input (environment; the Lambda event may also carry `case_id` and `targets`):
 | Var | Meaning |
 |---|---|
 | `PQC_CASE_ID` | Case id; send as `?id=` on every request |
-| `PQC_TARGETS` | Comma list from `hybrid,pqonly,mtls,eccert,tls12`, visited **in that order** (the runner brackets failed handshakes between successful ones) |
+| `PQC_TARGETS` | Comma list from `hybrid,pqonly,mtls,eccert,tls12,mldsa-dual,mldsa-only,mldsa-mtls`, visited **in that order** (the runner brackets failed handshakes between successful ones) |
 | `PQC_OBSERVER` | Host, `pq-observer` |
 | `PQC_COMPUTE`, `PQC_MODE` | Echo into output |
 | `PQC_CERTS` | Optional cert dir; else `<probe dir>/certs`, `/opt/pqc-certs`, `/etc/pqc/certs` |
 | `PQC_EGRESS_PORT` | If set: extension mode. `GET http://127.0.0.1:$PQC_EGRESS_PORT/<target>/probe?id=<case>` (plain HTTP); the pq-egress extension makes the TLS connection |
 
-Ports: hybrid 8443, pqonly 8444, mtls 8445 (send client cert), eccert 8446, tls12 8447.
+Ports: hybrid 8443, pqonly 8444, mtls 8445 (send client cert), eccert 8446, tls12 8447, mldsa-dual 8448,
+mldsa-only 8449, mldsa-mtls 8450 (send the ML-DSA client cert). On the `mldsa-*` targets trust `ca-both.crt`
+(`truststore-both.p12` for Java), use `client-mldsa.crt` + `client-mldsa.key` (`client-mldsa.p12`) on `mldsa-mtls`, and
+pass through `server_cert`, `server_sigalg`, `client_cert`, `client_sigalg` from the response.
 `GET https://pq-observer:<port>/probe?id=<case>` returns the observer's JSON view: `tls_version`, `group`, `pq`, `offered_pq`.
 
 Trust only the test CA (`ca.crt`, or `truststore.p12` for Java, password `changeit`). Client certificate for mtls:
@@ -64,7 +67,9 @@ and the finding explains the gap and names the doc line. The summary lists every
 silently.
 
 `expect` per target: any of `ok`, `pq`, `group`, `tls_version`, `offered_pq`, `error_match` (regex). Presets in
-`cases/lib.py`: `CLASSICAL`, `PQ`, `TLS12_ONLY`, plus `override(...)`.
+`cases/lib.py`: `CLASSICAL`, `PQ`, `TLS12_ONLY`, `MLDSA_FULL`, `MLDSA_NONE`, plus `override(...)`. `mldsa_expect`
+(merged into `expect` for the `mldsa-*` targets) and `mldsa: False` (skip them) are per-case keys. On the `mldsa-*`
+targets `expect` may also check `server_cert` and `client_cert` (`mldsa`, `ecdsa`).
 
 ## Run
 

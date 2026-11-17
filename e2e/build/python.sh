@@ -19,7 +19,7 @@ docker run --rm "${LBL[@]}" -v "$B":/b --entrypoint sh public.ecr.aws/lambda/pyt
   "pip install -q --disable-pip-version-check --target /b/pywheels-noidna-3.11 cryptography==50.0.2 pyOpenSSL==26.4.0 && rm -rf /b/pywheels-noidna-3.11/bin" 2>&1 | grep -v -i 'notice\|warning' || true
 pkg() { # pkg <name> [extra shell steps...]: probe + certs (+ extras) -> lambda/python/<name>.zip
   local d="$B/pkg-$1"; rm -rf "$d"; mkdir -p "$d/certs"
-  cp "$SRC/probe.py" "$d/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key} "$d/certs/"
+  cp "$SRC/probe.py" "$d/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,ca-both.crt,client-mldsa.crt,client-mldsa.key} "$d/certs/"
   shift; for x in "$@"; do eval "$x"; done
   zipdir "$d" "$OUT/$(basename "$d" | sed 's/^pkg-//').zip"
 }
@@ -43,7 +43,7 @@ for v in 3.9 3.10 3.11; do
 done
 
 # Lambda container images (PackageType Image) on AWS's base image
-LC="$B/lambda-image"; mkdir -p "$LC/certs" "$LC/pq-tls"; cp "$SRC/probe.py" "$LC/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key} "$LC/certs/"
+LC="$B/lambda-image"; mkdir -p "$LC/certs" "$LC/pq-tls"; cp "$SRC/probe.py" "$LC/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,ca-both.crt,client-mldsa.crt,client-mldsa.key} "$LC/certs/"
 cp "$CFG/pq-tls/openssl-pq.cnf" "$LC/pq-tls/"
 for v in 3.12 3.13; do
   cat > "$LC/Dockerfile.base" <<EOF
@@ -59,7 +59,7 @@ EOF
 done
 
 # ECS images
-EC="$B/ecs"; mkdir -p "$EC/certs" "$EC/pq-tls"; cp "$SRC/probe.py" "$EC/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key} "$EC/certs/"
+EC="$B/ecs"; mkdir -p "$EC/certs" "$EC/pq-tls"; cp "$SRC/probe.py" "$EC/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,ca-both.crt,client-mldsa.crt,client-mldsa.key} "$EC/certs/"
 cp "$CFG/pq-tls/openssl-pq.cnf" "$EC/pq-tls/"
 cat > "$EC/Dockerfile.al2023" <<EOF
 # AL2023 (same release as the AMI) + Python 3.11-3.14 from dnf. Config file present, NOT enabled:

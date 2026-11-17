@@ -37,6 +37,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -52,8 +62,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n18-bundled-conf",
@@ -83,6 +108,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -99,8 +134,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n18-bundled-flag",
@@ -130,6 +180,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -146,8 +206,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n18-layer",
@@ -177,6 +252,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -195,8 +280,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n18-extension",
@@ -341,6 +441,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -356,8 +466,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n20-bundled-conf",
@@ -387,6 +512,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -403,8 +538,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n20-bundled-flag",
@@ -434,6 +584,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -450,8 +610,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n20-layer",
@@ -481,6 +656,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -499,8 +684,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n20-extension",
@@ -645,6 +845,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -659,8 +871,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-bundled-conf",
@@ -693,6 +922,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -709,8 +950,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-bundled-flag",
@@ -743,6 +1001,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -759,8 +1029,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-layer",
@@ -793,6 +1080,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -811,8 +1110,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-extension",
@@ -957,6 +1273,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -971,8 +1299,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-bundled-conf",
@@ -1005,6 +1350,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1021,8 +1378,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-bundled-flag",
@@ -1055,6 +1429,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1071,8 +1457,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-layer",
@@ -1105,6 +1508,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1123,8 +1538,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-extension",
@@ -1272,6 +1704,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1288,8 +1732,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-devnull",
@@ -1322,6 +1783,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1338,8 +1811,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-code-ecdh",
@@ -1372,6 +1862,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1388,8 +1890,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-combined-wrapper",
@@ -1422,6 +1941,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1440,8 +1971,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-layer-ownconf",
@@ -1471,6 +2019,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1490,8 +2050,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-layer-chain",
@@ -1524,6 +2101,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1543,8 +2132,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-layer-disabled",
@@ -1574,6 +2180,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1593,8 +2211,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-code-ecdh-classical",
@@ -1624,6 +2259,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1641,8 +2288,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-tls-max-12",
@@ -1674,6 +2338,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1691,8 +2365,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n22-nec-bundled",
@@ -1725,6 +2414,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1743,8 +2444,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-nec-bundled",
@@ -1777,6 +2495,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1795,8 +2525,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-nec-aws",
@@ -1826,6 +2573,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1843,8 +2602,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-nec-none",
@@ -1872,6 +2648,18 @@
     "tls12": {
      "ok": false,
      "error_match": "UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|UNABLE_TO_GET_ISSUER"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1889,8 +2677,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-nec-layer",
@@ -1923,6 +2728,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1943,8 +2760,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-fetch-nec",
@@ -1973,6 +2807,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1991,8 +2837,25 @@
     "hybrid",
     "pqonly",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-pfx",
@@ -2025,6 +2888,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2042,8 +2917,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n24-pfx-legacy",
@@ -2076,6 +2968,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2093,8 +2997,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n22-pfx-legacy",
@@ -2127,6 +3048,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2144,8 +3077,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-n20-pfx-legacy",
@@ -2175,6 +3125,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -2191,8 +3151,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-lambda-n24-pfx-legacy-provider",
@@ -2225,6 +3200,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2243,8 +3230,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-image-n22-baseline",
@@ -2274,6 +3278,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2285,8 +3301,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-image-n22-fixed",
@@ -2319,6 +3352,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2330,8 +3375,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-image-n24-baseline",
@@ -2361,6 +3423,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2372,8 +3446,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-lambda-image-n24-fixed",
@@ -2406,6 +3497,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -2417,8 +3520,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n20-baseline",
@@ -2448,6 +3568,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:al2023 node-20",
@@ -2464,8 +3594,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n20-conf",
@@ -2498,6 +3643,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023 node-20",
@@ -2517,8 +3674,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n20-policy",
@@ -2551,6 +3725,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023-policy node-20",
@@ -2568,8 +3754,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n22-baseline",
@@ -2599,6 +3802,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:al2023 node-22",
@@ -2615,8 +3828,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n22-conf",
@@ -2649,6 +3877,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023 node-22",
@@ -2667,8 +3907,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n22-policy",
@@ -2701,6 +3958,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023-policy node-22",
@@ -2717,8 +3986,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n24-baseline",
@@ -2748,6 +4034,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:al2023 node-24",
@@ -2764,8 +4060,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n24-conf",
@@ -2798,6 +4109,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023 node-24",
@@ -2816,8 +4139,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-al2023-n24-policy",
@@ -2850,6 +4190,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023-policy node-24",
@@ -2866,8 +4218,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-20-slim",
@@ -2897,6 +4266,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:lib-20-slim node",
@@ -2913,8 +4292,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-lib-20-alpine",
@@ -2944,6 +4338,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:lib-20-alpine node",
@@ -2960,8 +4364,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-lib-22-slim",
@@ -2994,6 +4413,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-22-slim node",
@@ -3010,8 +4441,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-22-alpine",
@@ -3044,6 +4492,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-22-alpine node",
@@ -3060,8 +4520,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-slim",
@@ -3094,6 +4571,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -3110,8 +4599,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-alpine",
@@ -3144,6 +4650,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-alpine node",
@@ -3160,8 +4678,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-26-slim",
@@ -3194,6 +4729,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-26-slim node",
@@ -3210,8 +4757,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-2219-alpine",
@@ -3241,6 +4805,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:lib-22.19-alpine node",
@@ -3257,8 +4831,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-lib-2220-alpine",
@@ -3291,6 +4880,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-22.20-alpine node",
@@ -3307,8 +4908,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-244-alpine",
@@ -3338,6 +4956,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:lib-24.4-alpine node",
@@ -3354,8 +4982,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-fargate-lib-245-alpine",
@@ -3388,6 +5031,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24.5-alpine node",
@@ -3404,8 +5059,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-distro-debian13",
@@ -3438,6 +5110,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:distro-debian13 node",
@@ -3454,8 +5138,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-distro-alpine322",
@@ -3488,6 +5189,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:distro-alpine322 node",
@@ -3504,8 +5217,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-slim-nec",
@@ -3538,6 +5268,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -3557,8 +5299,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-22-slim-fetch",
@@ -3587,6 +5346,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-22-slim node",
@@ -3606,8 +5377,25 @@
     "hybrid",
     "pqonly",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-slim-pfx",
@@ -3640,6 +5428,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -3658,8 +5458,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-slim-pfx-legacy",
@@ -3692,6 +5509,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -3710,8 +5539,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-slim-pfx-legacy-provider",
@@ -3744,6 +5590,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -3763,8 +5621,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-fargate-lib-24-slim-tls-max-12",
@@ -3796,6 +5671,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -3814,8 +5699,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-ecsec2-al2023-n22-baseline",
@@ -3845,6 +5745,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:al2023 node-22",
@@ -3861,8 +5771,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-ecsec2-al2023-n22-conf",
@@ -3895,6 +5820,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023 node-22",
@@ -3913,8 +5850,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ecsec2-al2023-n24-policy",
@@ -3947,6 +5901,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:al2023-policy node-24",
@@ -3963,8 +5929,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ecsec2-lib-24-slim",
@@ -3997,6 +5980,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-node:lib-24-slim node",
@@ -4013,8 +6008,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ecsec2-lib-20-slim",
@@ -4044,6 +6056,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-node:lib-20-slim node",
@@ -4060,8 +6082,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n20-baseline",
@@ -4091,6 +6128,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 node-20",
@@ -4105,8 +6152,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n20-service-conf",
@@ -4139,6 +6201,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 node-20",
@@ -4156,8 +6230,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n20-host-policy",
@@ -4190,6 +6281,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 node-20",
@@ -4207,8 +6310,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n22-baseline",
@@ -4238,6 +6358,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 node-22",
@@ -4252,8 +6382,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n22-service-conf",
@@ -4286,6 +6431,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 node-22",
@@ -4302,8 +6459,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n22-host-policy",
@@ -4336,6 +6510,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 node-22",
@@ -4352,8 +6538,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n24-baseline",
@@ -4383,6 +6586,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 node-24",
@@ -4397,8 +6610,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n24-service-conf",
@@ -4431,6 +6659,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 node-24",
@@ -4447,8 +6687,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-n24-host-policy",
@@ -4481,6 +6738,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 node-24",
@@ -4497,8 +6766,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-official22-baseline",
@@ -4531,6 +6817,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/node/official-22/bin/node",
@@ -4545,8 +6843,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-official24-baseline",
@@ -4579,6 +6894,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/node/official-24/bin/node",
@@ -4593,8 +6920,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "node-ec2-al2023-official24-host-default-pq",
@@ -4627,6 +6971,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 /opt/pqc/node/official-24/bin/node",
@@ -4643,8 +6999,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   }
  ]
 }

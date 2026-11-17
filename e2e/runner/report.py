@@ -15,6 +15,21 @@ def _cell(r, t):
     return ("**PQ**" if c.get("pq") else "classical") + (" 1.2" if c.get("tls_version") == "TLSv1.2" else "")
 
 
+def _mcell(r, t):
+    """ML-DSA targets: which server certificate the client got (dual/only), or which client certificate it presented (mtls)."""
+    v = (r.get("targets") or {}).get(t) or {}
+    c = v.get("client") or {}
+    if not c:
+        return "-"
+    if not c.get("ok"):
+        return "fail"
+    k = c.get("client_cert") if t == "mldsa-mtls" else c.get("server_cert")
+    return {"mldsa": "**ML-DSA**", "ecdsa": "ECDSA", "rsa": "RSA"}.get(k, k or "?")
+
+
+MLDSA = ("mldsa-dual", "mldsa-only", "mldsa-mtls")
+
+
 def write(out_dir, run_id, results, meta):
     json.dump({"run_id": run_id, "meta": meta, "results": results}, open(os.path.join(out_dir, "results.json"), "w"),
               indent=1, default=str)
@@ -45,7 +60,7 @@ def write(out_dir, run_id, results, meta):
           "LocalStack: %s. %d of %d cases passed." % (meta.get("localstack"), p, len(results)), "",
           "PASS = the observed behaviour matched the expectation in the case file (which is the documented behaviour); "
           "it does not mean PQ was negotiated. Cells: what the client negotiated against each observer listener "
-          "(hybrid :8443, pqonly :8444, mtls :8445, eccert :8446, tls12 :8447).", ""]
+          "(hybrid :8443, pqonly :8444, mtls :8445, eccert :8446, tls12 :8447; ML-DSA certificates: mldsa-dual :8448, mldsa-only :8449, mldsa-mtls :8450). ML-DSA cells: the server certificate the client received (mldsa-dual, mldsa-only) or the client certificate it presented (mldsa-mtls).", ""]
     srv = [r for r in results if r.get("role") == "server"]
     if srv:
         md += ["## Load balancer target leg (server role)", "",
@@ -64,15 +79,16 @@ def write(out_dir, run_id, results, meta):
         if not rs:
             continue
         md += ["## %s" % lang, "",
-               "| Case | Compute | Runtime | Mode | hybrid | pqonly | mtls | eccert | tls12 | Verdict |",
-               "|---|---|---|---|---|---|---|---|---|---|"]
+               "| Case | Compute | Runtime | Mode | hybrid | pqonly | mtls | eccert | tls12 | mldsa-dual | mldsa-only | mldsa-mtls | Verdict |",
+               "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in sorted(rs, key=lambda r: (r["compute"], r["id"])):
             if r["mode"] == "detection":
-                md.append("| %s | %s | | detection | %s | | | | | %s |" % (r["id"], r["compute"], r.get("summary", ""), r["verdict"]))
+                md.append("| %s | %s | | detection | %s | | | | | | | | %s |" % (r["id"], r["compute"], r.get("summary", ""), r["verdict"]))
                 continue
-            md.append("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (
+            md.append("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (
                 r["id"], r["compute"], r.get("runtime") or r.get("runtime_label") or "", r["mode"],
                 *(_cell(r, t) for t in ("hybrid", "pqonly", "mtls", "eccert", "tls12")),
+                *(_mcell(r, t) for t in MLDSA),
                 r["verdict"] if r["verdict"] == "PASS" else "**%s**" % r["verdict"]))
         md.append("")
     fnd = [r for r in results if r.get("finding")]

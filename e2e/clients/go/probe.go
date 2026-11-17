@@ -51,8 +51,13 @@ import (
 // goLine is the main module's go line this binary was built with (set by build/go.sh with -X main.goLine=...).
 var goLine = "unknown"
 
-var targetPorts = map[string]int{"hybrid": 8443, "pqonly": 8444, "mtls": 8445, "eccert": 8446, "tls12": 8447}
-var targetOrder = []string{"hybrid", "pqonly", "mtls", "eccert", "tls12"}
+var targetPorts = map[string]int{"hybrid": 8443, "pqonly": 8444, "mtls": 8445, "eccert": 8446, "tls12": 8447,
+	"mldsa-dual": 8448, "mldsa-only": 8449, "mldsa-mtls": 8450}
+var targetOrder = []string{"hybrid", "pqonly", "mtls", "eccert", "tls12", "mldsa-dual", "mldsa-only", "mldsa-mtls"}
+
+// ML-DSA targets always use trust = ca-both.crt (test CA + ML-DSA test CA), whatever PQC_GO_TRUST says, and
+// mldsa-mtls presents client-mldsa.crt/.key: they measure ML-DSA support, not the trust mechanism.
+func isMLDSA(target string) bool { return strings.HasPrefix(target, "mldsa") }
 
 // stacks adds HTTP client stacks from optional files (awssdk.go, extras build).
 var stacks = map[string]func(cfg *tls.Config) (*http.Client, string){}
@@ -133,8 +138,12 @@ func tlsLib() string {
 	return s
 }
 
-func readPool(certs string) (*x509.CertPool, []byte, error) {
-	caPEM, err := os.ReadFile(filepath.Join(certs, "ca.crt"))
+func readPool(certs string, file ...string) (*x509.CertPool, []byte, error) {
+	name := "ca.crt"
+	if len(file) > 0 {
+		name = file[0]
+	}
+	caPEM, err := os.ReadFile(filepath.Join(certs, name))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -179,6 +188,21 @@ func loadClientCert(certs string) (tls.Certificate, error) {
 // tlsConfig builds the client tls.Config for one target. Only the variant env vars add settings.
 func tlsConfig(target, certs string) (*tls.Config, error) {
 	cfg := &tls.Config{}
+	if isMLDSA(target) {
+		pool, _, err := readPool(certs, "ca-both.crt")
+		if err != nil {
+			return nil, err
+		}
+		cfg.RootCAs = pool
+		if target == "mldsa-mtls" {
+			kp, err := tls.LoadX509KeyPair(filepath.Join(certs, "client-mldsa.crt"), filepath.Join(certs, "client-mldsa.key"))
+			if err != nil {
+				return nil, fmt.Errorf("ML-DSA client cert: %w", err)
+			}
+			cfg.Certificates = []tls.Certificate{kp}
+		}
+		return cfg, nil
+	}
 	pool, _, err := readPool(certs)
 	if err != nil {
 		return nil, err
@@ -328,7 +352,8 @@ func probeOne(host, name, caseID, certs string) map[string]any {
 		res["error"] = trunc(errText(err), 400)
 	} else {
 		res["ok"] = true
-		for _, k := range []string{"tls_version", "group", "offered_groups", "cipher_suite", "client_cert_cn"} {
+		for _, k := range []string{"tls_version", "group", "offered_groups", "cipher_suite", "client_cert_cn",
+			"server_cert", "server_sigalg", "client_cert", "client_sigalg"} {
 			if v, ok := obs[k]; ok {
 				res[k] = v
 			}

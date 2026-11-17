@@ -58,7 +58,7 @@ if [ ! -s "$C/client-ec.p12" ] || [ "$WORK/certs/ca.crt" -nt "$C/client-ec.p12" 
     openssl pkcs12 -export -in client-ec.crt -inkey client-ec.key -certfile /ca/ca.crt -name pqc-client-ec -out client-ec.p12 -passout pass:changeit
     rm -f client-ec.csr ext; chmod 644 *'
 fi
-certs() { mkdir -p "$1"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12,truststore.p12} "$C/client-ec.p12" "$1/"; }
+certs() { mkdir -p "$1"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12,truststore.p12,truststore-both.p12,client-mldsa.p12} "$C/client-ec.p12" "$1/"; }
 
 # 4. Lambda zips (class at the zip root; certs/ next to it)
 pkg() { # pkg <name> [extra shell steps...] -> lambda/java/<name>.zip

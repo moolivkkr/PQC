@@ -13,7 +13,7 @@ import urllib.request
 import boto3
 from botocore.config import Config
 
-TARGETS = ["hybrid", "pqonly", "mtls", "eccert", "tls12"]
+TARGETS = ["hybrid", "pqonly", "mtls", "eccert", "tls12", "mldsa-dual", "mldsa-only", "mldsa-mtls"]
 OBS_ADMIN = os.environ.get("PQC_OBSERVER_ADMIN", "http://10.250.0.20:8080")
 CFG = Config(retries={"max_attempts": 8, "mode": "standard"}, read_timeout=300, connect_timeout=10)
 TAGS = [{"Key": "project", "Value": "pqc-e2e"}]
@@ -403,7 +403,7 @@ def run_detection(env, results):
     classical = [e for e in run_reqs if not e.get("pq")]
     tls12 = [e for e in run_reqs if e.get("tls_version") == "TLSv1.2"]
     reported = {(r["full_id"], t) for r in results if r.get("client") and r.get("role") != "server" for t, v in (r["client"].get("results") or {}).items()
-                if v.get("ok") and not v.get("pq")}
+                if v.get("ok") and not v.get("pq") and not t.startswith("mldsa")}
     seen = {(e["case_id"], e["listener"]) for e in classical}
     missing = sorted(reported - seen)
     out.append({"id": "detect-server-handshake-log", "lang": "all", "compute": "observer", "mode": "detection",

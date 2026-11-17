@@ -7,7 +7,8 @@
 #   ./run.sh down                 stop this suite's containers (never volumes, never other LocalStacks)
 set -euo pipefail
 source "$(dirname "$0")/env.sh"; cd "$E2E_DIR"
-LANGS="python node java dotnet go server"   # server = load balancer target cases (needs the five language images); BUILD=1; ARGS=()
+LANGS="python node java dotnet go server"   # server = load balancer target cases (needs the five language images)
+BUILD=1; ARGS=()
 if [ "${1:-}" = down ]; then
   docker run --rm --network pqc-e2e -v "$E2E_DIR":/e2e pqc-e2e/runner:local cleanup || true
   docker compose stop; exit 0
@@ -30,6 +31,6 @@ fi
 for l in $LANGS; do [ -f "cases/$l.py" ] && (cd cases && python3 "$l.py" >/dev/null); done
 rc=0
 docker run --rm --network pqc-e2e -v "$E2E_DIR":/e2e -e E2E_ROOT=/e2e -e PQC_JOBS="${PQC_JOBS:-6}" \
-  pqc-e2e/runner:local run "${ARGS[@]}" || rc=$?
+  pqc-e2e/runner:local run ${ARGS[@]+"${ARGS[@]}"} || rc=$?
 echo; cat results/latest/summary.md | head -5
 exit $rc

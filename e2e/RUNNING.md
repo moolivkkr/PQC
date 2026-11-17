@@ -135,6 +135,14 @@ still shows up.
 Every client trusts only the suite's test CA (`e2e/.work/certs/ca.crt`, or `truststore.p12` for Java). The `mtls`
 listener needs `client.crt`/`client.key`, or `client.p12` (password `changeit`).
 
+Client cases also visit three ML-DSA certificate targets on the `pqc-e2e-mldsa` fixture (see README):
+
+| Listener | Port | A client that can't use ML-DSA | An ML-DSA-capable client (OpenSSL 3.5) |
+|---|---|---|---|
+| `mldsa-dual` | 8448 | connects, gets the ECDSA certificate | connects, gets the ML-DSA certificate |
+| `mldsa-only` | 8449 | **fails** | connects |
+| `mldsa-mtls` | 8450 | **fails** (no ML-DSA client signature) | connects with `client-mldsa.crt` |
+
 Load balancer target cases (`srv-*`, `--lang server`) visit two other targets instead. The workload is the server and
 the observer connects to it on port 9443 as a load balancer would:
 

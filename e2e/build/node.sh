@@ -8,7 +8,7 @@ rm -rf "$B" "$OUT"; mkdir -p "$B/certs" "$OUT"
 NODE_LIB=public.ecr.aws/docker/library/node
 
 # Test certs + a legacy PFX (RC2-40 / 3DES, as old Windows/Java tools export: tab case C / Pitfalls)
-cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12} "$B/certs/"
+cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12,ca-both.crt,client-mldsa.crt,client-mldsa.key} "$B/certs/"
 docker run --rm "${LBL[@]}" -v "$WORK/certs":/c:ro -v "$B/certs":/o public.ecr.aws/docker/library/debian:trixie-slim sh -euc \
   'apt-get -qq update >/dev/null && apt-get -qq install -y openssl >/dev/null 2>&1
    openssl pkcs12 -export -legacy -in /c/client.crt -inkey /c/client.key -certfile /c/ca.crt -name pqc-client \

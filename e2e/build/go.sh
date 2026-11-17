@@ -85,13 +85,13 @@ echo "posture: $B/posture.txt"; head -40 "$B/posture.txt"
 # Lambda zips: bootstrap at the zip root + test certs (custom-CA case) -> lambda/go/<binary>.zip
 for f in "$B"/bin/probe-*; do
   n=$(basename "$f"); d="$B/zip-$n"; rm -rf "$d"; mkdir -p "$d/certs"
-  cp "$f" "$d/bootstrap"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12} "$d/certs/"
+  cp "$f" "$d/bootstrap"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12,ca-both.crt,client-mldsa.crt,client-mldsa.key} "$d/certs/"
   zipdir "$d" "$OUT/$n.zip"; rm -rf "$d"
 done
 echo "lambda zips: $(ls "$OUT" | wc -l | tr -d ' ')"
 
 # ECS images: the SAME binaries on different bases (the tab: OS, crypto policy and base image play no part)
-EC="$B/ecs"; mkdir -p "$EC/bin/certs"; cp "$B"/bin/probe-* "$EC/bin/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12} "$EC/bin/certs/"
+EC="$B/ecs"; mkdir -p "$EC/bin/certs"; cp "$B"/bin/probe-* "$EC/bin/"; cp "$WORK/certs/"{ca.crt,client.crt,client.key,client.p12,ca-both.crt,client-mldsa.crt,client-mldsa.key} "$EC/bin/certs/"
 printf 'FROM %s\nCOPY bin/ /app/bin/\n' "$AL2023" > "$EC/Dockerfile.al2023"
 printf 'FROM %s\nRUN dnf -y -q install crypto-policies-scripts && update-crypto-policies --set DEFAULT:PQ && dnf clean all\nCOPY bin/ /app/bin/\n' "$AL2023" > "$EC/Dockerfile.al2023-policy"
 printf 'FROM %s\nCOPY bin/ /app/bin/\n' "$AL2" > "$EC/Dockerfile.al2"
@@ -110,8 +110,8 @@ cp -r "$WORK/certs" "$DC/certs"; rm -f "$DC/certs/"*.key.bak
 docfile() { # docfile <published dockerfile> -> same file with only the source paths adapted (+ test certs)
   perl -pe 's#COPY go.mod go.sum \./#COPY src/go.mod src/go.sum ./#; s#^COPY \. \.#COPY src/ .#;
     s#/out/(server|main)#/out/probe#g; s# \./cmd/[a-z]+# .#; s#^EXPOSE.*\n##;
-    s#^(COPY --from=build /out/probe /server)$#$1\nCOPY certs/ca.crt certs/client.crt certs/client.key /certs/#;
-    s#^(COPY --from=build /out/probe \./main)$#$1\nCOPY certs/ca.crt certs/client.crt certs/client.key ./certs/#' "$1"
+    s#^(COPY --from=build /out/probe /server)$#$1\nCOPY certs/ca.crt certs/client.crt certs/client.key certs/ca-both.crt certs/client-mldsa.crt certs/client-mldsa.key /certs/#;
+    s#^(COPY --from=build /out/probe \./main)$#$1\nCOPY certs/ca.crt certs/client.crt certs/client.key certs/ca-both.crt certs/client-mldsa.crt certs/client-mldsa.key ./certs/#' "$1"
 }
 docfile "$CFG/Dockerfile" > "$DC/Dockerfile.ecs"
 docfile "$CFG/Dockerfile.fips" > "$DC/Dockerfile.fips"

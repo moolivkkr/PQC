@@ -2,6 +2,7 @@
 # Shared artifacts: test PKI, runner image, pq-egress extension, Lambda layer sources.
 source "$(dirname "$0")/../env.sh"; source "$E2E_DIR/build/lib.sh"
 bash "$E2E_DIR/certs/gen.sh" >/dev/null
+bash "$E2E_DIR/certs/gen-mldsa.sh" >/dev/null
 docker build -q "${LBL[@]}" -t "$RUNNER" "$E2E_DIR/runner" >/dev/null && echo "runner image"
 
 # pq-egress extension (static linux/arm64)

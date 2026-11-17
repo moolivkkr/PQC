@@ -72,3 +72,21 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 3s
       retries: 20
+
+  # ML-DSA certificate endpoints (:8448-8450) in the observer's network namespace, so clients reach them as
+  # pq-observer. Python 3.15 (release candidate) on OpenSSL 3.5: its ssl module reports the group and the signature
+  # algorithms each side used. A fixture only; see mldsa/server.py.
+  mldsa:
+    image: python@sha256:a3af3d230522dd52f7f2191b39e1892912dbcb0c8dee22afdec3dc83baf0f549
+    container_name: pqc-e2e-mldsa
+    labels: { project: pqc-e2e }
+    network_mode: "service:observer"
+    depends_on: [observer]
+    command: ["python", "-u", "/app/server.py"]
+    volumes:
+      - ./mldsa:/app:ro
+      - ./.work/certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/healthz', timeout=3)"]
+      interval: 3s
+      retries: 20

@@ -32,6 +32,24 @@ versions) and every request (negotiated version and group):
 
 Every client trusts only the suite's test CA (the custom-CA case) and presents a client certificate on `mtls`.
 
+## ML-DSA certificate targets
+
+`mldsa/server.py` (container `pqc-e2e-mldsa`, Python 3.15 on OpenSSL 3.5, in the observer's network namespace so the
+same `pq-observer` name and address work) serves three more listeners. Python 3.15's `ssl` module reports the group and
+the signature algorithm each side used, which the Go observer cannot do for ML-DSA. Certificates come from
+`certs/gen-mldsa.sh` (ML-DSA-65 root, ML-DSA-44 leaf and client certificate).
+
+| Listener | Port | Purpose |
+|---|---|---|
+| mldsa-dual | 8448 | ML-DSA-44 and ECDSA P-256 server certificates: does the client get ML-DSA, and does every client still connect? |
+| mldsa-only | 8449 | ML-DSA-44 server certificate only, TLS 1.3: can the client negotiate and verify ML-DSA? |
+| mldsa-mtls | 8450 | Dual server certificates; an ML-DSA client certificate is required: can the client sign with ML-DSA? |
+
+Clients trust `ca-both.crt` (the classical and the ML-DSA root in one bundle; `truststore-both.p12` for Java) on these
+targets, which also tests that an extra ML-DSA root does no harm. `GET /probe` adds `server_cert`, `server_sigalg`,
+`client_cert` and `client_sigalg` to the observer fields. The targets are appended to every client case except
+extension-mode cases; `mldsa_expect` in a case sets the expectation (`MLDSA_FULL`, `MLDSA_NONE` in `cases/lib.py`).
+
 ## Load balancer target leg (server role)
 
 `cases/server.py` (32 cases, ids `srv-*`) turns the workload into the TLS server, as an HTTPS target behind an ALB or

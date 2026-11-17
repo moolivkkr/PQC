@@ -7,7 +7,7 @@ SDK=mcr.microsoft.com/dotnet/sdk:10.0-alpine     # builds portable (framework-de
 MCR=mcr.microsoft.com/dotnet
 rm -rf "$B/src" "$B/pub" "$B"/pkg-* "$B/img"; mkdir -p "$B/src" "$B/pub" "$B/nuget" "$OUT"
 cp "$SRC"/probe.csproj "$SRC"/Probe.cs "$B/src/"
-CERTS=("$WORK/certs/"{ca.crt,client.crt,client.key,client.p12})
+CERTS=("$WORK/certs/"{ca.crt,client.crt,client.key,client.p12,ca-both.crt,client-mldsa.crt,client-mldsa.key})
 
 # 1. Framework-dependent publish, one per target framework (the Lambda managed runtime and dotnet hosts run these)
 docker run --rm "${LBL[@]}" -v "$B/src":/src:ro -v "$B/pub":/out -v "$B/nuget":/root/.nuget/packages $SDK sh -c '

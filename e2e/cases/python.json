@@ -37,6 +37,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -51,8 +61,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py39-bundled-shim",
@@ -85,6 +110,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -101,8 +138,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py39-layer",
@@ -135,6 +189,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -153,8 +219,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py39-extension",
@@ -241,6 +324,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -255,8 +348,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py310-bundled-shim",
@@ -289,6 +397,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -305,8 +425,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py310-layer",
@@ -339,6 +476,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -357,8 +506,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py310-extension",
@@ -445,6 +611,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -459,8 +635,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py311-bundled-shim",
@@ -493,6 +684,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -509,8 +712,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py311-layer",
@@ -543,6 +763,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -561,8 +793,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py311-extension",
@@ -649,6 +898,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -663,8 +922,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py312-bundled-conf",
@@ -697,6 +971,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -713,8 +997,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py312-layer",
@@ -747,6 +1046,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -765,8 +1074,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py312-extension",
@@ -853,6 +1177,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -867,8 +1201,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py313-bundled-conf",
@@ -901,6 +1250,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -917,8 +1276,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py313-layer",
@@ -951,6 +1325,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -969,8 +1353,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py313-extension",
@@ -1057,6 +1456,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1071,8 +1480,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py314-bundled-conf",
@@ -1105,6 +1529,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1121,8 +1555,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py314-layer",
@@ -1155,6 +1604,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1173,8 +1632,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py314-extension",
@@ -1261,6 +1735,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1280,8 +1764,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py311-combined-ext-stdlib",
@@ -1368,6 +1867,15 @@
     "tls12": {
      "ok": false,
      "error_match": "idna"
+    },
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1386,8 +1894,22 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": false
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py313-combined-wrapper",
@@ -1420,6 +1942,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1438,8 +1970,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py312-layer-ownconf",
@@ -1469,6 +2016,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "lambda": {
@@ -1488,8 +2047,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-lambda-py312-layer-chain",
@@ -1522,6 +2098,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1541,8 +2127,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-py312-layer-disabled",
@@ -1572,6 +2173,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1591,8 +2202,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-image-py312-baseline",
@@ -1622,6 +2248,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1633,8 +2269,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-image-py312-fixed",
@@ -1667,6 +2318,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1678,8 +2339,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-image-py313-baseline",
@@ -1709,6 +2385,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1720,8 +2406,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-lambda-image-py313-fixed",
@@ -1754,6 +2455,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "lambda": {
@@ -1765,8 +2476,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py311-baseline",
@@ -1796,6 +2522,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.11",
@@ -1812,8 +2548,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py311-conf",
@@ -1846,6 +2597,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.11",
@@ -1864,8 +2625,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py312-baseline",
@@ -1895,6 +2671,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.12",
@@ -1911,8 +2697,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py312-conf",
@@ -1945,6 +2746,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.12",
@@ -1963,8 +2774,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py313-baseline",
@@ -1994,6 +2820,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.13",
@@ -2010,8 +2846,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py313-conf",
@@ -2044,6 +2895,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.13",
@@ -2062,8 +2923,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py314-baseline",
@@ -2093,6 +2969,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.14",
@@ -2109,8 +2995,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py314-conf",
@@ -2143,6 +3044,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.14",
@@ -2161,8 +3072,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-fargate-al2023-py312-policy",
@@ -2195,6 +3121,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-python:al2023-policy python3.12",
@@ -2211,8 +3149,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-fargate-lib-312-slim-trixie",
@@ -2245,6 +3200,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-python:lib-3.12-slim-trixie python",
@@ -2261,8 +3228,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-fargate-lib-313-slim-trixie",
@@ -2295,6 +3279,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-python:lib-3.13-slim-trixie python",
@@ -2311,8 +3307,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-fargate-lib-312-alpine",
@@ -2345,6 +3358,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-python:lib-3.12-alpine python",
@@ -2361,8 +3386,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-fargate-lib-312-slim-bookworm",
@@ -2392,6 +3434,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:lib-3.12-slim-bookworm python",
@@ -2408,8 +3460,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ecsec2-al2023-py312-baseline",
@@ -2439,6 +3506,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.12",
@@ -2455,8 +3532,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ecsec2-al2023-py312-conf",
@@ -2489,6 +3581,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-python:al2023 python3.12",
@@ -2507,8 +3609,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ecsec2-lib-313-slim-trixie",
@@ -2541,6 +3658,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-python:lib-3.13-slim-trixie python",
@@ -2557,8 +3686,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py311-baseline",
@@ -2588,6 +3734,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 python3.11",
@@ -2602,8 +3758,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py312-baseline",
@@ -2633,6 +3804,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 python3.12",
@@ -2647,8 +3828,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py313-baseline",
@@ -2678,6 +3874,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 python3.13",
@@ -2692,8 +3898,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py314-baseline",
@@ -2723,6 +3944,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 python3.14",
@@ -2737,8 +3968,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py312-service-conf",
@@ -2771,6 +4017,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2023 python3.12",
@@ -2787,8 +4043,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py313-host-policy",
@@ -2821,6 +4092,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 python3.13",
@@ -2837,8 +4120,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-ec2-al2023-py311-host-policy",
@@ -2871,6 +4171,18 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
     }
    },
    "runtime_label": "pqc-al2023 python3.11",
@@ -2887,8 +4199,25 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-only": {
+     "ok": true,
+     "server_cert": "mldsa"
+    },
+    "mldsa-mtls": {
+     "ok": true,
+     "client_cert": "mldsa"
+    }
+   }
   },
   {
    "id": "py-ec2-al2-py3-baseline",
@@ -2919,6 +4248,16 @@
      "ok": true,
      "pq": false,
      "tls_version": "TLSv1.2"
+    },
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
     }
    },
    "runtime_label": "pqc-al2 python3",
@@ -2933,8 +4272,23 @@
     "pqonly",
     "mtls",
     "eccert",
-    "tls12"
-   ]
+    "tls12",
+    "mldsa-dual",
+    "mldsa-only",
+    "mldsa-mtls"
+   ],
+   "mldsa_expect": {
+    "mldsa-dual": {
+     "ok": true,
+     "server_cert": "ecdsa"
+    },
+    "mldsa-only": {
+     "ok": false
+    },
+    "mldsa-mtls": {
+     "ok": false
+    }
+   }
   }
  ]
 }

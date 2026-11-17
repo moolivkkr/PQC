@@ -1,4 +1,5 @@
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -33,8 +34,9 @@ import java.util.Map;
  * Output: one {"event":"tls_handshake",...} line per target; main() also prints PQC_RESULT <json>.
  */
 public class Probe {
-    static final String[] NAMES = {"hybrid", "pqonly", "mtls", "eccert", "tls12"};
-    static final int[] PORTS = {8443, 8444, 8445, 8446, 8447};
+    static final String[] NAMES = {"hybrid", "pqonly", "mtls", "eccert", "tls12", "mldsa-dual", "mldsa-only", "mldsa-mtls"};
+    static final int[] PORTS = {8443, 8444, 8445, 8446, 8447, 8448, 8449, 8450};
+    static final String[] PASS_THROUGH = {"server_cert", "server_sigalg", "client_cert", "client_sigalg"};
     static final char[] PW = "changeit".toCharArray();
 
     public String handleRequest(Map<String, Object> event) throws Exception {   // Lambda
@@ -113,6 +115,23 @@ public class Probe {
                 alg + " (" + kmf.getProvider().getName() + ") " + ksFile.getName()};
     }
 
+    /** ML-DSA targets: trust = truststore-both.p12 (test CA + ML-DSA test CA); mldsa-mtls also loads client-mldsa.p12.
+     *  Always the app's own SSLContext, whatever PQC_JAVA_TLS says: these targets measure ML-DSA support, not trust setup.
+     *  Built per target so a JDK that cannot load the ML-DSA key only fails mldsa-mtls. */
+    static SSLSocketFactory mldsaFactory(File certs, boolean withKey) throws Exception {
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(load(new File(certs, "truststore-both.p12")));
+        KeyManager[] km = null;
+        if (withKey) {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(load(new File(certs, "client-mldsa.p12")), PW);
+            km = kmf.getKeyManagers();
+        }
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(km, tmf.getTrustManagers(), null);
+        return ctx.getSocketFactory();
+    }
+
     static String fetch(String url, SSLSocketFactory sf) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         if (sf != null && c instanceof HttpsURLConnection) ((HttpsURLConnection) c).setSSLSocketFactory(sf);
@@ -162,16 +181,19 @@ public class Probe {
             StringBuilder r = new StringBuilder("{");
             String status;
             try {
-                if (setupErr != null) throw new IllegalStateException("TLS setup failed: " + setupErr);
+                boolean mldsa = name.startsWith("mldsa") && egress.isEmpty();
+                if (setupErr != null && !mldsa) throw new IllegalStateException("TLS setup failed: " + setupErr);
                 String url = egress.isEmpty() ? "https://" + host + ":" + port + "/probe?id=" + caseId
                         : "http://127.0.0.1:" + egress + "/" + name + "/probe?id=" + caseId;
-                String obs = fetch(url, sf[0]);
+                String obs = fetch(url, mldsa ? mldsaFactory(certsDir(), name.equals("mldsa-mtls")) : sf[0]);
                 boolean pq = bool(obs, "pq");
                 r.append("\"ok\":true,\"tls_version\":").append(raw(obs, "tls_version"))
                         .append(",\"group\":").append(raw(obs, "group"))
                         .append(",\"pq\":").append(pq)
                         .append(",\"offered_pq\":").append(bool(obs, "offered_pq"))
-                        .append(",\"client_cert_cn\":").append(raw(obs, "client_cert_cn"))
+                        .append(",\"client_cert_cn\":").append(raw(obs, "client_cert_cn"));
+                for (String k : PASS_THROUGH) if (obs.contains("\"" + k + "\"")) r.append(",\"").append(k).append("\":").append(raw(obs, k));
+                r
                         .append(",\"stack\":").append(q("HttpsURLConnection " + info[0]));
                 status = pq ? "pq" : "classical";
             } catch (Throwable e) {
