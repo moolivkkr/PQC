@@ -1,8 +1,8 @@
-# Configuration file index
+# Appendix B. Configuration file index
 
-Every file listed in a tab's "Full configuration files" section, with what it does, which side of the connection it changes, and where it applies. The full text of each file is in the linked tab. Side: Client = outbound TLS from the workload; Server = inbound TLS it terminates; Both = the file sets the runtime or image, so it covers both directions; Infra = deployment, policy, detection or CI file that changes no handshake by itself. IaC and SSM files were linted or parse-checked, not deployed.
+Every configuration file the paper refers to, with what it does, which side of the connection it changes, and where it applies. Each file name links to the complete file in the repository under `configs/` (the per-folder list is [configs/MANIFEST.md](REPO/configs/MANIFEST.md)); the chapter named in the last column explains it. Side: Client = outbound TLS from the workload; Server = inbound TLS it terminates; Both = the file sets the runtime or image, so it covers both directions; Infra = deployment, policy, detection or CI file that changes no handshake by itself. IaC and SSM files were linted or parse-checked, not deployed.
 
-## Language runbooks
+## Languages
 
 | File | Purpose | Side | Applies to | Tab |
 | --- | --- | --- | --- | --- |

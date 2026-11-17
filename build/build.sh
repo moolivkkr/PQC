@@ -23,5 +23,5 @@ cp "$B/pqc-combined.html" "$R/$NAME.html"
   --print-to-pdf="$R/$NAME.pdf" "file://$B/pqc-combined.html" 2>/dev/null
 # 5. DOCX (imports into Google Docs: File > Open > Upload)
 docker run --rm --label run=pqc-final -v "$R":/d -w /d "$PANDOC" build/pqc-for-docx.html -f html -t docx \
-  --toc --toc-depth=2 --metadata title="PQC Detection and Remediation by Language and Compute" -o "$NAME.docx"
+  --toc --toc-depth=2 --metadata title="Post-Quantum TLS on AWS: Detection, Inventory and Remediation" -o "$NAME.docx"
 ls -la "$R/$NAME".*
