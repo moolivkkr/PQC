@@ -1,0 +1,20 @@
+<section id="lang-dotnet" class="light" data-transition="fade">
+<p class="eyebrow">.NET · by compute type</p>
+<h2>Pick a PQ base image, or one config file</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Compute</th><th style="width:22%">Runtime or base</th><th style="width:22%">PQ today</th><th style="width:35%">Fix</th><th style="width:8%;text-align:right">Cases</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td><b>dotnet8, dotnet10</b></td><td>Classical (AL2023 policy)</td><td>pq-tls layer or <span class=code>OPENSSL_CONF</span> file in the package</td><td style="text-align:right">33</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td><b>-alpine, 10.0-resolute (+chiseled)</b><br><b>default 8.0, 10.0, azurelinux3.0</b><br><b>AL2023 dnf .NET</b></td><td><span class=ok>PQ by default</span><br><span class=bad>OpenSSL 3.0–3.3: no ML-KEM</span><br>Classical</td><td>Nothing<br>Change the image tag<br>OPENSSL_CONF in the task definition, or DEFAULT:PQ</td><td style="text-align:right">25</td></tr>
+<tr class="a"><td><b>ECS on EC2 · EKS</b></td><td><b>Same images</b> on EC2 hosts</td><td>Follows the image</td><td>Same as Fargate. EKS: same image, not run in e2e</td><td style="text-align:right">6</td></tr>
+<tr class="b"><td><b>EC2</b></td><td><b>AL2023 host</b><br><b>Windows Server</b></td><td>Classical<br>Schannel, opt-in</td><td>OPENSSL_CONF per service, or host DEFAULT:PQ (SSM document)<br>Schannel group setting, TLS 1.3 (Documented, not tested)</td><td style="text-align:right">7</td></tr>
+</table>
+<p class="note warn" style="font-size:22px"><b>Risk:</b> the default Microsoft images (8.0, 10.0) are <i>not</i> PQ; only Alpine and Ubuntu 26.04 tags are. <span class=code>EnabledSslProtocols=Tls12</span> blocks PQ. .NET has no group API: the fix is always the OS or image.</p>
+<p class="foot">Post-quantum TLS on AWS · 14 · 71 e2e cases; code and cases: appendix</p>
+<aside>KEY MESSAGE: .NET on Linux uses the OS OpenSSL, so the image tag is the fix for containers and one config file is the fix for Lambda and EC2.
+• Lambda dotnet8 and dotnet10: the same config file as Python, in the layer or the package.
+• Containers: the default Microsoft tags are Ubuntu 24.04 or Debian 12 with OpenSSL 3.0, so not PQ. The Alpine and 10.0-resolute tags are PQ out of the box.
+• AL2023 images and hosts: OPENSSL_CONF or DEFAULT:PQ, as for Python.
+• .NET has no API to choose TLS groups, so there is no code fix; teams change the image or the config.
+• Windows Schannel supports the hybrid group as an opt-in; documented by Microsoft, not tested here.
+• EKS not run in the emulator; same images as ECS.</aside>
+</section>

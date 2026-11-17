@@ -1,0 +1,19 @@
+<section id="infra-edge" class="light" data-transition="fade">
+<p class="eyebrow">Infrastructure 1 of 3 · front doors</p>
+<h2>Load balancers, edge, AWS endpoints, WAF</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Area</th><th style="width:21%">PQ today</th><th style="width:24%">Our action</th><th style="width:18%">Blocked by AWS</th><th style="width:24%">Risk</th></tr>
+<tr class="a"><td><b>Load balancers</b></td><td><span class=ok>ALB, NLB: opt-in policy</span></td><td>2025-09 PQ policy on every listener; SCP on the policy name</td><td><span class=bad>Classic LB: migrate</span></td><td>IaC defaults to classical 2016-08; target leg follows the target’s own TLS (32 cases)</td></tr>
+<tr class="b"><td><b>Edge and API</b></td><td><span class=ok>CloudFront viewer on; REST opt-in</span></td><td>REST PQ policy; front HTTP and WebSocket APIs with CloudFront or a PQ ALB</td><td><span class=bad>Origin leg; HTTP, WebSocket APIs</span></td><td>Fronting an HTTP API adds a hop, cost and a new failure point</td></tr>
+<tr class="a"><td><b>AWS endpoints</b></td><td><span class=ok>KMS, STS, IAM, ACM, S3, DynamoDB, Secrets Manager</span></td><td>Client fixes (language slides); CloudTrail <span class=code>keyExchange</span> proves it</td><td><span class=bad>SSM, unlisted services</span></td><td>Only CloudTrail-logged calls can be proven; the rest rely on posture</td></tr>
+<tr class="b"><td><b>WAF</b></td><td>Never terminates TLS</td><td>Set PQ on the resource it protects</td><td>Same as that resource</td><td>A WAF on a classical listener looks protected but isn’t PQ</td></tr>
+</table>
+<p class="foot">Post-quantum TLS on AWS · 20 · Guide: Infrastructure tabs; AWS support checked 2026-11-16</p>
+<aside>KEY MESSAGE: At the front door, PQ is a policy choice we control; the risk is drift, so the SCP and Config rule hold the line.
+• Load balancers: name the 2025-09 PQ policy. Infrastructure as code defaults to the 2016-08 classical policy; only the console defaults to PQ.
+• The leg from the load balancer to the target follows the target’s TLS, so the language fixes still matter behind a PQ listener. 32 e2e cases cover it.
+• CloudFront is PQ to viewers today; its origin leg and API Gateway HTTP and WebSocket APIs are blocked until AWS adds support. Fronting an HTTP API with CloudFront is the workaround, with its cost.
+• AWS endpoints: KMS, STS, IAM, ACM, S3, DynamoDB and Secrets Manager accept PQ. Our work is on the client. CloudTrail records keyExchange for several of them.
+• WAF never terminates TLS; whatever it is attached to decides.
+• All of this is from AWS documentation except the target-leg cases, which ran in the emulator. Nothing here ran on a real AWS account.</aside>
+</section>

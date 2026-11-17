@@ -1,11 +1,11 @@
 <section id="cover" class="dark" data-transition="fade">
 <div class="spine"></div>
 <p class="eyebrow">Post-quantum cryptography · AWS workloads</p>
-<h1 style="width:1500px">Quantum-safe TLS, without new certificates</h1>
-<p class="lede" style="width:1300px">How each language and runtime gets the hybrid key exchange X25519MLKEM768, what testing proved and corrected, and the plan to take it to production.</p>
+<h1 style="width:1600px">Quantum-safe TLS: ML-KEM key exchange now, ML-DSA certificates by use case</h1>
+<p class="lede" style="width:1400px">The tested fix for each language on Lambda, ECS, EKS and EC2, what the infrastructure services need and where AWS blocks us, when ML-DSA certificates pay off, and the plan to production.</p>
 <p class="foot">Kishore Mooli · tested 12–16 November 2026 · results in e2e/results/latest</p>
-<aside>KEY MESSAGE: We know how to make every TLS connection we own quantum-safe, we have tested it end to end, and the change is small: certificates stay as they are.
-• Open with the promise: “Traffic recorded today stays private after quantum computers arrive, and we don’t have to re-issue a single certificate to get there.”
-• Five parts: why now, how we built and tested the guide, what decides PQ and the fix, the infrastructure side (load balancers, twelve infrastructure areas, what AWS blocks, guardrails and detection), then the plan and the ask.
+<aside>KEY MESSAGE: We know how to make every TLS connection we own quantum-safe, we have tested it end to end, and the change is small. Certificates move on their own, slower track, use case by use case.
+• Open with the promise: “Traffic recorded today stays private after quantum computers arrive. Key exchange needs no new certificates; ML-DSA certificates come where they pay off.”
+• Five parts and an appendix: why now and which algorithm protects which use case; how we tested; the fix per language and compute type; the infrastructure services with their risks; the plan and the ask. The appendix lists every test case per language, with links to the code.
 • Every number comes from a test that runs from the repository. Where something has not been tested, mainly real AWS, I say so.</aside>
 </section>

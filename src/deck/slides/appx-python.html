@@ -1,0 +1,20 @@
+<section id="appx-python" class="light" data-transition="fade">
+<p class="eyebrow">Appendix · Python test cases</p>
+<h2>Python: 59 cases, 59 passed</h2>
+<table class="tbl" style="font-size:21px">
+<tr class="h"><th style="width:14%">Compute</th><th style="width:70%">What the cases cover</th><th style="width:8%;text-align:right">Cases</th><th style="width:8%;text-align:right">Pass</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td>python3.9–3.14; pq-tls layer and OPENSSL_CONF; 3.9–3.11 shim; bundled-TLS libraries (grpcio, awscrt, psycopg); own OPENSSL_CONF and chained wrappers; Lambda images</td><td style="text-align:right">35</td><td style="text-align:right">35</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td>AL2023 python3.11–3.14 with and without task-def OPENSSL_CONF; DEFAULT:PQ image; slim-trixie, alpine (PQ); slim-bookworm (no ML-KEM)</td><td style="text-align:right">13</td><td style="text-align:right">13</td></tr>
+<tr class="a"><td><b>ECS on EC2</b></td><td>AL2023 python3.12 ± OPENSSL_CONF; slim-trixie</td><td style="text-align:right">3</td><td style="text-align:right">3</td></tr>
+<tr class="b"><td><b>EC2</b></td><td>AL2023 python3.11–3.14 default; per-service OPENSSL_CONF; host DEFAULT:PQ via SSM; AL2 python3.7 (no TLS 1.3)</td><td style="text-align:right">8</td><td style="text-align:right">8</td></tr>
+</table>
+<ul class="note" style="font-size:21px;list-style:none;padding-left:32px"><li>Cases (expected result per case): <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/python.py" class="code">e2e/cases/python.py</a></li><li>Probe the cases run: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/python/probe.py" class="code">e2e/clients/python/probe.py</a></li><li>Build of every image, zip and layer: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/python.sh" class="code">e2e/build/python.sh</a></li><li>Results, case by case: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md" class="code">e2e/results/latest/summary.md</a></li></ul>
+<p class="foot">Post-quantum TLS on AWS · 35 · Repository is private: links work for people with access</p>
+<aside>KEY MESSAGE: Every Python claim in this deck traces to a case here, and each case is code anyone with repo access can rerun.
+• 59 cases across Lambda, ECS Fargate, ECS on EC2 and EC2; 59 passed in the run of final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537).
+• Each case states its expected result per target: PQ hybrid, PQ-only, mTLS, EC certificate, TLS 1.2; from the 16 November run also the three ML-DSA certificate targets. The observer records what each handshake actually negotiated.
+• A case passes when the observed result matches the expectation in cases/python.py, which is written from the guide, not from the run.
+• To rerun: cd e2e; bash run.sh --lang python. It needs Docker and a LocalStack Pro licence.
+• EKS was not run; it uses the same images as ECS.
+LINKS: https://github.com/moolivkkr/PQC/blob/main/e2e/cases/python.py · https://github.com/moolivkkr/PQC/blob/main/e2e/clients/python/probe.py · https://github.com/moolivkkr/PQC/blob/main/e2e/build/python.sh · https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md</aside>
+</section>

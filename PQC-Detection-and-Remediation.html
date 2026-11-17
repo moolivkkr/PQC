@@ -32,6 +32,12 @@ telemetry. Containers on EC2 can also use passive sensors.</li>
 <li><strong>Remediation</strong> differs by language and version. Some
 need only a config file, some a Java agent or library shim, and some a
 runtime or toolchain upgrade.</li>
+<li><strong>Certificates are a separate, slower track.</strong> ML-KEM
+key exchange needs no new certificates. ML-DSA certificates and
+signatures matter first where trust lasts for years (device roots in
+firmware, code and firmware signing); internal TLS can pilot dual
+certificates; public HTTPS waits for AWS and browsers (Use cases
+below).</li>
 <li><strong>Every change ships through build, package and
 release.</strong> Configuration changes are released like code here, so
 the fix rides a shared build template, not per-function edits.</li>
@@ -450,6 +456,207 @@ Boot 3.5.16 SSL bundles use the default algorithm and work. An app's own
 the line there too. On JDK 25 with the default <code>SunX509</code>, the
 server ignored SNI on a two-certificate store; <code>PKIX</code> fixes
 that as well (Tested).</p>
+<h2 id="t0-use-cases-key-exchange-and-certificates">Use cases: key exchange
+and certificates</h2>
+<p>Two separate algorithms. <strong>ML-KEM (FIPS 203) protects key
+exchange</strong>: it stops traffic recorded today from being decrypted
+later, so it is urgent for every TLS connection, and it needs no new
+certificates. <strong>ML-DSA (FIPS 204) protects certificates and
+signatures</strong>: a forged signature only matters once a quantum
+computer exists, so it is urgent only where a signature or trust anchor
+must stay trusted for many years (device roots in firmware, code and
+firmware signing). ML-KEM cannot sign, so there is no "ML-KEM
+certificate".</p>
+<p>"Hybrid" means different things on each side. For key exchange it is
+one group (X25519MLKEM768) that combines both algorithms, and it is what
+AWS, browsers and Go use. For TLS certificates, the deployable form
+today is a <strong>dual certificate</strong>: the server holds an ECDSA
+and an ML-DSA certificate and sends the one the client asks for (Tested,
+nginx and the e2e fixture). Composite ML-DSA certificates (one
+certificate, both algorithms) are standardized for X.509 by IETF LAMPS,
+but their TLS code points are still TBD in
+draft-ietf-tls-composite-mldsa-00 (October 2026), so no TLS stack
+negotiates them yet (Documented).</p>
+<table>
+<thead>
+<tr>
+<th>Use case</th>
+<th>Key exchange (ML-KEM)</th>
+<th>Certificate (ML-DSA)</th>
+<th>Evidence</th>
+<th>Risk and what to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Public HTTPS</strong> (browsers, partners, public APIs)</td>
+<td>Hybrid X25519MLKEM768 at the ALB, NLB or CloudFront with a PQ
+security policy</td>
+<td>Not possible today. ACM, ALB, NLB, CloudFront and API Gateway serve
+RSA or ECDSA only; browsers do not negotiate ML-DSA server certificates,
+and Chrome plans Merkle Tree Certificates rather than ML-DSA X.509</td>
+<td>Key exchange Tested (e2e LB cases) and Documented; certificate
+Documented</td>
+<td>Keep ECDSA certificates. Revisit when browsers and AWS certificate
+services ship a PQ format</td>
+</tr>
+<tr>
+<td><strong>Internal HTTPS</strong> (service to service, private
+CA)</td>
+<td>Hybrid X25519MLKEM768 in every language and compute type (this
+document)</td>
+<td>Dual certificate from a private CA (AWS Private CA issues ML-DSA).
+Clients on OpenSSL 3.5 get ML-DSA; Go and Java verify ML-DSA chains but
+negotiate ECDSA; OpenSSL 3.0 gets ECDSA. On AL2023 the crypto policy
+blocks ML-DSA until <code>SignatureAlgorithms</code> is extended
+(<code>configs/certificates-ml-dsa/openssl-pq-mldsa.cnf</code>)</td>
+<td>Tested (e2e targets <code>mldsa-dual</code>,
+<code>mldsa-only</code>; per-language table below)</td>
+<td>Pilot only. Never serve ML-DSA alone while any client is on Go,
+Java, OpenSSL 3.0 or an unmodified AL2023 policy: they fail the
+handshake. Chains grow from about 0.9 KB to 11.8 KB</td>
+</tr>
+<tr>
+<td><strong>Workload identity and mTLS</strong> (client certificates,
+IAM Roles Anywhere, mesh)</td>
+<td>Same as internal HTTPS</td>
+<td>Client certificates: tested per language with an ML-DSA client key
+(<code>mldsa-mtls</code>). IAM Roles Anywhere accepts ML-DSA trust
+anchors and end-entity certificates (AWS, February/March 2026). SPIRE
+and Envoy/BoringSSL: no upstream ML-DSA certificate support found</td>
+<td>Client side Tested; Roles Anywhere Documented; SPIRE and Envoy
+Unverified (not found)</td>
+<td>Roles Anywhere can pilot ML-DSA now with a Private CA trust anchor.
+Mesh and SPIFFE identities stay ECDSA until upstream support lands</td>
+</tr>
+<tr>
+<td><strong>User certificates</strong> (Windows logon, VPN, Wi-Fi,
+S/MIME)</td>
+<td>Windows Schannel hybrid ML-KEM (July 2026 update); VPN and Wi-Fi
+depend on the vendor</td>
+<td>AD CS on Windows Server 2025 issues ML-DSA (May 2026 update), with
+client-authentication templates for Windows 11 24H2/25H2. Microsoft
+calls Schannel ML-DSA a pilot, "not for production" (2026-10-08). Smart
+card logon: not confirmed. S/MIME: RFC 9882 defines ML-DSA in CMS; mail
+client support not found</td>
+<td>Documented (Microsoft); smart card and S/MIME clients
+Unverified</td>
+<td>Build a separate ML-DSA test CA (AD CS cannot convert an existing
+CA). Keep production user certificates ECDSA or RSA</td>
+</tr>
+<tr>
+<td><strong>Device and IoT certificates</strong></td>
+<td>AWS IoT Core has no PQ policy; device legs stay classical (see IoT
+tab)</td>
+<td>AWS IoT Core documents RSA and ECDSA device certificates only; no
+ML-DSA support found. Devices that ship a root in firmware for 10+ years
+need a PQ root before they ship</td>
+<td>IoT Core Documented (no PQ); ML-DSA Unverified</td>
+<td><strong>Plan now</strong> for long-lived devices: put an ML-DSA root
+(alongside the ECDSA root) in new firmware and choose TLS stacks that
+can verify ML-DSA (OpenSSL 3.5, wolfSSL 5.8+)</td>
+</tr>
+<tr>
+<td><strong>Code and firmware signing</strong></td>
+<td>Not TLS</td>
+<td>AWS KMS has ML-DSA keys (ML_DSA_44/65/87) and AWS Private CA issues
+ML-DSA code-signing certificates. AWS Signer (Lambda zips and container
+images) is ECDSA only</td>
+<td>Documented (AWS)</td>
+<td><strong>Plan now</strong> for firmware and artifacts verified for
+years: sign with ML-DSA from KMS in the pipeline next to the existing
+signature; keep AWS Signer for Lambda code-signing config</td>
+</tr>
+<tr>
+<td><strong>SSH</strong> (hosts, users, bastions)</td>
+<td><code>mlkem768x25519-sha256</code> is the default in OpenSSH 10
+(Tested)</td>
+<td>OpenSSH 10.6 (2026-10-06) added the hybrid
+<code>ssh-mldsa44-ed25519</code> key type; 10.6p2 allows it as a CA
+signature algorithm. Older OpenSSH cannot use these keys</td>
+<td>Key exchange Tested; ML-DSA keys Documented (release notes), not
+tested here</td>
+<td>Upgrade OpenSSH for key exchange now. Pilot ML-DSA host and user
+keys only where every client is 10.6+</td>
+</tr>
+<tr>
+<td><strong>AWS API calls</strong> (SDK to AWS endpoints)</td>
+<td>Hybrid ML-KEM per language (this document)</td>
+<td>AWS's own certificates; nothing for us to change</td>
+<td>Tested</td>
+<td>None beyond the key-exchange fix</td>
+</tr>
+</tbody>
+</table>
+<p><strong>ML-DSA per language</strong> (e2e, three targets on one
+fixture: <code>mldsa-dual</code> = dual certificate,
+<code>mldsa-only</code> = ML-DSA certificate only,
+<code>mldsa-mtls</code> = ML-DSA client certificate required).</p>
+<p>Interim results below are from the 2026-11-14 client matrix and the
+2026-11-16 AL2023 test. The full e2e run across every language and
+compute type is in progress and will replace this table.</p>
+<table>
+<thead>
+<tr>
+<th>Client stack</th>
+<th>Dual server: certificate received</th>
+<th>ML-DSA-only server</th>
+<th>ML-DSA client certificate</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python, Node.js, .NET on OpenSSL 3.5 (Debian 13, Alpine, Ubuntu
+26.04, official Node 22.20+/24.5+)</td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Python: works (e2e smoke); Node.js, .NET: e2e run in progress</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Same languages on AL2023 (Lambda python3.12+, nodejs22+, dotnet;
+AL2023 images and hosts), default policy or ML-KEM config</td>
+<td>ECDSA</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested (Python 3.12, OpenSSL 3.5.8)</td>
+</tr>
+<tr>
+<td>Same, with <code>openssl-pq-mldsa.cnf</code></td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Works</td>
+<td>Tested (Python 3.12)</td>
+</tr>
+<tr>
+<td>OpenSSL 3.0 (Debian 12, Ubuntu 24.04, Node 20 bundled)</td>
+<td>ECDSA (the extra ML-DSA root does no harm)</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Go 1.27</td>
+<td>ECDSA; verifies ML-DSA chains offline</td>
+<td>Fails</td>
+<td>e2e run in progress</td>
+<td>Tested (1.27.4); Go 1.25 cannot verify ML-DSA</td>
+</tr>
+<tr>
+<td>Java 25 (stock JSSE)</td>
+<td>ECDSA; PKIX validates ML-DSA chains</td>
+<td>Fails</td>
+<td>e2e run in progress</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Trust bundles.</strong> Adding the ML-DSA root to a CA bundle
+next to the existing roots did not break any client in the e2e run,
+including OpenSSL 3.0, which ignores the root it cannot parse (Tested).
+So the ML-DSA root can be distributed ahead of any ML-DSA server
+certificate.</p>
 <p>Step-by-step instructions per language and component: Runbook by
 language</p>
 <p>Load balancers, edge, AWS endpoints, network devices, IoT, mesh,
@@ -795,6 +1002,15 @@ and guardrails tab)</td>
 <td>Pipeline diff check against each new runtime image</td>
 </tr>
 <tr>
+<td>ML-DSA certificates</td>
+<td>Public HTTPS cannot use ML-DSA (ACM, ELB, CloudFront, browsers); Go
+and Java do not negotiate it; AL2023 needs
+<code>SignatureAlgorithms</code> as well as Groups; chains grow 0.9 KB
+to 11.8 KB</td>
+<td>Dual certificates only; certificate track in the rollout plan;
+recheck AWS and browser support each quarter</td>
+</tr>
+<tr>
 <td>Untested rows</td>
 <td>Ruby, PHP, Rust and non-Corretto/Temurin JDK 25 builds are
 Documented or Unverified. Also not confirmed: which AWS SDK for Go v2
@@ -830,59 +1046,94 @@ HttpsServer, JDK 17, 21 and 25. Each language tab lists its scripts and
 results.</p>
 <p><strong>Documentation:</strong></p>
 <ul>
-<li>AWS: <a
+<li><p>AWS: <a
+href="https://aws.amazon.com/about-aws/whats-new/2026/03/iam-roles-anywhere-post-quantum-digital-certificates">IAM
+Roles Anywhere post-quantum certificates</a></p></li>
+<li><p>AWS: <a
+href="https://aws.amazon.com/about-aws/whats-new/2025/11/aws-private-ca-post-quantum-digital-certificates">AWS
+Private CA post-quantum certificates</a></p></li>
+<li><p>AWS: <a
+href="https://docs.aws.amazon.com/kms/latest/developerguide/mldsa.html">ML-DSA
+keys in AWS KMS</a></p></li>
+<li><p>AWS: <a
+href="https://aws.amazon.com/blogs/security/post-quantum-ml-dsa-code-signing-with-aws-private-ca-and-aws-kms">ML-DSA
+code signing with AWS Private CA and KMS</a></p></li>
+<li><p>AWS: <a
+href="https://docs.aws.amazon.com/govcloud-us/latest/UserGuide/govcloud-Signer.html">AWS
+Signer platforms (ECDSA)</a></p></li>
+<li><p>AWS: <a
+href="https://docs.aws.amazon.com/iot/latest/developerguide/x509-client-certs">IoT
+Core X.509 client certificates</a></p></li>
+<li><p>Microsoft: <a
+href="https://microsoft.com/en-us/security/blog/2026/10/08/post-quantum-authentication-why-organizations-should-start-testing-certificate-ecosystems-now">Post-quantum
+authentication: start testing certificate ecosystems
+(2026-10-08)</a></p></li>
+<li><p>Microsoft: <a
+href="https://learn.microsoft.com/windows-server/identity/ad-cs/ml-dsa-overview">ML-DSA
+in AD CS</a></p></li>
+<li><p>OpenSSH: <a
+href="https://www.openssh.org/releasenotes.html">Release notes (10.6,
+ssh-mldsa44-ed25519)</a></p></li>
+<li><p>IETF: <a href="https://www.rfc-editor.org/rfc/rfc9882.html">RFC
+9882, ML-DSA in CMS</a>; <a
+href="https://www.ietf.org/archive/id/draft-ietf-tls-composite-mldsa-00.html">draft-ietf-tls-composite-mldsa-00</a></p></li>
+<li><p>Apple: <a
+href="https://support.apple.com/guide/security/quantum-secure-cryptography-apple-devices-secc7c82e533/web">Quantum-secure
+cryptography in Apple devices</a></p></li>
+<li><p>AWS: <a
 href="https://aws.amazon.com/security/post-quantum-cryptography/aws-pq-readiness-confidentiality/">PQ
-readiness for AWS services</a></li>
-<li>AWS: <a
+readiness for AWS services</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">SDK
-and tool PQ TLS support</a></li>
-<li>AWS: <a
+and tool PQ TLS support</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html">ALB
-security policies</a></li>
-<li>AWS: <a
+security policies</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html">NLB
-security policies</a></li>
-<li>AWS: <a
+security policies</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-protocols-ciphers.html">CloudFront
-viewer protocols and ciphers</a></li>
-<li>AWS: <a
+viewer protocols and ciphers</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/en_us/apigateway/latest/developerguide/apigateway-security-policies-list.html">API
-Gateway security policies</a></li>
-<li>AWS: <a
+Gateway security policies</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/iot/latest/developerguide/transport-security.html">IoT
-Core transport security</a></li>
-<li>AWS: <a
+Core transport security</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html">AL2023
-PQ crypto policies</a></li>
-<li>AWS: <a
+PQ crypto policies</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/pqtls.html">Secrets
-Manager post-quantum TLS</a></li>
-<li>AWS: <a
+Manager post-quantum TLS</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html">Lambda
-quotas</a></li>
-<li>AWS: <a
+quotas</a></p></li>
+<li><p>AWS: <a
 href="https://docs.amazonaws.cn/en_us/lambda/latest/dg/lambda-runtimes.html">Lambda
-runtimes and deprecation</a></li>
-<li>AWS: <a
+runtimes and deprecation</a></p></li>
+<li><p>AWS: <a
 href="https://docs.aws.amazon.com/config/latest/developerguide/elbv2-predefined-security-policy-ssl-check.html">Config
-rule elbv2-predefined-security-policy-ssl-check</a></li>
-<li>Go: <a href="https://go.dev/doc/go1.24">Go 1.24 release
-notes</a></li>
-<li>OpenJDK: <a href="https://openjdk.org/jeps/527">JEP 527</a></li>
-<li>rustls: <a
-href="https://docs.rs/crate/rustls/latest/source/src/manual/defaults.rs">defaults</a></li>
-<li>Linkerd: <a
+rule elbv2-predefined-security-policy-ssl-check</a></p></li>
+<li><p>Go: <a href="https://go.dev/doc/go1.24">Go 1.24 release
+notes</a></p></li>
+<li><p>OpenJDK: <a href="https://openjdk.org/jeps/527">JEP
+527</a></p></li>
+<li><p>rustls: <a
+href="https://docs.rs/crate/rustls/latest/source/src/manual/defaults.rs">defaults</a></p></li>
+<li><p>Linkerd: <a
 href="https://linkerd.io/2025/10/31/announcing-linkerd-2.19/">2.19
-announcement</a></li>
-<li>Istio: <a
+announcement</a></p></li>
+<li><p>Istio: <a
 href="https://istio.io/latest/news/releases/1.27.x/announcing-1.27/change-notes/">1.27
-change notes</a></li>
-<li>Microsoft: <a
+change notes</a></p></li>
+<li><p>Microsoft: <a
 href="https://techcommunity.microsoft.com/t5/post-quantum-crypto-tech-blog/windows-tls-1-3-and-post-quantum-crypto-faq/ba-p/4556389">Windows
-TLS 1.3 and PQ FAQ</a></li>
-<li>Third party: <a
+TLS 1.3 and PQ FAQ</a></p></li>
+<li><p>Third party: <a
 href="https://hidekazu-konishi.com/entry/when_an_aws_connection_uses_ml_kem.html">When
-an AWS connection uses ML-KEM</a></li>
+an AWS connection uses ML-KEM</a></p></li>
 </ul>
 <p>Related: <a
 href="https://claude.ai/artifact/8wFt3xY4hJjG9wm8FuDHaH">PQC Connection
@@ -13293,6 +13544,7 @@ status, detection, steps and enforcement for one area.</p>
 <th>PQ today</th>
 <th>Main action</th>
 <th>Blocked by AWS</th>
+<th>Risk</th>
 </tr>
 </thead>
 <tbody>
@@ -13303,6 +13555,9 @@ status, detection, steps and enforcement for one area.</p>
 <code>elasticloadbalancing:SecurityPolicy</code> (CreateListener,
 ModifyListener)</td>
 <td>Classic LB (migrate)</td>
+<td>IaC defaults to the classical 2016-08 policy; Security Hub ELB.17
+passes non-PQ policies; the target leg follows the target's own TLS
+(Tested, 32 e2e cases)</td>
 </tr>
 <tr>
 <td>Edge and API front doors</td>
@@ -13312,6 +13567,8 @@ Transfer Family SFTP on 2025-03 policies</td>
 or a PQ ALB</td>
 <td>CloudFront origin leg, API Gateway egress, HTTP and WebSocket
 APIs</td>
+<td>Fronting HTTP and WebSocket APIs adds a hop, cost and a failure
+point; origin legs stay classical</td>
 </tr>
 <tr>
 <td>AWS service endpoints</td>
@@ -13320,6 +13577,8 @@ plane or unlisted</td>
 <td>Client-side fixes only (language runbooks); CloudTrail
 <code>keyExchange</code> for detection</td>
 <td>SSM and other unlisted services</td>
+<td>Only CloudTrail-logged calls can be proven PQ; the rest rely on
+posture</td>
 </tr>
 <tr>
 <td>Network devices and egress</td>
@@ -13328,6 +13587,8 @@ and vendor appliances ready</td>
 <td>Use a PQ egress proxy for what can't upgrade; Zeek for
 detection</td>
 <td>Network Firewall TLS inspection, AWS VPN</td>
+<td>TLS inspection re-terminates connections, so inspected traffic is
+classical; AWS VPN has no PQ option</td>
 </tr>
 <tr>
 <td>IoT</td>
@@ -13336,6 +13597,8 @@ detection</td>
 <td>Inventory TLS stacks; PQ-capable stacks for new devices; PQ gateways
 and brokers</td>
 <td>IoT Core (no PQ policy)</td>
+<td>Devices live 10+ years: the TLS stack and roots in firmware shipped
+now decide PQ for a decade; IoT Core has no ML-DSA either</td>
 </tr>
 <tr>
 <td>Service mesh</td>
@@ -13343,6 +13606,8 @@ and brokers</td>
 <td>Upgrade or set mesh config (Istio <code>COMPLIANCE_POLICY=pqc</code>
 is PQ-only)</td>
 <td>ECS Service Connect (no setting)</td>
+<td>Istio <code>COMPLIANCE_POLICY=pqc</code> is PQ-only and cuts off
+classical peers; ECS Service Connect has no setting</td>
 </tr>
 <tr>
 <td>Databases and data services</td>
@@ -13351,6 +13616,8 @@ self-managed</td>
 <td>Engine upgrade, <code>ssl_groups</code> or group config, PQ-capable
 drivers</td>
 <td>RDS Proxy, ElastiCache, MSK, OpenSearch</td>
+<td>Engine and driver must both support the group; engine upgrades need
+maintenance windows; managed proxies and caches stay classical</td>
 </tr>
 <tr>
 <td>Hosts and OS</td>
@@ -13358,12 +13625,18 @@ drivers</td>
 programs only (not GnuTLS); Windows opt-in</td>
 <td><code>DEFAULT:PQ</code> via SSM; Schannel group via GPO or SSM</td>
 <td>Amazon Linux 2 (migrate)</td>
+<td>Host-wide <code>DEFAULT:PQ</code> changes every OpenSSL program at
+once; GnuTLS tools (wget, git on Debian) stay classical; AL2023 also
+needs <code>SignatureAlgorithms</code> for ML-DSA</td>
 </tr>
 <tr>
 <td>Certificates (ML-DSA)</td>
 <td>Private CA, KMS, Roles Anywhere can issue ML-DSA</td>
 <td>CLM pilot on internal mutual TLS after ML-KEM</td>
 <td>ACM, ELB, CloudFront, public web PKI</td>
+<td>An ML-DSA-only server breaks Go, Java, OpenSSL 3.0 and default
+AL2023 clients; chains grow 0.9 KB to 11.8 KB; composite certificates
+have no TLS code points yet</td>
 </tr>
 <tr>
 <td>WAF</td>
@@ -13371,6 +13644,7 @@ programs only (not GnuTLS); Windows opt-in</td>
 <td>Set PQ on the resource; reverse-proxy WAFs need their own PQ
 profile</td>
 <td>Same as the resource it protects</td>
+<td>A WAF on a classical listener looks protected but is not PQ</td>
 </tr>
 <tr>
 <td>Web servers and proxies</td>
@@ -13378,6 +13652,8 @@ profile</td>
 Envoy and AL2023 builds classical until set</td>
 <td>Set the group list on both the listener and the upstream leg</td>
 <td>None (self-managed)</td>
+<td>Setting only the listener leaves the upstream leg classical; Envoy
+before 1.40 is classical unless <code>ecdh_curves</code> is set</td>
 </tr>
 <tr>
 <td>Mobile, desktop and CLI clients</td>
@@ -13387,6 +13663,8 @@ and GnuTLS tools not</td>
 <td>Upgrade CI toolboxes and clients; PQ only shows once the server
 offers it</td>
 <td>None (client-side)</td>
+<td>macOS LibreSSL curl and Debian GnuTLS tools stay classical; Android
+platform TLS not confirmed</td>
 </tr>
 </tbody>
 </table>
@@ -14947,7 +15225,7 @@ Resources:
 <h2 id="t12-verify">Verify</h2>
 <ol><li><p><strong>Inventory:</strong> for each device model, record the TLS library and version and whether OTA is possible. Store them as thing attributes (for example <code>tlsLib=wolfssl-5.9.4</code>), then query fleet indexing for anything below wolfSSL 5.9.1, OpenSSL 3.5 or a current awscrt.</p></li><li><p><strong>Broker, PQ-only client must succeed:</strong> <code>openssl s_client -connect broker:8883 -groups X25519MLKEM768 -tls1_3 -cert dev.pem -key dev.key -CAfile ca.pem -brief &lt;/dev/null</code> prints <code>Negotiated TLS1.3 group: X25519MLKEM768</code>.</p></li><li><p><strong>Broker fallback:</strong> the same command with <code>-groups X25519</code> must still connect, unless you enforce PQ.</p></li><li><p><strong>Device as client:</strong> point a test device at <code>openssl s_server -accept 8883 -groups X25519MLKEM768 -tls1_3 -cert srv.pem -key srv.key -CAfile ca.pem -Verify 1</code>. It must complete the handshake. Against <code>-groups X25519</code> it must fall back.</p></li><li><p><strong>Observed signal:</strong> the broker log (<code>no suitable key share</code> means a classical client was refused in PQ-only mode), a Zeek <code>ssl.log</code> <code>curve</code> on a mirrored gateway uplink (<a href="#tab11-network-devices-vpn-and-egress">Network devices and egress</a>), or <code>wolfSSL_get_curve_name()</code> / <code>s2n_connection_get_kem_group_name()</code> logged on the device.</p></li></ol>
 <h2 id="t12-pitfalls-and-rollback">Pitfalls and rollback</h2>
-<ul><li><p><strong>IoT Core is classical:</strong> don&#39;t hold device rollout back waiting for PQ on IoT Core. Ship PQ-capable stacks now, and enforce PQ on your own brokers and gateways first. Watch the <a href="https://docs.aws.amazon.com/iot/latest/developerguide/transport-security.html">IoT Core security policies</a> page for a PQ policy. Device lifetimes of 10 years or more make procurement the cheapest point to fix this.</p></li><li><p><strong>Buffers and stacks:</strong> a hybrid ClientHello is about 1.3 KB and the ServerHello about 1.2 KB. MCU TLS receive buffers of 1–2 KB, <code>MQTT_NETWORK_BUFFER_SIZE</code> and task stacks need headroom. Test on real hardware for heap fragmentation, handshake time and battery cost.</p></li><li><p><strong>HelloRetryRequest:</strong> if the device lists the hybrid group but sends only an X25519 share, a PQ-only server forces an extra round trip. Send the hybrid key share first (<code>wolfSSL_UseKeyShare</code>).</p></li><li><p><strong>PKCS#11 and secure-element keys:</strong> the CRT path gives no TLS 1.3 and so no PQ there. The alternative is wolfSSL with a crypto callback for the secure element.</p></li><li><p><strong>Stale names:</strong> <code>PQ_TLSv1_0_2021_05</code> (awscrt) and the Kyber IDs such as <code>WOLFSSL_P521_KYBER_LEVEL5</code> are pre-standard, and servers no longer accept them. Replace them.</p></li><li><p><strong>ESP-IDF registry lag:</strong> the managed wolfSSL component is 5.8.2, older than default-on ML-KEM. Pin a newer wolfSSL, or enable ML-KEM in <code>user_settings.h</code>, and test.</p></li><li><p><strong>Rollback:</strong> brokers: remove the <code>OPENSSL_CONF</code> drop-in to return to hybrid-preferred with classical fallback. Devices: keep X25519/P-256 after the hybrid group so that fallback needs no change, and ship an OTA config flag that skips <code>wolfSSL_UseKeyShare</code> if a model misbehaves.</p></li></ul>
+<ul><li><p>Certificates: AWS IoT Core documents RSA and ECDSA device certificates only; no ML-DSA support was found (checked 2026-11-16). Devices that ship a trust root in firmware keep it for their whole life, so new firmware should carry an ML-DSA root next to the ECDSA root and use a TLS stack that can verify ML-DSA (OpenSSL 3.5, wolfSSL 5.8+). Firmware signing can use ML-DSA from AWS KMS today (Documented). See Use cases in the overview.</p></li><li><p><strong>IoT Core is classical:</strong> don&#39;t hold device rollout back waiting for PQ on IoT Core. Ship PQ-capable stacks now, and enforce PQ on your own brokers and gateways first. Watch the <a href="https://docs.aws.amazon.com/iot/latest/developerguide/transport-security.html">IoT Core security policies</a> page for a PQ policy. Device lifetimes of 10 years or more make procurement the cheapest point to fix this.</p></li><li><p><strong>Buffers and stacks:</strong> a hybrid ClientHello is about 1.3 KB and the ServerHello about 1.2 KB. MCU TLS receive buffers of 1–2 KB, <code>MQTT_NETWORK_BUFFER_SIZE</code> and task stacks need headroom. Test on real hardware for heap fragmentation, handshake time and battery cost.</p></li><li><p><strong>HelloRetryRequest:</strong> if the device lists the hybrid group but sends only an X25519 share, a PQ-only server forces an extra round trip. Send the hybrid key share first (<code>wolfSSL_UseKeyShare</code>).</p></li><li><p><strong>PKCS#11 and secure-element keys:</strong> the CRT path gives no TLS 1.3 and so no PQ there. The alternative is wolfSSL with a crypto callback for the secure element.</p></li><li><p><strong>Stale names:</strong> <code>PQ_TLSv1_0_2021_05</code> (awscrt) and the Kyber IDs such as <code>WOLFSSL_P521_KYBER_LEVEL5</code> are pre-standard, and servers no longer accept them. Replace them.</p></li><li><p><strong>ESP-IDF registry lag:</strong> the managed wolfSSL component is 5.8.2, older than default-on ML-KEM. Pin a newer wolfSSL, or enable ML-KEM in <code>user_settings.h</code>, and test.</p></li><li><p><strong>Rollback:</strong> brokers: remove the <code>OPENSSL_CONF</code> drop-in to return to hybrid-preferred with classical fallback. Devices: keep X25519/P-256 after the hybrid group so that fallback needs no change, and ship an OTA config flag that skips <code>wolfSSL_UseKeyShare</code> if a model misbehaves.</p></li></ul>
 <h2 id="t12-full-configuration-files">Full configuration files</h2>
 <p>Each file is complete. The label says whether it was Tested here, comes from vendor docs, or is an untested starting point.</p>
 <p><strong><code>user_settings.h</code></strong> (wolfSSL on an MCU. The PQ defines are from wolfSSL&#39;s <code>examples/configs/user_settings_pq.h</code>; the platform lines are a typical FreeRTOS/lwIP client profile. Not built on an MCU here: run <code>wolfcrypt_test()</code> on your port)</p>
@@ -16069,7 +16347,7 @@ openssl s_client -connect web:443 -CAfile roots.pem -sigalgs ecdsa_secp256r1_sha
 openssl x509 -in cert.pem -noout -text | grep -E &#39;Signature Algorithm|Public Key Algorithm&#39;</code></pre>
 <p>Expect <code>Peer signature type: mldsa44</code> for the first and <code>ecdsa_secp256r1_sha256</code> for the second (Tested). Old clients (OpenSSL 3.0, Go, Java) must still complete the handshake (Tested).</p>
 <h2 id="t16-pitfalls-and-rollback">Pitfalls and rollback</h2>
-<ul><li><p>Never serve only an ML-DSA certificate to a mixed fleet: Go, Java and OpenSSL 3.0 clients cannot negotiate it (Tested).</p></li><li><p>Chains grow about 13 times (0.9 KB to 11.8 KB). Watch MTU-sensitive paths, middleboxes, IoT devices and client-certificate size limits.</p></li><li><p>A certificate carries one algorithm. Re-issue; don&#39;t re-sign.</p></li><li><p>Rollback: remove the ML-DSA <code>ssl_certificate</code> pair and reload; ECDSA keeps serving. The ML-DSA root can stay in trust stores; it is harmless when unused.</p></li></ul>
+<ul><li><p>Never serve only an ML-DSA certificate to a mixed fleet: Go, Java and OpenSSL 3.0 clients cannot negotiate it (Tested).</p></li><li><p>Amazon Linux 2023: the crypto policy lists only classical <code>SignatureAlgorithms</code>, so OpenSSL 3.5.8 never offers ML-DSA, even with the ML-KEM config file. A dual-certificate server sends ECDSA, and an ML-DSA-only server or an ML-DSA client certificate fails the handshake. Adding <code>mldsa44:mldsa65:mldsa87</code> ahead of the policy list (<code>openssl-pq-mldsa.cnf</code>) fixes all three (Tested 2026-11-16, AL2023 Python 3.12).</p></li><li><p>Chains grow about 13 times (0.9 KB to 11.8 KB). Watch MTU-sensitive paths, middleboxes, IoT devices and client-certificate size limits.</p></li><li><p>A certificate carries one algorithm. Re-issue; don&#39;t re-sign.</p></li><li><p>Rollback: remove the ML-DSA <code>ssl_certificate</code> pair and reload; ECDSA keeps serving. The ML-DSA root can stay in trust stores; it is harmless when unused.</p></li></ul>
 <h2 id="t16-full-configuration-files">Full configuration files</h2>
 <h3 id="t16-mkchainsh-openssl-35-ml-dsa-and-ecdsa-chains-tested">mkchain.sh (OpenSSL 3.5: ML-DSA and ECDSA chains, Tested)</h3>
 <pre><code class="language-bash">#!/bin/sh
@@ -16120,6 +16398,35 @@ extendedKeyUsage       = serverAuth, clientAuth
 subjectAltName         = DNS:web, DNS:localhost
 subjectKeyIdentifier   = hash
 authorityKeyIdentifier = keyid:always</code></pre>
+<h3 id="t16-openssl-pq-mldsacnf-al2023-ml-kem-and-ml-dsa-tested">openssl-pq-mldsa.cnf (AL2023: ML-KEM groups and ML-DSA signature algorithms, Tested)</h3>
+<pre><code class="language-ini"># ML-KEM key exchange AND ML-DSA certificates on Amazon Linux 2023 (OpenSSL 3.5).
+# The AL2023 crypto policy lists only classical SignatureAlgorithms, so OpenSSL 3.5 never offers
+# ML-DSA: a server with only an ML-DSA certificate fails the handshake, and a dual-certificate
+# server sends ECDSA. Tested 2026-11-16 (e2e mldsa-dual/only/mtls): Groups alone -&gt; ecdsa/fail/fail;
+# with the SignatureAlgorithms line below -&gt; mldsa/mldsa/mldsa (client certificate too).
+# ML-DSA is listed first and the policy's classical list follows, so every existing peer still connects.
+# Point OPENSSL_CONF at this file instead of openssl-pq.cnf on hosts that join the ML-DSA certificate track.
+openssl_conf = openssl_init
+
+.include /etc/pki/tls/openssl.d
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = pq_system_default
+
+[pq_system_default]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192
+SignatureAlgorithms = mldsa44:mldsa65:mldsa87:ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:ed25519:ed448:rsa_pss_pss_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha512:rsa_pss_rsae_sha256:rsa_pss_rsae_sha384:rsa_pss_rsae_sha512:RSA+SHA256:RSA+SHA384:RSA+SHA512</code></pre>
 <h3 id="t16-defaultconf-nginx-dual-certificate-server-tested">default.conf (nginx dual-certificate server, Tested)</h3>
 <pre><code class="language-nginx"># /etc/nginx/conf.d/default.conf - ML-DSA to clients that offer ML-DSA signature algorithms,
 # ECDSA to everyone else. Needs nginx on OpenSSL 3.5+. Tested: nginx 1.29 (Debian 13, OpenSSL 3.5.5).

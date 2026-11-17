@@ -8,7 +8,7 @@
 <div class="card tight top-purple" style="--i:3"><p class="tag-blue">Prove</p><h3>From the logs</h3><p class="body">ALB connection logs and NLB access logs record tls_keyexchange per connection.</p></div>
 </div>
 <p class="note"><b>Policy:</b> <span class="code">ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</span><br><b>Guardrail:</b> an SCP on elasticloadbalancing:SecurityPolicy denies CreateListener and ModifyListener without a PQ policy.</p>
-<p class="foot">Post-quantum TLS on AWS · 11 · Guide: Load balancers tab</p>
+<p class="foot">Post-quantum TLS on AWS · 18 · Guide: Load balancers tab</p>
 <aside>KEY MESSAGE: For ALB and NLB, PQ is one setting on the listener, but the tools we use for infrastructure as code pick the old policy unless we name the new one.
 • The certificate has nothing to do with key exchange. We keep every ACM certificate.
 • The trap: CloudFormation, the CLI and CDK default to ELBSecurityPolicy-2016-08. Only the console defaults to the PQ policy. So every template has to name the policy, and the SCP makes that mandatory.

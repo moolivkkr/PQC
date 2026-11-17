@@ -11,7 +11,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | [PQC-Detection-and-Remediation.pdf](PQC-Detection-and-Remediation.pdf) | All 22 sections: Overview, Runbook, Go, Python, Node.js, Java, .NET, twelve infrastructure sections, Enforcement and guardrails, Configuration file index |
 | [PQC-Detection-and-Remediation.docx](PQC-Detection-and-Remediation.docx) | Same content in Word; import into Google Docs with Drive > Upload, then Open with Google Docs |
 | [PQC-Detection-and-Remediation.html](PQC-Detection-and-Remediation.html) | Same content as one HTML page |
-| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 23-slide deck (PowerPoint and PDF), in the Secure Telemetry Tokenization deck's format: why now, baseline and target, tested outcome, seven test rounds and six corrections, what decides PQ, the fix per language, design choices, the AWS runtime deadline; infrastructure (ALB/NLB policy and the tested target leg, the twelve infrastructure areas, what AWS blocks and the exception register, five guardrail layers, warn-then-fail, detection, infrastructure traps); scorecard, rollout, the ask. Speaker notes on every slide |
+| [PQC-Summary.pptx](PQC-Summary.pptx), [PQC-Summary.pdf](PQC-Summary.pdf) | 39-slide deck (PowerPoint and PDF) in the Secure Telemetry Tokenization format: why now, baseline and target, tested outcome, ML-KEM vs ML-DSA by use case (public HTTPS, internal HTTPS, workload identity and mTLS, user, device and IoT, code signing, SSH); test rounds and corrections; the solution per language (Go, Python, Node.js, Java, .NET) by compute type (Lambda, ECS Fargate, ECS on EC2 and EKS, EC2), ML-DSA by client stack, the AWS runtime deadline, design choices; infrastructure services in three slides with a risk column, the ML-DSA certificate track, what AWS blocks, guardrails, detection and traps; scorecard, rollout, the ask; appendix of test cases per language and for infrastructure, with links to the test code (private repo). Speaker notes on every slide |
 
 ## End-to-end verification (2026-11-15)
 
@@ -34,6 +34,7 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 | `tests/lambda/` | The 2026-11-12 Lambda runtime matrix (Runtime Interface Emulator) |
 | `e2e/` | End-to-end suite on LocalStack: probes per language, observer, runner, cases, `pq-egress` extension, results ([README](e2e/README.md), [RUNNING](e2e/RUNNING.md), [CONTRACT](e2e/CONTRACT.md)) |
 | `build/build.sh` | Rebuilds HTML, PDF and DOCX from `src/` (Docker pandoc pinned by digest, Chrome headless) |
+| `build/deck-renumber.py` | Renumbers slide footers and scorecard cross-references in `deck.json` order |
 | `build/deck.sh` | Rebuilds the deck from `src/deck/`: checks every slide for overflow, prints the PDF with headless Chrome, and builds the PPTX (one image per slide plus speaker notes). Fonts are vendored in `build/fonts/` (OFL) |
 | `build/extract-configs.py` | Regenerates `configs/` from `src/` |
 | `artifacts/` | Review artifacts kept with the project, each as HTML and DOCX: the rollout plan (`PQC-TLS-rollout-plan.*`, source `.md` exported from the [Claude Doc](https://claude.ai/artifact/7uLzuHcyCSJ4WN13MkxBt8)) and the end-to-end findings page (`PQC-e2e-findings.*`). Rebuild with `bash artifacts/build.sh` |

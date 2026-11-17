@@ -1,0 +1,20 @@
+<section id="appx-java" class="light" data-transition="fade">
+<p class="eyebrow">Appendix · Java test cases</p>
+<h2>Java: 96 cases, 96 passed</h2>
+<table class="tbl" style="font-size:21px">
+<tr class="h"><th style="width:14%">Compute</th><th style="width:70%">What the cases cover</th><th style="width:8%;text-align:right">Cases</th><th style="width:8%;text-align:right">Pass</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td>java8.al2, java8.al2023, java11, java17, java21, java25; kit v1 and v2 agents via layer; Java 8 flags; EC and RSA keystores; mTLS; AWS SDK v2 CRT; Netty tcnative</td><td style="text-align:right">57</td><td style="text-align:right">57</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td>Corretto 8–25 ± kit v2 via task-def JAVA_TOOL_OPTIONS; static BC registration (Corretto 17/21, Temurin 21); EC client keystore; AL2023 dnf Corretto 17–25</td><td style="text-align:right">21</td><td style="text-align:right">21</td></tr>
+<tr class="a"><td><b>ECS on EC2</b></td><td>Corretto 8 (kit), 17 static, 21 ± kit, 25</td><td style="text-align:right">5</td><td style="text-align:right">5</td></tr>
+<tr class="b"><td><b>EC2</b></td><td>AL2023 Corretto 11–25 ± kit v2 (systemd); alternatives with four JDKs; AL2 Corretto 11/17 ± kit</td><td style="text-align:right">13</td><td style="text-align:right">13</td></tr>
+</table>
+<ul class="note" style="font-size:21px;list-style:none;padding-left:32px"><li>Cases (expected result per case): <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/java.py" class="code">e2e/cases/java.py</a></li><li>Probe the cases run: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/java/Probe.java" class="code">e2e/clients/java/Probe.java</a></li><li>Build of every image, zip and layer: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/java.sh" class="code">e2e/build/java.sh</a></li><li>Results, case by case: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md" class="code">e2e/results/latest/summary.md</a></li></ul>
+<p class="foot">Post-quantum TLS on AWS · 37 · Repository is private: links work for people with access</p>
+<aside>KEY MESSAGE: Every Java claim in this deck traces to a case here, and each case is code anyone with repo access can rerun.
+• 96 cases across Lambda, ECS Fargate, ECS on EC2 and EC2; 96 passed in the run of final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537).
+• Each case states its expected result per target: PQ hybrid, PQ-only, mTLS, EC certificate, TLS 1.2; from the 16 November run also the three ML-DSA certificate targets. The observer records what each handshake actually negotiated.
+• A case passes when the observed result matches the expectation in cases/java.py, which is written from the guide, not from the run.
+• To rerun: cd e2e; bash run.sh --lang java. It needs Docker and a LocalStack Pro licence.
+• EKS was not run; it uses the same images as ECS.
+LINKS: https://github.com/moolivkkr/PQC/blob/main/e2e/cases/java.py · https://github.com/moolivkkr/PQC/blob/main/e2e/clients/java/Probe.java · https://github.com/moolivkkr/PQC/blob/main/e2e/build/java.sh · https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md</aside>
+</section>

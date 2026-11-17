@@ -30,6 +30,7 @@ The blind spot is outbound calls from Lambda and Fargate to non-AWS services: no
 | Phase 3. Front doors | 2027-01-11 to 2027-03-12 |
 | Phase 4. Workload waves B to D | 2027-02-01 to 2027-06-30 |
 | Phase 5. Enforce | 2027-07-01 to 2027-09-30 |
+| Certificate track (ML-DSA) | 2026-11-23 to 2027-12-17, then as stacks catch up |
 | AWS: function create blocked (deprecated runtimes) | 2027-07-29 |
 | AWS: function update blocked (deprecated runtimes) | 2027-08-31 |
 
@@ -41,14 +42,27 @@ Dates are a proposal for the steering group; the only fixed date is AWS's update
 
 | Phase | Window (proposed) | Work | Exit gate | Lead |
 | --- | --- | --- | --- | --- |
-| 0. Prove on real AWS | 2026-11-23 to 2026-12-18 | Sandbox account: ALB and NLB listeners on `ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09` with connection logs; a fixed Lambda per language calling KMS and Secrets Manager (CloudTrail `tlsDetails.keyExchange`); `pq-egress` with SigV4 calls; one x86\_64 run of the e2e suite; `java11.al2023` and `java17.al2023`; guardrails applied in audit mode | Every "not tested" row in Starting point is Tested or an accepted exception | Security architecture |
+| 0. Prove on real AWS | 2026-11-23 to 2026-12-18 | Sandbox account: ALB and NLB listeners on `ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09` with connection logs; a fixed Lambda per language calling KMS and Secrets Manager (CloudTrail `tlsDetails.keyExchange`); `pq-egress` with SigV4 calls; one x86\_64 run of the e2e suite; `java11.al2023` and `java17.al2023`; guardrails applied in audit mode; AWS Private CA ML-DSA test root issuing a dual ECDSA + ML-DSA certificate to one internal test service, and IAM Roles Anywhere with an ML-DSA trust anchor | Every "not tested" row in Starting point is Tested or an accepted exception | Security architecture |
 | 1. Inventory and baseline | 2026-11-23 to 2027-01-15 | Posture inventory across all accounts: Lambda runtimes and env vars, ECR image SBOMs, SSM inventory, ELB and API Gateway policies; ALB/NLB connection logs and Athena tables; CloudTrail key-exchange queries; RemediationEngine PQC readiness findings | Every workload sits in a guide matrix row with an owner; baseline share of classical handshakes recorded | Platform engineering |
 | 2. Guardrails in warn mode | 2027-01-04 to 2027-02-12 | cfn-guard, conftest and Checkov rules in every pipeline as warnings; Config rules in audit; ELB SCP on a sandbox OU | Warnings visible on every pull request; no false positives open | Security architecture |
 | 3. Front doors | 2027-01-11 to 2027-03-12 | All ALB and NLB TLS listeners to the `Res-PQ` policy (classical and TLS 1.2 clients still connect); API Gateway REST to the PQ policy | Listener posture 100% PQ policy; key-exchange mix from connection logs reported weekly | Network engineering |
 | 4. Workload waves | 2027-02-01 to 2027-06-30 | Shared build template carries the pq-tls kit; waves B to D (Order of work) ship on each service's normal release. Wave A, runtime upgrades, runs from 2026-12-01 to 2027-06-30 as its own track | Each workload meets the definition of done | Platform engineering with app teams |
 | 5. Enforce | 2027-07-01 to 2027-09-30 | Guardrails fail builds; SCP denies non-PQ ELB policies; listeners whose TLS 1.2 traffic is zero move to `TLS13-1-3-PQ`; exceptions register reviewed | No new non-PQ workload can ship; every remaining classical connection is a recorded exception | Security architecture |
 
-After Phase 5: JDK 25.0.5+ replaces the Java kit as teams upgrade, and ML-DSA certificates start as a separate programme.
+After Phase 5: JDK 25.0.5+ replaces the Java kit as teams upgrade.
+
+## Certificate track (ML-DSA)
+
+ML-KEM (the phases above) protects key exchange and needs no new certificates. ML-DSA protects certificates and signatures; a forged signature only matters once a quantum computer exists, so this track is smaller and runs alongside, with two exceptions that start now: roots that ship in device firmware and code or firmware signatures that are verified for years. For TLS, "hybrid" certificates mean two certificates on one server (ECDSA and ML-DSA, chosen per client); composite ML-DSA certificates have no TLS code points yet.
+
+| Step | Window (proposed) | Work | Exit gate | Lead |
+| --- | --- | --- | --- | --- |
+| C0. Test in Phase 0 | 2026-11-23 to 2026-12-18 | Private CA ML-DSA test root; dual certificate on one internal test service; Roles Anywhere ML-DSA trust anchor and `aws_signing_helper` with an ML-DSA key; client matrix from the e2e targets `mldsa-dual`, `mldsa-only`, `mldsa-mtls` repeated on real AWS | Each use case in the guide's Use cases table marked Tested or Unverified on real AWS | Security architecture |
+| C1. Roots and signing | 2027-01-04 to 2027-03-31 | Add the ML-DSA root to trust bundles next to the existing roots (old clients ignore it, Tested); ML-DSA signature from KMS next to the existing signature for firmware and long-lived artifacts; ML-DSA root in new device firmware | New firmware and signed artifacts carry ML-DSA; trust bundles carry the ML-DSA root | Platform engineering, device teams |
+| C2. Internal pilot | 2027-04-01 to 2027-12-17 | Dual certificates on internal mTLS services whose clients run OpenSSL 3.5 (Python, Node.js, .NET on Debian 13, Alpine, Ubuntu 26.04, or AL2023 with `configs/certificates-ml-dsa/openssl-pq-mldsa.cnf`) | Pilot services serve ML-DSA to those clients and ECDSA to the rest with no failed handshakes | Platform engineering |
+| C3. Wider use | When Go and Java negotiate ML-DSA, and ACM, ELB, CloudFront and browsers serve it | Extend dual certificates; public HTTPS follows browsers and AWS | Recheck each quarter | Security architecture |
+
+Never serve an ML-DSA certificate alone while any client runs Go, Java, OpenSSL 3.0 or an unmodified AL2023 crypto policy: those clients fail the handshake (Tested). Certificate chains grow from about 0.9 KB to 11.8 KB.
 
 ## Order of work
 
@@ -111,6 +125,8 @@ Every fix rolls back by removing a file or a variable in the next release, excep
 | Deprecated runtimes miss 2027-08-31 | No config change possible afterwards | Wave A starts in Phase 1, tracked separately | None: upgrade is the only path |
 | Node config file replaces AWS's | Drift when AWS changes its Lambda file | Pipeline diff against each new runtime image | Remove the variable |
 | Guardrails block delivery | Teams stall on false positives | Warn mode for 30 days first; exceptions by tag | Switch the rule back to warn |
+| ML-DSA-only certificate on a server | Go, Java, OpenSSL 3.0 and default AL2023 clients fail the handshake | Dual certificates only; client inventory before each pilot service | Remove the ML-DSA certificate; ECDSA keeps serving |
+| AL2023 crypto policy omits ML-DSA signature algorithms | AL2023 clients get ECDSA from a dual server and fail against ML-DSA only, even with the ML-KEM config | Use `openssl-pq-mldsa.cnf` (adds `SignatureAlgorithms`) on pilot clients | Point `OPENSSL_CONF` back at `openssl-pq.cnf` |
 | No log shows outbound key exchange from Lambda and Fargate to non-AWS services | Done cannot be proven for those calls | App-side handshake logs or an egress sensor where the data warrants it | n/a |
 
 ## Decisions needed
@@ -124,6 +140,7 @@ Phase 0 cannot start until the first decision is made.
 - [ ] FIPS policy: which workloads must stay FIPS, and whether they wait for FIPS PQ evidence.
 - [ ] Exception rule: who approves a workload staying classical, and how often it is reviewed.
 - [ ] Which data classes rank first inside each wave.
+- [ ] Certificate track: approve C0 in Phase 0, ML-DSA signing for firmware and long-lived artifacts in 2027 Q1, and one internal dual-certificate pilot service.
 
 ## Sources
 

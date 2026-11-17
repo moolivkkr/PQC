@@ -179,6 +179,7 @@ Extracted from each tab's "Full configuration files" section by `build/extract-c
 | `aws-service-endpoints/home/.aws/config` | ~/.aws/config (FIPS endpoints, optional) |
 | `certificates-ml-dsa/mkchain.sh` | mkchain.sh (OpenSSL 3.5: ML-DSA and ECDSA chains, Tested) |
 | `certificates-ml-dsa/ca.ext` | ca.ext |
+| `certificates-ml-dsa/openssl-pq-mldsa.cnf` | openssl-pq-mldsa.cnf (AL2023: ML-KEM groups and ML-DSA signature algorithms, Tested) |
 | `certificates-ml-dsa/default.conf` | default.conf (nginx dual-certificate server, Tested) |
 | `certificates-ml-dsa/web-ssl.conf` | web-ssl.conf (Apache httpd; Unverified with ML-DSA) |
 | `certificates-ml-dsa/private-ca-mldsa.tf` | private-ca-mldsa.tf (Terraform; provider acceptance of ML_DSA values Unverified) |

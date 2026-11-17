@@ -269,6 +269,10 @@ that is, we will know after Phase 1.</p>
 <td>2027-07-01 to 2027-09-30</td>
 </tr>
 <tr>
+<td>Certificate track (ML-DSA)</td>
+<td>2026-11-23 to 2027-12-17, then as stacks catch up</td>
+</tr>
+<tr>
 <td>AWS: function create blocked (deprecated runtimes)</td>
 <td>2027-07-29</td>
 </tr>
@@ -305,7 +309,9 @@ logs; a fixed Lambda per language calling KMS and Secrets Manager
 (CloudTrail <code>tlsDetails.keyExchange</code>); <code>pq-egress</code>
 with SigV4 calls; one x86_64 run of the e2e suite;
 <code>java11.al2023</code> and <code>java17.al2023</code>; guardrails
-applied in audit mode</td>
+applied in audit mode; AWS Private CA ML-DSA test root issuing a dual
+ECDSA + ML-DSA certificate to one internal test service, and IAM Roles
+Anywhere with an ML-DSA trust anchor</td>
 <td>Every "not tested" row in Starting point is Tested or an accepted
 exception</td>
 <td>Security architecture</td>
@@ -360,8 +366,76 @@ connection is a recorded exception</td>
 </tr>
 </tbody>
 </table>
-<p>After Phase 5: JDK 25.0.5+ replaces the Java kit as teams upgrade,
-and ML-DSA certificates start as a separate programme.</p>
+<p>After Phase 5: JDK 25.0.5+ replaces the Java kit as teams
+upgrade.</p>
+<h2 id="certificate-track-ml-dsa">Certificate track (ML-DSA)</h2>
+<p>ML-KEM (the phases above) protects key exchange and needs no new
+certificates. ML-DSA protects certificates and signatures; a forged
+signature only matters once a quantum computer exists, so this track is
+smaller and runs alongside, with two exceptions that start now: roots
+that ship in device firmware and code or firmware signatures that are
+verified for years. For TLS, "hybrid" certificates mean two certificates
+on one server (ECDSA and ML-DSA, chosen per client); composite ML-DSA
+certificates have no TLS code points yet.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Window (proposed)</th>
+<th>Work</th>
+<th>Exit gate</th>
+<th>Lead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C0. Test in Phase 0</td>
+<td>2026-11-23 to 2026-12-18</td>
+<td>Private CA ML-DSA test root; dual certificate on one internal test
+service; Roles Anywhere ML-DSA trust anchor and
+<code>aws_signing_helper</code> with an ML-DSA key; client matrix from
+the e2e targets <code>mldsa-dual</code>, <code>mldsa-only</code>,
+<code>mldsa-mtls</code> repeated on real AWS</td>
+<td>Each use case in the guide's Use cases table marked Tested or
+Unverified on real AWS</td>
+<td>Security architecture</td>
+</tr>
+<tr>
+<td>C1. Roots and signing</td>
+<td>2027-01-04 to 2027-03-31</td>
+<td>Add the ML-DSA root to trust bundles next to the existing roots (old
+clients ignore it, Tested); ML-DSA signature from KMS next to the
+existing signature for firmware and long-lived artifacts; ML-DSA root in
+new device firmware</td>
+<td>New firmware and signed artifacts carry ML-DSA; trust bundles carry
+the ML-DSA root</td>
+<td>Platform engineering, device teams</td>
+</tr>
+<tr>
+<td>C2. Internal pilot</td>
+<td>2027-04-01 to 2027-12-17</td>
+<td>Dual certificates on internal mTLS services whose clients run
+OpenSSL 3.5 (Python, Node.js, .NET on Debian 13, Alpine, Ubuntu 26.04,
+or AL2023 with
+<code>configs/certificates-ml-dsa/openssl-pq-mldsa.cnf</code>)</td>
+<td>Pilot services serve ML-DSA to those clients and ECDSA to the rest
+with no failed handshakes</td>
+<td>Platform engineering</td>
+</tr>
+<tr>
+<td>C3. Wider use</td>
+<td>When Go and Java negotiate ML-DSA, and ACM, ELB, CloudFront and
+browsers serve it</td>
+<td>Extend dual certificates; public HTTPS follows browsers and AWS</td>
+<td>Recheck each quarter</td>
+<td>Security architecture</td>
+</tr>
+</tbody>
+</table>
+<p>Never serve an ML-DSA certificate alone while any client runs Go,
+Java, OpenSSL 3.0 or an unmodified AL2023 crypto policy: those clients
+fail the handshake (Tested). Certificate chains grow from about 0.9 KB
+to 11.8 KB.</p>
 <h2 id="order-of-work">Order of work</h2>
 <p>Waves are set by how hard the fix is; within a wave, workloads go by
 data sensitivity first, because recorded traffic stays decryptable for
@@ -580,6 +654,23 @@ on FIPS JVMs</td>
 <td>Switch the rule back to warn</td>
 </tr>
 <tr>
+<td>ML-DSA-only certificate on a server</td>
+<td>Go, Java, OpenSSL 3.0 and default AL2023 clients fail the
+handshake</td>
+<td>Dual certificates only; client inventory before each pilot
+service</td>
+<td>Remove the ML-DSA certificate; ECDSA keeps serving</td>
+</tr>
+<tr>
+<td>AL2023 crypto policy omits ML-DSA signature algorithms</td>
+<td>AL2023 clients get ECDSA from a dual server and fail against ML-DSA
+only, even with the ML-KEM config</td>
+<td>Use <code>openssl-pq-mldsa.cnf</code> (adds
+<code>SignatureAlgorithms</code>) on pilot clients</td>
+<td>Point <code>OPENSSL_CONF</code> back at
+<code>openssl-pq.cnf</code></td>
+</tr>
+<tr>
 <td>No log shows outbound key exchange from Lambda and Fargate to
 non-AWS services</td>
 <td>Done cannot be proven for those calls</td>
@@ -608,6 +699,9 @@ stay FIPS, and whether they wait for FIPS PQ evidence.</label></li>
 workload staying classical, and how often it is reviewed.</label></li>
 <li><label><input type="checkbox" />Which data classes rank first inside
 each wave.</label></li>
+<li><label><input type="checkbox" />Certificate track: approve C0 in
+Phase 0, ML-DSA signing for firmware and long-lived artifacts in 2027
+Q1, and one internal dual-certificate pilot service.</label></li>
 </ul>
 <h2 id="sources">Sources</h2>
 <ul>

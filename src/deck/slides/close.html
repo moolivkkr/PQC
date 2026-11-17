@@ -1,18 +1,20 @@
 <section id="close" class="dark" data-transition="fade" style="gap:48px">
 <div class="spine"></div>
-<h1 style="width:1500px">Same certificates. Quantum-safe key exchange.</h1>
+<h1 style="width:1600px">Quantum-safe key exchange now. ML-DSA where it pays.</h1>
 <div class="row" style="gap:48px">
 <div class="closecol"><h3>Tested</h3><p class="body">469 of 469 cases pass; six guide errors found and fixed</p></div>
 <div class="closecol"><h3>Small to ship</h3><p class="body">One file, variable or version per workload; rolled back by removing it</p></div>
 <div class="closecol"><h3>Provable</h3><p class="body">CloudTrail, ELB logs and sensors show the group; gaps are named</p></div>
 </div>
 <p class="ask">Fund the sandbox and approve the windows · Questions and discussion</p>
-<p class="foot">Post-quantum TLS on AWS · 23 · Guide, e2e tests and rollout plan in the PQC repository</p>
-<aside>KEY MESSAGE: Same certificates, quantum-safe key exchange, and we can prove it workload by workload.
+<p class="foot">Post-quantum TLS on AWS · 32 · Guide, e2e tests and rollout plan in the PQC repository</p>
+<aside>KEY MESSAGE: Quantum-safe key exchange everywhere now, ML-DSA certificates where they pay off, and we can prove it workload by workload.
 • Recap in three words: tested, small, provable.
 • Repeat the ask: the sandbox account, the windows, and a lead per role; the three policy decisions can follow in a few weeks.
 LIKELY QUESTIONS:
-• “Do we need new certificates?” No. Only key exchange changes. ML-DSA certificates are a later, separate step.
+• “Do we need new certificates?” Not for key exchange. ML-DSA starts now only for firmware roots and long-lived signatures; internal TLS pilots dual certificates in 2027; public HTTPS waits for AWS and browsers.
+• “Why not hybrid ML-DSA certificates?” For TLS, hybrid means two certificates on one server today. The composite single certificate has no TLS code points yet.
+• “Does Go or Java support ML-DSA?” They verify ML-DSA chains but don’t negotiate it in TLS, so they get the ECDSA certificate from a dual server.
 • “Will anything break?” Hybrid falls back to classical for peers without ML-KEM, and every fix is removed by deleting one file or variable.
 • “Why not wait for AWS to make it the default?” Lambda’s managed runtimes and AL2023 still default to classical, and the deprecated runtimes can’t be changed after 31 August 2027.
 • “Has this run on real AWS?” Not yet. LocalStack and Docker only, on arm64. Phase 0 is that test.

@@ -1,0 +1,25 @@
+<section id="usecases" class="light" data-transition="fade">
+<p class="eyebrow">Two algorithms, seven use cases</p>
+<h2>ML-KEM everywhere now; ML-DSA where it pays</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:17%">Use case</th><th style="width:25%">Key exchange: ML-KEM</th><th style="width:38%">Certificate: ML-DSA</th><th style="width:20%">ML-DSA when</th></tr>
+<tr class="a"><td><b>Public HTTPS</b></td><td class="ok">Hybrid at ALB, NLB, CloudFront</td><td>ACM, ALB, CloudFront serve RSA/ECDSA only; browsers don’t negotiate ML-DSA</td><td class="bad">Blocked: keep ECDSA</td></tr>
+<tr class="b"><td><b>Internal HTTPS</b></td><td class="ok">Every language, every compute</td><td>Dual certificate (ECDSA + ML-DSA) from Private CA; OpenSSL 3.5 clients pick ML-DSA</td><td class="plan">Pilot 2027</td></tr>
+<tr class="a"><td><b>Workload identity, mTLS</b></td><td class="ok">Same as internal</td><td>ML-DSA client certs tested per language; IAM Roles Anywhere accepts ML-DSA; SPIRE, Envoy: not yet</td><td class="plan">Pilot with Roles Anywhere</td></tr>
+<tr class="b"><td><b>User certificates</b></td><td>Schannel hybrid (Jul 2026)</td><td>AD CS 2025 issues ML-DSA; Microsoft: Schannel ML-DSA is a pilot, not production</td><td>Test CA only</td></tr>
+<tr class="a"><td><b>Device and IoT</b></td><td class="bad">IoT Core: no PQ policy</td><td>IoT Core: no ML-DSA found. Roots in firmware live 10+ years</td><td class="bad">Plan now: ML-DSA root in new firmware</td></tr>
+<tr class="b"><td><b>Code, firmware signing</b></td><td>Not TLS</td><td>KMS ML-DSA keys, Private CA code-signing certificates; AWS Signer is ECDSA only</td><td class="bad">Plan now: sign with both</td></tr>
+<tr class="a"><td><b>SSH</b></td><td class="ok">OpenSSH 10 default (tested)</td><td>OpenSSH 10.6 adds hybrid ssh-mldsa44-ed25519 keys</td><td>After clients reach 10.6</td></tr>
+</table>
+<p class="note" style="font-size:22px"><b>“Hybrid” differs by side:</b> for key exchange it is one group, X25519MLKEM768. For certificates the deployable form is <b>two certificates</b> on one server; composite ML-DSA has no TLS code points yet (IETF draft, Oct 2026).</p>
+<p class="foot">Post-quantum TLS on AWS · 05 · Guide: Use cases; vendor sources checked 2026-11-16</p>
+<aside>KEY MESSAGE: Key exchange and certificates are two separate jobs. ML-KEM protects every connection now; ML-DSA is urgent only where a signature must be trusted for years.
+• ML-KEM stops harvest-now-decrypt-later. It needs no new certificates, works in every language we tested, and is the rollout.
+• ML-DSA protects against forged signatures, which only matters once a quantum computer exists. So it’s urgent only for things trusted for a decade: device roots in firmware and code or firmware signing.
+• Public HTTPS can’t use ML-DSA today: AWS’s certificate and load balancer services don’t serve it, and browsers don’t negotiate it. Chrome is heading to Merkle Tree Certificates instead.
+• Internal HTTPS and workload identity can pilot it with dual certificates from AWS Private CA; IAM Roles Anywhere already accepts ML-DSA.
+• User certificates: Microsoft AD CS issues ML-DSA, but Microsoft itself calls Schannel support a pilot.
+• SSH: key exchange is already PQ with OpenSSH 10; hybrid ML-DSA keys arrived in OpenSSH 10.6 in October.
+• Hybrid certificates in TLS mean two certificates today; the one-certificate composite form isn’t negotiable yet.
+• Sources: AWS, Microsoft, OpenSSH release notes, IETF; Public HTTPS, user and IoT rows are documented, not tested here.</aside>
+</section>

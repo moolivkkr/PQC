@@ -1,0 +1,20 @@
+<section id="lang-java" class="light" data-transition="fade">
+<p class="eyebrow">Java · by compute type</p>
+<h2>Kit v2 on JDK 8–21; JDK 25 is PQ on its own</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Compute</th><th style="width:22%">Runtime or base</th><th style="width:22%">PQ today</th><th style="width:35%">Fix</th><th style="width:8%;text-align:right">Cases</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td><b>java8.al2 … java21</b><br><b>java25</b></td><td>Classical<br><span class=ok>PQ (JDK 25.0.5+)</span></td><td>pq-tls layer: Bouncy Castle agent via JAVA_TOOL_OPTIONS (Java 8 adds two flags)<br>Nothing</td><td style="text-align:right">57</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td><b>Corretto 8–21 images</b><br><b>Corretto 25</b></td><td>Classical<br><span class=ok>PQ</span></td><td>Kit v2 via task-definition JAVA_TOOL_OPTIONS, or static BC registration (17, 21)<br>Nothing</td><td style="text-align:right">21</td></tr>
+<tr class="a"><td><b>ECS on EC2 · EKS</b></td><td><b>Same images</b> on EC2 hosts</td><td>Follows the image</td><td>Same as Fargate. EKS: same image, not run in e2e</td><td style="text-align:right">5</td></tr>
+<tr class="b"><td><b>EC2</b></td><td><b>AL2023, AL2 Corretto 11–21</b><br><b>Corretto 25</b></td><td>Classical<br><span class=ok>PQ</span></td><td>Kit v2 via systemd Environment=<br>Nothing; with several JDKs, alternatives picks 25</td><td style="text-align:right">13</td></tr>
+</table>
+<p class="note warn" style="font-size:22px"><b>Risk:</b> Bouncy Castle replaces the TLS provider for the whole JVM. Code that hard-codes <span class=code>SunX509</span> breaks EC server certificates (kit v2 sets PKIX). Test FIPS, keystore and mTLS services first.</p>
+<p class="foot">Post-quantum TLS on AWS · 13 · 96 e2e cases; code and cases: appendix</p>
+<aside>KEY MESSAGE: Java ignores the OS, so the JDK decides: JDK 25 is PQ by itself, and JDK 8 to 21 need the kit until Oracle’s backport.
+• JSSE doesn’t use OpenSSL, so crypto policies and config files do nothing for Java.
+• Kit v2 adds the Bouncy Castle provider through JAVA_TOOL_OPTIONS: a layer on Lambda, an env var in the task definition, a systemd line on EC2.
+• Java 8 needs two extra flags; the layer adds them.
+• JDK 25.0.5 and later are PQ by default. Oracle says backports to 17 and 21 come in H1 2027; that’s a claim, not tested.
+• Main risk: the agent replaces the TLS provider for the whole JVM, so FIPS, custom keystore and mTLS services get tested first.
+• EKS not run in the emulator; same images as ECS.</aside>
+</section>

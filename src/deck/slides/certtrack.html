@@ -1,0 +1,18 @@
+<section id="certtrack" class="alt" data-transition="fade">
+<p class="eyebrow">Certificate track</p>
+<h2>ML-DSA: dual certificates, inside first</h2>
+<div class="grid3" style="margin-top:16px">
+<div class="card tight top-orange" style="--i:0"><p class="tag-orange">Now · Phase 0–1</p><h3>Roots and signing</h3><p class="body">Private CA ML-DSA test root; add it to trust bundles (harmless to old clients). ML-DSA signing for firmware and long-lived artifacts via KMS.</p></div>
+<div class="card tight top-blue" style="--i:1"><p class="tag-blue">2027 · pilot</p><h3>Internal mTLS</h3><p class="body">Dual certificates (ECDSA + ML-DSA) on one internal service; IAM Roles Anywhere with an ML-DSA trust anchor.</p></div>
+<div class="card tight top-blue" style="--i:2"><p class="tag-blue">When stacks catch up</p><h3>Go, Java, public HTTPS</h3><p class="body">Go and Java verify ML-DSA but don’t negotiate it; ACM, ALB and browsers don’t serve it. Recheck each quarter.</p></div>
+</div>
+<p class="note warn" style="font-size:22px"><b>Never ML-DSA alone</b> while any client runs Go, Java, OpenSSL 3.0 or default AL2023: they fail the handshake. On AL2023, ML-DSA needs <span class="code">SignatureAlgorithms</span> as well as Groups (found in e2e; file in <span class="code">configs/certificates-ml-dsa</span>). Chains grow from 0.9 KB to 11.8 KB.</p>
+<p class="foot">Post-quantum TLS on AWS · 23 · e2e targets mldsa-dual, mldsa-only, mldsa-mtls; guide: Certificates (ML-DSA)</p>
+<aside>KEY MESSAGE: Certificates move on their own track: distribute ML-DSA roots and sign long-lived artifacts now, pilot dual certificates internally next year, and wait for AWS and browsers before touching public HTTPS.
+• Step one costs almost nothing: an ML-DSA test root from Private CA added to our trust bundles. The e2e run showed old clients ignore the root they can’t read.
+• Firmware and artifacts that are verified for years get an ML-DSA signature next to the existing one, from KMS.
+• The pilot is one internal service with two certificates: ECDSA for everyone, ML-DSA for clients that ask for it. IAM Roles Anywhere can take an ML-DSA trust anchor.
+• The rule: never serve ML-DSA alone yet. Go and Java verify it but don’t negotiate it, OpenSSL 3.0 can’t, and AL2023 needs an extra line we found in testing.
+• The cost is size: a certificate chain goes from under 1 KB to about 12 KB, which matters for constrained devices and high-volume handshakes.
+• Public HTTPS waits for ACM, the load balancers and browsers.</aside>
+</section>

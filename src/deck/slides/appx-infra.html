@@ -1,0 +1,22 @@
+<section id="appx-infra" class="light" data-transition="fade">
+<p class="eyebrow">Appendix · infrastructure test cases</p>
+<h2>Load balancer target leg and ML-DSA fixtures</h2>
+<table class="tbl" style="font-size:21px">
+<tr class="h"><th style="width:22%">Suite</th><th style="width:62%">What the cases cover</th><th style="width:8%;text-align:right">Cases</th><th style="width:8%;text-align:right">Pass</th></tr>
+<tr class="a"><td><b>LB target leg</b><br>ECS Fargate, ECS on EC2</td><td>Each language as the HTTPS target behind an ALB or NLB TLS listener with a PQ policy: no fix (classical), each fix (OPENSSL_CONF, DEFAULT:PQ, kit v2, GODEBUG, image change), and PQ-by-default images. Proves the target leg follows the target’s own TLS</td><td style="text-align:right">32</td><td style="text-align:right">32</td></tr>
+<tr class="b"><td><b>ML-DSA certificates</b><br>every client case</td><td>Dual ECDSA + ML-DSA server, ML-DSA-only server, ML-DSA client certificate; trust bundle with both roots</td><td style="text-align:right" colspan="2">In run</td></tr>
+<tr class="a"><td><b>Guardrails</b></td><td>cfn-guard, conftest, Checkov and Kyverno rules unit-tested against good and bad fixtures; not applied to an account</td><td style="text-align:right" colspan="2">Unit tests</td></tr>
+</table>
+<ul class="note" style="font-size:21px;list-style:none;padding-left:32px">
+<li>LB cases: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/server.py">e2e/cases/server.py</a> · server probes: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/README.md">e2e/clients/server/</a> · build: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/server.sh">e2e/build/server.sh</a></li>
+<li>ML-DSA fixture and certificates: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/mldsa/server.py">e2e/mldsa/server.py</a> · <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/certs/gen-mldsa.sh">e2e/certs/gen-mldsa.sh</a></li>
+<li>Not run here: the ALB/NLB listener leg, CloudFront, API Gateway, mesh, databases, IoT and real AWS (Phase 0)</li>
+</ul>
+<p class="foot">Post-quantum TLS on AWS · 39 · Repository is private: links work for people with access</p>
+<aside>KEY MESSAGE: Infrastructure claims are tested where the emulator can run them, and the rest is labelled as documented.
+• 32 load balancer cases make each language the target behind a PQ listener. The observer connects back like a load balancer and records the group. All 32 passed in the final run on 15 November.
+• The ML-DSA fixture is new: three listeners that serve or require ML-DSA certificates. Every client case now visits them.
+• Guardrail rules are unit-tested against fixtures; applying them to an account is Phase 0.
+• Not testable here: the listener leg itself, CloudFront, API Gateway, mesh, databases and IoT. Those rows in the guide are documented, with sources.
+LINKS: https://github.com/moolivkkr/PQC/blob/main/e2e/cases/server.py · https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/README.md · https://github.com/moolivkkr/PQC/blob/main/e2e/build/server.sh · https://github.com/moolivkkr/PQC/blob/main/e2e/mldsa/server.py · https://github.com/moolivkkr/PQC/blob/main/e2e/certs/gen-mldsa.sh</aside>
+</section>

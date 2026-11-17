@@ -1,0 +1,20 @@
+<section id="lang-python" class="light" data-transition="fade">
+<p class="eyebrow">Python · by compute type</p>
+<h2>One config file on AL2023; upgrade 3.9–3.11</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Compute</th><th style="width:22%">Runtime or base</th><th style="width:22%">PQ today</th><th style="width:35%">Fix</th><th style="width:8%;text-align:right">Cases</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td><b>python3.12–3.14</b> (AL2023)<br><b>python3.9–3.11</b> (AL2)</td><td>Classical: the AL2023 policy omits ML-KEM; AL2 has OpenSSL 1.1.1</td><td>pq-tls layer or <span class=code>OPENSSL_CONF</span> file in the package. 3.9–3.11: upgrade, or the shim (requests, boto3 only)</td><td style="text-align:right">35</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td><b>AL2023 image</b><br><b>slim-trixie, alpine</b><br><b>slim-bookworm</b></td><td><span class=bad>Classical</span><br><span class=ok>PQ by default</span><br><span class=bad>No ML-KEM (OpenSSL 3.0)</span></td><td>OPENSSL_CONF in the task definition, or <span class=code>DEFAULT:PQ</span> in the Dockerfile. Bookworm: move to trixie</td><td style="text-align:right">13</td></tr>
+<tr class="a"><td><b>ECS on EC2 · EKS</b></td><td><b>Same images</b> on EC2 hosts</td><td>Follows the image, not the host</td><td>Same as Fargate. EKS: same image, not run in e2e</td><td style="text-align:right">3</td></tr>
+<tr class="b"><td><b>EC2</b></td><td><b>AL2023 host</b><br><b>AL2 host</b></td><td>Classical<br><span class=bad>OpenSSL 1.0.2: no TLS 1.3</span></td><td>OPENSSL_CONF per service (systemd), or host DEFAULT:PQ via SSM. AL2: migrate the host</td><td style="text-align:right">8</td></tr>
+</table>
+<p class="note " style="font-size:22px"><b>Already PQ, no change:</b> libraries that bundle their own TLS (grpcio, awscrt, psycopg binary, confluent-kafka), even on python3.9–3.11. <b>Risk:</b> the 3.9–3.11 shim covers requests and boto3 only.</p>
+<p class="foot">Post-quantum TLS on AWS · 11 · 59 e2e cases; code and cases: appendix</p>
+<aside>KEY MESSAGE: Python follows the OpenSSL it is linked to, so the fix lives wherever OpenSSL is configured: the package on Lambda, the image on containers, the host on EC2.
+• Lambda 3.12 to 3.14 run on AL2023, whose crypto policy leaves ML-KEM out. One config file, shipped in the pq-tls layer or the package, turns it on.
+• Lambda 3.9 to 3.11 run on Amazon Linux 2 with OpenSSL 1.1.1: no ML-KEM at all. Upgrade; the shim is a bridge for requests and boto3 only.
+• Containers: Debian 13 and Alpine images are PQ out of the box; AL2023 images need the env var or DEFAULT:PQ; Debian 12 needs a new base.
+• EC2: the same file per service through systemd, or DEFAULT:PQ for the whole host through SSM. Amazon Linux 2 hosts must migrate.
+• Bundled-TLS libraries like grpcio and awscrt are already PQ everywhere.
+• EKS not run in the emulator; same images as ECS.</aside>
+</section>

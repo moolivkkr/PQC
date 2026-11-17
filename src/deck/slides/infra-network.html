@@ -1,0 +1,19 @@
+<section id="infra-network" class="light" data-transition="fade">
+<p class="eyebrow">Infrastructure 2 of 3 · network and data</p>
+<h2>Egress, IoT, service mesh, databases</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Area</th><th style="width:21%">PQ today</th><th style="width:24%">Our action</th><th style="width:18%">Blocked by AWS</th><th style="width:24%">Risk</th></tr>
+<tr class="a"><td><b>Egress and network</b></td><td><span class=ok>Squid, Envoy, strongSwan 6.0.2+</span></td><td>PQ egress proxy for what can’t upgrade; Zeek on traffic mirroring sees the group</td><td><span class=bad>Network Firewall TLS inspection, AWS VPN</span></td><td>TLS inspection re-terminates the connection, so inspected traffic is classical</td></tr>
+<tr class="b"><td><b>IoT</b></td><td><span class=bad>Classical into IoT Core</span></td><td>Inventory device TLS stacks; wolfSSL 5.8+ or OpenSSL 3.5 for new devices</td><td><span class=bad>IoT Core: no PQ policy</span></td><td>Devices live 10+ years; firmware fixed today decides PQ for a decade</td></tr>
+<tr class="a"><td><b>Service mesh</b></td><td><span class=ok>Linkerd 2.19+ on; Istio 1.27+ opt-in</span></td><td>Upgrade or set mesh config</td><td><span class=bad>ECS Service Connect</span></td><td>Istio <span class=code>COMPLIANCE_POLICY=pqc</span> is PQ-only and cuts off classical peers</td></tr>
+<tr class="b"><td><b>Databases</b></td><td>RDS, Aurora by engine version</td><td>Engine upgrade; set groups; PQ-capable drivers</td><td><span class=bad>RDS Proxy, ElastiCache, MSK, OpenSearch</span></td><td>Both the engine and the driver must support it; upgrades need maintenance windows</td></tr>
+</table>
+<p class="foot">Post-quantum TLS on AWS · 21 · Guide: Infrastructure tabs; AWS support checked 2026-11-16</p>
+<aside>KEY MESSAGE: Network and data services are where AWS blocks the most; we record those legs as exceptions and protect what we can around them.
+• Egress: an egress proxy like Squid or Envoy carries PQ for workloads that can’t upgrade yet. Zeek on VPC traffic mirroring shows which group each connection used.
+• Risk: Network Firewall TLS inspection terminates and re-originates TLS, so inspected traffic loses PQ. AWS VPN has no PQ option.
+• IoT Core has no PQ policy. The real risk is device lifetime: the TLS stack in firmware we ship now is what those devices use for years.
+• Mesh: Linkerd 2.19 is PQ by default; Istio 1.27 is opt-in, and its pqc compliance mode is PQ-only, which breaks classical peers. Turn it on last.
+• Databases: RDS and Aurora depend on the engine version, and the client driver must support the group. RDS Proxy, ElastiCache, MSK and OpenSearch have no option yet.
+• These rows are from vendor and AWS documentation; mesh, database and IoT were not run in the emulator.</aside>
+</section>

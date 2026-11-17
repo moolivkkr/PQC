@@ -1,0 +1,23 @@
+<section id="appx-index" class="alt" data-transition="fade">
+<p class="eyebrow">Appendix · how the tests work</p>
+<h2>One suite, real deployments, graded per handshake</h2>
+<div class="grid3" style="margin-top:16px">
+<div class="card tight top-blue" style="--i:0"><p class="tag-blue">Deploy</p><h3>Real compute, emulated AWS</h3><p class="body">LocalStack Pro runs each case as a real Lambda zip, layer or image, ECS Fargate or EC2-launch task, or EC2 instance from AL2023 and AL2 AMIs.</p></div>
+<div class="card tight top-blue" style="--i:1"><p class="tag-blue">Connect</p><h3>Eight targets per case</h3><p class="body">PQ hybrid, PQ-only, mTLS, EC certificate, TLS 1.2, and three ML-DSA targets: dual certificate, ML-DSA only, ML-DSA client certificate.</p></div>
+<div class="card tight top-orange" style="--i:2"><p class="tag-orange">Grade</p><h3>Observer vs expectation</h3><p class="body">A TLS observer records the group and signature each handshake used. A case passes only if that matches the result the guide predicts.</p></div>
+</div>
+<ul class="note" style="font-size:21px;list-style:none;padding-left:32px">
+<li>Suite and how to run it: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/README.md">e2e/README.md</a> · contract: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/CONTRACT.md">e2e/CONTRACT.md</a></li>
+<li>Observer and ML-DSA fixture: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/observer/main.go">e2e/observer/main.go</a> · <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/mldsa/server.py">e2e/mldsa/server.py</a></li>
+<li>Latest results: <a class="code" href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md">e2e/results/latest/summary.md</a></li>
+</ul>
+<p class="foot">Post-quantum TLS on AWS · 33 · Repository is private: links work for people with access</p>
+<aside>KEY MESSAGE: Every number in this deck comes from one test suite that deploys real workloads and checks each handshake against what the guide predicts.
+• LocalStack Pro emulates the AWS APIs, but the code runs for real: Lambda functions in the AWS base images, ECS tasks, and EC2 instances booted from Amazon Linux AMIs.
+• Each case connects to eight targets. Five cover key exchange; three cover ML-DSA certificates.
+• The observer is a Go TLS server that logs the group each client offered and used. The ML-DSA fixture is a Python 3.15 server that also logs which certificate and signature were used.
+• The expected result per case is written from the guide before the run; a case only passes when reality matches it, so the guide is what’s being tested.
+• Not covered: real AWS accounts, x86_64, EKS, and the ALB/NLB listener leg. Those are Phase 0.
+• The next slides list the cases per language with links to the code.
+LINKS: https://github.com/moolivkkr/PQC/blob/main/e2e/README.md · https://github.com/moolivkkr/PQC/blob/main/e2e/CONTRACT.md · https://github.com/moolivkkr/PQC/blob/main/e2e/observer/main.go · https://github.com/moolivkkr/PQC/blob/main/e2e/mldsa/server.py · https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md</aside>
+</section>

@@ -9,12 +9,14 @@
 <div class="card tight top-orange" style="--i:4"><p class="tag-orange">Phase 4 · Dec 2026–Jun 2027</p><h3>Workload waves</h3><p class="body">Wave A runtime upgrades by 30 June; waves B–D from February.</p></div>
 <div class="card tight top-purple" style="--i:5"><p class="tag-orange">Phase 5 · Jul–Sep 2027</p><h3>Enforce</h3><p class="body">Guardrails fail builds; SCP denies non-PQ ELB policies.</p></div>
 </div>
-<p class="foot">Post-quantum TLS on AWS · 21 · Dates and owners: artifacts/PQC-TLS-rollout-plan</p>
+<p class="note" style="font-size:22px;margin-top:8px"><b>Alongside, the certificate track:</b> ML-DSA test in Phase 0 · roots in trust bundles and ML-DSA signing from Q1 2027 · internal dual-certificate pilot Apr–Dec 2027 · public HTTPS when AWS and browsers support it.</p>
+<p class="foot">Post-quantum TLS on AWS · 30 · Dates and owners: artifacts/PQC-TLS-rollout-plan</p>
 <aside>KEY MESSAGE: The plan is sequenced so the deadline-bound work starts first and enforcement only comes after teams have had warn mode.
 • Phase 0 (23 Nov–18 Dec): prove the rows the scorecard couldn’t, in a sandbox account.
 • Phase 1 (23 Nov–15 Jan): inventory and a baseline from CloudTrail and ELB logs.
 • Phase 2 (4 Jan–12 Feb): guardrails in warn mode, so false positives surface before anything blocks.
 • Phase 3 (11 Jan–12 Mar): front-door policies, a few changes with big reach.
 • Phase 4: Wave A runtime upgrades 1 Dec–30 Jun, ahead of the AWS block; waves B–D 1 Feb–30 Jun.
-• Phase 5 (1 Jul–30 Sep): enforce. Every remaining classical connection is a recorded exception. After that, JDK 25.0.5+ replaces the Java kit and ML-DSA certificates start as a separate programme.</aside>
+• Phase 5 (1 Jul–30 Sep): enforce. Every remaining classical connection is a recorded exception. After that, JDK 25.0.5+ replaces the Java kit and ML-DSA certificates start as a separate programme.
+• Alongside the phases, the certificate track: test ML-DSA issuance from Private CA in Phase 0, add the ML-DSA root to trust bundles and sign firmware with ML-DSA from Q1 2027, then one internal dual-certificate pilot. It doesn’t gate any phase.</aside>
 </section>

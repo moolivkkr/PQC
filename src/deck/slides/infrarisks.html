@@ -10,7 +10,7 @@
 <tr class="a"><td><b>Envoy before 1.40</b></td><td>Classical unless ecdh_curves is set</td><td>1.40+ is PQ by default; tested 1.40.2</td></tr>
 <tr class="b"><td><b>Guardrail PQ-L2</b></td><td>Rejected the guide’s own bundled path</td><td>All four rule sets fixed, retested</td></tr>
 </table>
-<p class="foot">Post-quantum TLS on AWS · 19 · Each found while testing; details in the guide’s Enforcement tab</p>
+<p class="foot">Post-quantum TLS on AWS · 25 · Each found while testing; details in the guide’s Enforcement tab</p>
 <aside>KEY MESSAGE: The infrastructure side had its own traps. Each would have produced a false “PQ” or a broken pipeline, and each is now handled.
 • The biggest: infrastructure as code defaults load balancers to a classical policy. Only the console defaults to PQ.
 • Security Hub’s ELB.17 control passes policies that aren’t PQ, so a green dashboard isn’t PQ coverage.

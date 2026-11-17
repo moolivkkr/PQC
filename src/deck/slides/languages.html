@@ -10,7 +10,7 @@
 <tr class="a"><td><b>.NET</b></td><td>Alpine, Ubuntu 26.04; not Lambda, AL2023</td><td>PQ base image, OPENSSL_CONF or the layer</td><td style="text-align:right">71 pass</td></tr>
 </table>
 <p class="note"><b>Same in every language:</b> certificates and keystores do not change. Code that pins classical groups or TLS 1.2 overrides every fix, and the per-language CI checks find it.</p>
-<p class="foot">Post-quantum TLS on AWS · 08 · Detail per language, version and compute type: the guide’s language tabs</p>
+<p class="foot">Post-quantum TLS on AWS · 09 · Detail per language, version and compute type: the guide’s language tabs</p>
 <aside>KEY MESSAGE: For every language the fix is one setting, one file, a rebuild or a version bump, and each is tested.
 • Go is the easiest: its own TLS library, so rebuild with 1.26 and set the go line. Most misses are an old go line with a new toolchain.
 • Python, Node.js and .NET use OpenSSL: on Lambda and AL2023 one config file turns PQ on; the newest base images are already PQ.

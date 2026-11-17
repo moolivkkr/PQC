@@ -1,0 +1,20 @@
+<section id="appx-go" class="light" data-transition="fade">
+<p class="eyebrow">Appendix · Go test cases</p>
+<h2>Go: 118 cases, 118 passed</h2>
+<table class="tbl" style="font-size:21px">
+<tr class="h"><th style="width:14%">Compute</th><th style="width:70%">What the cases cover</th><th style="width:8%;text-align:right">Cases</th><th style="width:8%;text-align:right">Pass</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td>provided.al2023 and .al2; Go 1.23–1.27 toolchains × go lines; GODEBUG; FIPS modes; AWS SDK v2; layer and pq-egress extension; own certs and mTLS</td><td style="text-align:right">77</td><td style="text-align:right">77</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td>AL2023, scratch, distroless, golang:1.27, AL2 bases × Go 1.23/1.24/1.27; DEFAULT:PQ (no effect); task-def GODEBUG; FIPS Dockerfile; boringcrypto</td><td style="text-align:right">22</td><td style="text-align:right">22</td></tr>
+<tr class="a"><td><b>ECS on EC2</b></td><td>AL2023, scratch, distroless, golang images on the EC2 launch type</td><td style="text-align:right">5</td><td style="text-align:right">5</td></tr>
+<tr class="b"><td><b>EC2</b></td><td>AL2023 and AL2 AMIs; prebuilt 1.23–1.27; dnf/yum golang; host DEFAULT:PQ (no effect); systemd GODEBUG; fips140=on</td><td style="text-align:right">14</td><td style="text-align:right">14</td></tr>
+</table>
+<ul class="note" style="font-size:21px;list-style:none;padding-left:32px"><li>Cases (expected result per case): <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/go.py" class="code">e2e/cases/go.py</a></li><li>Probe the cases run: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/go/probe.go" class="code">e2e/clients/go/probe.go</a></li><li>Build of every image, zip and layer: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/go.sh" class="code">e2e/build/go.sh</a></li><li>Results, case by case: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md" class="code">e2e/results/latest/summary.md</a></li></ul>
+<p class="foot">Post-quantum TLS on AWS · 34 · Repository is private: links work for people with access</p>
+<aside>KEY MESSAGE: Every Go claim in this deck traces to a case here, and each case is code anyone with repo access can rerun.
+• 118 cases across Lambda, ECS Fargate, ECS on EC2 and EC2; 118 passed in the run of final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537).
+• Each case states its expected result per target: PQ hybrid, PQ-only, mTLS, EC certificate, TLS 1.2; from the 16 November run also the three ML-DSA certificate targets. The observer records what each handshake actually negotiated.
+• A case passes when the observed result matches the expectation in cases/go.py, which is written from the guide, not from the run.
+• To rerun: cd e2e; bash run.sh --lang go. It needs Docker and a LocalStack Pro licence.
+• EKS was not run; it uses the same images as ECS.
+LINKS: https://github.com/moolivkkr/PQC/blob/main/e2e/cases/go.py · https://github.com/moolivkkr/PQC/blob/main/e2e/clients/go/probe.go · https://github.com/moolivkkr/PQC/blob/main/e2e/build/go.sh · https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md</aside>
+</section>

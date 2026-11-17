@@ -1,0 +1,19 @@
+<section id="infra-platform" class="light" data-transition="fade">
+<p class="eyebrow">Infrastructure 3 of 3 · hosts, servers, clients, certificates</p>
+<h2>Hosts, servers, clients and certificates</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Area</th><th style="width:21%">PQ today</th><th style="width:24%">Our action</th><th style="width:18%">Blocked by AWS</th><th style="width:24%">Risk</th></tr>
+<tr class="a"><td><b>Hosts and OS</b></td><td>Debian 13, Ubuntu 26.04 on; AL2023, RHEL, Windows opt-in</td><td><span class=code>DEFAULT:PQ</span> via SSM; Schannel group via GPO</td><td><span class=bad>Amazon Linux 2: migrate</span></td><td>Host-wide policy changes every OpenSSL program at once; GnuTLS tools stay classical</td></tr>
+<tr class="b"><td><b>Web servers, proxies</b></td><td><span class=ok>nginx on OpenSSL 3.5, Envoy 1.40+</span></td><td>Set groups on the listener and the upstream leg</td><td>None: self-managed</td><td>Setting only the listener leaves the upstream leg classical</td></tr>
+<tr class="a"><td><b>Clients and CI</b></td><td><span class=ok>Browsers, Apple 26 stacks</span></td><td>Upgrade CI toolboxes; OpenSSL-linked curl, not GnuTLS</td><td>None: client side</td><td>macOS LibreSSL curl and Debian wget/git stay classical; Android not confirmed</td></tr>
+<tr class="b"><td><b>Certificates (ML-DSA)</b></td><td>Private CA, KMS, Roles Anywhere issue ML-DSA</td><td>Dual certificates on internal mTLS, after ML-KEM</td><td><span class=bad>ACM, ELB, CloudFront, public PKI</span></td><td>ML-DSA-only servers break Go, Java, OpenSSL 3.0 and default AL2023 clients; chains grow 0.9 → 11.8 KB</td></tr>
+</table>
+<p class="foot">Post-quantum TLS on AWS · 22 · Guide: Infrastructure tabs; AWS support checked 2026-11-16</p>
+<aside>KEY MESSAGE: Hosts, servers and clients are all under our control; the risk is partial changes that leave one leg or one tool classical.
+• Hosts: DEFAULT:PQ through SSM turns PQ on for every OpenSSL program on an AL2023 host. That’s the point and the risk: roll it out by host group and watch for failures.
+• Debian’s GnuTLS has no ML-KEM, so wget and git stay classical even on a PQ-by-default OS.
+• Web servers and proxies: set the group list on both the listener and the upstream leg. Envoy before 1.40 is classical unless configured.
+• Clients: browsers and Apple 26 are PQ. Our CI images are the clients we control; use OpenSSL-linked tools.
+• Certificates: ML-DSA is issued by Private CA, KMS and Roles Anywhere. Serving it alone breaks Go, Java, OpenSSL 3.0 and default AL2023 clients, so it’s dual certificates on internal mTLS only. Details on the certificate slides.
+• Envoy 1.40, nginx and the GnuTLS findings were tested; the rest is documented.</aside>
+</section>

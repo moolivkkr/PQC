@@ -1,0 +1,20 @@
+<section id="lang-node" class="light" data-transition="fade">
+<p class="eyebrow">Node.js · by compute type</p>
+<h2>Config file on Lambda; Node 22.20+ is PQ elsewhere</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Compute</th><th style="width:22%">Runtime or base</th><th style="width:22%">PQ today</th><th style="width:35%">Fix</th><th style="width:8%;text-align:right">Cases</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td><b>nodejs22.x, nodejs24.x</b><br><b>nodejs18.x, nodejs20.x</b></td><td>Classical: the bootstrap’s config drops the PQ group<br><span class=bad>No ML-KEM in bundled OpenSSL</span></td><td>Ship <span class=code>openssl-pq-node.cnf</span> + OPENSSL_CONF (pq-tls layer)<br>Upgrade; interim pq-egress extension</td><td style="text-align:right">48</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td><b>node:22.20+, 24.5+</b><br><b>node:20, 22.19, 24.4</b><br><b>AL2023 dnf nodejs</b></td><td><span class=ok>PQ by default</span><br><span class=bad>OpenSSL 3.0: no ML-KEM</span><br>Classical (system policy)</td><td>Nothing<br>Bump the image tag<br>OPENSSL_CONF system file, or DEFAULT:PQ</td><td style="text-align:right">28</td></tr>
+<tr class="a"><td><b>ECS on EC2 · EKS</b></td><td><b>Same images</b> on EC2 hosts</td><td>Follows the image</td><td>Same as Fargate. EKS: same image, not run in e2e</td><td style="text-align:right">5</td></tr>
+<tr class="b"><td><b>EC2</b></td><td><b>AL2023 dnf nodejs20–24</b><br><b>Official binaries</b></td><td>Classical<br><span class=ok>PQ by default</span></td><td>OPENSSL_CONF per service, or host DEFAULT:PQ<br>Nothing</td><td style="text-align:right">12</td></tr>
+</table>
+<p class="note warn" style="font-size:22px"><b>Risk:</b> <span class=code>NODE_OPTIONS=--tls-max-v1.2</span> or a TLS 1.2 cap blocks PQ everywhere. Legacy RC2/3DES PFX files fail on current Node: re-export them. Don’t put X25519MLKEM768 first in <span class=code>ecdhCurve</span> on Node 20.</p>
+<p class="foot">Post-quantum TLS on AWS · 12 · 93 e2e cases; code and cases: appendix</p>
+<aside>KEY MESSAGE: Node carries its own OpenSSL, so the Node version decides: 22.20+ and 24.5+ are PQ everywhere except Lambda, where one config file fixes it.
+• On Lambda, AWS’s bootstrap sets its own OpenSSL config that removes the PQ group. Our config file in the pq-tls layer puts it back.
+• Node 18 and 20 bundle OpenSSL 3.0: no setting helps. Upgrade; the pq-egress extension is a bridge for calls that must be PQ sooner.
+• Containers on official node images from 22.20 and 24.5 are PQ with no change. Below that, bump the tag.
+• Distro Node from dnf follows the system OpenSSL, so it needs the system config file or DEFAULT:PQ, like Python.
+• The pitfall to scan for: code or NODE_OPTIONS capping TLS at 1.2.
+• EKS not run in the emulator; same images as ECS.</aside>
+</section>

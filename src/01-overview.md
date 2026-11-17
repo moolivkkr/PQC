@@ -6,6 +6,7 @@ Outbound TLS becomes post-quantum (PQ) only when the client's TLS library offers
 
 - **Detection** differs by compute type. Lambda and Fargate cannot be packet-mirrored, so they rely on AWS logs and app-side telemetry. Containers on EC2 can also use passive sensors.
 - **Remediation** differs by language and version. Some need only a config file, some a Java agent or library shim, and some a runtime or toolchain upgrade.
+- **Certificates are a separate, slower track.** ML-KEM key exchange needs no new certificates. ML-DSA certificates and signatures matter first where trust lasts for years (device roots in firmware, code and firmware signing); internal TLS can pilot dual certificates; public HTTPS waits for AWS and browsers (Use cases below).
 - **Every change ships through build, package and release.** Configuration changes are released like code here, so the fix rides a shared build template, not per-function edits.
 
 How to read the evidence labels in the tables:
@@ -81,6 +82,38 @@ Most application teams already load their own server certificates, client certif
 | .NET | No change for PFX, PEM or `X509Store` (Tested on Linux) | No change for custom validation callbacks and `CustomTrustStore` (Tested) | No change (Tested) | `X509Certificate2.CreateFromPemFile(caPath)` throws on a CA-only file: use `CreateFromPem(File.ReadAllText(path))` |
 
 **Java with the Bouncy Castle agent and an EC server certificate.** Every handshake used to fail. The cause is the key manager, not the certificate: Bouncy Castle asks for key type `EC/secp256r1`, and the JDK default `SunX509` key manager returns no alias for it. The fix is one security property, `ssl.KeyManagerFactory.algorithm=PKIX`, in a file passed with `-Djava.security.properties=<file>` or added to `java.security`. Kit v2's agent sets it and ships `pq-tls.security`. With it, Tomcat 11.0.29, Jetty 12.1.15 and HttpsServer on JDK 17 and 21 negotiate X25519MLKEM768 with an EC certificate, and an X25519-only client still connects (Tested). Spring Boot 3.5.16 SSL bundles use the default algorithm and work. An app's own `-Djava.security.properties` overrides the kit file, so add the line there too. On JDK 25 with the default `SunX509`, the server ignored SNI on a two-certificate store; `PKIX` fixes that as well (Tested).
+
+## Use cases: key exchange and certificates
+
+Two separate algorithms. **ML-KEM (FIPS 203) protects key exchange**: it stops traffic recorded today from being decrypted later, so it is urgent for every TLS connection, and it needs no new certificates. **ML-DSA (FIPS 204) protects certificates and signatures**: a forged signature only matters once a quantum computer exists, so it is urgent only where a signature or trust anchor must stay trusted for many years (device roots in firmware, code and firmware signing). ML-KEM cannot sign, so there is no "ML-KEM certificate".
+
+"Hybrid" means different things on each side. For key exchange it is one group (X25519MLKEM768) that combines both algorithms, and it is what AWS, browsers and Go use. For TLS certificates, the deployable form today is a **dual certificate**: the server holds an ECDSA and an ML-DSA certificate and sends the one the client asks for (Tested, nginx and the e2e fixture). Composite ML-DSA certificates (one certificate, both algorithms) are standardized for X.509 by IETF LAMPS, but their TLS code points are still TBD in draft-ietf-tls-composite-mldsa-00 (October 2026), so no TLS stack negotiates them yet (Documented).
+
+| Use case | Key exchange (ML-KEM) | Certificate (ML-DSA) | Evidence | Risk and what to do |
+| --- | --- | --- | --- | --- |
+| **Public HTTPS** (browsers, partners, public APIs) | Hybrid X25519MLKEM768 at the ALB, NLB or CloudFront with a PQ security policy | Not possible today. ACM, ALB, NLB, CloudFront and API Gateway serve RSA or ECDSA only; browsers do not negotiate ML-DSA server certificates, and Chrome plans Merkle Tree Certificates rather than ML-DSA X.509 | Key exchange Tested (e2e LB cases) and Documented; certificate Documented | Keep ECDSA certificates. Revisit when browsers and AWS certificate services ship a PQ format |
+| **Internal HTTPS** (service to service, private CA) | Hybrid X25519MLKEM768 in every language and compute type (this document) | Dual certificate from a private CA (AWS Private CA issues ML-DSA). Clients on OpenSSL 3.5 get ML-DSA; Go and Java verify ML-DSA chains but negotiate ECDSA; OpenSSL 3.0 gets ECDSA. On AL2023 the crypto policy blocks ML-DSA until `SignatureAlgorithms` is extended (`configs/certificates-ml-dsa/openssl-pq-mldsa.cnf`) | Tested (e2e targets `mldsa-dual`, `mldsa-only`; per-language table below) | Pilot only. Never serve ML-DSA alone while any client is on Go, Java, OpenSSL 3.0 or an unmodified AL2023 policy: they fail the handshake. Chains grow from about 0.9 KB to 11.8 KB |
+| **Workload identity and mTLS** (client certificates, IAM Roles Anywhere, mesh) | Same as internal HTTPS | Client certificates: tested per language with an ML-DSA client key (`mldsa-mtls`). IAM Roles Anywhere accepts ML-DSA trust anchors and end-entity certificates (AWS, February/March 2026). SPIRE and Envoy/BoringSSL: no upstream ML-DSA certificate support found | Client side Tested; Roles Anywhere Documented; SPIRE and Envoy Unverified (not found) | Roles Anywhere can pilot ML-DSA now with a Private CA trust anchor. Mesh and SPIFFE identities stay ECDSA until upstream support lands |
+| **User certificates** (Windows logon, VPN, Wi-Fi, S/MIME) | Windows Schannel hybrid ML-KEM (July 2026 update); VPN and Wi-Fi depend on the vendor | AD CS on Windows Server 2025 issues ML-DSA (May 2026 update), with client-authentication templates for Windows 11 24H2/25H2. Microsoft calls Schannel ML-DSA a pilot, "not for production" (2026-10-08). Smart card logon: not confirmed. S/MIME: RFC 9882 defines ML-DSA in CMS; mail client support not found | Documented (Microsoft); smart card and S/MIME clients Unverified | Build a separate ML-DSA test CA (AD CS cannot convert an existing CA). Keep production user certificates ECDSA or RSA |
+| **Device and IoT certificates** | AWS IoT Core has no PQ policy; device legs stay classical (see IoT tab) | AWS IoT Core documents RSA and ECDSA device certificates only; no ML-DSA support found. Devices that ship a root in firmware for 10+ years need a PQ root before they ship | IoT Core Documented (no PQ); ML-DSA Unverified | **Plan now** for long-lived devices: put an ML-DSA root (alongside the ECDSA root) in new firmware and choose TLS stacks that can verify ML-DSA (OpenSSL 3.5, wolfSSL 5.8+) |
+| **Code and firmware signing** | Not TLS | AWS KMS has ML-DSA keys (ML_DSA_44/65/87) and AWS Private CA issues ML-DSA code-signing certificates. AWS Signer (Lambda zips and container images) is ECDSA only | Documented (AWS) | **Plan now** for firmware and artifacts verified for years: sign with ML-DSA from KMS in the pipeline next to the existing signature; keep AWS Signer for Lambda code-signing config |
+| **SSH** (hosts, users, bastions) | `mlkem768x25519-sha256` is the default in OpenSSH 10 (Tested) | OpenSSH 10.6 (2026-10-06) added the hybrid `ssh-mldsa44-ed25519` key type; 10.6p2 allows it as a CA signature algorithm. Older OpenSSH cannot use these keys | Key exchange Tested; ML-DSA keys Documented (release notes), not tested here | Upgrade OpenSSH for key exchange now. Pilot ML-DSA host and user keys only where every client is 10.6+ |
+| **AWS API calls** (SDK to AWS endpoints) | Hybrid ML-KEM per language (this document) | AWS's own certificates; nothing for us to change | Tested | None beyond the key-exchange fix |
+
+**ML-DSA per language** (e2e, three targets on one fixture: `mldsa-dual` = dual certificate, `mldsa-only` = ML-DSA certificate only, `mldsa-mtls` = ML-DSA client certificate required). 
+
+Interim results below are from the 2026-11-14 client matrix and the 2026-11-16 AL2023 test. The full e2e run across every language and compute type is in progress and will replace this table.
+
+| Client stack | Dual server: certificate received | ML-DSA-only server | ML-DSA client certificate | Evidence |
+| --- | --- | --- | --- | --- |
+| Python, Node.js, .NET on OpenSSL 3.5 (Debian 13, Alpine, Ubuntu 26.04, official Node 22.20+/24.5+) | ML-DSA | Connects | Python: works (e2e smoke); Node.js, .NET: e2e run in progress | Tested |
+| Same languages on AL2023 (Lambda python3.12+, nodejs22+, dotnet; AL2023 images and hosts), default policy or ML-KEM config | ECDSA | Fails | Fails | Tested (Python 3.12, OpenSSL 3.5.8) |
+| Same, with `openssl-pq-mldsa.cnf` | ML-DSA | Connects | Works | Tested (Python 3.12) |
+| OpenSSL 3.0 (Debian 12, Ubuntu 24.04, Node 20 bundled) | ECDSA (the extra ML-DSA root does no harm) | Fails | Fails | Tested |
+| Go 1.27 | ECDSA; verifies ML-DSA chains offline | Fails | e2e run in progress | Tested (1.27.4); Go 1.25 cannot verify ML-DSA |
+| Java 25 (stock JSSE) | ECDSA; PKIX validates ML-DSA chains | Fails | e2e run in progress | Tested |
+
+**Trust bundles.** Adding the ML-DSA root to a CA bundle next to the existing roots did not break any client in the e2e run, including OpenSSL 3.0, which ignores the root it cannot parse (Tested). So the ML-DSA root can be distributed ahead of any ML-DSA server certificate.
 
 Step-by-step instructions per language and component: Runbook by language
 
@@ -203,6 +236,7 @@ Dormant workloads with no release coming: rank them by observed classical traffi
 | AWS IoT Core | No PQ policy; device legs stay classical | Track AWS roadmap; new devices choose wolfSSL 5.8+ or OpenSSL 3.5 |
 | API Gateway egress, CloudFront origin leg | Classical by AWS design today | Accept and record as exceptions |
 | Node config drift | Our Node file replaces AWS's | Pipeline diff check against each new runtime image |
+| ML-DSA certificates | Public HTTPS cannot use ML-DSA (ACM, ELB, CloudFront, browsers); Go and Java do not negotiate it; AL2023 needs `SignatureAlgorithms` as well as Groups; chains grow 0.9 KB to 11.8 KB | Dual certificates only; certificate track in the rollout plan; recheck AWS and browser support each quarter |
 | Untested rows | Ruby, PHP, Rust and non-Corretto/Temurin JDK 25 builds are Documented or Unverified. Also not confirmed: which AWS SDK for Go v2 release added the FIPS curve list, AWS Network Firewall TLS-inspection PQ legs, the RDS enable setting for MySQL PQ groups, and Oracle's 17/21 backport dates | Add them to the emulator test matrix |
 
 ## Evidence and sources
@@ -214,6 +248,18 @@ Dormant workloads with no release coming: rank them by observed classical traffi
 **Tests (2026-11-13 and 2026-11-14).** Existing-certificate cases (own keystores and key files, private CA trust, mutual TLS, explicit TLS settings) for all five languages, in official language and distro images (Debian 12, 13 and 14, Ubuntu 26.04, Alpine, AL2023, Fedora) against OpenSSL 3.5 `s_server` instances that accept only X25519MLKEM768 or only X25519. The Bouncy Castle EC server fix was tested on Tomcat 11.0.29, Jetty 12.1.15 and HttpsServer, JDK 17, 21 and 25. Each language tab lists its scripts and results.
 
 **Documentation:**
+
+- AWS: [IAM Roles Anywhere post-quantum certificates](https://aws.amazon.com/about-aws/whats-new/2026/03/iam-roles-anywhere-post-quantum-digital-certificates)
+- AWS: [AWS Private CA post-quantum certificates](https://aws.amazon.com/about-aws/whats-new/2025/11/aws-private-ca-post-quantum-digital-certificates)
+- AWS: [ML-DSA keys in AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/mldsa.html)
+- AWS: [ML-DSA code signing with AWS Private CA and KMS](https://aws.amazon.com/blogs/security/post-quantum-ml-dsa-code-signing-with-aws-private-ca-and-aws-kms)
+- AWS: [AWS Signer platforms (ECDSA)](https://docs.aws.amazon.com/govcloud-us/latest/UserGuide/govcloud-Signer.html)
+- AWS: [IoT Core X.509 client certificates](https://docs.aws.amazon.com/iot/latest/developerguide/x509-client-certs)
+- Microsoft: [Post-quantum authentication: start testing certificate ecosystems (2026-10-08)](https://microsoft.com/en-us/security/blog/2026/10/08/post-quantum-authentication-why-organizations-should-start-testing-certificate-ecosystems-now)
+- Microsoft: [ML-DSA in AD CS](https://learn.microsoft.com/windows-server/identity/ad-cs/ml-dsa-overview)
+- OpenSSH: [Release notes (10.6, ssh-mldsa44-ed25519)](https://www.openssh.org/releasenotes.html)
+- IETF: [RFC 9882, ML-DSA in CMS](https://www.rfc-editor.org/rfc/rfc9882.html); [draft-ietf-tls-composite-mldsa-00](https://www.ietf.org/archive/id/draft-ietf-tls-composite-mldsa-00.html)
+- Apple: [Quantum-secure cryptography in Apple devices](https://support.apple.com/guide/security/quantum-secure-cryptography-apple-devices-secc7c82e533/web)
 
 - AWS: [PQ readiness for AWS services](https://aws.amazon.com/security/post-quantum-cryptography/aws-pq-readiness-confidentiality/)
 - AWS: [SDK and tool PQ TLS support](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html)

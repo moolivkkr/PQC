@@ -6,14 +6,15 @@
 <div class="card tight top-orange" style="--i:1"><p class="tag-orange">Approve</p><h3>The phase windows</h3><p class="body">Wave A runtime upgrades must end by 30 June 2027.</p></div>
 <div class="card tight top-orange" style="--i:2"><p class="tag-orange">Name</p><h3>A lead per role</h3><p class="body">Platform, security, network, and each app team.</p></div>
 <div class="card tight top-blue" style="--i:3"><p class="tag-blue">Decide</p><h3>The Java path</h3><p class="body">Kit v2 as a bridge on 8–21, or move straight to JDK 25.0.5+.</p></div>
-<div class="card tight top-blue" style="--i:4"><p class="tag-blue">Decide</p><h3>The FIPS policy</h3><p class="body">Which workloads stay FIPS, and whether they wait for FIPS PQ evidence.</p></div>
-<div class="card tight top-blue" style="--i:5"><p class="tag-blue">Decide</p><h3>The exception rule</h3><p class="body">Who approves staying classical, how often it’s reviewed, which data goes first.</p></div>
+<div class="card tight top-blue" style="--i:4"><p class="tag-blue">Decide</p><h3>FIPS and exceptions</h3><p class="body">Which workloads stay FIPS; who approves staying classical, and how often.</p></div>
+<div class="card tight top-blue" style="--i:5"><p class="tag-blue">Decide</p><h3>The certificate track</h3><p class="body">ML-DSA test in Phase 0, ML-DSA signing for firmware, one dual-certificate pilot.</p></div>
 </div>
-<p class="foot">Post-quantum TLS on AWS · 22</p>
-<aside>KEY MESSAGE: Three things to fund or approve today, three policy decisions in the next few weeks.
+<p class="foot">Post-quantum TLS on AWS · 31</p>
+<aside>KEY MESSAGE: Three things to fund or approve today, three decisions in the next few weeks, including the certificate track.
 • The sandbox account is the only spend; it closes every Phase 0 row on the scorecard.
 • The windows are driven by the AWS dates; Wave A can’t slip past 30 June 2027.
 • Java: the kit is tested and works, but it is a bridge. Or require JDK 25.0.5+; Oracle says backports to 17 and 21 are planned for H1 2027 but none has shipped.
 • FIPS: no kit or generic config file on FIPS hosts until Phase 0 shows FIPS PQ evidence.
-• Exceptions: suggest ranking by data class, with the longest-lived confidential data first.</aside>
+• Exceptions: who approves a workload staying classical, reviewed quarterly; rank by data class, longest-lived confidential data first.
+• Certificate track: approve the Private CA ML-DSA test in Phase 0, ML-DSA signatures for firmware and long-lived artifacts from Q1 2027, and one internal dual-certificate pilot. Public HTTPS waits for AWS and browsers.</aside>
 </section>

@@ -1,19 +1,21 @@
 <section id="choices" class="alt" data-transition="fade">
 <p class="eyebrow">The right approach</p>
-<h2>Five choices that keep the rollout safe</h2>
+<h2>Six choices that keep the rollout safe</h2>
 <table class="tbl">
 <tr class="h"><th style="width:31%">Choice</th><th style="width:24%">Instead of</th><th style="width:45%">Why</th></tr>
-<tr class="a"><td><b>Change key exchange only</b></td><td>New certificates now</td><td>Certificates are unchanged and tested; ML-DSA comes later</td></tr>
+<tr class="a"><td><b>Key exchange first</b></td><td>Re-issue every certificate now</td><td>ML-KEM needs no new certificates; ML-DSA pays first for firmware roots and signing</td></tr>
 <tr class="b"><td><b>Hybrid, with fallback</b></td><td>PQ-only servers</td><td>Classical and TLS 1.2 clients still connect</td></tr>
 <tr class="a"><td><b>Ship in the shared template</b></td><td>Code changes per team</td><td>One file or variable; rolled back by removing it</td></tr>
 <tr class="b"><td><b>Guardrails warn, then fail</b></td><td>Enforce on day one</td><td>Teams aren’t stalled by false positives</td></tr>
 <tr class="a"><td><b>Done means observed</b></td><td>Done means deployed</td><td>Shipping isn’t proof; logs show the group</td></tr>
+<tr class="b"><td><b>Dual certificates for ML-DSA</b></td><td>ML-DSA-only or composite</td><td>Go, Java, OpenSSL 3.0 fail on ML-DSA-only; composite has no TLS code points yet</td></tr>
 </table>
-<p class="foot">Post-quantum TLS on AWS · 09</p>
-<aside>KEY MESSAGE: We keep the change small, reversible and provable, so it can go everywhere without a programme of certificate work.
-• Key exchange only: no certificate re-issue, no new PKI. Post-quantum certificates are a separate step for later.
+<p class="foot">Post-quantum TLS on AWS · 17</p>
+<aside>KEY MESSAGE: We keep the change small, reversible and provable, so it can go everywhere, and certificates follow on their own track.
+• Key exchange first: no certificate re-issue for the ML-KEM rollout. ML-DSA follows by use case; it starts now only for device roots and long-lived signatures.
 • Hybrid, never PQ-only: anything that can’t do PQ still connects, so nothing breaks on the day we switch.
 • The platform ships the fix in the shared build template; app teams release it. Rollback is removing one file or one variable.
 • Guardrails start in warn mode (about 30 days first, per the plan’s risk table) so teams aren’t blocked by a rule we got wrong.
-• And a workload is only done when a log shows X25519MLKEM768, not when the change merges.</aside>
+• And a workload is only done when a log shows X25519MLKEM768, not when the change merges.
+• For ML-DSA certificates, two certificates on one server, never ML-DSA alone: clients that can’t use it get ECDSA. The one-certificate composite form can’t be negotiated in TLS yet.</aside>
 </section>

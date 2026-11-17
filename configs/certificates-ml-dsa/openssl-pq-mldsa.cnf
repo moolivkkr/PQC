@@ -1,0 +1,28 @@
+# ML-KEM key exchange AND ML-DSA certificates on Amazon Linux 2023 (OpenSSL 3.5).
+# The AL2023 crypto policy lists only classical SignatureAlgorithms, so OpenSSL 3.5 never offers
+# ML-DSA: a server with only an ML-DSA certificate fails the handshake, and a dual-certificate
+# server sends ECDSA. Tested 2026-11-16 (e2e mldsa-dual/only/mtls): Groups alone -> ecdsa/fail/fail;
+# with the SignatureAlgorithms line below -> mldsa/mldsa/mldsa (client certificate too).
+# ML-DSA is listed first and the policy's classical list follows, so every existing peer still connects.
+# Point OPENSSL_CONF at this file instead of openssl-pq.cnf on hosts that join the ML-DSA certificate track.
+openssl_conf = openssl_init
+
+.include /etc/pki/tls/openssl.d
+
+[openssl_init]
+ssl_conf = ssl_module
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1
+
+[ssl_module]
+system_default = pq_system_default
+
+[pq_system_default]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+Groups = *X25519MLKEM768:*X25519:secp256r1:X448:secp521r1:secp384r1:ffdhe2048:ffdhe3072:ffdhe4096:ffdhe6144:ffdhe8192
+SignatureAlgorithms = mldsa44:mldsa65:mldsa87:ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:ed25519:ed448:rsa_pss_pss_sha256:rsa_pss_pss_sha384:rsa_pss_pss_sha512:rsa_pss_rsae_sha256:rsa_pss_rsae_sha384:rsa_pss_rsae_sha512:RSA+SHA256:RSA+SHA384:RSA+SHA512

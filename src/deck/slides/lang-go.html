@@ -1,0 +1,20 @@
+<section id="lang-go" class="light" data-transition="fade">
+<p class="eyebrow">Go · by compute type</p>
+<h2>Rebuild with Go 1.26 and the go 1.26 line</h2>
+<table class="tbl" style="font-size:22px">
+<tr class="h"><th style="width:13%">Compute</th><th style="width:22%">Runtime or base</th><th style="width:22%">PQ today</th><th style="width:35%">Fix</th><th style="width:8%;text-align:right">Cases</th></tr>
+<tr class="a"><td><b>Lambda</b></td><td><b>provided.al2023, provided.al2</b></td><td>PQ when built with 1.24+ <i>and</i> go.mod says 1.24+</td><td>Rebuild; or <span class=code>GODEBUG=tlsmlkem=1</span> in the function env, no rebuild. Layers and OPENSSL_CONF do nothing</td><td style="text-align:right">77</td></tr>
+<tr class="b"><td><b>ECS Fargate</b></td><td><b>Any image</b>: scratch, distroless, AL2023, AL2</td><td>Same rule; the base image plays no part</td><td>Rebuild, or GODEBUG in the task definition. FIPS: <span class=code>GOFIPS140=v1.26.0</span> is PQ</td><td style="text-align:right">22</td></tr>
+<tr class="a"><td><b>ECS on EC2 · EKS</b></td><td><b>Same images</b> on EC2 hosts</td><td>Same; the host crypto policy plays no part</td><td>Same as Fargate. EKS: same image, not run in e2e</td><td style="text-align:right">5</td></tr>
+<tr class="b"><td><b>EC2</b></td><td><b>AL2023, AL2</b> hosts</td><td>Binary decides; DEFAULT:PQ changes nothing</td><td>Rebuild, or <span class=code>Environment=GODEBUG=…</span> in the systemd unit</td><td style="text-align:right">14</td></tr>
+</table>
+<p class="note warn" style="font-size:22px"><b>Most common miss:</b> a new toolchain with an old <span class=code>go 1.23</span> line in go.mod stays classical. <b>Risk:</b> boringcrypto builds with fips140=on panic at start; use the native FIPS module.</p>
+<p class="foot">Post-quantum TLS on AWS · 10 · 118 e2e cases; code and cases: appendix</p>
+<aside>KEY MESSAGE: Go is the simplest language: its own TLS stack, so the compute type and base image don’t matter. Only the toolchain and the go line do.
+• Lambda, Fargate, ECS on EC2 and EC2 all behave the same: a binary built with Go 1.24+ and a go line of 1.24+ is PQ.
+• The trap is the go line: Go 1.27 with go 1.23 in go.mod is classical. CI checks the go line.
+• No rebuild possible? GODEBUG=tlsmlkem=1 in the function, task or unit environment turns it on.
+• OS crypto policies, OPENSSL_CONF and our layers have no effect on Go; we tested that so nobody wastes time on it.
+• FIPS: the native Go FIPS module (GOFIPS140) is PQ; the old boringcrypto build panics with fips140=on.
+• EKS was not run in the emulator; it runs the same images as ECS, so we expect the same result but haven’t tested it.</aside>
+</section>
