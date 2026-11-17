@@ -415,9 +415,11 @@ the ML-DSA root</td>
 <td>C2. Internal pilot</td>
 <td>2027-04-01 to 2027-12-17</td>
 <td>Dual certificates on internal mTLS services whose clients run
-OpenSSL 3.5 (Python, Node.js, .NET on Debian 13, Alpine, Ubuntu 26.04,
-or AL2023 with
-<code>configs/certificates-ml-dsa/openssl-pq-mldsa.cnf</code>)</td>
+OpenSSL 3.5 with ML-DSA enabled: Node.js 22.20+/24.5+ (including
+Lambda), Python and .NET 10 on Debian 13, Alpine or Ubuntu 26.04, or
+AL2023 with <code>DEFAULT:PQ</code> or
+<code>configs/certificates-ml-dsa/openssl-pq-mldsa.cnf</code>. Not .NET
+8 for ML-DSA client certificates (Tested)</td>
 <td>Pilot services serve ML-DSA to those clients and ECDSA to the rest
 with no failed handshakes</td>
 <td>Platform engineering</td>
@@ -665,7 +667,7 @@ service</td>
 <td>AL2023 crypto policy omits ML-DSA signature algorithms</td>
 <td>AL2023 clients get ECDSA from a dual server and fail against ML-DSA
 only, even with the ML-KEM config</td>
-<td>Use <code>openssl-pq-mldsa.cnf</code> (adds
+<td><code>DEFAULT:PQ</code>, or <code>openssl-pq-mldsa.cnf</code> (adds
 <code>SignatureAlgorithms</code>) on pilot clients</td>
 <td>Point <code>OPENSSL_CONF</code> back at
 <code>openssl-pq.cnf</code></td>

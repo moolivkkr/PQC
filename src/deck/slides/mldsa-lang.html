@@ -1,21 +1,23 @@
 <section id="mldsa-lang" class="alt" data-transition="fade">
 <p class="eyebrow">Certificates, by language and base</p>
 <h2>Who can use an ML-DSA certificate today</h2>
-<table class="tbl" style="font-size:22px">
-<tr class="h"><th style="width:34%">Client stack</th><th style="width:20%">Dual server gives</th><th style="width:16%">ML-DSA only</th><th style="width:16%">ML-DSA client cert</th><th style="width:14%">Evidence</th></tr>
-<tr class="a"><td><b>Python, Node.js, .NET on OpenSSL 3.5</b><br>Debian 13, Alpine, Ubuntu 26.04, official Node</td><td class="ok">ML-DSA</td><td class="ok">Connects</td><td class="ok">Python works; others in run</td><td>Tested</td></tr>
-<tr class="b"><td><b>Same languages on AL2023</b><br>Lambda 3.12+, nodejs22+, dotnet; AL2023 images, hosts</td><td class="bad">ECDSA</td><td class="bad">Fails</td><td class="bad">Fails</td><td>Tested</td></tr>
-<tr class="a"><td><b>AL2023 + openssl-pq-mldsa.cnf</b></td><td class="ok">ML-DSA</td><td class="ok">Connects</td><td class="ok">Works</td><td>Tested</td></tr>
-<tr class="b"><td><b>OpenSSL 3.0</b> (Debian 12, Ubuntu 24.04, Node 20)</td><td>ECDSA</td><td class="bad">Fails</td><td class="bad">Fails</td><td>Tested</td></tr>
-<tr class="a"><td><b>Go 1.27</b></td><td>ECDSA; verifies ML-DSA chains</td><td class="bad">Fails</td><td>In run</td><td>Tested</td></tr>
-<tr class="b"><td><b>Java 25</b> (stock JSSE)</td><td>ECDSA; validates ML-DSA chains</td><td class="bad">Fails</td><td>In run</td><td>Tested</td></tr>
+<table class="tbl" style="font-size:21px">
+<tr class="h"><th style="width:42%">Client stack</th><th style="width:17%">Dual server gives</th><th style="width:14%">ML-DSA only</th><th style="width:15%">ML-DSA client cert</th><th style="width:12%;text-align:right">Cases</th></tr>
+<tr class="a"><td><b>Node.js 22.20+, 24.5+</b>: Lambda nodejs22/24, official images</td><td class="ok">ML-DSA</td><td class="ok">Connects</td><td class="ok">Works</td><td rowspan="2" style="text-align:right">91</td></tr>
+<tr class="b"><td><b>Python, Node, .NET 10 on OpenSSL 3.5</b>: Debian 13, Alpine, Ubuntu 26.04; AL2023 with DEFAULT:PQ; Lambda py3.9–3.11 shim</td><td class="ok">ML-DSA</td><td class="ok">Connects</td><td class="ok">Works</td></tr>
+<tr class="a"><td><b>.NET 8</b> on the same bases</td><td class="ok">ML-DSA</td><td class="ok">Connects</td><td class="bad">Fails: no ML-DSA keys</td><td style="text-align:right">4</td></tr>
+<tr class="b"><td><b>AL2023 default or our ML-KEM file</b>: Lambda python3.12+, dotnet; AL2023 images, hosts</td><td class="bad">ECDSA</td><td class="bad">Fails</td><td class="bad">Fails</td><td rowspan="3" style="text-align:right">307</td></tr>
+<tr class="a"><td><b>Go, Java</b> (all versions, JSSE and Bouncy Castle)</td><td>ECDSA</td><td class="bad">Fails</td><td class="bad">Fails</td></tr>
+<tr class="b"><td><b>OpenSSL 1.x, 3.0–3.4</b>: Node 18, 20; Debian 12, Ubuntu 24.04; any TLS 1.2 cap</td><td>ECDSA</td><td class="bad">Fails</td><td class="bad">Fails</td></tr>
 </table>
-<p class="note" style="font-size:22px"><b>Every client connects to a dual-certificate server.</b> The extra ML-DSA root in the trust bundle did no harm, even on OpenSSL 3.0. Full per-compute e2e results replace “in run” when the current run finishes.</p>
-<p class="foot">Post-quantum TLS on AWS · 15 · nginx client matrix 2026-11-14; AL2023 and e2e smoke 2026-11-16</p>
-<aside>KEY MESSAGE: ML-DSA works today only for OpenSSL 3.5 clients, and on AL2023 only with one extra line, so dual certificates are the only safe way to serve it.
-• Python, Node.js and .NET on an OpenSSL 3.5 base pick the ML-DSA certificate and verify it.
-• On AL2023, which is our Lambda and much of our EC2 base, the crypto policy leaves ML-DSA out. Our ML-KEM config file doesn’t change that; the ML-DSA config file adds the signature algorithms, and then all three targets work. We found this in testing today.
-• OpenSSL 3.0, Go and Java get the ECDSA certificate from a dual server. Go and Java can verify ML-DSA chains but their TLS stacks don’t negotiate ML-DSA.
-• So a server that only has an ML-DSA certificate breaks Go, Java, OpenSSL 3.0 and default AL2023 clients.
-• The full e2e run per language and compute type is in progress; the ML-DSA client certificate column fills in from it.</aside>
+<p class="note" style="font-size:21px"><b>All 402 clients that connect at all connected to the dual server</b>, with the ML-DSA root in their bundle. On AL2023, <span class="code">DEFAULT:PQ</span> or <span class="code">openssl-pq-mldsa.cnf</span> turns ML-DSA on; our ML-KEM file alone doesn’t.</p>
+<p class="foot">Post-quantum TLS on AWS · 15 · e2e run r1117034807, 409 client cases; 7 more fail every target for other reasons</p>
+<aside>KEY MESSAGE: Only OpenSSL 3.5 stacks with ML-DSA enabled can use an ML-DSA certificate today, so dual certificates are the only safe way to serve it, and they break nobody.
+• The e2e run put 409 client cases against three ML-DSA servers. 91 used ML-DSA everywhere, 4 on two of three, and 307 got the ECDSA certificate from the dual server.
+• Node 22.20 and 24.5 and later bundle OpenSSL 3.5 and use ML-DSA everywhere, including Lambda, with or without our fix.
+• On AL2023 the default crypto policy leaves ML-DSA out, and our ML-KEM config file keeps that list. DEFAULT:PQ or the new ML-DSA config file turns it on. That’s the finding from this round.
+• .NET 8 can verify ML-DSA servers but can’t load an ML-DSA private key, so ML-DSA client certificates need .NET 10.
+• A surprise: Lambda Python 3.9 to 3.11 with our shim use ML-DSA, because pyOpenSSL’s wheel bundles OpenSSL 3.5.
+• Go and Java verify ML-DSA chains but their TLS stacks don’t negotiate it, so they get ECDSA.
+• Most important: every client that connects at all connected to the dual server with the extra ML-DSA root in its bundle, including OpenSSL 1.0.2 and Java 8.</aside>
 </section>

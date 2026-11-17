@@ -508,10 +508,12 @@ document)</td>
 <td>Dual certificate from a private CA (AWS Private CA issues ML-DSA).
 Clients on OpenSSL 3.5 get ML-DSA; Go and Java verify ML-DSA chains but
 negotiate ECDSA; OpenSSL 3.0 gets ECDSA. On AL2023 the crypto policy
-blocks ML-DSA until <code>SignatureAlgorithms</code> is extended
-(<code>configs/certificates-ml-dsa/openssl-pq-mldsa.cnf</code>)</td>
+blocks ML-DSA until <code>DEFAULT:PQ</code> is set or
+<code>SignatureAlgorithms</code> is extended
+(<code>configs/certificates-ml-dsa/openssl-pq-mldsa.cnf</code>); our
+ML-KEM file alone does not</td>
 <td>Tested (e2e targets <code>mldsa-dual</code>,
-<code>mldsa-only</code>; per-language table below)</td>
+<code>mldsa-only</code>; per-stack table below)</td>
 <td>Pilot only. Never serve ML-DSA alone while any client is on Go,
 Java, OpenSSL 3.0 or an unmodified AL2023 policy: they fail the
 handshake. Chains grow from about 0.9 KB to 11.8 KB</td>
@@ -521,9 +523,10 @@ handshake. Chains grow from about 0.9 KB to 11.8 KB</td>
 IAM Roles Anywhere, mesh)</td>
 <td>Same as internal HTTPS</td>
 <td>Client certificates: tested per language with an ML-DSA client key
-(<code>mldsa-mtls</code>). IAM Roles Anywhere accepts ML-DSA trust
-anchors and end-entity certificates (AWS, February/March 2026). SPIRE
-and Envoy/BoringSSL: no upstream ML-DSA certificate support found</td>
+(<code>mldsa-mtls</code>): works on OpenSSL 3.5 stacks with .NET 10, not
+.NET 8, Go or Java. IAM Roles Anywhere accepts ML-DSA trust anchors and
+end-entity certificates (AWS, February/March 2026). SPIRE and
+Envoy/BoringSSL: no upstream ML-DSA certificate support found</td>
 <td>Client side Tested; Roles Anywhere Documented; SPIRE and Envoy
 Unverified (not found)</td>
 <td>Roles Anywhere can pilot ML-DSA now with a Private CA trust anchor.
@@ -592,71 +595,140 @@ keys only where every client is 10.6+</td>
 fixture: <code>mldsa-dual</code> = dual certificate,
 <code>mldsa-only</code> = ML-DSA certificate only,
 <code>mldsa-mtls</code> = ML-DSA client certificate required).</p>
-<p>Interim results below are from the 2026-11-14 client matrix and the
-2026-11-16 AL2023 test. The full e2e run across every language and
-compute type is in progress and will replace this table.</p>
+<p>Run r1117034807 (2026-11-16): 409 client cases across Lambda, ECS
+Fargate, ECS on EC2 and EC2. 91 got ML-DSA on all three targets, 4 (.NET
+8) on two, 307 got the ECDSA certificate from the dual server and failed
+the other two, and 7 failed every target for unrelated reasons
+(FIPS-only Go, a boringcrypto panic, Java 8 without the host-name flag,
+the shim without idna). Expectations per case:
+<code>e2e/cases/mldsa_rules.py</code>.</p>
 <table>
 <thead>
 <tr>
 <th>Client stack</th>
-<th>Dual server: certificate received</th>
-<th>ML-DSA-only server</th>
+<th>Dual server gives</th>
+<th>ML-DSA only</th>
 <th>ML-DSA client certificate</th>
 <th>Evidence</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Python, Node.js, .NET on OpenSSL 3.5 (Debian 13, Alpine, Ubuntu
-26.04, official Node 22.20+/24.5+)</td>
-<td>ML-DSA</td>
-<td>Connects</td>
-<td>Python: works (e2e smoke); Node.js, .NET: e2e run in progress</td>
-<td>Tested</td>
-</tr>
-<tr>
-<td>Same languages on AL2023 (Lambda python3.12+, nodejs22+, dotnet;
-AL2023 images and hosts), default policy or ML-KEM config</td>
-<td>ECDSA</td>
-<td>Fails</td>
-<td>Fails</td>
-<td>Tested (Python 3.12, OpenSSL 3.5.8)</td>
-</tr>
-<tr>
-<td>Same, with <code>openssl-pq-mldsa.cnf</code></td>
+<td>Node.js with bundled OpenSSL 3.5: Lambda <code>nodejs22.x</code> and
+<code>nodejs24.x</code> (with or without our fix), official images and
+binaries 22.20+ and 24.5+</td>
 <td>ML-DSA</td>
 <td>Connects</td>
 <td>Works</td>
-<td>Tested (Python 3.12)</td>
+<td>Tested (e2e)</td>
 </tr>
 <tr>
-<td>OpenSSL 3.0 (Debian 12, Ubuntu 24.04, Node 20 bundled)</td>
-<td>ECDSA (the extra ML-DSA root does no harm)</td>
-<td>Fails</td>
-<td>Fails</td>
-<td>Tested</td>
+<td>Python, Node.js, .NET 10 on a distro OpenSSL 3.5: Debian 13, Alpine,
+Ubuntu 26.04</td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Works</td>
+<td>Tested (e2e)</td>
 </tr>
 <tr>
-<td>Go 1.27</td>
-<td>ECDSA; verifies ML-DSA chains offline</td>
-<td>Fails</td>
-<td>e2e run in progress</td>
-<td>Tested (1.27.4); Go 1.25 cannot verify ML-DSA</td>
+<td>.NET 8 on any OpenSSL 3.5 base</td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td><strong>Fails</strong>: .NET 8 cannot load an ML-DSA private key
+("not a known key algorithm"); .NET 10 can</td>
+<td>Tested (e2e)</td>
 </tr>
 <tr>
-<td>Java 25 (stock JSSE)</td>
-<td>ECDSA; PKIX validates ML-DSA chains</td>
+<td>Amazon Linux 2023, default crypto policy: Lambda
+<code>python3.12</code>–<code>3.14</code>, <code>dotnet8</code>,
+<code>dotnet10</code>; AL2023 images and hosts</td>
+<td>ECDSA</td>
 <td>Fails</td>
-<td>e2e run in progress</td>
-<td>Tested</td>
+<td>Fails</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>AL2023 with our ML-KEM file <code>openssl-pq.cnf</code> (Python,
+.NET; it includes the policy's signature list)</td>
+<td>ECDSA</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>AL2023 with <code>openssl-pq-mldsa.cnf</code></td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Works</td>
+<td>Tested (Python 3.12, outside the suite)</td>
+</tr>
+<tr>
+<td>AL2023 with <code>update-crypto-policies --set DEFAULT:PQ</code>
+(image or host)</td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Works (.NET 8: fails, as above)</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>AL2023 Node.js from dnf with
+<code>openssl-pq-node-system.cnf</code></td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Works</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>Lambda <code>python3.9</code>–<code>3.11</code> with the pq-tls shim
+or layer (requests goes through pyOpenSSL, whose wheel bundles OpenSSL
+3.5)</td>
+<td>ML-DSA</td>
+<td>Connects</td>
+<td>Works</td>
+<td>Tested (e2e); stdlib <code>ssl</code> on the same runtime stays
+ECDSA</td>
+</tr>
+<tr>
+<td>OpenSSL 1.0.2, 1.1.1, 3.0 to 3.4: Node 18 and 20, Node 22.19 and
+24.4, Debian 12, Ubuntu 24.04, Azure Linux 3.0, Amazon Linux 2</td>
+<td>ECDSA</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>Go 1.23 to 1.27 (every compute type and FIPS mode that
+connects)</td>
+<td>ECDSA</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested (e2e); Go 1.27 verifies ML-DSA chains offline but crypto/tls
+does not negotiate ML-DSA</td>
+</tr>
+<tr>
+<td>Java 8 to 25, SunJSSE and Bouncy Castle JSSE (kit v1 and v2)</td>
+<td>ECDSA</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested (e2e); JDK 25 PKIX validates ML-DSA chains offline</td>
+</tr>
+<tr>
+<td>Any stack capped at TLS 1.2 (<code>--tls-max-v1.2</code>,
+<code>EnabledSslProtocols=Tls12</code>)</td>
+<td>ECDSA</td>
+<td>Fails</td>
+<td>Fails</td>
+<td>Tested (e2e); ML-DSA is TLS 1.3 only</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Trust bundles.</strong> Adding the ML-DSA root to a CA bundle
-next to the existing roots did not break any client in the e2e run,
-including OpenSSL 3.0, which ignores the root it cannot parse (Tested).
-So the ML-DSA root can be distributed ahead of any ML-DSA server
-certificate.</p>
+<p><strong>Trust bundles.</strong> Every ML-DSA target used a bundle
+holding both the classical and the ML-DSA root
+(<code>ca-both.crt</code>, <code>truststore-both.p12</code> for Java).
+All 402 clients that connect at all connected to the dual server,
+including OpenSSL 1.0.2, 1.1.1 and 3.0, Go 1.23 to 1.25 (which cannot
+parse ML-DSA) and Java 8 (Tested). So the ML-DSA root can be distributed
+ahead of any ML-DSA server certificate.</p>
 <p>Step-by-step instructions per language and component: Runbook by
 language</p>
 <p>Load balancers, edge, AWS endpoints, network devices, IoT, mesh,
@@ -16287,6 +16359,7 @@ Environment=OPENSSL_CONF=/etc/pki/tls/openssl-pq.cnf</code></pre>
 <h3 id="t16-clients-and-runtimes">Clients and runtimes</h3>
 <p>Tested 2026-11-14 against nginx 1.29 (OpenSSL 3.5.5) holding an ML-DSA-44 chain and an ECDSA P-256 chain.</p>
 <table><thead><tr><th>Client</th><th>TLS: offers ML-DSA? Leaf received</th><th>Offline ML-DSA chain verification</th><th>Evidence</th></tr></thead><tbody><tr><td>OpenSSL 3.5.7 <code>s_client</code>, curl (Debian 13)</td><td>Yes; ML-DSA-44 leaf (<code>Peer signature type: mldsa44</code>)</td><td><code>openssl verify</code>: OK</td><td>Tested</td></tr><tr><td>OpenSSL 3.5 with <code>-sigalgs ecdsa_secp256r1_sha256</code></td><td>No; ECDSA leaf</td><td>–</td><td>Tested</td></tr><tr><td>OpenSSL 3.0 (Debian 12)</td><td>No; ECDSA leaf</td><td>No</td><td>Tested</td></tr><tr><td>Python 3.13 (Debian 13, OpenSSL 3.5.7)</td><td>Yes; ML-DSA-44 leaf, verified</td><td>via OpenSSL</td><td>Tested</td></tr><tr><td>Node 24.22.3 (bundled OpenSSL 3.5.9)</td><td>Yes; ML-DSA-44 leaf, <code>authorized=true</code></td><td>via OpenSSL</td><td>Tested</td></tr><tr><td>.NET 10.0.15 (Alpine 3.24)</td><td>Yes; ML-DSA-44 leaf, chain built with a custom root</td><td><code>X509Chain.Build</code>: true; <code>MLDsa.IsSupported</code>: true</td><td>Tested</td></tr><tr><td>Go 1.25.14</td><td>No; ECDSA leaf</td><td>No: unknown key algorithm, &quot;signed by unknown authority&quot;</td><td>Tested</td></tr><tr><td>Go 1.27.4</td><td>No; ECDSA leaf (crypto/tls does not offer ML-DSA)</td><td>Yes: <code>x509.Verify</code> OK</td><td>Tested</td></tr><tr><td>Java 25.0.5 (Temurin, stock JSSE)</td><td>No; EC leaf</td><td>Yes: PKIX <code>CertPathValidator</code> OK</td><td>Tested</td></tr><tr><td>Bouncy Castle JSSE</td><td>Not tested</td><td>–</td><td>Unverified</td></tr></tbody></table>
+<p>End to end (run r1117034807, 2026-11-16): 409 client cases on Lambda, ECS Fargate, ECS on EC2 and EC2 against a dual-certificate server, an ML-DSA-only server and a server requiring an ML-DSA client certificate. Results per client stack are in the overview’s Use cases section; every client that connects at all connected to the dual server.</p>
 <p>Size cost (Tested, DER): ML-DSA-87 root 7,510 bytes, ML-DSA-65 intermediate 6,876, ML-DSA-44 leaf 4,953; ECDSA P-256 root 424 and leaf 464. Leaf plus intermediate grows from about 0.9 KB to 11.8 KB. An ML-DSA-44 signature is 2,420 bytes and its public key 1,312 bytes, against 64 bytes for an ECDSA P-256 signature.</p>
 <h2 id="t16-client-side-app-level">Client side (app level)</h2>
 <p>A client needs the private root in its trust store and, to receive the ML-DSA certificate, a TLS stack that offers ML-DSA. Clients that have only the root still work against a dual-certificate server; they receive ECDSA.</p>
@@ -16347,7 +16420,7 @@ openssl s_client -connect web:443 -CAfile roots.pem -sigalgs ecdsa_secp256r1_sha
 openssl x509 -in cert.pem -noout -text | grep -E &#39;Signature Algorithm|Public Key Algorithm&#39;</code></pre>
 <p>Expect <code>Peer signature type: mldsa44</code> for the first and <code>ecdsa_secp256r1_sha256</code> for the second (Tested). Old clients (OpenSSL 3.0, Go, Java) must still complete the handshake (Tested).</p>
 <h2 id="t16-pitfalls-and-rollback">Pitfalls and rollback</h2>
-<ul><li><p>Never serve only an ML-DSA certificate to a mixed fleet: Go, Java and OpenSSL 3.0 clients cannot negotiate it (Tested).</p></li><li><p>Amazon Linux 2023: the crypto policy lists only classical <code>SignatureAlgorithms</code>, so OpenSSL 3.5.8 never offers ML-DSA, even with the ML-KEM config file. A dual-certificate server sends ECDSA, and an ML-DSA-only server or an ML-DSA client certificate fails the handshake. Adding <code>mldsa44:mldsa65:mldsa87</code> ahead of the policy list (<code>openssl-pq-mldsa.cnf</code>) fixes all three (Tested 2026-11-16, AL2023 Python 3.12).</p></li><li><p>Chains grow about 13 times (0.9 KB to 11.8 KB). Watch MTU-sensitive paths, middleboxes, IoT devices and client-certificate size limits.</p></li><li><p>A certificate carries one algorithm. Re-issue; don&#39;t re-sign.</p></li><li><p>Rollback: remove the ML-DSA <code>ssl_certificate</code> pair and reload; ECDSA keeps serving. The ML-DSA root can stay in trust stores; it is harmless when unused.</p></li></ul>
+<ul><li><p>Never serve only an ML-DSA certificate to a mixed fleet: Go, Java and OpenSSL 3.0 clients cannot negotiate it (Tested).</p></li><li><p>Amazon Linux 2023: the crypto policy lists only classical <code>SignatureAlgorithms</code>, so OpenSSL 3.5.8 never offers ML-DSA, even with the ML-KEM config file. A dual-certificate server sends ECDSA, and an ML-DSA-only server or an ML-DSA client certificate fails the handshake. Adding <code>mldsa44:mldsa65:mldsa87</code> ahead of the policy list (<code>openssl-pq-mldsa.cnf</code>) fixes all three (Tested 2026-11-16, AL2023 Python 3.12). <code>update-crypto-policies --set DEFAULT:PQ</code> also enables ML-DSA, and so does Node’s <code>openssl-pq-node-system.cnf</code>, which sets its own list (Tested, e2e).</p></li><li><p>.NET 8 negotiates ML-DSA server certificates through OpenSSL 3.5 but cannot load an ML-DSA private key, so it cannot present an ML-DSA client certificate (“not a known key algorithm”). .NET 10 can (Tested, e2e).</p></li><li><p>Chains grow about 13 times (0.9 KB to 11.8 KB). Watch MTU-sensitive paths, middleboxes, IoT devices and client-certificate size limits.</p></li><li><p>A certificate carries one algorithm. Re-issue; don&#39;t re-sign.</p></li><li><p>Rollback: remove the ML-DSA <code>ssl_certificate</code> pair and reload; ECDSA keeps serving. The ML-DSA root can stay in trust stores; it is harmless when unused.</p></li></ul>
 <h2 id="t16-full-configuration-files">Full configuration files</h2>
 <h3 id="t16-mkchainsh-openssl-35-ml-dsa-and-ecdsa-chains-tested">mkchain.sh (OpenSSL 3.5: ML-DSA and ECDSA chains, Tested)</h3>
 <pre><code class="language-bash">#!/bin/sh

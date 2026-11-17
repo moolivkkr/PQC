@@ -15,8 +15,8 @@
 <p class="what">in the guide caught by testing before anyone shipped them, fixed and kept as regression cases</p>
 </div>
 <div class="stat" style="--i:3">
-<p class="num">11 of 12</p>
-<p class="what">detection checks find every classical handshake; the miss was a log line LocalStack dropped</p>
+<p class="num">409 / 409</p>
+<p class="what">clients behave as documented against ML-DSA certificates; a dual-certificate server breaks none of them</p>
 </div>
 </div>
 <p class="foot">Post-quantum TLS on AWS · 04 · LocalStack Pro on arm64; real AWS not yet tested (slide 29)</p>
@@ -24,6 +24,7 @@
 • 469 of 469: five languages, four compute types, Lambda zip, layer, extension and container image, plus the load balancer to container leg.
 • Zero certificate changes, tested with our own certificates, private CAs and mutual TLS.
 • Six errors in the written guide were found by the tests, not by a team in production. Each is now a regression case.
-• Detection works: 11 of 12 checks; the one miss was LocalStack dropping a log line under load, not a gap in the method.
+• ML-DSA: every client case also ran against three ML-DSA certificate servers. All 409 matched the documented behaviour of their TLS stack, and the dual-certificate server broke none of them.
+• Detection works: both checks pass in the full run; an earlier run lost one log line in LocalStack, not a gap in the method.
 • Get ahead of it: all of this ran on LocalStack. Real AWS is Phase 0 of the plan, slide 29.</aside>
 </section>

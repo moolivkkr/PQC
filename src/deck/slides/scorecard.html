@@ -6,14 +6,16 @@
 <tr class="a"><td><b>Language fixes give PQ</b></td><td>Every case</td><td>437 / 437</td><td class="ok">Met</td></tr>
 <tr class="b"><td><b>Certificates unchanged</b></td><td>No re-issue</td><td>0 new certificates</td><td class="ok">Met</td></tr>
 <tr class="a"><td><b>ALB target leg</b></td><td>Every case</td><td>32 / 32, modelled</td><td class="ok">Met</td></tr>
-<tr class="b"><td><b>Detection</b></td><td>Every signal</td><td>11 / 12</td><td class="plan">Met, one LocalStack log loss</td></tr>
-<tr class="a"><td><b>Guardrails</b></td><td>Applied to an account</td><td>Unit-tested only</td><td class="bad">Phase 0</td></tr>
-<tr class="b"><td><b>Listener leg, AWS endpoints, x86_64</b></td><td>Tested on real AWS</td><td>Not yet</td><td class="bad">Phase 0</td></tr>
+<tr class="b"><td><b>Detection</b></td><td>Every signal</td><td>2 / 2 (full run)</td><td class="ok">Met; one earlier LocalStack log loss</td></tr>
+<tr class="a"><td><b>ML-DSA behaviour per stack</b></td><td>Every case as documented</td><td>409 / 409; dual server breaks none</td><td class="ok">Met</td></tr>
+<tr class="b"><td><b>Guardrails</b></td><td>Applied to an account</td><td>Unit-tested only</td><td class="bad">Phase 0</td></tr>
+<tr class="a"><td><b>Listener leg, AWS endpoints, x86_64</b></td><td>Tested on real AWS</td><td>Not yet</td><td class="bad">Phase 0</td></tr>
 </table>
 <p class="foot">Post-quantum TLS on AWS · 29 · Runs 12–16 November 2026 on LocalStack and Docker, arm64</p>
 <aside>KEY MESSAGE: Everything we could test locally passes; the rows marked Phase 0 need a real AWS account, and that is the first ask.
 • 437 language cases and 32 load balancer cases: all pass. 469 in total.
-• Detection: 11 of 12. The miss was one log line LocalStack dropped under load; rerunning that case passes. Separately, Lambda and Fargate to non-AWS peers remains a blind spot by design.
+• Detection: both checks pass in the full run of 16 November. An earlier per-language run lost one log line in LocalStack under load; rerunning that case passed.
+• ML-DSA: all 409 client cases behaved as the guide documents for their TLS stack, and every client that connects at all connected to the dual-certificate server. Separately, Lambda and Fargate to non-AWS peers remains a blind spot by design.
 • Not yet proven: guardrails in a real account, the ALB listener leg, AWS endpoint behaviour and the CloudTrail field, and x86_64. LocalStack can’t show these.
 • We say “modelled” for anything tested on LocalStack instead of AWS.</aside>
 </section>

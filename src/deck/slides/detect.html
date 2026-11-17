@@ -9,11 +9,11 @@
 <tr class="b"><td><b>Posture</b></td><td>Runtime, env vars, layers</td><td>Image SBOM, OpenSSL version</td><td>Policy names</td></tr>
 </table>
 <p class="note warn"><b>The blind spot:</b> calls from Lambda and Fargate to non-AWS services. No AWS log records the group, so they stay on inventory until an app-side log or proxy exists.</p>
-<p class="foot">Post-quantum TLS on AWS · 28 · In e2e, 11 of 12 detection checks pass; the miss was a log line LocalStack dropped</p>
+<p class="foot">Post-quantum TLS on AWS · 28 · In the full e2e run both detection checks pass; one earlier run lost a LocalStack log line</p>
 <aside>KEY MESSAGE: We can prove most of the estate from logs AWS already writes; the rest we track honestly as posture.
 • CloudTrail records tlsDetails.keyExchange for every AWS API call. That covers the biggest share of outbound traffic.
 • ALB and NLB access logs record the key exchange on the client leg.
 • On EC2 and containers on EC2, an egress sensor or Zeek on VPC Traffic Mirroring sees the group in the handshake.
 • Lambda and Fargate to non-AWS peers is the blind spot: there is nowhere to mirror. We count those as posture-only, not as done.
-• In the e2e tests the CloudWatch filter and the server-side log caught every classical handshake: 11 of 12 checks pass, and the one miss was LocalStack dropping a log line under load. CloudTrail and ELB log fields are AWS-documented, not yet tested on real AWS.</aside>
+• In the e2e tests the CloudWatch filter and the server-side log caught every classical handshake in the full run of 16 November; one earlier run lost a log line in LocalStack under load. CloudTrail and ELB log fields are AWS-documented, not yet tested on real AWS.</aside>
 </section>

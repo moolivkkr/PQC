@@ -11,8 +11,8 @@
 <ul class="note" style="font-size:21px;list-style:none;padding-left:32px"><li>Cases (expected result per case): <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/go.py" class="code">e2e/cases/go.py</a></li><li>Probe the cases run: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/go/probe.go" class="code">e2e/clients/go/probe.go</a></li><li>Build of every image, zip and layer: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/go.sh" class="code">e2e/build/go.sh</a></li><li>Results, case by case: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md" class="code">e2e/results/latest/summary.md</a></li></ul>
 <p class="foot">Post-quantum TLS on AWS · 34 · Repository is private: links work for people with access</p>
 <aside>KEY MESSAGE: Every Go claim in this deck traces to a case here, and each case is code anyone with repo access can rerun.
-• 118 cases across Lambda, ECS Fargate, ECS on EC2 and EC2; 118 passed in the run of final-20261115 (python r1115024129, node r1115024405, java r1115024739, dotnet r1115025234, go r1115030106, server r1115034537).
-• Each case states its expected result per target: PQ hybrid, PQ-only, mTLS, EC certificate, TLS 1.2; from the 16 November run also the three ML-DSA certificate targets. The observer records what each handshake actually negotiated.
+• 118 cases across Lambda, ECS Fargate, ECS on EC2 and EC2; 118 passed in the run of r1117034807.
+• Each case states its expected result per target: PQ hybrid, PQ-only, mTLS, EC certificate, TLS 1.2, and the three ML-DSA certificate targets (dual, ML-DSA only, ML-DSA client certificate). The observer records what each handshake actually negotiated.
 • A case passes when the observed result matches the expectation in cases/go.py, which is written from the guide, not from the run.
 • To rerun: cd e2e; bash run.sh --lang go. It needs Docker and a LocalStack Pro licence.
 • EKS was not run; it uses the same images as ECS.
