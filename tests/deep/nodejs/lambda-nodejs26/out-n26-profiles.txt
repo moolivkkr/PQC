@@ -1,0 +1,25 @@
+### AWS_LAMBDA_TLS_PROFILE=aws
+[tls-profile] applied 'aws' -> /var/runtime/tls-profiles/commercial-2025.conf
+OPENSSL_CONF=/var/runtime/tls-profiles/commercial-2025.conf NODE_OPTIONS=--tls-cipher-list=@SECLEVEL=2:kEECDH:kRSA:kEDH:kPSK:kDHEPSK:kECDHEPSK:kRSAPSK:-aDSS:-3DES:!DES:!RC4:!RC2:!IDEA:-SEED:!eNULL:!aNULL:!MD5:-SHA384:-CAMELLIA:-ARIA:-AESCCM8:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_SHA256
+pq-only: FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE
+classical: ok {"type":"ECDH","name":"X25519","size":253} TLSv1.3
+### commercial/2026
+[tls-profile] applied 'commercial/2026' -> /var/runtime/tls-profiles/commercial-2026.conf
+OPENSSL_CONF=/var/runtime/tls-profiles/commercial-2026.conf NODE_OPTIONS=--tls-cipher-list=@SECLEVEL=2:kEECDH:kRSA:kEDH:kPSK:kDHEPSK:kECDHEPSK:kRSAPSK:-aDSS:-3DES:!DES:!RC4:!RC2:!IDEA:-SEED:!eNULL:!aNULL:!MD5:-SHA384:-CAMELLIA:-ARIA:-AESCCM8:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_SHA256
+pq-only: ok {"type":"TLSGroup","name":"X25519MLKEM768"} TLSv1.3
+classical: ok {"type":"ECDH","name":"X25519","size":253} TLSv1.3
+### aws + OPENSSL_CONF=pq file
+[tls-profile] 'aws' resolved to /var/runtime/tls-profiles/commercial-2025.conf but customer OPENSSL_CONF is set, keeping customer value
+OPENSSL_CONF=/w/openssl-pq-node.cnf NODE_OPTIONS=
+pq-only: ok {"type":"TLSGroup","name":"X25519MLKEM768"} TLSv1.3
+classical: ok {"type":"ECDH","name":"X25519","size":253} TLSv1.3
+### aws + NODE_OPTIONS=--openssl-config
+[tls-profile] 'aws' resolved to /var/runtime/tls-profiles/commercial-2025.conf but customer --openssl-config is set in NODE_OPTIONS, keeping customer value
+OPENSSL_CONF= NODE_OPTIONS=--openssl-config=/w/openssl-pq-node.cnf
+pq-only: ok {"type":"TLSGroup","name":"X25519MLKEM768"} TLSv1.3
+classical: ok {"type":"ECDH","name":"X25519","size":253} TLSv1.3
+### cnsa
+[tls-profile] applied 'cnsa' -> /var/runtime/tls-profiles/cnsa-1.0.conf
+OPENSSL_CONF=/var/runtime/tls-profiles/cnsa-1.0.conf NODE_OPTIONS=--tls-cipher-list=@SECLEVEL=3:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384
+pq-only: FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE
+classical: FAIL ERR_SSL_SSL/TLS_ALERT_HANDSHAKE_FAILURE

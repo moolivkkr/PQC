@@ -1,0 +1,2774 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Post-Quantum TLS on AWS: Python</title><style>
+body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
+h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
+h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:9pt;page-break-inside:auto}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#e8edf3} tr{page-break-inside:avoid}
+code{font-family:Menlo,Consolas,monospace;font-size:8.5pt;background:#f2f2f2;padding:0 2px;word-break:break-word}
+code.nb{white-space:nowrap;word-break:normal}
+pre{background:#f2f2f2;padding:8px;font-size:8pt;white-space:pre-wrap;word-break:break-all;border:1px solid #ddd}
+pre code{background:none;padding:0}
+p.excerpt{font-size:9pt;margin-top:-4px}
+.cover{text-align:left;padding-top:160px}.cover h1{page-break-before:avoid;border:none;font-size:28pt}
+.cover .sub{font-size:14pt;color:#444}.cover .meta{margin-top:60px;font-size:10.5pt}
+.toc ul{padding-left:0}.toc li{list-style:none;margin:2px 0}.toc li.l0{margin-top:8px;font-weight:600}
+.toc li.l1{margin-left:22px;font-weight:400;font-size:9.5pt}.toc li.l2{margin-left:22px;font-weight:400;font-size:9.5pt}
+a{color:#0b57d0;text-decoration:none}
+@media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
+@page{size:A4;margin:16mm 14mm}
+</style></head><body>
+<div class="cover"><h1 class="title">Post-Quantum TLS on AWS: Python</h1>
+<p class="sub">For Python application teams: what to change on Lambda, ECS, EKS and EC2, every case, how to test, and the evidence</p><p>Start with the one-page summary. The detailed guide covers every Python version, the cases teams meet (own keystores, custom CA trust, mutual TLS, explicit TLS settings, FIPS, libraries with their own TLS), how to test and roll back, and the configuration files. The last chapter lists every end-to-end test case run for Python.</p>
+<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="https://github.com/moolivkkr/PQC">https://github.com/moolivkkr/PQC</a></p></div>
+<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul><li class="l0"><a href="#ch-summary-python">1 Summary for Python teams</a></li><li class="l0"><a href="#ch-lang-context">2 Context for application
+teams</a><ul><li class="l2"><a href="#ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</a></li><li class="l2"><a href="#ch-lang-context--how-the-fix-ships">2.2 How the fix ships</a></li><li class="l2"><a href="#ch-lang-context--evidence-labels">2.3 Evidence labels</a></li><li class="l2"><a href="#ch-lang-context--related-documents">2.4 Related documents</a></li></ul></li><li class="l0"><a href="#ch-04-python">3 Python: detailed guide</a><ul><li class="l2"><a href="#ch-04-python--problem-statement">3.1 Problem statement</a></li><li class="l2"><a href="#ch-04-python--quick-start-by-compute-type">3.2 Quick start by compute type</a></li><li class="l2"><a href="#ch-04-python--versions-and-native-support">3.3 Versions and native support</a></li><li class="l2"><a href="#ch-04-python--cases-what-to-change">3.4 Cases: what to change</a></li><li class="l2"><a href="#ch-04-python--solution-and-automation">3.5 Solution and automation</a></li><li class="l2"><a href="#ch-04-python--how-to-test">3.6 How to test</a></li><li class="l2"><a href="#ch-04-python--rollout-checklist">3.7 Rollout checklist</a></li><li class="l2"><a href="#ch-04-python--pitfalls-and-rollback">3.8 Pitfalls and rollback</a></li><li class="l2"><a href="#ch-04-python--test-evidence">3.9 Test evidence</a></li><li class="l2"><a href="#ch-04-python--full-configuration-files">3.10 Configuration files</a></li></ul></li><li class="l0"><a href="#ch-tests-python">4 Test evidence and test cases</a><ul><li class="l2"><a href="#ch-tests-python--summary">4.1 Summary</a></li><li class="l2"><a href="#ch-tests-python--every-client-case">4.2 Every client case</a></li><li class="l2"><a href="#ch-tests-python--load-balancer-target-cases-6">4.3 Load balancer target cases
+(6)</a></li></ul></li></ul></div>
+<h1 id="ch-summary-python">1 Summary for Python teams</h1>
+<p><strong>What decides PQ.</strong> The standard library
+<code class="nb">ssl</code> module uses the platform's OpenSSL, so the OS image and
+its crypto policy decide. OpenSSL 3.5 can do ML-KEM, but Amazon Linux
+2023's crypto policy leaves it out, so Lambda and AL2023 images
+negotiate classical X25519 until a config file adds it. Libraries that
+bundle their own TLS (grpcio, awscrt, psycopg binary, pyOpenSSL,
+confluent-kafka) are already PQ on every runtime.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda python3.12 to 3.14</td>
+<td>No</td>
+<td>Ship <code>openssl-pq.cnf</code>, set
+<code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code> (or the
+<code class="nb">pq-tls</code> layer)</td>
+</tr>
+<tr>
+<td>Lambda python3.9 to 3.11 (Amazon Linux 2, OpenSSL 1.1.1)</td>
+<td>No</td>
+<td>Upgrade to 3.12+ before 2027-08-31. Bridge: the shim (requests and
+boto3 only) or the layer</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td>Debian 13 (<code class="nb">-trixie</code>) and Alpine 3.24: yes. Debian 12,
+Ubuntu 24.04, AL2023: no</td>
+<td>Move to a trixie or Alpine image; on AL2023, <code>DEFAULT:PQ</code>
+in the Dockerfile or the config file</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>AL2023: no; Debian 13, Ubuntu 26.04: yes</td>
+<td><code>update-crypto-policies --set DEFAULT:PQ</code> via SSM, or
+<code>OPENSSL_CONF</code> in the service unit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Pick the row above; one file and one variable, or one base image
+change.</li>
+<li>Don't use <code>OPENSSL_CONF=/dev/null</code>: it enables PQ but
+drops the crypto policy and changes the cipher list.</li>
+<li>Remove <code>set_ecdh_curve(...)</code> and TLS 1.2 maximums from
+code; on Python 3.15, <code>SSLContext.set_groups()</code> is the right
+API if you must pin groups.</li>
+<li>Python 3.9 to 3.11 bridge: build pyOpenSSL, cryptography <strong>and
+idna</strong> in each version's Lambda image (without idna every request
+fails); <code>truststore.inject_into_ssl()</code> disables it.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change for
+<code>load_cert_chain</code>, <code class="nb">cafile</code>, certifi or
+<code>REQUESTS_CA_BUNDLE</code>. gunicorn with an encrypted key file
+fails every worker: use an <code>ssl_context</code> hook.
+<strong>ML-DSA:</strong> works on OpenSSL 3.5 images (Debian 13, Alpine)
+and through the 3.9 to 3.11 shim; AL2023 also needs
+<code>SignatureAlgorithms</code> (<code>openssl-pq-mldsa.cnf</code> or
+<code>DEFAULT:PQ</code>).</p>
+<p><strong>Rollback:</strong> remove <code>OPENSSL_CONF</code> (or
+<code>PQ_TLS_DISABLE=1</code> with the layer). <strong>Detect:</strong>
+CloudTrail for AWS calls; log <code>SSLSocket.group()</code> on Python
+3.15+.</p>
+<p><strong>Tested:</strong> 59 client cases (Lambda 35, Fargate 13, ECS
+on EC2 3, EC2 8) and 6 load balancer target cases, all passing.</p>
+
+<h1 id="ch-lang-context">2 Context for application
+teams</h1>
+<h2 id="ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</h2>
+<p>A <strong>PQ connection</strong> is a TLS 1.3 handshake that
+negotiated a hybrid ML-KEM key exchange group, X25519MLKEM768 (ML-KEM is
+FIPS 203). It protects traffic recorded today from being decrypted by a
+future quantum computer. Your service is <strong>PQ-enabled</strong>
+when it offers or accepts that group first <strong>and</strong> still
+connects to classical peers, so nothing breaks. It is
+<strong>done</strong> when the programme's dashboards show its
+connections as PQ, not when the change is deployed.</p>
+<p>What does <strong>not</strong> change: your certificates, keystores,
+private CA trust and mutual TLS. ML-KEM works with today's RSA and ECDSA
+certificates. ML-DSA (PQ certificates, FIPS 204) is a separate, later
+track; your summary page says what your runtime can do with it.</p>
+<h2 id="ch-lang-context--how-the-fix-ships">2.2 How the fix ships</h2>
+<p>Every fix is one of: a configuration file plus a variable, a Java
+agent, a base image or a version. The shared <code class="nb">pq-tls</code> kit
+versions these files once, and the shared build template adds them, so
+your service picks the fix up on its next release and rolls back by
+removing one setting. Guardrails in the pipeline warn first and fail
+later on settings that block PQ.</p>
+<table>
+<thead>
+<tr>
+<th>Where a variable goes</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (zip or image)</td>
+<td><code>Environment.Variables</code> (CloudFormation, SAM),
+<code>environment</code> (CDK, Terraform)</td>
+</tr>
+<tr>
+<td>Container images</td>
+<td><code>ENV NAME=value</code> in the Dockerfile</td>
+</tr>
+<tr>
+<td>ECS task, EKS pod (override)</td>
+<td><code>containerDefinitions[].environment</code>;
+<code>spec.containers[].env</code></td>
+</tr>
+<tr>
+<td>EC2 service</td>
+<td><code>Environment=NAME=value</code> in the systemd unit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--evidence-labels">2.3 Evidence labels</h2>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tested</td>
+<td>Run between 2026-11-12 and 2026-11-16 in Lambda base images,
+official images or the LocalStack end-to-end suite. Not run on real
+AWS</td>
+</tr>
+<tr>
+<td>Documented</td>
+<td>Stated in vendor documentation, not tested here</td>
+</tr>
+<tr>
+<td>Claimed</td>
+<td>A vendor plan, not shipped</td>
+</tr>
+<tr>
+<td>Unverified</td>
+<td>Believed true; confirm before relying on it</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--related-documents">2.4 Related documents</h2>
+<p>The programme's white paper (<code>docs/PQC-White-Paper.pdf</code>)
+explains detection, the inventory and the rollout. The complete guide
+(<code>PQC-Detection-and-Remediation.pdf</code>) holds the
+infrastructure detail (load balancers, databases, service mesh, hosts).
+Every configuration file named in this document is in the repository
+under <code class="nb">configs/</code>, and every test under <code class="nb">e2e/</code> and
+<code class="nb">tests/</code>.</p>
+
+<h1 id="ch-04-python">3 Python: detailed guide</h1>
+<h2 id="ch-04-python--problem-statement">3.1 Problem statement</h2>
+<p>A Python service on the wrong base image or runtime negotiates
+classical X25519 or P-256 with no ML-KEM, so traffic it sends or
+receives can be recorded now and decrypted later by a quantum computer
+(harvest-now-decrypt-later). Nothing fails, so nobody notices.</p>
+<p>Python has no PQ switch of its own. The TLS library each package uses
+decides, and every package belongs to one of two families:</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Packages</th>
+<th>Who decides the key exchange</th>
+<th>PQ when</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code class="nb">ssl</code> family</strong>: linked to the system
+OpenSSL through the <code class="nb">ssl</code> module</td>
+<td><code class="nb">ssl</code>, <code>http.client</code>, <code class="nb">urllib</code>,
+requests, urllib3, boto3/botocore (default path), httpx, aiohttp,
+redis-py, PyMySQL, uvicorn, gunicorn, hypercorn, and
+Flask/Django/FastAPI behind them</td>
+<td>The OpenSSL the interpreter links (base image, Lambda runtime or
+host) plus its config (<code>OPENSSL_CONF</code>, the AL2023 crypto
+policy)</td>
+<td>OpenSSL 3.5+ and the config keeps ML-KEM in the group list</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><strong>Bundled-TLS wheels</strong>: carry their own TLS
+library</td>
+<td>grpcio (BoringSSL), awscrt (s2n-tls + AWS-LC), confluent-kafka
+(static OpenSSL 3.5.8 in librdkafka 2.16.0), psycopg
+<code class="nb">[binary]</code> and psycopg2-binary (own libpq + libssl),
+pyOpenSSL (the OpenSSL in the cryptography wheel)</td>
+<td>The wheel version</td>
+<td>Already PQ in current wheels on every base image tested, including
+Debian 12 with OpenSSL 3.0</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p>So the first question for any service is which family each connection
+uses: a requests call on Debian 12 is classical while a grpcio call from
+the same container is PQ. The fix is almost always a base-image change,
+one file plus one environment variable, or a runtime upgrade.
+Certificates, key files, PKCS#12 stores and CA bundles do not change,
+because key exchange is negotiated apart from the certificate (cases C
+and D, Tested).</p>
+<p>Python 3.15 (released 9 Oct 2026, <a
+href="https://www.python.org/downloads/release/python-3150/">python.org</a>)
+adds <code>SSLContext.set_groups()</code>, <code>get_groups()</code> and
+<code>SSLSocket.group()</code> (<a
+href="https://docs.python.org/3.15/library/ssl.html#ssl.SSLContext.set_groups">3.15
+ssl docs</a>, Documented and Tested). Earlier versions have no group
+API; <code>set_ecdh_curve("X25519MLKEM768")</code> raises
+<code>ValueError: unknown elliptic curve name</code> on 3.12, 3.13 and
+3.15 (Tested).</p>
+<h2 id="ch-04-python--quick-start-by-compute-type">3.2 Quick start by compute type</h2>
+<p>Find your row, make the one change, verify, and keep the rollback.
+Everything here is for the <code class="nb">ssl</code> family; bundled-TLS wheels
+need only a current version on every row. All "Tested" rows ran in the
+e2e suite (run r1117041043) or in Lambda base images; none ran on real
+AWS.</p>
+<table>
+<thead>
+<tr>
+<th>Compute type</th>
+<th>Check</th>
+<th>PQ today?</th>
+<th>The one change</th>
+<th>Verify</th>
+<th>Roll back</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip, python3.12, 3.13, 3.14</td>
+<td><code class="nb">Runtime</code> in the IaC</td>
+<td>No: OpenSSL 3.5.8, but the AL2023 crypto policy omits ML-KEM</td>
+<td>Ship <code>pq-tls/openssl-pq.cnf</code> in the package, set
+<code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code>. Fleet option:
+the <code class="nb">pq-tls</code> layer with
+<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code></td>
+<td><code>pq_probe.py</code> against a PQ-only server succeeds;
+CloudTrail <code>tlsDetails.keyExchange = X25519MLKEM768</code> for KMS,
+STS, Secrets Manager calls</td>
+<td>Remove <code>OPENSSL_CONF</code> (layer:
+<code>PQ_TLS_DISABLE=1</code>)</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>Lambda zip, python3.15 (public preview)</td>
+<td>as above</td>
+<td>No, same as 3.14</td>
+<td>Same file and variable; or in code
+<code>ctx.set_groups("X25519MLKEM768:X25519")</code>. Preview runtimes
+are outside the Lambda SLA (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">Lambda
+runtimes</a>)</td>
+<td>as above, plus <code>SSLSocket.group()</code> in logs</td>
+<td>Remove the variable or the call</td>
+<td>Tested (Lambda 3.15 base image, not in e2e)</td>
+</tr>
+<tr>
+<td>Lambda zip, python3.9, 3.10, 3.11</td>
+<td><code class="nb">Runtime</code> in the IaC</td>
+<td>No: Amazon Linux 2, OpenSSL 1.1.1zb, no setting helps</td>
+<td>Upgrade the runtime to python3.13. Bridge until then: the shim
+(<code>PYTHONPATH=/var/task/pq-tls/pyshim</code> plus pyOpenSSL,
+cryptography <strong>and idna</strong>), or the <code class="nb">pq-tls</code>
+layer. Covers urllib3, requests and boto3 only</td>
+<td>CloudWatch log line
+<code>pq-tls: python legacy shim: urllib3 -&gt; pyOpenSSL</code>;
+PQ-only probe succeeds</td>
+<td>Remove <code>PYTHONPATH</code> (layer:
+<code>PQ_TLS_DISABLE=1</code>)</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>Lambda container image</td>
+<td><code>FROM public.ecr.aws/lambda/python:3.x</code></td>
+<td>No (3.12+), as the zip</td>
+<td><code class="nb">COPY</code> the file and
+<code>ENV OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code> in the
+Dockerfile</td>
+<td>Run <code>pq_probe.py</code> in the built image in CI</td>
+<td>Redeploy the previous image digest, or override
+<code>OPENSSL_CONF</code> in the function variables</td>
+<td>Tested (e2e, 3.12 and 3.13)</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td><code class="nb">FROM</code> line;
+<code>python3 -c "import ssl; print(ssl.OPENSSL_VERSION)"</code> in the
+image</td>
+<td><code>python:*-slim-trixie</code>, <code>python:*-alpine</code>:
+yes. <code class="nb">-bookworm</code>, Ubuntu 24.04, AL2023: no</td>
+<td>Move to <code>python:3.13-slim-trixie</code> or
+<code class="nb">-alpine</code>. On AL2023:
+<code>ENV OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf</code> (or the task
+definition) or <code>update-crypto-policies --set DEFAULT:PQ</code> in
+the Dockerfile</td>
+<td>PQ-only probe in CI; server:
+<code>probe-server.sh app:8443</code></td>
+<td>Redeploy the previous image digest; remove the task-definition
+variable</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>ECS on EC2, EKS</td>
+<td>as Fargate: the image decides, not the node</td>
+<td>as Fargate</td>
+<td>as Fargate; on EKS the variable goes in the pod spec
+<code class="nb">env</code></td>
+<td>as Fargate</td>
+<td>as Fargate</td>
+<td>ECS on EC2: Tested (e2e). EKS: not run; same images</td>
+</tr>
+<tr>
+<td>EC2, Amazon Linux 2023</td>
+<td><code>update-crypto-policies --show</code>;
+<code>python3.X -c "import ssl; print(ssl.OPENSSL_VERSION)"</code></td>
+<td>No: OpenSSL 3.5.8, policy <code class="nb">DEFAULT</code> omits ML-KEM</td>
+<td>One service:
+<code>Environment=OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf</code> in its
+systemd unit. Whole host:
+<code>update-crypto-policies --set DEFAULT:PQ</code> through SSM, then
+restart services</td>
+<td>PQ-only probe on the host; CloudTrail</td>
+<td>Remove the drop-in, or
+<code>update-crypto-policies --set DEFAULT</code>, then restart</td>
+<td>Tested (e2e, python3.11 to 3.14)</td>
+</tr>
+<tr>
+<td>EC2, Amazon Linux 2</td>
+<td><code>cat /etc/os-release</code></td>
+<td>No, and cannot be: python3.7 with OpenSSL 1.0.2k, TLS 1.2 only</td>
+<td>Migrate the host to AL2023 (AL2 end of life 30 Jun 2026, <a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">Lambda
+runtimes</a>)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>EC2, Ubuntu 24.04 or Debian 12</td>
+<td>as above</td>
+<td>No: OpenSSL 3.0</td>
+<td>Run the service in a trixie or alpine container, or move the OS</td>
+<td>PQ-only probe</td>
+<td>Previous AMI or image</td>
+<td>Debian 12: Tested. Ubuntu 24.04: Documented (ships OpenSSL 3.0)</td>
+</tr>
+</tbody>
+</table>
+<p>Two rules apply on every row:</p>
+<ul>
+<li>If the function, image or unit already sets
+<code>OPENSSL_CONF</code>, merge the <code class="nb">Groups</code> line from
+<code>openssl-pq.cnf</code> into that file. The layer leaves an existing
+<code>OPENSSL_CONF</code> alone, so such a function stays classical
+(Tested, e2e <code>py-lambda-py312-layer-ownconf</code>).</li>
+<li>Don't use <code>OPENSSL_CONF=/dev/null</code>. It does turn PQ on
+(Tested 2026-11-16, Lambda python3.12 and 3.15 images), but it drops the
+whole AL2023 crypto policy, not just the group list (in the Lambda
+python3.12 image the default context lost
+<code>TLS_AES_128_CCM_SHA256</code> and the policy's TLS 1.3 maximum: <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/baseline-default.json">tests/lambda/baseline-default.json</a>
+against <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/baseline-devnull.json">baseline-devnull.json</a>).</li>
+</ul>
+<p>Lambda deadlines: python3.9 was deprecated on 15 Dec 2025, python3.10
+on 31 Oct 2026, and python3.11 is deprecated on 30 Jun 2027. Function
+creation is blocked from 29 Jul 2027 and updates from 31 Aug 2027 for
+all three (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">Lambda
+runtimes</a>, Documented). After that no file, layer or variable can be
+added, so these functions move first.</p>
+<h2 id="ch-04-python--versions-and-native-support">3.3 Versions and native support</h2>
+<p>PQ depends on the OpenSSL under Python, so the same Python version
+gives different answers on Lambda, in a container and on EC2.</p>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th><code class="nb">ssl</code>-family OpenSSL</th>
+<th>PQ by default (client and server)</th>
+<th>Group API</th>
+<th>Proposed solution</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3.9, 3.10, 3.11</td>
+<td>Lambda: 1.1.1zb (AL2). AL2023 (EC2, containers): 3.5.8. trixie:
+3.5.7</td>
+<td>Lambda: no. AL2023: no. trixie: yes</td>
+<td>None; <code>set_ecdh_curve</code> takes one classical curve
+only</td>
+<td>Lambda: upgrade to python3.12+; bridge with the shim (requests,
+boto3 only). AL2023: the config or <code>DEFAULT:PQ</code>. Containers:
+trixie or alpine base</td>
+<td>Tested (Lambda 3.9 to 3.11, AL2023 3.11, trixie 3.11)</td>
+</tr>
+<tr>
+<td>3.12, 3.13, 3.14</td>
+<td>Lambda and AL2023: 3.5.8. trixie: 3.5.7. alpine 3.24: 3.5.9.
+bookworm: 3.0.22</td>
+<td>Lambda, AL2023: no (crypto policy). trixie, alpine: yes. bookworm:
+no</td>
+<td>None</td>
+<td>Lambda and AL2023: <code>OPENSSL_CONF=openssl-pq.cnf</code> or
+<code>DEFAULT:PQ</code>. bookworm: move to trixie</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>3.15 (Lambda: public preview)</td>
+<td>As 3.12</td>
+<td>As 3.12</td>
+<td><code>SSLContext.set_groups()</code>, <code>get_groups()</code>,
+<code>SSLSocket.group()</code></td>
+<td>Platform fix as 3.12;
+<code>set_groups("X25519MLKEM768:X25519")</code> also works without the
+file; log <code class="nb">group()</code></td>
+<td>Tested (trixie 3.15, Lambda 3.15 image)</td>
+</tr>
+<tr>
+<td>Bundled-TLS wheels, any version</td>
+<td>BoringSSL, s2n-tls, static OpenSSL 3.5.8, own libssl, cryptography's
+OpenSSL 4.0.3</td>
+<td>Yes; grpcio server also yes</td>
+<td>Library-specific (<code>ssl.curves.list</code>,
+<code>TlsCipherPref</code>)</td>
+<td>Keep wheels current</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p>FIPS mode for the <code class="nb">ssl</code> family (AL2023 in FIPS mode, or a
+FIPS OpenSSL provider) was not tested; see case G.</p>
+<h3 id="ch-04-python--by-library-does-the-client-offer-ml-kem-to-a-pq-only-server">By
+library (does the client offer ML-KEM to a PQ-only server?)</h3>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Lambda 3.11 (AL2)</th>
+<th>Lambda 3.14</th>
+<th>Lambda 3.14 + conf</th>
+<th>trixie 3.13 / 3.15</th>
+<th>bookworm 3.12</th>
+<th>AL2023 3.12</th>
+<th>AL2023 3.12 + conf</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="nb">ssl</code>, <code>http.client</code>, <code class="nb">urllib</code>,
+requests, urllib3, botocore, httpx, aiohttp, redis-py</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>urllib3 + <code>inject_into_urllib3()</code> (pyOpenSSL)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>pyOpenSSL 26.4.0</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>awscrt 0.38.1 (default and <code>PQ_DEFAULT</code>)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>grpcio 1.85.1 client</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (3.13)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>psycopg 3.3.9 binary, psycopg2-binary 2.9.13</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (3.13)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>confluent-kafka (librdkafka 2.16.0)</td>
+<td>No wheel installed</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (3.13)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>All cells Tested on 2026-11-14 in containers (arm64) against an
+OpenSSL 3.5.7 <code class="nb">s_server</code> limited to X25519MLKEM768 and one
+limited to X25519 (<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/python/run-python.sh">tests/deep/python/run-python.sh</a>,
+outputs in <a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/python/out">tests/deep/python/out</a>). Every
+library also connected to the classical-only server, so fallback works.
+For grpcio, Kafka and Redis the server log confirmed
+<code>Peer Temp Key: X25519MLKEM768</code>; PostgreSQL drivers were
+tested against PostgreSQL 18.7 with
+<code>ssl_groups = 'X25519MLKEM768'</code>.</p>
+<p>Gaps: on the Lambda python3.11 image pip found no confluent-kafka
+wheel. On Python 3.15 (trixie and the Lambda image) pip chose
+<code>confluent-kafka 4.4.0b1</code>, whose build failed to import, so
+Kafka is untested on 3.11 Lambda and on 3.15. The Lambda 3.15 image
+otherwise matched Lambda 3.14.</p>
+<h2 id="ch-04-python--cases-what-to-change">3.4 Cases: what to change</h2>
+<p>Unless a row says otherwise, results here were Tested on 2026-11-14
+in containers (arm64) on Debian 13 trixie with Python 3.12.16 and
+3.13.18 (OpenSSL 3.5.7, no setting), Amazon Linux 2023 with Python
+3.12.15 and <code>OPENSSL_CONF</code> (OpenSSL 3.5.8), and the Lambda
+<code>python:3.11</code> image with the shim (clients only). Test
+servers are OpenSSL 3.5.7 <code class="nb">s_server</code> instances: PQ-only
+(<code>-groups X25519MLKEM768 -tls1_3</code>), classical-only
+(<code>-groups X25519</code>), and the same pair requiring a client
+certificate. A client that reaches the PQ-only server has proved it
+offered X25519MLKEM768. Python servers were probed with
+<code>openssl s_client</code>, which printed
+<code>Negotiated TLS1.3 group: X25519MLKEM768</code>. Scripts and
+outputs: <a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/python/v2">tests/deep/python/v2</a>
+(<code class="nb">run-v2.sh</code>, <code class="nb">cases.py</code>, <code>servers.py</code>,
+<code>out/d312.txt</code>, <code>out/d313.txt</code>,
+<code>out/al-conf.txt</code>, <code>out/l311-shim.txt</code>).</p>
+<h3 id="ch-04-python--a-simple-client">A. Simple client</h3>
+<p><strong>Who this is:</strong> code that calls requests, boto3, httpx,
+aiohttp, urllib or a DB/queue driver with default TLS settings;
+<code>grep -rnE "ssl\.|SSLContext|verify=|cert=" src/</code> finds
+nothing unusual.</p>
+<p><strong>What to change:</strong> the platform fix only (Quick start).
+No code change. Code is needed only to pin the group list (3.15+) or to
+log the negotiated group.</p>
+<table>
+<thead>
+<tr>
+<th>Library (tested version)</th>
+<th>TLS stack</th>
+<th>What to set</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="nb">ssl</code>, <code>http.client</code>,
+<code>urllib.request</code> (3.12, 3.13, 3.15)</td>
+<td>System OpenSSL</td>
+<td>Nothing. On 3.15+ you may call
+<code>ctx.set_groups("X25519MLKEM768:X25519")</code>;
+<code>"X25519MLKEM768"</code> alone refuses classical servers</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>requests 2.34.2, urllib3 2.8.0</td>
+<td>System OpenSSL via <code class="nb">ssl</code></td>
+<td>Nothing. To pin groups on 3.15, pass a context through an
+<code>HTTPAdapter</code> (below)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>boto3 / botocore 1.44.3 (default HTTP path)</td>
+<td>System OpenSSL via <code class="nb">ssl</code></td>
+<td>Nothing. botocore builds its own <code>SSLContext</code>, so
+<code>inject_into_urllib3()</code> alone does not reach it; the Lambda
+shim patches both</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>awscrt 0.38.1 (<code>boto3[crt]</code>, S3 transfer manager)</td>
+<td>s2n-tls, bundled</td>
+<td>Nothing: the default policy offered ML-KEM;
+<code>TlsCipherPref.PQ_DEFAULT</code> also works.
+<code>PQ_TLSv1_0_2021_05</code> raises
+<code>AWS_IO_TLS_CIPHER_PREF_UNSUPPORTED</code>. The FIPS policy
+<code>TLSv1_2_2025_07</code> allows only P-256/P-384 per its
+docstring</td>
+<td>Tested; FIPS policy from the docstring</td>
+</tr>
+<tr>
+<td>httpx 0.28.1</td>
+<td>System OpenSSL via <code class="nb">ssl</code></td>
+<td>Nothing. To pin on 3.15: <code>httpx.Client(verify=ctx)</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>aiohttp 3.14.5</td>
+<td>System OpenSSL via <code class="nb">ssl</code></td>
+<td>Nothing. To pin on 3.15: <code>session.get(url, ssl=ctx)</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>pyOpenSSL 26.4.0</td>
+<td>cryptography wheel's OpenSSL (4.0.3)</td>
+<td>Nothing; PQ even on Debian 12 and AL2023 without the config</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>grpcio 1.85.1 (client)</td>
+<td>BoringSSL, bundled</td>
+<td>Nothing. ClientHello listed
+<code>X25519MLKEM768:x25519:secp256r1:secp384r1:secp521r1</code> on
+every image. No Python group setting; <code>OPENSSL_CONF</code> has no
+effect</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>psycopg 3.3.9 <code class="nb">[binary]</code> (libpq 18), psycopg2-binary
+2.9.13 (libpq 17)</td>
+<td>libpq + libssl bundled</td>
+<td>Nothing; use <code>sslmode=verify-full</code>. Connected to
+PostgreSQL 18 with <code>ssl_groups = 'X25519MLKEM768'</code> on every
+image</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>psycopg or psycopg2 built from source, mysqlclient</td>
+<td>System libpq / client library and OpenSSL</td>
+<td>Platform fix, as for the <code class="nb">ssl</code> family</td>
+<td>Unverified (follows from linkage)</td>
+</tr>
+<tr>
+<td>PyMySQL</td>
+<td>System OpenSSL via <code>ssl.create_default_context</code> (read
+from source)</td>
+<td>Platform fix; the MySQL server must also offer ML-KEM</td>
+<td>Source read; handshake not tested</td>
+</tr>
+<tr>
+<td>redis-py 8.1.0</td>
+<td>System OpenSSL via <code class="nb">ssl</code></td>
+<td>Platform fix (<code class="nb">ssl=True</code>, <code>ssl_ca_certs</code>)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>confluent-kafka 2.x (librdkafka 2.16.0)</td>
+<td>OpenSSL 3.5.8, static in the wheel</td>
+<td>Nothing. <code>ssl.curves.list=X25519MLKEM768:X25519</code> also
+works. The broker or Amazon MSK must also accept ML-KEM</td>
+<td>Tested (client); MSK not tested</td>
+</tr>
+</tbody>
+</table>
+<p>Pin the group list for requests on Python 3.15+ (most services do not
+need this):</p>
+<pre class="python"><code>import ssl, requests
+from requests.adapters import HTTPAdapter
+
+class PQAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = ssl.create_default_context()
+        ctx.set_groups(&quot;X25519MLKEM768:X25519&quot;)  # 3.15+; omit X25519 to refuse classical
+        kwargs[&quot;ssl_context&quot;] = ctx
+        return super().init_poolmanager(*args, **kwargs)
+
+s = requests.Session()
+s.mount(&quot;https://&quot;, PQAdapter())</code></pre>
+<p>Log the negotiated group once per dependency at startup (3.15+):
+<code>log.info("tls", extra={"host": host, "group": tls_sock.group()})</code>.</p>
+<h3 id="ch-04-python--b-simple-server">B. Simple server</h3>
+<p><strong>Who this is:</strong> uvicorn, gunicorn, hypercorn or a
+grpcio server that terminates TLS in the Python process: an HTTPS target
+group, an NLB TCP passthrough, in-VPC service-to-service, or gRPC. If an
+ALB, NLB TLS listener, API Gateway or CloudFront terminates TLS, that
+service's security policy sets the client-facing key exchange, not
+Python (guide chapters: Load balancers, Edge and API front doors).</p>
+<p><strong>What to change:</strong> the platform fix only. Python
+servers accept ML-KEM whenever the linked OpenSSL is 3.5+ with ML-KEM in
+its group list; no server flag is needed. A server without ML-KEM still
+serves PQ-capable clients over X25519, so the failure is silent.</p>
+<table>
+<thead>
+<tr>
+<th>Server (tested version)</th>
+<th>TLS stack</th>
+<th>trixie 3.13 / 3.15</th>
+<th>bookworm 3.12</th>
+<th>AL2023 3.12</th>
+<th>AL2023 + <code>OPENSSL_CONF</code></th>
+<th>Group control in code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uvicorn 0.54.0 (<code>--ssl-certfile</code>)</td>
+<td>System OpenSSL</td>
+<td>PQ</td>
+<td>Classical only</td>
+<td>Classical only</td>
+<td>PQ</td>
+<td>3.15+: build <code class="nb">Config</code>, call <code>config.load()</code>,
+then <code>config.ssl.set_groups(...)</code> (Tested)</td>
+</tr>
+<tr>
+<td>gunicorn 27.0.1 (<code class="nb">certfile</code>)</td>
+<td>System OpenSSL</td>
+<td>PQ</td>
+<td>Classical only</td>
+<td>Classical only</td>
+<td>PQ</td>
+<td>3.15+: <code>ssl_context</code> hook calling <code>set_groups</code>
+(Tested)</td>
+</tr>
+<tr>
+<td>hypercorn 0.18.0 (<code>--certfile</code>)</td>
+<td>System OpenSSL</td>
+<td>PQ</td>
+<td>Classical only</td>
+<td>Classical only</td>
+<td>PQ</td>
+<td>No hook checked; platform only</td>
+</tr>
+<tr>
+<td>grpcio 1.85.1 (<code>ssl_server_credentials</code>)</td>
+<td>BoringSSL, bundled</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>None needed</td>
+</tr>
+</tbody>
+</table>
+<p>All rows Tested with
+<code>openssl s_client -groups X25519MLKEM768 -tls1_3</code> and
+<code>-groups X25519</code>. "Classical only" means the PQ-only client
+was refused with a handshake alert; classical clients connected in every
+cell.</p>
+<ul>
+<li>uvicorn <code>--ssl-ciphers</code> and gunicorn <code class="nb">ciphers</code>
+set TLS 1.2 cipher suites only; they do not affect groups (Tested).</li>
+<li><strong>Enforcing PQ-only</strong> (refusing classical clients)
+needs Python 3.15 <code>set_groups("X25519MLKEM768")</code>. Tested for
+gunicorn and uvicorn; on 3.12 and 3.13 the same hook is a no-op. Only do
+this on internal endpoints whose every client you control.</li>
+<li><strong>Flask</strong> <code>app.run(ssl_context=ctx)</code> takes
+an <code>SSLContext</code> (<a
+href="https://werkzeug.palletsprojects.com/en/stable/serving/">Werkzeug
+docs</a>, Documented), so <code>set_groups</code> should work on 3.15;
+not tested. Not for production. <strong>Django</strong>
+<code class="nb">runserver</code> has no TLS; production Django and FastAPI run
+under the servers above.</li>
+<li><strong>Behind an ALB or NLB TLS listener</strong> (e2e, load
+balancer modelled as the client on the target leg): an
+<code class="nb">ssl</code>-module HTTPS target on AL2023 Python 3.12 or
+<code>python:3.12-slim-bookworm</code> stayed classical;
+<code>OPENSSL_CONF</code>, <code>DEFAULT:PQ</code> or
+<code>python:3.13-slim-trixie</code> gave X25519MLKEM768 with the same
+certificate. The classic backend leg stayed TLS 1.2 in every case
+(Tested, cases <code>srv-python-*</code>).</li>
+</ul>
+<p><code>gunicorn.conf.py</code> hook (full file at the end):</p>
+<pre class="python"><code>def ssl_context(conf, default_ssl_context_factory):
+    ctx = default_ssl_context_factory()
+    if hasattr(ctx, &quot;set_groups&quot;):  # Python 3.15+
+        ctx.set_groups(os.environ.get(&quot;PQ_GROUPS&quot;, &quot;X25519MLKEM768:X25519:secp256r1&quot;))
+    return ctx</code></pre>
+<h3 id="ch-04-python--c-existing-server-certificates-and-key-files">C. Existing server
+certificates and key files</h3>
+<p><strong>Who this is:</strong> a Python server that loads its own
+certificate and key. Find it with:</p>
+<pre class="bash"><code>grep -rnE &quot;load_cert_chain|ssl[-_]keyfile|ssl[-_]certfile|--keyfile|--certfile|keyfile *=|certfile *=|ssl_server_credentials|pkcs12|\.p12|\.pfx&quot; .</code></pre>
+<p><strong>What changes in the store: nothing.</strong> The certificate
+and key sign the handshake; ML-KEM changes only the key exchange. The
+same RSA or EC certificate, encrypted key and PKCS#12 file negotiated
+X25519MLKEM768 once the platform fix was in place. Do not re-issue
+certificates for PQ key exchange; ML-DSA certificates are a separate,
+later step (guide chapter: Certificates (ML-DSA)).</p>
+<p><strong>What to change:</strong> the platform fix only. Two
+exceptions, neither about PQ:</p>
+<ul>
+<li><p><strong>gunicorn with an encrypted key.</strong> gunicorn has no
+key-password option. The master reports
+<code>Listening at: https://...</code>, but every worker fails with
+<code>OSError: [Errno 22] Invalid argument</code> and clients get
+<code>unexpected eof</code> (Tested). Load the key in the
+<code>ssl_context</code> hook with the password from the environment
+(full <code>gunicorn-enc.conf.py</code> at the end):</p>
+<pre class="python"><code>def ssl_context(conf, default_ssl_context_factory):
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)  # the factory loads the key without a password
+    ctx.load_cert_chain(conf.certfile, conf.keyfile, password=os.environ[&quot;TLS_KEY_PASSWORD&quot;])
+    return ctx</code></pre></li>
+<li><p><strong>PKCS#12 / PFX.</strong> The <code class="nb">ssl</code> module
+cannot read PKCS#12, and pyOpenSSL 26.4.0 no longer has
+<code>crypto.load_pkcs12</code> (Tested). Convert with cryptography's
+<code>pkcs12.load_key_and_certificates()</code> at startup
+(<code>p12_to_pem.py</code> at the end) to a tmpfs path readable only by
+the service user, or once at build time with
+<code>openssl pkcs12 -in server.p12 -nodes -out server.pem</code> (key
+mode 0600; add <code class="nb">-aes256</code> and
+<code>load_cert_chain(..., password=...)</code> to keep it
+encrypted).</p></li>
+</ul>
+<p><strong>Tested proof</strong> (<code>out/d312.txt</code>,
+<code>out/d313.txt</code>, <code>out/al-conf.txt</code>; each row: a
+PQ-only client negotiated X25519MLKEM768 and an X25519-only client still
+connected):</p>
+<table>
+<thead>
+<tr>
+<th>Server and store</th>
+<th>Cert served</th>
+<th>Result with the platform fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ssl.SSLContext</code> + <code>load_cert_chain</code>, RSA 2048
+PEM / EC P-256 PEM</td>
+<td>RSA / EC</td>
+<td>X25519MLKEM768; classical client OK</td>
+</tr>
+<tr>
+<td><code>load_cert_chain(..., password=...)</code> (string or
+callable), encrypted RSA and EC</td>
+<td>RSA / EC</td>
+<td>X25519MLKEM768; classical client OK</td>
+</tr>
+<tr>
+<td>RSA and EC in one context (two <code>load_cert_chain</code>
+calls)</td>
+<td>EC to an ECDSA-only client, RSA to an RSA-only client</td>
+<td>X25519MLKEM768 for both</td>
+</tr>
+<tr>
+<td>SNI: <code>sni_callback</code> swaps to a second EC cert</td>
+<td>The cert for the requested name</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>PKCS#12 converted to PEM with cryptography 50.0.2</td>
+<td>EC</td>
+<td>X25519MLKEM768; classical client OK</td>
+</tr>
+<tr>
+<td>uvicorn 0.54.0 <code>--ssl-certfile/--ssl-keyfile</code>, plain and
+<code>--ssl-keyfile-password</code></td>
+<td>RSA / EC</td>
+<td>X25519MLKEM768; classical client OK</td>
+</tr>
+<tr>
+<td>gunicorn 27.0.1 <code>--certfile/--keyfile</code>, plain key</td>
+<td>RSA / EC</td>
+<td>X25519MLKEM768; classical client OK</td>
+</tr>
+<tr>
+<td>gunicorn <code class="nb">--keyfile</code> with an encrypted key</td>
+<td>none</td>
+<td>Workers fail (<code>OSError: [Errno 22]</code>); not a PQ issue</td>
+</tr>
+<tr>
+<td>gunicorn encrypted key through the <code>ssl_context</code>
+hook</td>
+<td>EC</td>
+<td>X25519MLKEM768; classical client OK</td>
+</tr>
+</tbody>
+</table>
+<p>On Debian 12 and on AL2023 without the config the same servers were
+classical-only (<code>tests/deep/python/out/b312.txt</code>,
+<code>out/al.txt</code>): the certificate never made a difference.
+grpcio servers were PQ on every image. Not tested: hypercorn with an
+encrypted key, HSM or KMS keys (case I), Windows.</p>
+<h3 id="ch-04-python--d-custom-ca-trust-private-ca-custom-bundle-system-store">D.
+Custom CA trust (private CA, custom bundle, system store)</h3>
+<p><strong>Who this is:</strong> a client that trusts a private CA (AWS
+Private CA, an internal root, a TLS-inspecting proxy root). Find it
+with:</p>
+<pre class="bash"><code>grep -rnE &quot;REQUESTS_CA_BUNDLE|SSL_CERT_FILE|SSL_CERT_DIR|AWS_CA_BUNDLE|CURL_CA_BUNDLE|cafile=|capath=|load_verify_locations|verify=[&#39;\&quot;/]|certifi|truststore|ca_certs|root_certificates|GRPC_DEFAULT_SSL_ROOTS_FILE_PATH&quot; . ; env | grep -E &quot;CA_BUNDLE|SSL_CERT&quot;</code></pre>
+<p>Also check Dockerfiles for <code>update-ca-certificates</code>,
+<code>update-ca-trust</code> or a PEM appended to certifi's
+<code>cacert.pem</code>.</p>
+<p><strong>What changes in the trust store: nothing.</strong> Trust
+decides which server certificates are accepted; key exchange is
+negotiated apart from it. Every method below kept working against the
+PQ-only server once the platform fix was in place.</p>
+<p><strong>What to change:</strong> the platform fix only. Two things
+that are not PQ issues often surface during the change:</p>
+<ul>
+<li>requests ignores <code>SSL_CERT_FILE</code> and the OS store; it
+uses certifi unless <code>REQUESTS_CA_BUNDLE</code>,
+<code class="nb">verify=</code> or truststore says otherwise. httpx 0.28.1 honours
+<code>SSL_CERT_FILE</code> but not the OS store (both Tested).</li>
+<li>A base-image move (bookworm to trixie, or to AL2023) resets the OS
+store. Re-add the CA in the new Dockerfile: Debian/Ubuntu/Alpine
+<code>COPY corp-root.pem /usr/local/share/ca-certificates/corp-root.crt</code>
++ <code>RUN update-ca-certificates</code>; AL2023
+<code>COPY corp-root.pem /etc/pki/ca-trust/source/anchors/</code> +
+<code>RUN update-ca-trust extract</code>. A CA appended to certifi is
+lost on every <code>pip install -U certifi</code>; prefer
+<code>REQUESTS_CA_BUNDLE</code> or truststore.</li>
+</ul>
+<p><strong>Tested proof, platform fix in place</strong> (Debian 13 3.12
+and 3.13, AL2023 3.12 + <code>OPENSSL_CONF</code>). OK = reached both
+the PQ-only and the classical-only server:</p>
+<table>
+<thead>
+<tr>
+<th>Trust method</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ssl.create_default_context(cafile=ca.pem)</code>,
+<code>SSL_CERT_FILE=ca.pem</code>, CA in the OS store</td>
+<td>OK</td>
+</tr>
+<tr>
+<td>requests <code>REQUESTS_CA_BUNDLE=ca.pem</code>,
+<code>verify="ca.pem"</code>, certifi with the CA appended</td>
+<td>OK</td>
+</tr>
+<tr>
+<td>requests with <code>SSL_CERT_FILE</code> only, or CA only in the OS
+store</td>
+<td>Fails verification on both servers: requests uses certifi (expected,
+not PQ)</td>
+</tr>
+<tr>
+<td><code>truststore.inject_into_ssl()</code> (0.10.5) + requests, CA in
+the OS store; <code>truststore.SSLContext(...)</code></td>
+<td>OK</td>
+</tr>
+<tr>
+<td>httpx <code>verify=ssl.create_default_context(cafile=...)</code>,
+httpx with <code>SSL_CERT_FILE</code></td>
+<td>OK</td>
+</tr>
+<tr>
+<td>httpx with CA only in the OS store</td>
+<td>Fails verification (uses certifi; expected)</td>
+</tr>
+<tr>
+<td>aiohttp <code>ssl=ssl.create_default_context(cafile=...)</code></td>
+<td>OK</td>
+</tr>
+<tr>
+<td>boto3 <code>AWS_CA_BUNDLE=ca.pem</code> (endpoint pointed at the
+test server)</td>
+<td>TLS OK on both servers (the API call then times out: the server is
+not STS)</td>
+</tr>
+<tr>
+<td>Negative control: requests with stock certifi</td>
+<td>Fails verification (proves verification was on)</td>
+</tr>
+</tbody>
+</table>
+<p>On Lambda python3.9 to 3.11 with the shim,
+<code>REQUESTS_CA_BUNDLE</code>, <code class="nb">verify=</code>, an appended
+certifi and boto3 <code>AWS_CA_BUNDLE</code> all keep working, but
+<strong><code>truststore.inject_into_ssl()</code> turns the shim off for
+requests</strong> (case J).</p>
+<h3 id="ch-04-python--e-mutual-tls-client-certificates">E. Mutual TLS (client
+certificates)</h3>
+<p><strong>Who this is:</strong> a client that presents a certificate,
+or a server that requires one.
+<code>grep -rnE "cert=\(|load_cert_chain|client_cert|ssl-cert-reqs|cert_reqs|CERT_REQUIRED|ssl_channel_credentials|require_client_auth" .</code></p>
+<p><strong>What to change:</strong> the platform fix only; client
+certificates and keys are unaffected. With the fix every row completed
+mTLS against a PQ-only server requiring a client certificate and against
+a classical-only one (Tested).</p>
+<table>
+<thead>
+<tr>
+<th>Client or server</th>
+<th>Setting</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>requests</td>
+<td><code>cert=("client.pem", "client.key")</code>,
+<code class="nb">verify=ca</code></td>
+<td>OK; without a cert:
+<code>TLSV13_ALERT_CERTIFICATE_REQUIRED</code></td>
+</tr>
+<tr>
+<td><code class="nb">ssl</code>, httpx 0.28.1, aiohttp 3.14.5</td>
+<td><code>ctx.load_cert_chain(crt, key[, password=...])</code> passed as
+the context</td>
+<td>OK, including an encrypted key</td>
+</tr>
+<tr>
+<td>boto3</td>
+<td><code>Config(client_cert=(crt, key))</code> +
+<code>AWS_CA_BUNDLE</code></td>
+<td>TLS OK (the API call then times out on the test server)</td>
+</tr>
+<tr>
+<td>grpcio 1.85.1 client</td>
+<td><code>grpc.ssl_channel_credentials(root, key, chain)</code></td>
+<td>Server log: <code>Peer Temp Key: X25519MLKEM768</code>,
+<code>Verification: OK</code></td>
+</tr>
+<tr>
+<td><code class="nb">ssl</code> server</td>
+<td><code>verify_mode=CERT_REQUIRED</code> +
+<code>load_verify_locations(ca)</code></td>
+<td>X25519MLKEM768 with the client cert</td>
+</tr>
+<tr>
+<td>uvicorn / gunicorn</td>
+<td><code>--ssl-cert-reqs 2 --ssl-ca-certs ca.pem</code> /
+<code>--cert-reqs 2 --ca-certs ca.pem</code></td>
+<td>X25519MLKEM768 with the client cert</td>
+</tr>
+</tbody>
+</table>
+<p>requests cannot take a password for an encrypted client key; build an
+<code class="nb">ssl</code> context or use httpx. PKCS#12 client stores: convert as
+in case C.</p>
+<h3 id="ch-04-python--f-explicit-tls-settings-that-block-pq">F. Explicit TLS settings
+that block PQ</h3>
+<p><strong>Who this is:</strong> code or config that sets TLS versions,
+curves or ciphers by hand. Find it with <code>ci/pq-tls-lint.sh</code>
+(full file at the end) or:</p>
+<pre class="bash"><code>grep -rnE &quot;set_ecdh_curve|maximum_version|ssl_maximum_version|OP_NO_TLSv1_3|PROTOCOL_TLSv1|set_ciphers|ssl[-_]ciphers|set_groups|ssl\.curves\.list|OPENSSL_CONF&quot; .</code></pre>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>PQ-only peer</th>
+<th>Classical peer</th>
+<th>Change it to</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ctx.set_ciphers("ECDHE+AESGCM:...")</code>, uvicorn
+<code>--ssl-ciphers</code>, gunicorn <code class="nb">ciphers</code></td>
+<td>OK, X25519MLKEM768</td>
+<td>OK</td>
+<td>Nothing (TLS 1.2 suites only)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.minimum_version = TLSVersion.TLSv1_3</code></td>
+<td>OK</td>
+<td>OK</td>
+<td>Nothing</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.maximum_version = TLSVersion.TLSv1_2</code>,
+<code>ctx.options |= ssl.OP_NO_TLSv1_3</code>,
+<code>ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)</code>, urllib3
+<code>ssl_maximum_version=TLSv1_2</code> (client)</td>
+<td>Fails: <code>TLSV1_ALERT_PROTOCOL_VERSION</code></td>
+<td>OK, TLS 1.2</td>
+<td>Remove it; use <code>ssl.create_default_context()</code> or
+<code>PROTOCOL_TLS_CLIENT</code> / <code>PROTOCOL_TLS_SERVER</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.maximum_version = TLSv1_2</code> (server)</td>
+<td>Fails</td>
+<td>Fails for a TLS 1.3-only client</td>
+<td>Remove it</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.set_ecdh_curve("prime256v1")</code> (client or
+server)</td>
+<td>Fails: handshake failure</td>
+<td>Fails against an X25519-only peer too</td>
+<td>Remove it</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.set_ecdh_curve("X25519")</code></td>
+<td>Fails</td>
+<td>OK</td>
+<td>Remove it</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.set_ecdh_curve("X25519MLKEM768")</code></td>
+<td><code>ValueError: unknown elliptic curve name</code></td>
+<td>same</td>
+<td>Use <code>set_groups</code> on 3.15+, else the platform</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>ctx.set_groups(...)</code> (3.15+) or confluent-kafka
+<code>ssl.curves.list</code> without an ML-KEM group</td>
+<td>Fails</td>
+<td>OK</td>
+<td>Put <code>X25519MLKEM768</code> first, keep <code class="nb">X25519</code></td>
+<td><code>set_groups</code> replacing the whole list Tested
+(<code>tests/deep/python/out/t315.txt</code>); the
+<code class="nb">"X25519"</code>-only string not run</td>
+</tr>
+<tr>
+<td>A custom <code>OPENSSL_CONF</code> without a <code class="nb">Groups</code>
+line on AL2023 or Lambda</td>
+<td>Classical</td>
+<td>OK</td>
+<td>Merge the <code class="nb">Groups</code> line from
+<code>openssl-pq.cnf</code></td>
+<td>Tested (e2e <code>py-lambda-py312-layer-ownconf</code>)</td>
+</tr>
+<tr>
+<td><code>OPENSSL_CONF=/dev/null</code> on AL2023 or Lambda</td>
+<td>OK, X25519MLKEM768</td>
+<td>OK</td>
+<td>Point it at <code>openssl-pq.cnf</code> instead:
+<code class="nb">/dev/null</code> drops the whole crypto policy</td>
+<td>Tested 2026-11-16 (Lambda python3.12 and 3.15 images)</td>
+</tr>
+</tbody>
+</table>
+<p><code>set_ecdh_curve</code> is the trap: on OpenSSL 3 it replaces the
+whole group list with one classical curve, so it removes ML-KEM on every
+platform, client or server. The Python docs say it "doesn't apply to
+client sockets" (<a
+href="https://docs.python.org/3.15/library/ssl.html#ssl.SSLContext.set_ecdh_curve">ssl
+docs</a>), but in the tests it did change the client's offer. Old code
+often has it from TLS 1.2 tuning. Removing these settings keeps TLS
+1.2-only peers working, because the defaults still allow TLS 1.2.</p>
+<h3 id="ch-04-python--g-fips-mode">G. FIPS mode</h3>
+<p><strong>Who this is:</strong> AL2023 with FIPS mode enabled
+(<code>fips-mode-setup --check</code>), images with a FIPS OpenSSL
+provider, awscrt with a FIPS policy, or FIPS AWS endpoints.</p>
+<p><strong>What happens today:</strong> not tested for the
+<code class="nb">ssl</code> family; whether the AL2023 FIPS provider offers ML-KEM
+is not confirmed here (guide chapter: Hosts and OS). awscrt's FIPS
+policy <code>TLSv1_2_2025_07</code> lists only P-256 and P-384 in its
+docstring, so no PQ. Whether FIPS AWS endpoints accept ML-KEM was not
+checked here: not sure.</p>
+<p><strong>What to change:</strong> nothing in Python. Treat FIPS paths
+as classical until the platform team confirms ML-KEM in the FIPS
+provider, and record them as exceptions.</p>
+<h3 id="ch-04-python--h-libraries-with-their-own-tls-stack">H. Libraries with their
+own TLS stack</h3>
+<p><strong>Who this is:</strong> grpcio, awscrt, confluent-kafka,
+psycopg <code class="nb">[binary]</code>, psycopg2-binary, pyOpenSSL.
+<code>pip list | grep -Ei '^(grpcio|awscrt|confluent-kafka|psycopg|psycopg2-binary|pyopenssl|cryptography) '</code>.</p>
+<p><strong>What happens today:</strong> PQ on every base image,
+including Debian 12 and AL2023 without the config (Tested, library
+table). The platform fix has no effect on them, and
+<code>OPENSSL_CONF</code> does not reach BoringSSL or s2n.</p>
+<p><strong>What to change:</strong> keep the wheels current. Building
+from source (<code>psycopg[c]</code>, <code class="nb">psycopg2</code>,
+<code>mysqlclient</code>) links the system OpenSSL and follows the
+<code class="nb">ssl</code> family (Unverified, from linkage). grpcio custom trust
+goes through <code>root_certificates=</code> or
+<code>GRPC_DEFAULT_SSL_ROOTS_FILE_PATH</code>, not
+<code>SSL_CERT_FILE</code>.</p>
+<p><strong>Side effect:</strong> one process can be PQ on gRPC and
+classical on requests at the same time. Inventory by library, not by
+service.</p>
+<h3 id="ch-04-python--i-pinning-hsmpkcs11-and-kms-backed-keys">I. Pinning, HSM/PKCS#11
+and KMS-backed keys</h3>
+<ul>
+<li><strong>Certificate pinning:</strong> unaffected. A pin on the
+SHA-256 of the peer certificate matched on the PQ-only server (Tested).
+Re-pin only when certificates change, for example to ML-DSA.</li>
+<li><strong>HSM / PKCS#11 / KMS keys:</strong> the <code class="nb">ssl</code>
+module cannot use them without an OpenSSL provider (for example
+pkcs11-provider) or a TLS-terminating proxy. The key only signs; ML-KEM
+is done in software, so PQ should not change this (Unverified, not
+tested).</li>
+</ul>
+<h3 id="ch-04-python--j-other-cases">J. Other cases</h3>
+<p><strong>Lambda 3.9 to 3.11 shim with custom trust or mTLS</strong>
+(Lambda <code>python:3.11</code> image, OpenSSL 1.1.1zb,
+<code>PYTHONPATH=/kit/pyshim</code>; Python 3.11.18, cryptography 50.0.2
+with OpenSSL 4.0.3, pyOpenSSL 26.4.0, truststore 0.10.5; Tested
+2026-11-14, <code>out/l311-shim.txt</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>PQ-only server</th>
+<th>Classical server</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>requests with <code>REQUESTS_CA_BUNDLE</code>, <code class="nb">verify=</code>,
+appended certifi, or <code>cert=(crt, key)</code></td>
+<td>OK</td>
+<td>OK</td>
+<td>Shim log:
+<code>urllib3 -&gt; pyOpenSSL (OpenSSL 4.0.3 ...)</code></td>
+</tr>
+<tr>
+<td>boto3 <code>AWS_CA_BUNDLE</code>,
+<code>Config(client_cert=...)</code></td>
+<td>TLS OK</td>
+<td>TLS OK</td>
+<td>Shim log: <code>botocore -&gt; pyOpenSSL</code></td>
+</tr>
+<tr>
+<td>grpcio mTLS</td>
+<td>OK (<code>Peer Temp Key: X25519MLKEM768</code>)</td>
+<td></td>
+<td>BoringSSL; no shim needed</td>
+</tr>
+<tr>
+<td><strong>truststore <code>inject_into_ssl()</code> +
+requests</strong></td>
+<td><strong>Fails</strong></td>
+<td>OK</td>
+<td>truststore puts requests back on the stdlib context (OpenSSL 1.1.1).
+Use <code>REQUESTS_CA_BUNDLE</code> instead</td>
+</tr>
+<tr>
+<td>raw <code class="nb">ssl</code>, <code>http.client</code>, httpx, aiohttp</td>
+<td>Fails</td>
+<td>OK</td>
+<td>Not covered by the shim, also when loaded by the layer (e2e
+<code>py-lambda-py311-layer-stdlib</code>). Upgrade to python3.12+</td>
+</tr>
+<tr>
+<td>urllib3 <code>ssl_maximum_version=TLSv1_2</code></td>
+<td>Fails</td>
+<td>OK</td>
+<td>Case F applies through the shim too</td>
+</tr>
+</tbody>
+</table>
+<p><strong>stdlib clients on Lambda 3.9 to 3.11.</strong> The interim
+option is the <code class="nb">pq-egress</code> extension: the function sends plain
+HTTP to <code>http://127.0.0.1:2779/&lt;route&gt;/&lt;path&gt;</code>
+and the extension makes the TLS connection with X25519MLKEM768 (Tested
+in e2e on python3.9 to 3.14, and for <code>http.client</code> on 3.11
+through the combined layer). Not tested for AWS SDK calls (SigV4 signs
+the host name) or on real AWS. Source: <a
+href="https://github.com/moolivkkr/PQC/tree/main/e2e/lambda/extension/pq-egress">e2e/lambda/extension/pq-egress</a>.</p>
+<p><strong>HTTPS proxy (<code>HTTPS_PROXY</code>).</strong> With a
+CONNECT proxy TLS runs end to end, so the client's PQ setting applies. A
+TLS-inspecting proxy terminates TLS and decides both legs (guide
+chapter: Network devices and egress). Not tested.</p>
+<p><strong>WebSockets, HTTP/2.</strong> <code>websockets</code>, aiohttp
+WebSockets and h2/httpx HTTP/2 use the <code class="nb">ssl</code> module: platform
+fix only (Unverified for websockets).</p>
+<p><strong>Service mesh sidecar.</strong> If Envoy or Linkerd originates
+mTLS for the pod, the sidecar decides (guide chapter: Service mesh). The
+app's own TLS still follows this chapter.</p>
+<p><strong>Child processes.</strong> <code>OPENSSL_CONF</code> is
+inherited by <code>subprocess</code>, the AWS CLI and curl. Programs
+that link GnuTLS (Debian curl and git builds) get no ML-KEM at all
+(Tested 2026-11-14).</p>
+<h2 id="ch-04-python--solution-and-automation">3.5 Solution and automation</h2>
+<h3 id="ch-04-python--step-1-inventory-and-detect">Step 1: inventory and detect</h3>
+<ol type="1">
+<li><p><strong>Platform per service</strong>, inside the deployed image
+with the deployed env:</p>
+<pre class="bash"><code>python3 -c &quot;import ssl,os; print(ssl.OPENSSL_VERSION, os.environ.get(&#39;OPENSSL_CONF&#39;))&quot;
+cat /etc/os-release | head -2; (update-crypto-policies --show 2&gt;/dev/null || true)
+pip list | grep -Ei &#39;^(grpcio|awscrt|confluent-kafka|psycopg|psycopg2-binary|pyopenssl|cryptography|truststore|certifi) &#39;</code></pre></li>
+<li><p><strong>Cases C to F:</strong> run the grep line from each case
+over the app repo and the deployment repo (Dockerfiles, task
+definitions, Helm values).</p></li>
+<li><p><strong>Live:</strong> <code>pq_probe.py</code> against a PQ-only
+test server from inside the image (How to test).</p></li>
+</ol>
+<h3 id="ch-04-python--step-2-change-packaging-per-compute-type">Step 2: change
+(packaging per compute type)</h3>
+<p>The Quick start table gives the change per row. Details that matter
+when you build it:</p>
+<p><strong>Lambda zip, python3.12+.</strong> Put the file in the package
+and set the variable (full SAM, CloudFormation and Terraform templates
+at the end):</p>
+<pre class="text"><code>build/
+  app.py
+  pq-tls/openssl-pq.cnf      # keeps the AL2023 policy, changes only the group list
+  &lt;your dependencies&gt;</code></pre>
+<pre class="yaml"><code>      Runtime: python3.13
+      Environment:
+        Variables:
+          OPENSSL_CONF: /var/task/pq-tls/openssl-pq.cnf</code></pre>
+<p>Fleet option without repackaging: the <code class="nb">pq-tls</code> layer with
+<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code> sets
+<code>OPENSSL_CONF</code> on python3.12+ and the shim on 3.9 to 3.11. It
+leaves a function's own <code>OPENSSL_CONF</code> alone, and chains an
+existing wrapper (Datadog, OpenTelemetry) through
+<code>PQ_TLS_NEXT_WRAPPER</code> (both Tested, e2e).</p>
+<p><strong>Lambda zip, python3.9 to 3.11 bridge.</strong> Add
+<code>pq-tls/pyshim/sitecustomize.py</code> and install pyOpenSSL,
+cryptography <strong>and idna</strong> inside the Lambda image of the
+same Python version and architecture:</p>
+<pre class="bash"><code>docker run --rm --entrypoint sh -v &quot;$PWD/build:/out&quot; public.ecr.aws/lambda/python:3.11 \
+  -c &#39;pip install --target /out cryptography==50.0.2 pyOpenSSL==26.4.0 idna==3.20&#39;</code></pre>
+<p>Set <code>PYTHONPATH=/var/task/pq-tls/pyshim</code>. For a layer,
+install into <code>python/lib/python3.X/site-packages</code>.</p>
+<ul>
+<li><strong><code class="nb">idna</code> is required.</strong> pyOpenSSL's urllib3
+integration imports it and the Lambda runtime does not ship it. Without
+it the shim still logs <code>urllib3 -&gt; pyOpenSSL</code>, then every
+urllib3, requests and boto3 request raises
+<code>No module named 'idna'</code> (Tested, e2e
+<code>py-lambda-py311-shim-noidna</code>).</li>
+<li><strong>Build once per Python version.</strong> The cryptography
+wheel pip picks on 3.11 fails to import on 3.9 and 3.10
+(<code>PyType_GetName</code>), and
+<code>pip install --platform manylinux2014_...</code> hides cryptography
+50.x. Installing inside each version's image avoids both (Tested).</li>
+<li><strong>Size:</strong> the bridge adds about 18 MB unpacked, 6 MB
+zipped (cryptography, cffi, pycparser, pyOpenSSL, idna; measured from
+the e2e <code>probe-shim-py311.zip</code>: 17,983,187 bytes unpacked
+against 28,647 for the probe alone).</li>
+</ul>
+<p><strong>Lambda container image</strong> (full
+<code>Dockerfile.lambda</code> at the end):</p>
+<pre class="dockerfile"><code>COPY pq-tls/openssl-pq.cnf ${LAMBDA_TASK_ROOT}/pq-tls/openssl-pq.cnf
+ENV OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code></pre>
+<p><strong>Fargate, ECS on EC2, EKS.</strong> Pick the base image first;
+the Python version matters much less.</p>
+<table>
+<thead>
+<tr>
+<th>Base image</th>
+<th>OpenSSL</th>
+<th><code class="nb">ssl</code> family PQ out of the box</th>
+<th>Action</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python:3.x-slim-trixie</code> (Debian 13)</td>
+<td>3.5.7</td>
+<td>Yes</td>
+<td>None</td>
+<td>Tested (3.11, 3.12, 3.13, 3.15)</td>
+</tr>
+<tr>
+<td><code>python:3.x-alpine</code> (Alpine 3.24)</td>
+<td>3.5.9</td>
+<td>Yes</td>
+<td>None</td>
+<td>Tested (3.12)</td>
+</tr>
+<tr>
+<td><code>python:3.x-slim-bookworm</code> (Debian 12)</td>
+<td>3.0.22</td>
+<td>No</td>
+<td>Move to trixie or alpine; nothing adds ML-KEM to OpenSSL 3.0</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>amazonlinux:2023</code> + <code>python3.11</code> to
+<code>python3.14</code></td>
+<td>3.5.8</td>
+<td>No: crypto policy omits ML-KEM</td>
+<td><code>ENV OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf</code> with the
+file, or <code>update-crypto-policies --set DEFAULT:PQ</code> in the
+Dockerfile</td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>Ubuntu 24.04</td>
+<td>3.0.x</td>
+<td>No</td>
+<td>Move to one of the above</td>
+<td>Documented</td>
+</tr>
+</tbody>
+</table>
+<p>The variable can live in the task definition
+(<code>environment</code>) or pod spec (<code class="nb">env</code>) instead of the
+image. Add a build-time guard so an image regression fails CI:</p>
+<pre class="dockerfile"><code>RUN python -c &quot;import ssl,sys; sys.exit(0 if ssl.OPENSSL_VERSION_INFO &gt;= (3,5) else &#39;OpenSSL &lt; 3.5&#39;)&quot;</code></pre>
+<p>On AL2023 the version guard is not enough (3.5.8 is classical by
+default): also run <code>pq_probe.py</code> against a PQ-only server in
+CI.</p>
+<p><strong>EC2.</strong> AL2023: one service
+(<code>Environment=OPENSSL_CONF=/etc/pq-tls/openssl-pq.cnf</code> in its
+systemd unit) or the whole host (SSM document running
+<code>update-crypto-policies --set DEFAULT:PQ</code>, then restart
+services); both files at the end, host-wide details in the guide chapter
+Hosts and OS. On AL2023 EC2 <code>python3.11</code> links the system
+OpenSSL 3.5.8, unlike Lambda's python3.11, so the same fix works
+(Tested, e2e). AL2, Ubuntu 24.04 and Debian 12 hosts cannot be fixed in
+place.</p>
+<p>When you change the base image, carry over the OS trust-store step
+(case D) and any key-password plumbing (case C).</p>
+<h3 id="ch-04-python--step-3-ci-guardrails">Step 3: CI guardrails</h3>
+<ul>
+<li><strong>Lint:</strong> <code>sh ci/pq-tls-lint.sh src/</code> fails
+the build on the case F settings (full file at the end). Tested: it
+flagged <code>maximum_version=TLSv1_2</code>,
+<code>OP_NO_TLSv1_3</code>, <code>PROTOCOL_TLSv1_2</code>,
+<code>set_ecdh_curve</code> and <code>ssl_maximum_version</code>, and
+passed <code>set_groups("X25519MLKEM768:X25519")</code>. Mark a reviewed
+line with <code># pq-tls: allow</code>.</li>
+<li><strong>Image gate:</strong> the
+<code>OPENSSL_VERSION_INFO &gt;= (3,5)</code> line above; on AL2023 also
+<code>RUN test "$OPENSSL_CONF" = /etc/pq-tls/openssl-pq.cnf</code>.</li>
+<li><strong>Handshake gate:</strong> start <code>pq-harness.sh</code> as
+a service container and run <code>pq_probe.py pqsrv:8443</code> and, for
+servers, <code>probe-server.sh app:8443</code> inside the built image.
+Both must pass.</li>
+<li><strong>Policy:</strong> deny base images
+<code>python:*-bookworm</code>, <code>ubuntu:24.04</code> and
+<code>amazonlinux:2</code> and <code>OPENSSL_CONF=/dev/null</code> in
+your image and pod policy (guide chapter: Enforcement and
+guardrails).</li>
+</ul>
+<h2 id="ch-04-python--how-to-test">3.6 How to test</h2>
+<p>Run in the same image, env and user as the service. Steps 1 to 6 need
+no AWS account.</p>
+<ol type="1">
+<li><strong>Posture.</strong> Step 1 commands above. <code class="nb">ssl</code>
+family: OpenSSL 3.5 or later, and on AL2023 <code>OPENSSL_CONF</code>
+set or <code>update-crypto-policies --show</code> =
+<code>DEFAULT:PQ</code>. Bundled wheels: compare versions with the
+library table.</li>
+<li><strong>Start the harness.</strong> <code>pq-harness.sh</code> (full
+file at the end) starts a PQ-only server on 8443, a classical-only one
+on 8444 and the mTLS pair on 8451/8452, signed by a throw-away CA. Run
+it in <code>python:3.13-slim-trixie</code> or
+<code>debian:trixie-slim</code> on the same Docker network.</li>
+<li><strong>Client (cases A, D).</strong>
+<code>SSL_CERT_FILE=/certs/ca.pem python3 pq_probe.py pqsrv:8443</code>
+must connect (on 3.15 it prints
+<code>RESULT pqsrv:8443 TLSv1.3 group=X25519MLKEM768</code>, Tested);
+before 3.15 the connection itself is the proof. <code>pqsrv:8444</code>
+must also connect (fallback). Repeat with your real trust setting by
+pointing your client code at the harness.</li>
+<li><strong>Server (cases B, C).</strong> Start the server with its real
+cert and key, then <code>sh probe-server.sh app:8443</code>: expect
+<code>Negotiated TLS1.3 group: X25519MLKEM768</code> on the first check
+and a connection on the second.</li>
+<li><strong>mTLS (case E).</strong>
+<code>python3 -c "import requests; print(requests.get('https://pqsrv:8451/', verify='/certs/ca.pem', cert=('/certs/client.pem','/certs/client.key')).status_code)"</code>
+must print 200. For a server that requires client certs:
+<code>sh probe-server.sh app:8443 -cert client.pem -key client.key</code>.</li>
+<li><strong>Settings (case F).</strong>
+<code>sh ci/pq-tls-lint.sh .</code> must print <code class="nb">clean</code>.</li>
+<li><strong>Rollback test.</strong> Remove <code>OPENSSL_CONF</code> (or
+redeploy the old image) in a test environment and rerun step 3: the
+PQ-only probe must now fail and the classical one pass. This proves the
+probe detects a regression.</li>
+<li><strong>In the cloud.</strong> CloudTrail
+<code>tlsDetails.keyExchange</code> shows <code>X25519MLKEM768</code> on
+the workload's calls to KMS, STS, IAM, Secrets Manager, ACM and Payment
+Cryptography (other services don't log it). On 3.15 log
+<code>SSLSocket.group()</code>. On Lambda with the shim, look for
+<code>pq-tls: python legacy shim: urllib3 -&gt; pyOpenSSL</code> and
+<code>botocore -&gt; pyOpenSSL</code> in CloudWatch Logs.</li>
+</ol>
+<h2 id="ch-04-python--rollout-checklist">3.7 Rollout checklist</h2>
+<p>Owner: the service team, unless noted.</p>
+<ol type="1">
+<li><strong>Inventory (platform team).</strong> List every Python
+workload with compute type, runtime or base image, OpenSSL version and
+<code>OPENSSL_CONF</code> (Step 1). Tag each with its Quick start
+row.</li>
+<li><strong>Library check.</strong> For each service, list which
+connections use the <code class="nb">ssl</code> family and which use bundled-TLS
+wheels. Bundled wheels: confirm current versions; nothing else to
+do.</li>
+<li><strong>Settings sweep.</strong> Run <code>ci/pq-tls-lint.sh</code>
+and the case C to F greps. Remove <code>set_ecdh_curve</code>, TLS 1.2
+maximums and <code>OPENSSL_CONF=/dev/null</code>; merge
+<code class="nb">Groups</code> into any existing <code>OPENSSL_CONF</code>
+file.</li>
+<li><strong>Plan the legacy Lambdas first.</strong> python3.9 to 3.11
+functions: schedule the runtime upgrade before 29 Jul 2027 (create
+blocked) and 31 Aug 2027 (update blocked). Use the shim or layer only as
+a bridge, with <code class="nb">idna</code> in the package and no truststore.</li>
+<li><strong>Make the one change</strong> from the Quick start row in a
+branch: file plus variable, base image, or crypto policy. Carry over CA
+and key-password steps if the base image changes.</li>
+<li><strong>Add CI gates:</strong> lint, image guard, and the PQ-only
+and classical-only probe against <code>pq-harness.sh</code>.</li>
+<li><strong>Canary.</strong> Deploy to one task, pod, host or a 10%
+weighted Lambda alias. Watch error rate and latency for a day.</li>
+<li><strong>Confirm the signal.</strong> CloudTrail
+<code>tlsDetails.keyExchange = X25519MLKEM768</code> for that role's
+KMS, STS or Secrets Manager calls, or the <code class="nb">group()</code> log on
+3.15. No signal means not done.</li>
+<li><strong>Check the peers.</strong> For servers, confirm what
+terminates TLS in front (ALB, NLB, API Gateway, CloudFront) and whether
+its policy is PQ. For Kafka, PostgreSQL, MySQL and Redis, confirm the
+server side offers ML-KEM.</li>
+<li><strong>Widen</strong> by account or OU. Record FIPS paths and
+anything left classical as exceptions with an owner and date.</li>
+<li><strong>Keep the rollback</strong> (table below) with the change
+ticket; run the rollback test (How to test, step 7) once in a test
+environment.</li>
+<li><strong>Clean up:</strong> remove the shim and its packages when a
+function reaches python3.12+.</li>
+</ol>
+<h2 id="ch-04-python--pitfalls-and-rollback">3.8 Pitfalls and rollback</h2>
+<ul>
+<li><strong>Silent fallback.</strong> Every failure mode still connects
+with X25519. Only a PQ-only test or a logged group proves the
+change.</li>
+<li><strong>One process, two answers.</strong> On Debian 12 or AL2023
+without the config, requests and boto3 are classical while grpcio,
+awscrt, confluent-kafka and psycopg binary are PQ (Tested).</li>
+<li><strong>A version guard is not enough on AL2023.</strong> OpenSSL
+3.5.8 there is classical until the config or policy changes.</li>
+<li><strong>Building from source changes the answer.</strong>
+<code>psycopg[c]</code>, <code class="nb">psycopg2</code> and
+<code>mysqlclient</code> link the system libraries. New Python versions
+can lag on wheels: on 3.15 pip picked
+<code>confluent-kafka 4.4.0b1</code>, which failed to import.</li>
+<li><strong><code>set_ecdh_curve</code> removes ML-KEM</strong>, client
+or server, on every platform, and rejects <code>X25519MLKEM768</code>
+(Tested). Remove the call; use <code>set_groups</code> on 3.15+.</li>
+<li><strong><code>set_groups</code> replaces the whole list.</strong>
+<code>set_groups("X25519MLKEM768")</code> refuses classical peers
+(Tested). Keep <code class="nb">X25519</code> (and <code class="nb">secp256r1</code> if peers
+need it) unless you mean to enforce.</li>
+<li><strong>TLS 1.2 maximums block PQ:</strong>
+<code>maximum_version</code>, <code>OP_NO_TLSv1_3</code>,
+<code>PROTOCOL_TLSv1_2</code>, urllib3 <code>ssl_maximum_version</code>
+(Tested).</li>
+<li><strong><code>OPENSSL_CONF</code> is process-wide and
+inherited</strong> by child processes. If it is already set, merge the
+<code class="nb">Groups</code> line; the layer will not override it.
+<code class="nb">/dev/null</code> turns PQ on but drops the crypto policy.</li>
+<li><strong><code>DEFAULT:PQ</code> on a host changes every OpenSSL,
+GnuTLS and NSS program.</strong> Prefer the per-service systemd
+<code>Environment=</code> when only one service should change.</li>
+<li><strong>Legacy Lambda shim</strong> covers urllib3, requests and
+boto3 only, needs <code class="nb">idna</code>, must be built per Python version,
+adds about 18 MB unpacked, and is turned off for requests by
+<code>truststore.inject_into_ssl()</code> (all Tested).</li>
+<li><strong>gunicorn with an encrypted key</strong> looks healthy
+(<code>Listening at</code>) but every worker fails. Use the
+<code>ssl_context</code> hook (Tested).</li>
+<li><strong>pyOpenSSL has no <code>load_pkcs12</code>.</strong> Convert
+PKCS#12 with cryptography (Tested on 26.4.0).</li>
+<li><strong>Base-image moves reset the OS trust store,</strong> and
+certifi upgrades drop an appended CA. requests and httpx do not read the
+OS store by default (Tested).</li>
+<li><strong>FIPS</strong> paths (awscrt <code>TLSv1_2_2025_07</code>, a
+FIPS provider) are classical until proven otherwise.</li>
+<li><strong>Python 3.15 on Lambda is a public preview</strong>
+(announced 25 Aug 2026), outside the Lambda SLA (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">Lambda
+runtimes</a>). Don't move production to it for <code>set_groups</code>
+alone.</li>
+</ul>
+<p><strong>Rollback</strong> (each is one change, no code):</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Roll back</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OPENSSL_CONF</code> in Lambda, task definition, pod spec or
+systemd</td>
+<td>Remove the variable and redeploy or restart</td>
+<td>Tested (baseline cases)</td>
+</tr>
+<tr>
+<td><code class="nb">pq-tls</code> layer</td>
+<td><code>PQ_TLS_DISABLE=1</code>, or remove
+<code>AWS_LAMBDA_EXEC_WRAPPER</code></td>
+<td>Tested (e2e <code>py-lambda-py312-layer-disabled</code>)</td>
+</tr>
+<tr>
+<td>Legacy shim</td>
+<td>Remove <code>PYTHONPATH=/var/task/pq-tls/pyshim</code>, or set
+<code>PQ_TLS_DISABLE=1</code></td>
+<td>Tested (baseline cases)</td>
+</tr>
+<tr>
+<td>AL2023 <code>DEFAULT:PQ</code> policy</td>
+<td><code>update-crypto-policies --set DEFAULT</code>, then restart the
+services</td>
+<td>Documented</td>
+</tr>
+<tr>
+<td>Base image moved to trixie or alpine</td>
+<td>Redeploy the previous image digest</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>set_groups</code> in code</td>
+<td>Set <code class="nb">PQ_GROUPS</code> to include <code class="nb">X25519</code>, or remove
+the call</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-04-python--test-evidence">3.9 Test evidence</h2>
+<p><strong>e2e suite, run r1117041043 (2026-11-16, LocalStack Pro
+2026.10.6):</strong> 65 Python cases, all PASS: 59 client cases (Lambda
+35, ECS on Fargate 13, ECS on EC2 3, EC2 8) and 6 load balancer target
+cases. PASS means the observed result matched the expectation in the
+case file; for a baseline case the expectation is "classical". Each
+client case connects to observer listeners: hybrid, PQ-only, mTLS, EC
+certificate, TLS 1.2-only, and three ML-DSA certificate listeners.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Mode</th>
+<th>Cases</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip</td>
+<td>Baseline, python3.9 to 3.14</td>
+<td>6</td>
+<td>Classical X25519; PQ-only server refused</td>
+</tr>
+<tr>
+<td>Lambda zip</td>
+<td>Bundled <code>openssl-pq.cnf</code> + <code>OPENSSL_CONF</code>,
+python3.12 to 3.14</td>
+<td>3</td>
+<td>X25519MLKEM768 on hybrid, PQ-only, mTLS and EC-cert listeners</td>
+</tr>
+<tr>
+<td>Lambda zip</td>
+<td>Bundled shim + pyOpenSSL/cryptography/idna, python3.9 to 3.11</td>
+<td>3</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>Lambda zip</td>
+<td>Shim without <code class="nb">idna</code> (pitfall regression)</td>
+<td>1</td>
+<td>Every request fails with the <code class="nb">idna</code> import error, as
+documented</td>
+</tr>
+<tr>
+<td>Lambda zip</td>
+<td><code class="nb">pq-tls</code> layer: python3.9 to 3.14, combined layer,
+existing wrapper chained</td>
+<td>8</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>Lambda zip</td>
+<td>Layer limits: stdlib <code>http.client</code> on 3.11, function's
+own <code>OPENSSL_CONF</code>, <code>PQ_TLS_DISABLE=1</code></td>
+<td>3</td>
+<td>Classical, as documented</td>
+</tr>
+<tr>
+<td>Lambda zip</td>
+<td><code class="nb">pq-egress</code> extension, python3.9 to 3.14, plus stdlib on
+3.11 via the combined layer</td>
+<td>7</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>Lambda image</td>
+<td><code>public.ecr.aws/lambda/python:3.12</code>, <code class="nb">:3.13</code>,
+baseline and <code>ENV OPENSSL_CONF</code></td>
+<td>4</td>
+<td>Baseline classical; fixed X25519MLKEM768</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>AL2023 python3.11 to 3.14, baseline and task-definition
+<code>OPENSSL_CONF</code></td>
+<td>8</td>
+<td>Baseline classical; fixed X25519MLKEM768</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>AL2023 image with <code>DEFAULT:PQ</code></td>
+<td>1</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td><code>python:3.12-slim-trixie</code>, <code>3.13-slim-trixie</code>,
+<code>3.12-alpine</code>, no change</td>
+<td>3</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td><code>python:3.12-slim-bookworm</code>, no change</td>
+<td>1</td>
+<td>Classical</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>AL2023 python3.12 baseline and <code>OPENSSL_CONF</code>;
+<code>python:3.13-slim-trixie</code></td>
+<td>3</td>
+<td>Classical; X25519MLKEM768; X25519MLKEM768</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>AL2023 python3.11 to 3.14 baseline</td>
+<td>4</td>
+<td>Classical</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>AL2023 one service <code>OPENSSL_CONF</code> (3.12); host
+<code>DEFAULT:PQ</code> (3.11, 3.13)</td>
+<td>3</td>
+<td>X25519MLKEM768</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Amazon Linux 2 python3.7, OpenSSL 1.0.2k</td>
+<td>1</td>
+<td>TLS 1.2 only, P-256; PQ-only refused</td>
+</tr>
+<tr>
+<td>Load balancer target (Fargate, ECS on EC2)</td>
+<td><code class="nb">ssl</code>-module HTTPS server: AL2023 baseline,
+<code>OPENSSL_CONF</code> (2), <code>DEFAULT:PQ</code>, trixie 3.13,
+bookworm 3.12</td>
+<td>6</td>
+<td>PQ backend policy: X25519MLKEM768 for the fixed and trixie servers,
+classical for AL2023 baseline and bookworm. Classic backend policy: TLS
+1.2 everywhere</td>
+</tr>
+</tbody>
+</table>
+<p>What the suite also showed:</p>
+<ul>
+<li>The TLS 1.2-only listener stayed classical in every case: ML-KEM
+needs TLS 1.3.</li>
+<li>ML-DSA certificates were accepted with <code>DEFAULT:PQ</code>, on
+trixie and alpine, and through the shim, but <strong>not</strong> with
+<code>openssl-pq.cnf</code> alone on AL2023 or Lambda: that file changes
+only <code class="nb">Groups</code>, so ML-DSA also needs
+<code>SignatureAlgorithms</code> (guide chapter: Certificates (ML-DSA)).
+The extension cases did not run the ML-DSA listeners.</li>
+</ul>
+<p><strong>Not covered by e2e:</strong> Lambda python3.15 (covered by
+the container tests below), EKS (ECS on EC2 uses the same images), real
+AWS, FIPS mode, and the library-level and case C to F matrices, which
+ran in containers instead.</p>
+<p><strong>Test code and outputs:</strong></p>
+<ul>
+<li>e2e case definitions and expectations: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/python.py">e2e/cases/python.py</a></li>
+<li>e2e client probe (urllib3 path, or <code>http.client</code> with
+<code>PQC_PY_STACK=stdlib</code>): <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/python/probe.py">e2e/clients/python/probe.py</a></li>
+<li>e2e packaging (shim builds per version, the no-idna regression
+package): <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/python.sh">e2e/build/python.sh</a>;
+layers: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/layers.sh">e2e/build/layers.sh</a></li>
+<li>e2e results: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md">e2e/results/latest/summary.md</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/results.json">e2e/results/latest/results.json</a></li>
+<li>Library matrix on Lambda, trixie, bookworm and AL2023 images
+(2026-11-14): <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/python/run-python.sh">tests/deep/python/run-python.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/python/pyclients.py">tests/deep/python/pyclients.py</a>,
+outputs in <a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/python/out">tests/deep/python/out</a></li>
+<li>Cases C to F and the shim with custom trust: <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/python/v2/run-v2.sh">tests/deep/python/v2/run-v2.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/python/v2/cases.py">tests/deep/python/v2/cases.py</a>,
+outputs in <a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/python/v2/out">tests/deep/python/v2/out</a></li>
+<li>Lambda base-image and container checks: <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-py-legacy.sh">tests/lambda/run-py-legacy.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-containers.sh">tests/lambda/run-containers.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/containers.out">tests/lambda/containers.out</a></li>
+<li><code>OPENSSL_CONF=/dev/null</code> on Lambda python3.12 and 3.15
+images (2026-11-16): a one-off run of a stdlib client against PQ-only
+and X25519-only <code class="nb">s_server</code> instances (OpenSSL 3.5.7); both
+images negotiated X25519MLKEM768. The earlier <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-envonly.sh">tests/lambda/run-envonly.sh</a>
+covers the same question through the Lambda emulator.</li>
+</ul>
+<h2 id="ch-04-python--full-configuration-files">3.10 Configuration files</h2>
+<p>The complete files for this chapter are in the repository under <a href="https://github.com/moolivkkr/PQC/tree/main/configs/python"><code>configs/python/</code></a>. This paper shows only the main change from each; copy from the repository, not from the paper. 21 files:</p><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/pq-tls/openssl-pq.cnf"><code>configs/python/pq-tls/openssl-pq.cnf</code></a></td><td><code>pq-tls/openssl-pq.cnf</code> (Lambda python3.12+, Lambda images, AL2023 containers and hosts; Tested)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/pq-tls/pyshim/sitecustomize.py"><code>configs/python/pq-tls/pyshim/sitecustomize.py</code></a></td><td><code>pq-tls/pyshim/sitecustomize.py</code> (Lambda python3.9 to 3.11 bridge only; Tested on Lambda base images 3.9 and 3.11)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/template.yaml"><code>configs/python/template.yaml</code></a></td><td><code>template.yaml</code> (AWS SAM, Lambda zip, python3.13)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/cfn/lambda.yaml"><code>configs/python/cfn/lambda.yaml</code></a></td><td><code>cfn/lambda.yaml</code> (CloudFormation, Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/terraform/lambda.tf"><code>configs/python/terraform/lambda.tf</code></a></td><td><code>terraform/lambda.tf</code> (Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/terraform/lambda-legacy.tf"><code>configs/python/terraform/lambda-legacy.tf</code></a></td><td><code>terraform/lambda-legacy.tf</code> (python3.11 bridge until the upgrade; in CloudFormation or SAM set the same <code>PYTHONPATH</code> variable)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/Dockerfile.lambda"><code>configs/python/Dockerfile.lambda</code></a></td><td><code>Dockerfile.lambda</code> (Lambda container image)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/Dockerfile"><code>configs/python/Dockerfile</code></a></td><td><code>Dockerfile</code> (Fargate / ECS / EKS, Debian 13 trixie: PQ with no extra setting)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/Dockerfile.al2023"><code>configs/python/Dockerfile.al2023</code></a></td><td><code>Dockerfile.al2023</code> (Fargate / ECS / EKS on Amazon Linux 2023)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/ecs/taskdef.json"><code>configs/python/ecs/taskdef.json</code></a></td><td><code>ecs/taskdef.json</code> (Fargate)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/k8s/deployment.yaml"><code>configs/python/k8s/deployment.yaml</code></a></td><td><code>k8s/deployment.yaml</code> (EKS)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/gunicorn.conf.py"><code>configs/python/gunicorn.conf.py</code></a></td><td><code>gunicorn.conf.py</code> (gunicorn terminates TLS; Tested on 3.12, 3.13 and 3.15; set_groups applies on 3.15 only)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/serve_uvicorn.py"><code>configs/python/serve_uvicorn.py</code></a></td><td><code>serve_uvicorn.py</code> (uvicorn terminates TLS with an explicit group list; Tested on 3.15: PQ-first and PQ-only)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/etc/systemd/system/orders.service"><code>configs/python/etc/systemd/system/orders.service</code></a></td><td><code>/etc/systemd/system/orders.service</code> (EC2, AL2023; scope the config to one service)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/ssm/pq-crypto-policy.yaml"><code>configs/python/ssm/pq-crypto-policy.yaml</code></a></td><td><code>ssm/pq-crypto-policy.yaml</code> (SSM Command document for AL2023 hosts; run from a State Manager association)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/pq_probe.py"><code>configs/python/pq_probe.py</code></a></td><td><code>pq_probe.py</code> (posture and live check; run inside the same image, env and user as the service; Tested on 3.15)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/gunicorn-enc.conf.py"><code>configs/python/gunicorn-enc.conf.py</code></a></td><td><code>gunicorn-enc.conf.py</code> (gunicorn with an encrypted key; Tested on 3.12, 3.13, AL2023 3.12 + config)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/p12_to_pem.py"><code>configs/python/p12_to_pem.py</code></a></td><td><code>p12_to_pem.py</code> (convert a PKCS#12/PFX at startup; Tested with cryptography 50.0.2: the converted pair served X25519MLKEM768, key file mode 0600)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/ci/pq-tls-lint.sh"><code>configs/python/ci/pq-tls-lint.sh</code></a></td><td><code>ci/pq-tls-lint.sh</code> (CI guardrail for case F; Tested)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/pq-harness.sh"><code>configs/python/pq-harness.sh</code></a></td><td><code>pq-harness.sh</code> (PQ-only, classical-only and mTLS test servers; Tested as <code class="nb">srv2.sh</code> + <code>mkcerts.sh</code>)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/python/probe-server.sh"><code>configs/python/probe-server.sh</code></a></td><td><code>probe-server.sh</code> (server-side check; Tested as the probe in <code class="nb">run-v2.sh</code>)</td></tr></tbody></table>
+
+<h1 id="ch-tests-python">4 Test evidence and test cases</h1>
+<p>Run r1117041043 (2026-11-16), LocalStack Pro end-to-end suite. Each
+case deploys the runtime and fix on real Lambda, ECS or EC2 resources in
+LocalStack and connects to a TLS observer; PASS means the observed
+result matched the expectation in the case file (a baseline that stays
+classical as documented passes). Not run on real AWS or x86_64.</p>
+<h2 id="ch-tests-python--summary">4.1 Summary</h2>
+<p>59 client cases and 6 load balancer target cases; 65 passed.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>PQ on <code class="nb">hybrid</code></th>
+<th>Connected to <code class="nb">pqonly</code></th>
+<th>Runtimes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda</td>
+<td>35</td>
+<td>23</td>
+<td>23</td>
+<td>image, python3.10, python3.11, python3.12, python3.13, python3.14,
+python3.9</td>
+</tr>
+<tr>
+<td>ECS Fargate</td>
+<td>13</td>
+<td>8</td>
+<td>8</td>
+<td>pqc-python:al2023 python3.11, pqc-python:al2023 python3.12,
+pqc-python:al2023 python3.13, pqc-python:al2023 python3.14,
+pqc-python:al2023-policy python3.12, pqc-python:lib-3.12-alpine python,
+pqc-python:lib-3.12-slim-bookworm python,
+pqc-python:lib-3.12-slim-trixie python and 1 more</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>3</td>
+<td>2</td>
+<td>2</td>
+<td>pqc-python:al2023 python3.12, pqc-python:lib-3.13-slim-trixie
+python</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>8</td>
+<td>3</td>
+<td>3</td>
+<td>pqc-al2 python3, pqc-al2023 python3.11, pqc-al2023 python3.12,
+pqc-al2023 python3.13, pqc-al2023 python3.14</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What the cases vary:</strong> no change: the runtime's
+default (expected classical where the paper says so) (21); the
+<code class="nb">pq-tls</code> layer and <code>AWS_LAMBDA_EXEC_WRAPPER</code> (11);
+kit files bundled in the Lambda package (7); the <code class="nb">pq-egress</code>
+Lambda extension (7); OpenSSL config file and <code>OPENSSL_CONF</code>
+(6); <code>update-crypto-policies --set DEFAULT:PQ</code> (image or
+host) (3); Lambda container image, unchanged (2); Lambda container image
+with the fix in the Dockerfile (2).</p>
+<p><strong>ML-DSA:</strong> 14 used ML-DSA on all three targets; 37 got
+ECDSA from the dual server and failed the ML-DSA-only targets; 1 failed
+every target for reasons unrelated to ML-DSA.</p>
+<p><strong>Load balancer target leg:</strong> 6 servers (ecs-ec2,
+ecs-fargate); 4 negotiated PQ with the ALB's PQ backend policy (the rest
+are baselines); 6 of 6 negotiated classical TLS 1.2 with the classic
+policy.</p>
+<table>
+<thead>
+<tr>
+<th>Test component</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case definitions (one entry per case, with its expectation)</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/python.py">e2e/cases/python.py</a></td>
+</tr>
+<tr>
+<td>Probe deployed in every case</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/python/probe.py">e2e/clients/python/probe.py</a></td>
+</tr>
+<tr>
+<td>Build and deploy script</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/python.sh">e2e/build/python.sh</a></td>
+</tr>
+<tr>
+<td>Load balancer target server</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/server.py">e2e/clients/server/server.py</a></td>
+</tr>
+<tr>
+<td>Earlier tests: existing certificates, keystores, libraries
+(containers)</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/python">tests/deep/python/</a></td>
+</tr>
+<tr>
+<td>Earlier tests: Lambda base images under the Runtime Interface
+Emulator</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/client.py">tests/lambda/client.py</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-matrix.sh">tests/lambda/run-matrix.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-py-legacy.sh">tests/lambda/run-py-legacy.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/al2023-python-test.sh">tests/lambda/al2023-python-test.sh</a></td>
+</tr>
+<tr>
+<td>Configuration and test harness files from the chapter</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/configs/python">configs/python/</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-python--every-client-case">4.2 Every client case</h2>
+<p>Cells: what the client negotiated with each target (hybrid, PQ-only,
+mutual TLS, TLS 1.2 only) and the certificate it got from the dual
+ML-DSA/ECDSA server.</p>
+<h3 id="ch-tests-python--lambda-35-cases">Lambda (35 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>py-lambda-image-py312-baseline</code></td>
+<td>3.12.16</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-image-py312-fixed</code></td>
+<td>3.12.16</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-image-py313-baseline</code></td>
+<td>3.13.18</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-image-py313-fixed</code></td>
+<td>3.13.18</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py310-baseline</code></td>
+<td>3.10.22</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py310-bundled-shim</code></td>
+<td>3.10.22</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py310-extension</code></td>
+<td>3.10.22</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py310-layer</code></td>
+<td>3.10.22</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-baseline</code></td>
+<td>3.11.18</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-bundled-shim</code></td>
+<td>3.11.18</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-combined-ext-stdlib</code></td>
+<td>3.11.18</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-extension</code></td>
+<td>3.11.18</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-layer</code></td>
+<td>3.11.18</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-layer-stdlib</code></td>
+<td>3.11.18</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py311-shim-noidna</code></td>
+<td>3.11.18</td>
+<td>bundled</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-baseline</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-bundled-conf</code></td>
+<td>3.12.16</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-extension</code></td>
+<td>3.12.16</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-layer</code></td>
+<td>3.12.16</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-layer-chain</code></td>
+<td>3.12.16</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-layer-disabled</code></td>
+<td>3.12.16</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py312-layer-ownconf</code></td>
+<td>3.12.16</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py313-baseline</code></td>
+<td>3.13.18</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py313-bundled-conf</code></td>
+<td>3.13.18</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py313-combined-wrapper</code></td>
+<td>3.13.18</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py313-extension</code></td>
+<td>3.13.18</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py313-layer</code></td>
+<td>3.13.18</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py314-baseline</code></td>
+<td>3.14.10</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py314-bundled-conf</code></td>
+<td>3.14.10</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py314-extension</code></td>
+<td>3.14.10</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py314-layer</code></td>
+<td>3.14.10</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py39-baseline</code></td>
+<td>3.9.23</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py39-bundled-shim</code></td>
+<td>3.9.23</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py39-extension</code></td>
+<td>3.9.23</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-lambda-py39-layer</code></td>
+<td>3.9.23</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-python--ecs-fargate-13-cases">ECS Fargate (13 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>py-fargate-al2023-py311-baseline</code></td>
+<td>3.11.18</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py311-conf</code></td>
+<td>3.11.18</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py312-baseline</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py312-conf</code></td>
+<td>3.12.16</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py312-policy</code></td>
+<td>3.12.16</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py313-baseline</code></td>
+<td>3.13.18</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py313-conf</code></td>
+<td>3.13.18</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py314-baseline</code></td>
+<td>3.14.10</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-al2023-py314-conf</code></td>
+<td>3.14.10</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-lib-312-alpine</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-lib-312-slim-bookworm</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-lib-312-slim-trixie</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-fargate-lib-313-slim-trixie</code></td>
+<td>3.13.18</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-python--ecs-on-ec2-3-cases">ECS on EC2 (3 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>py-ecsec2-al2023-py312-baseline</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ecsec2-al2023-py312-conf</code></td>
+<td>3.12.16</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ecsec2-lib-313-slim-trixie</code></td>
+<td>3.13.18</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-python--ec2-8-cases">EC2 (8 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>py-ec2-al2-py3-baseline</code></td>
+<td>3.7.16</td>
+<td>baseline</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py311-baseline</code></td>
+<td>3.11.18</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py311-host-policy</code></td>
+<td>3.11.18</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py312-baseline</code></td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py312-service-conf</code></td>
+<td>3.12.16</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py313-baseline</code></td>
+<td>3.13.18</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py313-host-policy</code></td>
+<td>3.13.18</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>py-ec2-al2023-py314-baseline</code></td>
+<td>3.14.10</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-python--load-balancer-target-cases-6">4.3 Load balancer target cases
+(6)</h2>
+<p>The workload is the HTTPS server; the observer connects like an ALB
+with the PQ backend policy (alb-pq) or the classic one
+(alb-classic).</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Compute</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>alb-pq</th>
+<th>alb-classic</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>srv-python-ecsec2-al2023-py312-conf</code></td>
+<td>ecs-ec2</td>
+<td>3.12.16</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-python-fargate-al2023-py312-baseline</code></td>
+<td>ecs-fargate</td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-python-fargate-al2023-py312-conf</code></td>
+<td>ecs-fargate</td>
+<td>3.12.16</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-python-fargate-al2023-py312-policy</code></td>
+<td>ecs-fargate</td>
+<td>3.12.16</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-python-fargate-bookworm-py312</code></td>
+<td>ecs-fargate</td>
+<td>3.12.16</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-python-fargate-trixie-py313</code></td>
+<td>ecs-fargate</td>
+<td>3.13.18</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+</body></html>

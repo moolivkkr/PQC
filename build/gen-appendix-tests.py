@@ -3,7 +3,7 @@
 Usage: python3 -I build/gen-appendix-tests.py <pqc repo dir>
 Links use REPO/<path>; build/combine.py turns them into repository links.
 """
-import collections, json, os, sys
+import collections, json, os, re, sys
 
 R = sys.argv[1]
 res = json.load(open(os.path.join(R, "e2e/results/latest/results.json")))
@@ -161,4 +161,47 @@ out.append(f"""## Infrastructure, detection and enforcement
 - Ruby, PHP and Rust; JDK 25 builds other than Corretto and Temurin; the `pq-egress` extension for AWS SDK calls.
 """)
 open(os.path.join(R, "src/24-appendix-tests.md"), "w").write("\n".join(out))
+
+# one test chapter per language document: the language's section above plus every case
+CELL = lambda x, t: (lambda c: "—" if not c else ("**PQ**" if c.get("pq") else (
+    "classical 1.2" if c.get("tls_version") == "TLSv1.2" else "classical")) if c.get("ok") else "fail")(
+    (x["targets"].get(t) or {}).get("client"))
+MD_CELL = {"full": "**ML-DSA**", "server": "ML-DSA (server only)", "ecdsa": "ECDSA", "fail": "fail", None: "—"}
+text = "\n".join(out)
+for lang, (name, *_r) in LANG.items():
+    a = text.index(f"## {name}\n")
+    b = text.index("\n## ", a + 5)
+    sec = text[a:b].replace(f"## {name}\n", "", 1)
+    sec = re.sub(r"Detail: \[[^\]]+\]\(#[^)]+\)\. ", "", sec)
+    lines = [f"# Test evidence and test cases\n\nRun {run} (2026-11-16), LocalStack Pro end-to-end suite. "
+             "Each case deploys the runtime and fix on real Lambda, ECS or EC2 resources in LocalStack and connects "
+             "to a TLS observer; PASS means the observed result matched the expectation in the case file (a baseline "
+             "that stays classical as documented passes). Not run on real AWS or x86_64.\n",
+             "## Summary\n", sec.strip() + "\n",
+             "## Every client case\n\nCells: what the client negotiated with each target (hybrid, PQ-only, mutual TLS, "
+             "TLS 1.2 only) and the certificate it got from the dual ML-DSA/ECDSA server.\n"]
+    for c, cn in COMP:
+        cs = sorted((x for x in cl if x["lang"] == lang and x["compute"] == c), key=lambda x: x["id"])
+        if not cs:
+            continue
+        lines.append(f"### {cn} ({len(cs)} cases)\n")
+        lines.append("| Case | Runtime | Mode | hybrid | pqonly | mtls | tls12 | ML-DSA dual | Verdict |\n"
+                     "| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        for x in cs:
+            md = mldsa(x)
+            md_s = {"full": "**ML-DSA**", "server": "**ML-DSA**"}.get(md, MD_CELL.get(md))
+            lines.append(f"| `{x['id']}` | {x.get('runtime') or x.get('runtime_label') or ''} | {x['mode']} | "
+                         f"{CELL(x, 'hybrid')} | {CELL(x, 'pqonly')} | {CELL(x, 'mtls')} | {CELL(x, 'tls12')} | "
+                         f"{md_s} | {x['verdict']} |")
+        lines.append("")
+    ss = sorted((x for x in srv if x["lang"] == lang), key=lambda x: x["id"])
+    if ss:
+        lines.append(f"## Load balancer target cases ({len(ss)})\n\nThe workload is the HTTPS server; the observer "
+                     "connects like an ALB with the PQ backend policy (alb-pq) or the classic one (alb-classic).\n")
+        lines.append("| Case | Compute | Runtime | Mode | alb-pq | alb-classic | Verdict |\n| --- | --- | --- | --- | --- | --- | --- |")
+        for x in ss:
+            lines.append(f"| `{x['id']}` | {x['compute']} | {x.get('runtime') or ''} | {x['mode']} | "
+                         f"{CELL(x, 'alb-pq')} | {CELL(x, 'alb-classic')} | {x['verdict']} |")
+    open(os.path.join(R, f"src/lang/tests-{'nodejs' if lang == 'node' else lang}.md"), "w").write("\n".join(lines) + "\n")
+    print("wrote", f"src/lang/tests-{lang}.md")
 print("wrote src/24-appendix-tests.md", len(cl), len(srv), len(det))

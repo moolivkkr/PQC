@@ -1,0 +1,3518 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Post-Quantum TLS on AWS: Node.js</title><style>
+body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
+h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
+h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:9pt;page-break-inside:auto}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#e8edf3} tr{page-break-inside:avoid}
+code{font-family:Menlo,Consolas,monospace;font-size:8.5pt;background:#f2f2f2;padding:0 2px;word-break:break-word}
+code.nb{white-space:nowrap;word-break:normal}
+pre{background:#f2f2f2;padding:8px;font-size:8pt;white-space:pre-wrap;word-break:break-all;border:1px solid #ddd}
+pre code{background:none;padding:0}
+p.excerpt{font-size:9pt;margin-top:-4px}
+.cover{text-align:left;padding-top:160px}.cover h1{page-break-before:avoid;border:none;font-size:28pt}
+.cover .sub{font-size:14pt;color:#444}.cover .meta{margin-top:60px;font-size:10.5pt}
+.toc ul{padding-left:0}.toc li{list-style:none;margin:2px 0}.toc li.l0{margin-top:8px;font-weight:600}
+.toc li.l1{margin-left:22px;font-weight:400;font-size:9.5pt}.toc li.l2{margin-left:22px;font-weight:400;font-size:9.5pt}
+a{color:#0b57d0;text-decoration:none}
+@media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
+@page{size:A4;margin:16mm 14mm}
+</style></head><body>
+<div class="cover"><h1 class="title">Post-Quantum TLS on AWS: Node.js</h1>
+<p class="sub">For Node.js application teams: what to change on Lambda, ECS, EKS and EC2, every case, how to test, and the evidence</p><p>Start with the one-page summary. The detailed guide covers every Node.js version, the cases teams meet (own keystores, custom CA trust, mutual TLS, explicit TLS settings, FIPS, libraries with their own TLS), how to test and roll back, and the configuration files. The last chapter lists every end-to-end test case run for Node.js.</p>
+<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="https://github.com/moolivkkr/PQC">https://github.com/moolivkkr/PQC</a></p></div>
+<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul><li class="l0"><a href="#ch-summary-nodejs">1 Summary for Node.js teams</a></li><li class="l0"><a href="#ch-lang-context">2 Context for application
+teams</a><ul><li class="l2"><a href="#ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</a></li><li class="l2"><a href="#ch-lang-context--how-the-fix-ships">2.2 How the fix ships</a></li><li class="l2"><a href="#ch-lang-context--evidence-labels">2.3 Evidence labels</a></li><li class="l2"><a href="#ch-lang-context--related-documents">2.4 Related documents</a></li></ul></li><li class="l0"><a href="#ch-05-nodejs">3 Node.js: detailed guide</a><ul><li class="l2"><a href="#ch-05-nodejs--problem-statement">3.1 Problem statement</a></li><li class="l2"><a href="#ch-05-nodejs--quick-start-by-compute-type">3.2 Quick start by compute type</a></li><li class="l2"><a href="#ch-05-nodejs--versions-and-native-support">3.3 Versions and native support</a></li><li class="l2"><a href="#ch-05-nodejs--cases-what-to-change">3.4 Cases: what to change</a></li><li class="l2"><a href="#ch-05-nodejs--solution-and-automation">3.5 Solution and automation</a></li><li class="l2"><a href="#ch-05-nodejs--how-to-test">3.6 How to test</a></li><li class="l2"><a href="#ch-05-nodejs--rollout-checklist">3.7 Rollout checklist</a></li><li class="l2"><a href="#ch-05-nodejs--pitfalls-and-rollback">3.8 Pitfalls and rollback</a></li><li class="l2"><a href="#ch-05-nodejs--test-evidence">3.9 Test evidence</a></li><li class="l2"><a href="#ch-05-nodejs--full-configuration-files">3.10 Configuration files</a></li></ul></li><li class="l0"><a href="#ch-tests-nodejs">4 Test evidence and test cases</a><ul><li class="l2"><a href="#ch-tests-nodejs--summary">4.1 Summary</a></li><li class="l2"><a href="#ch-tests-nodejs--every-client-case">4.2 Every client case</a></li><li class="l2"><a href="#ch-tests-nodejs--load-balancer-target-cases-7">4.3 Load balancer target cases
+(7)</a></li></ul></li></ul></div>
+<h1 id="ch-summary-nodejs">1 Summary for Node.js teams</h1>
+<p><strong>What decides PQ.</strong> Official Node.js binaries bundle
+their own OpenSSL: 22.20+ and 24.5+ ship OpenSSL 3.5 and are PQ by
+default (use 24.9+ as the policy floor, as AWS does). On Lambda, the
+runtime's bootstrap sets <code>OPENSSL_CONF</code> to a file whose group
+list has no ML-KEM, so Lambda Node is classical until that file is
+overridden. Official Node 18 and 20 bundle OpenSSL without ML-KEM (3.0
+in <code class="nb">node:20</code> images; 3.1 and 3.2 on Lambda
+<code>nodejs18.x</code> and <code>nodejs20.x</code>). Distro Node links
+the system OpenSSL, so AL2023 <code class="nb">dnf</code> Node, even
+<code class="nb">nodejs20</code>, is fixable with the system policy or config.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda nodejs22.x, nodejs24.x</td>
+<td>No (bootstrap config)</td>
+<td>Ship <code>openssl-pq-node.cnf</code>, set <code>OPENSSL_CONF</code>
+to it (or the <code class="nb">pq-tls</code> layer). Prefer 24:
+<code>nodejs22.x</code> updates are blocked from 2027-08-31</td>
+</tr>
+<tr>
+<td>Lambda nodejs26.x (preview)</td>
+<td>Not sure: the base image is PQ unless
+<code>AWS_LAMBDA_TLS_PROFILE=aws</code> selects its classical profile
+(Docker test only)</td>
+<td>Set <code>OPENSSL_CONF</code> as for 22 and 24</td>
+</tr>
+<tr>
+<td>Lambda nodejs18.x, nodejs20.x</td>
+<td>No, and no setting helps</td>
+<td>Upgrade before 2027-08-31; interim, the <code class="nb">pq-egress</code>
+extension for calls that must be PQ</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td>Official <code class="nb">node</code> images 22.20+ and 24.5+: yes. AL2023
+<code class="nb">dnf</code> Node: no</td>
+<td>Official image 24.9+; AL2023 <code class="nb">dnf</code> Node:
+<code>DEFAULT:PQ</code> in the Dockerfile or <code>OPENSSL_CONF</code>
+(EKS not tested)</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Official binaries: yes. AL2023 <code class="nb">dnf</code> Node: no</td>
+<td>Official binaries, or <code>DEFAULT:PQ</code> / a per-service
+<code>OPENSSL_CONF</code> for <code class="nb">dnf</code> Node</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Lambda: ship the override file and variable. Our file replaces AWS's
+rather than including it, so add a pipeline check that diffs AWS's file
+against ours on each new runtime image.</li>
+<li>Upgrade Node 18 and 20; don't put X25519MLKEM768 first in
+<code class="nb">ecdhCurve</code> on bundled Node 20: it crashes.</li>
+<li>Remove explicit <code class="nb">ecdhCurve</code> lists and TLS 1.2 maximums,
+or add X25519MLKEM768 to them.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change for key/cert,
+modern PFX, <code class="nb">ca</code> or <code>NODE_EXTRA_CA_CERTS</code>. Legacy
+RC2 or 3DES PFX files fail on every current runtime: re-export them. The
+Lambda image has an empty system CA store: set
+<code>SSL_CERT_FILE</code>. <strong>ML-DSA:</strong> Node on OpenSSL 3.5
+(Lambda 22 and 24 even unfixed, official 22.20+/24.5+ images, fixed
+AL2023 Node) negotiates ML-DSA on all three targets; unfixed AL2023 Node
+and Node 20 get ECDSA.</p>
+<p><strong>Rollback:</strong> remove <code>OPENSSL_CONF</code> (or
+<code>PQ_TLS_DISABLE=1</code> with the layer). <strong>Detect:</strong>
+CloudTrail for AWS calls; application handshake logs.</p>
+<p><strong>Tested:</strong> 93 client cases (Lambda 48, Fargate 28, ECS
+on EC2 5, EC2 12) and 7 load balancer target cases, all passing
+(LocalStack, run r1117041043; not yet on real AWS).</p>
+
+<h1 id="ch-lang-context">2 Context for application
+teams</h1>
+<h2 id="ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</h2>
+<p>A <strong>PQ connection</strong> is a TLS 1.3 handshake that
+negotiated a hybrid ML-KEM key exchange group, X25519MLKEM768 (ML-KEM is
+FIPS 203). It protects traffic recorded today from being decrypted by a
+future quantum computer. Your service is <strong>PQ-enabled</strong>
+when it offers or accepts that group first <strong>and</strong> still
+connects to classical peers, so nothing breaks. It is
+<strong>done</strong> when the programme's dashboards show its
+connections as PQ, not when the change is deployed.</p>
+<p>What does <strong>not</strong> change: your certificates, keystores,
+private CA trust and mutual TLS. ML-KEM works with today's RSA and ECDSA
+certificates. ML-DSA (PQ certificates, FIPS 204) is a separate, later
+track; your summary page says what your runtime can do with it.</p>
+<h2 id="ch-lang-context--how-the-fix-ships">2.2 How the fix ships</h2>
+<p>Every fix is one of: a configuration file plus a variable, a Java
+agent, a base image or a version. The shared <code class="nb">pq-tls</code> kit
+versions these files once, and the shared build template adds them, so
+your service picks the fix up on its next release and rolls back by
+removing one setting. Guardrails in the pipeline warn first and fail
+later on settings that block PQ.</p>
+<table>
+<thead>
+<tr>
+<th>Where a variable goes</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (zip or image)</td>
+<td><code>Environment.Variables</code> (CloudFormation, SAM),
+<code>environment</code> (CDK, Terraform)</td>
+</tr>
+<tr>
+<td>Container images</td>
+<td><code>ENV NAME=value</code> in the Dockerfile</td>
+</tr>
+<tr>
+<td>ECS task, EKS pod (override)</td>
+<td><code>containerDefinitions[].environment</code>;
+<code>spec.containers[].env</code></td>
+</tr>
+<tr>
+<td>EC2 service</td>
+<td><code>Environment=NAME=value</code> in the systemd unit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--evidence-labels">2.3 Evidence labels</h2>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tested</td>
+<td>Run between 2026-11-12 and 2026-11-16 in Lambda base images,
+official images or the LocalStack end-to-end suite. Not run on real
+AWS</td>
+</tr>
+<tr>
+<td>Documented</td>
+<td>Stated in vendor documentation, not tested here</td>
+</tr>
+<tr>
+<td>Claimed</td>
+<td>A vendor plan, not shipped</td>
+</tr>
+<tr>
+<td>Unverified</td>
+<td>Believed true; confirm before relying on it</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--related-documents">2.4 Related documents</h2>
+<p>The programme's white paper (<code>docs/PQC-White-Paper.pdf</code>)
+explains detection, the inventory and the rollout. The complete guide
+(<code>PQC-Detection-and-Remediation.pdf</code>) holds the
+infrastructure detail (load balancers, databases, service mesh, hosts).
+Every configuration file named in this document is in the repository
+under <code class="nb">configs/</code>, and every test under <code class="nb">e2e/</code> and
+<code class="nb">tests/</code>.</p>
+
+<h1 id="ch-05-nodejs">3 Node.js: detailed guide</h1>
+<h2 id="ch-05-nodejs--problem-statement">3.1 Problem statement</h2>
+<p>Official Node.js 22.20+ and 24.5+ negotiate hybrid post-quantum key
+exchange (X25519MLKEM768) with no change. Four groups stay classical
+(X25519 or P-256 alone), so traffic recorded today can be decrypted once
+a large quantum computer exists ("harvest now, decrypt later"):</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Why it is classical</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda <code>nodejs22.x</code>, <code>nodejs24.x</code> (zip and AWS
+base image)</td>
+<td>The bootstrap sets <code>OPENSSL_CONF</code> to a file whose
+<code class="nb">Groups</code> omits ML-KEM</td>
+<td>Ship <code>openssl-pq-node.cnf</code> and point
+<code>OPENSSL_CONF</code> at it</td>
+</tr>
+<tr>
+<td>Official Node 20 and older, 22.0–22.19, 24.0–24.4; Lambda
+<code>nodejs18.x</code>, <code>nodejs20.x</code></td>
+<td>Bundled OpenSSL has no ML-KEM (3.0.x; Lambda 18 = 3.1.8, Lambda 20 =
+3.2.6)</td>
+<td>Upgrade; no setting helps</td>
+</tr>
+<tr>
+<td>Distro Node on Amazon Linux 2023
+(<code>dnf install nodejs20/22/24</code>)</td>
+<td>Links the system OpenSSL 3.5.8, whose <code class="nb">DEFAULT</code> crypto
+policy omits ML-KEM</td>
+<td><code>DEFAULT:PQ</code> policy, or <code>OPENSSL_CONF</code> =
+<code>openssl-pq-node-system.cnf</code></td>
+</tr>
+<tr>
+<td>Code that pins groups or caps TLS at 1.2</td>
+<td><code class="nb">ecdhCurve</code> / <code>tls.DEFAULT_ECDH_CURVE</code> without
+<code>X25519MLKEM768</code>, <code>maxVersion: 'TLSv1.2'</code>,
+<code>--tls-max-v1.2</code></td>
+<td>Remove the setting, or put <code>X25519MLKEM768</code> first</td>
+</tr>
+</tbody>
+</table>
+<p>What decides, in order: the OpenSSL inside the <code class="nb">node</code>
+process (bundled in official builds, the system library in distro
+builds), the OpenSSL config file Node reads, then TLS options in code.
+The OS crypto policy matters only for distro-built Node. Node reads the
+<code>nodejs_conf</code> section of the file named by
+<code>--openssl-config</code> or <code>OPENSSL_CONF</code> (the flag
+wins); <code>--openssl-shared-config</code> makes it read
+<code>openssl_conf</code> instead; both flags are allowed in
+<code>NODE_OPTIONS</code> (<a
+href="https://nodejs.org/api/cli.html#--openssl-shared-config">Node CLI
+docs</a>, Documented).</p>
+<p>Certificates, keys, PFX files, CA bundles and client certificates
+take no part in the key-exchange choice: every existing-certificate,
+custom-trust and mutual-TLS setup tested kept working unchanged (cases
+C, D, E). Every client library tested (fetch, undici, axios, got,
+node-fetch, AWS SDK v3, grpc-js, pg, mysql2, ioredis, kafkajs) inherits
+Node's defaults.</p>
+<h2 id="ch-05-nodejs--quick-start-by-compute-type">3.2 Quick start by compute type</h2>
+<p>One change per workload. "Verify" means a PQ-only test server
+(<code>openssl s_server -groups X25519MLKEM768 -tls1_3</code>) accepts
+the client and a classical one still does; for AWS API calls, CloudTrail
+<code>tlsDetails.keyExchange</code> shows <code>X25519MLKEM768</code>.
+<code>pq-check.js</code> and the full files are under Full configuration
+files and in <a href="https://github.com/moolivkkr/PQC/tree/main/configs/nodejs">configs/nodejs</a>.</p>
+<p><strong>Lambda <code>nodejs22.x</code> and
+<code>nodejs24.x</code></strong> (e2e: 31 zip cases on 22 and 24, 6 of
+them the main fix)</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check</td>
+<td><code>aws lambda get-function-configuration --function-name &lt;fn&gt; --query 'Environment.Variables.OPENSSL_CONF'</code>
+returns nothing: classical (the bootstrap's file)</td>
+</tr>
+<tr>
+<td>One change</td>
+<td>Package <code>pq-tls/openssl-pq-node.cnf</code> and set
+<code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf</code>. No code
+change: attach the <code class="nb">pq-tls</code> layer with
+<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code></td>
+</tr>
+<tr>
+<td>Verify</td>
+<td><code>node pq-check.js &lt;pq-only-host&gt;:443</code> from the
+function reports <code class="nb">"pq":true</code>; CloudTrail shows
+<code>X25519MLKEM768</code> for KMS, STS or Secrets Manager calls from
+the function's role</td>
+</tr>
+<tr>
+<td>Roll back</td>
+<td>Remove <code>OPENSSL_CONF</code> (layer: set
+<code>PQ_TLS_DISABLE=1</code>), or shift the alias back to the previous
+version</td>
+</tr>
+</tbody>
+</table>
+<p>Plan the move to <code>nodejs24.x</code>: <code>nodejs22.x</code> is
+deprecated on 2027-05-30 and blocked from updates on 2027-08-31 (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">Lambda
+runtimes</a>, Documented).</p>
+<p><strong>Lambda <code>nodejs18.x</code> and
+<code>nodejs20.x</code></strong> (e2e: 13 cases)</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check</td>
+<td><code>aws lambda list-functions --query "Functions[?contains(['nodejs18.x','nodejs20.x'],Runtime)].FunctionName"</code></td>
+</tr>
+<tr>
+<td>One change</td>
+<td>Change <code class="nb">Runtime</code> to <code>nodejs24.x</code>, then apply
+the fix above. The config file, <code>--openssl-config</code> and the
+layer change nothing here (Tested: still classical, startup not broken).
+Interim for calls that must be PQ now: the <code class="nb">pq-egress</code>
+extension</td>
+</tr>
+<tr>
+<td>Verify</td>
+<td>As above, after the runtime change</td>
+</tr>
+<tr>
+<td>Roll back</td>
+<td>Revert <code class="nb">Runtime</code>; possible only until updates to these
+runtimes are blocked on 2027-08-31 (Documented)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lambda container image on
+<code>public.ecr.aws/lambda/nodejs:22</code> or
+<code class="nb">:24</code></strong> (e2e: 2 fixed, 2 baselines)</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check</td>
+<td>The Dockerfile has no <code>ENV OPENSSL_CONF</code>: classical</td>
+</tr>
+<tr>
+<td>One change</td>
+<td><code>COPY pq-tls/ /var/task/pq-tls/</code> and
+<code>ENV OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf</code> (the
+bootstrap keeps a value that is already set)</td>
+</tr>
+<tr>
+<td>Verify</td>
+<td>As for zip</td>
+</tr>
+<tr>
+<td>Roll back</td>
+<td>Redeploy the previous image digest</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Amazon ECS on Fargate</strong> (e2e: 28 client cases, 6 load
+balancer target cases)</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check</td>
+<td><code>docker run --rm --entrypoint node &lt;image&gt; -p "process.version+' '+process.versions.openssl"</code>:
+official 22.20+/24.5+ with 3.5.x needs nothing. AL2023 <code class="nb">dnf</code>
+Node also prints 3.5.x but is classical under the <code class="nb">DEFAULT</code>
+policy</td>
+</tr>
+<tr>
+<td>One change</td>
+<td>Official image: <code>FROM node:24-slim@sha256:&lt;digest&gt;</code>
+(24.9+ as policy floor). AL2023 <code class="nb">dnf</code> Node:
+<code>RUN update-crypto-policies --set DEFAULT:PQ</code> in the
+Dockerfile, or
+<code>OPENSSL_CONF=/etc/app/openssl-pq-node-system.cnf</code> in the
+task definition</td>
+</tr>
+<tr>
+<td>Verify</td>
+<td><code>pq-check.js</code> in the task against a PQ-only target;
+CloudTrail for AWS calls</td>
+</tr>
+<tr>
+<td>Roll back</td>
+<td>Previous task definition revision or image digest</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Amazon ECS on EC2 and Amazon EKS</strong> (e2e: 5 client
+cases and 1 target case on ECS on EC2; EKS not run)</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check</td>
+<td>As for Fargate: the image decides; the node's OS and crypto policy
+do not reach the container</td>
+</tr>
+<tr>
+<td>One change</td>
+<td>As for Fargate. EKS: <code>OPENSSL_CONF</code> goes in
+<code>spec.containers[].env</code> (Unverified: no EKS case in the
+suite)</td>
+</tr>
+<tr>
+<td>Verify</td>
+<td>As for Fargate; on EC2-backed nodes Zeek on mirrored ENIs also shows
+the group</td>
+</tr>
+<tr>
+<td>Roll back</td>
+<td>Previous task definition revision; EKS
+<code>kubectl rollout undo</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Amazon EC2</strong> (e2e: 12 cases on AL2023
+2023.12.20261109)</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check</td>
+<td><code>node -p "process.execPath+' '+process.version+' '+process.versions.openssl"</code>
+per service; for distro Node also
+<code>update-crypto-policies --show</code></td>
+</tr>
+<tr>
+<td>One change</td>
+<td>Official binaries 24.9+: nothing else (host <code>DEFAULT:PQ</code>
+does not affect them, Tested). AL2023 <code class="nb">dnf</code> Node:
+<code>Environment=OPENSSL_CONF=/etc/app/openssl-pq-node-system.cnf</code>
+in the unit, or host-wide
+<code>update-crypto-policies --set DEFAULT:PQ</code>, then restart the
+service</td>
+</tr>
+<tr>
+<td>Verify</td>
+<td><code>pq-check.js</code> on the host; the
+<code>pq-node-posture.json</code> SSM document across the fleet</td>
+</tr>
+<tr>
+<td>Roll back</td>
+<td>Remove the drop-in, or
+<code>update-crypto-policies --set DEFAULT</code>; restart</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-05-nodejs--versions-and-native-support">3.3 Versions and native support</h2>
+<p>Tested 2026-11-14 to 2026-11-16 against an OpenSSL 3.5.7 PQ-only
+server (<code>-groups X25519MLKEM768 -tls1_3</code>) and a
+classical-only server (<code>-groups X25519</code>), and in the e2e
+suite. "Yes" = the PQ-only server was accepted with no setting, and the
+classical server still worked.</p>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>TLS stack</th>
+<th>PQ client by default (Lambda / container image / EC2)</th>
+<th>PQ server by default</th>
+<th>FIPS mode</th>
+<th>Fix</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Official 24.5+ (tested 24.5.0, 24.9.0, 24.22.3)</td>
+<td>Bundled OpenSSL 3.5.x (24.22.3 = 3.5.9)</td>
+<td>Lambda <code>nodejs24.x</code>: <strong>No</strong> (bootstrap
+config) / <code class="nb">node:24</code>, <code class="nb">-slim</code>,
+<code class="nb">-alpine</code>: Yes / official tarball: Yes</td>
+<td>Yes; on Lambda No (same config)</td>
+<td><code>--enable-fips</code> needs a FIPS provider you configure;
+official builds ship none. ML-KEM under FIPS: not tested</td>
+<td>Lambda: <code>openssl-pq-node.cnf</code>. Elsewhere: nothing</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Official 22.20+ (tested 22.20.0, 22.23.5)</td>
+<td>Bundled OpenSSL 3.5.x (22.23.5 = 3.5.9)</td>
+<td>Lambda <code>nodejs22.x</code>: <strong>No</strong> /
+<code class="nb">node:22</code> images: Yes / EC2: Yes</td>
+<td>Yes; Lambda No</td>
+<td>same</td>
+<td>same</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Official 26.x (tested 26.13.1)</td>
+<td>Bundled OpenSSL 3.5.9</td>
+<td>Lambda <code>nodejs26.x</code> (public preview): depends on
+<code>AWS_LAMBDA_TLS_PROFILE</code>, see below /
+<code>node:26-slim</code>: Yes / EC2: Yes</td>
+<td>Yes</td>
+<td>same</td>
+<td>Lambda: set <code>OPENSSL_CONF</code> as for 22/24</td>
+<td>Tested (container, e2e); Lambda image Tested in Docker only</td>
+</tr>
+<tr>
+<td>Official 22.0–22.19, 24.0–24.4</td>
+<td>Bundled OpenSSL 3.0.x</td>
+<td>No / No / No</td>
+<td>No</td>
+<td>n/a</td>
+<td>Upgrade to 22.20+ or 24.9+</td>
+<td>Tested (22.19.0, 24.4.1)</td>
+</tr>
+<tr>
+<td>Official 20.x, 18.x</td>
+<td>Bundled OpenSSL without ML-KEM: 3.0.x in
+<code>node:20-slim</code>/<code class="nb">-alpine</code>; Lambda
+<code>nodejs18.x</code> 3.1.8, <code>nodejs20.x</code> 3.2.6</td>
+<td>No / No / No</td>
+<td>No</td>
+<td>n/a</td>
+<td>Upgrade; no setting adds PQ</td>
+<td>Tested (<code>node:20-slim</code>, <code>node:20-alpine</code>
+20.20.2; e2e <code>node-lambda-n18-*</code>, <code class="nb">-n20-*</code>)</td>
+</tr>
+<tr>
+<td>AL2023 <code>dnf install nodejs20</code> / <code class="nb">nodejs22</code> /
+<code class="nb">nodejs24</code> (20.20.2, 22.23.4, 24.22.1)</td>
+<td>System OpenSSL 3.5.8 + crypto policy</td>
+<td>n/a / No / No until <code>DEFAULT:PQ</code></td>
+<td>No (same policy)</td>
+<td>AL2023 FIPS mode uses the system FIPS provider; ML-KEM there not
+tested</td>
+<td><code>DEFAULT:PQ</code>, or <code>OPENSSL_CONF</code> =
+<code>openssl-pq-node-system.cnf</code>. Node 20 included: it links the
+system library</td>
+<td>Tested (e2e Fargate, ECS on EC2, EC2)</td>
+</tr>
+<tr>
+<td>Debian 13 <code>apt install nodejs</code> (20.19.2)</td>
+<td>System OpenSSL 3.5.7</td>
+<td>n/a / Yes / Yes</td>
+<td>Yes</td>
+<td>not tested</td>
+<td>nothing (check <code>process.versions.openssl</code>, not the
+major)</td>
+<td>Tested (<code>debian:trixie-slim</code>, e2e)</td>
+</tr>
+<tr>
+<td>Alpine 3.22 <code>apk add nodejs</code> (22.23.5)</td>
+<td>System OpenSSL 3.5.9</td>
+<td>n/a / Yes / n/a</td>
+<td>Yes</td>
+<td>not tested</td>
+<td>nothing</td>
+<td>Tested (<code>alpine:3.22</code>, e2e)</td>
+</tr>
+<tr>
+<td>Deno 2.9.8 / Bun 1.4.4</td>
+<td>rustls / BoringSSL</td>
+<td>n/a / Yes (client) / Yes</td>
+<td>not tested</td>
+<td>not tested</td>
+<td>nothing</td>
+<td>Tested (client)</td>
+</tr>
+</tbody>
+</table>
+<p>The API to set groups is the same everywhere: the
+<code class="nb">ecdhCurve</code> option, <code>tls.DEFAULT_ECDH_CURVE</code>, or
+OpenSSL <code class="nb">Groups</code> via <code>OPENSSL_CONF</code> /
+<code>--openssl-config</code>. On OpenSSL 3.0 builds a PQ-first
+<code class="nb">ecdhCurve</code> throws
+<code>ERR_CRYPTO_OPERATION_FAILED</code>.</p>
+<p><strong>Version floor.</strong> Node's release notes put the OpenSSL
+3.5 upgrade in 22.20.0 ("now bundles OpenSSL 3.5.2", <a
+href="https://nodejs.org/en/blog/release/v22.20.0">v22.20.0</a>) and
+24.5.0 (<a
+href="https://nodejs.org/en/blog/release/v24.5.0">v24.5.0</a>), both
+Documented; 22.20.0 and 24.5.0 negotiated X25519MLKEM768 here and
+22.19.0 and 24.4.1 did not (Tested). AWS's SDK guide names v22.20 and
+v24.9.0 (<a
+href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">AWS
+SDK PQ TLS guide</a>). Use 24.9+ as the policy floor to match AWS, but
+don't flag 24.5–24.8 as classical.</p>
+<p><strong>Lambda <code>nodejs26.x</code> (public preview).</strong> The
+preview base image (<code>public.ecr.aws/lambda/nodejs:26</code>,
+<code>sha256:c805b481…</code>, Node 26.13.1, OpenSSL 3.5.9, pulled
+2026-11-16) no longer ships the classical
+<code>/var/runtime/openssl_conf/openssl.cnf</code>. Its bootstrap
+sources <code>resolve-tls-profile.sh</code>, which maps
+<code>AWS_LAMBDA_TLS_PROFILE</code> to a file under
+<code>/var/runtime/tls-profiles/</code> and keeps Node's defaults when
+the variable is unset. Run in Docker with that script sourced, against
+PQ-only and classical servers (<a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/nodejs/lambda-nodejs26">test and output</a>):</p>
+<table>
+<thead>
+<tr>
+<th><code>AWS_LAMBDA_TLS_PROFILE</code></th>
+<th>Profile file</th>
+<th>PQ-only server</th>
+<th>Classical server</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unset</td>
+<td>none (Node defaults)</td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+</tr>
+<tr>
+<td><code class="nb">aws</code> (and every other partition name)</td>
+<td><code>commercial-2025.conf</code> (no ML-KEM in
+<code class="nb">Groups</code>)</td>
+<td>handshake failure</td>
+<td>X25519</td>
+</tr>
+<tr>
+<td><code>commercial/2026</code></td>
+<td><code>commercial-2026.conf</code> (ML-KEM groups first, ML-DSA
+signatures)</td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+</tr>
+<tr>
+<td><code class="nb">cnsa</code></td>
+<td><code>cnsa-1.0.conf</code> (<code>Groups = secp384r1</code>)</td>
+<td>handshake failure</td>
+<td>handshake failure (test server offers X25519 only)</td>
+</tr>
+<tr>
+<td><code class="nb">aws</code> + <code>OPENSSL_CONF=…/openssl-pq-node.cnf</code>,
+or <code>NODE_OPTIONS=--openssl-config=…</code></td>
+<td>yours (the script keeps a customer value)</td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+</tr>
+</tbody>
+</table>
+<p>The profile map's comment says the sandbox sends the partition
+(<code class="nb">aws</code>) as <code>AWS_LAMBDA_TLS_PROFILE</code>, which would
+make a real <code>nodejs26.x</code> function classical. I'm not sure: no
+AWS account was available, and a preview can change before GA. Treat
+<code>nodejs26.x</code> like 22 and 24 (set <code>OPENSSL_CONF</code>)
+until a real function proves otherwise. Lambda lists
+<code>nodejs26.x</code> as preview, not for production (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">Lambda
+runtimes</a>, Documented).</p>
+<p><strong>FIPS.</strong> <a
+href="https://nodejs.org/api/cli.html#--enable-fips">Node CLI docs,
+<code>--enable-fips</code></a>: "a configured provider named
+<code class="nb">fips</code> must be available" (Documented). The OpenSSL 3.5.4
+FIPS module was submitted for FIPS 140-3 validation in October 2025 (<a
+href="https://mirror.openssl-library.org/post/2025-10-09-ossl3.5.4-fips-submission/">OpenSSL</a>);
+I found no issued certificate, so a FIPS-validated ML-KEM path for Node
+is not confirmed.</p>
+<p><strong>Beyond compute type</strong> (Quick start covers the
+runtime):</p>
+<ul>
+<li>Distro Node linked to a system OpenSSL 3.5 (AL2023
+<code class="nb">nodejs20</code>, Debian 13 <code class="nb">nodejs</code> 20.19) is fixable
+without an upgrade. Decide by <code>process.versions.openssl</code>, not
+the Node major.</li>
+<li>Code that sets <code class="nb">ecdhCurve</code>,
+<code>tls.DEFAULT_ECDH_CURVE</code>, <code>maxVersion: 'TLSv1.2'</code>,
+<code>secureProtocol: 'TLSv1_2_method'</code> or
+<code>--tls-max-v1.2</code>: change it (case F), on every compute
+type.</li>
+<li>Your own certificates, keys, PFX files, CA bundles and client
+certificates: no change (cases C, D, E). The one exception: legacy
+RC2/3DES PFX files fail on every current runtime, PQ or not; re-export
+them (case C).</li>
+</ul>
+<h2 id="ch-05-nodejs--cases-what-to-change">3.4 Cases: what to change</h2>
+<p>Find your situation below. Unless a row says otherwise, "Tested"
+means four runtimes gave the same result: <code class="nb">node:22</code> (22.23.5,
+<code>node@sha256:e13726ca…</code>), <code class="nb">node:24</code> (24.22.3,
+<code>node@sha256:9d266751…</code>), and
+<code>public.ecr.aws/lambda/nodejs:22</code> / <code class="nb">:24</code> (22.23.5
+/ 24.22.3) with <code>OPENSSL_CONF</code> set to
+<code>openssl-pq-node.cnf</code>. The same Lambda images with AWS's own
+file (<code>/var/runtime/openssl_conf/openssl.cnf</code>) were the
+"before" baseline.</p>
+<h3 id="ch-05-nodejs--a-simple-client-default-fetch-http-client-aws-sdk-db-driver">A.
+Simple client (default fetch, HTTP client, AWS SDK, DB driver)</h3>
+<p><strong>Who this is:</strong> you call <code class="nb">fetch</code>, axios,
+got, node-fetch, the AWS SDK v3, a database or cache driver, and pass no
+TLS options.
+<code>grep -rnE "ecdhCurve|DEFAULT_ECDH_CURVE|maxVersion|secureProtocol|tls-max-v1" src/</code>
+finds nothing.</p>
+<p><strong>What happens today:</strong> PQ on official Node 22.20+/24.5+
+in containers and EC2; classical on Lambda nodejs22/24 until the config
+is overridden; classical on official Node 20 and older (distro Node 20
+on a system OpenSSL 3.5, such as AL2023 <code class="nb">nodejs20</code>, takes the
+config fix). Every tested library inherits Node's defaults (Tested).</p>
+<p><strong>What to change:</strong> nothing, except on Lambda (config
+file), AL2023 <code class="nb">dnf</code> Node (system fix) and old runtimes
+(upgrade): see Quick start.</p>
+<p><strong>Side effects:</strong> the ClientHello grows by about 1.2 KB
+(the ML-KEM key share). Classical-only servers still negotiate X25519
+(Tested).</p>
+<p>Client libraries against the same servers. Versions tested: undici
+8.12.4, axios 1.21.1, got 16.2.0, node-fetch 3.3.2, @aws-sdk/client-s3
+3.1169.0 with @smithy/node-http-handler 4.14.2, @grpc/grpc-js 1.14.7, pg
+8.23.1, mysql2 3.24.6, ioredis 6.0.0, kafkajs 2.2.4. Images:
+<code>node:20/22/24</code> slim and alpine,
+<code>node:22.20-alpine</code>, <code>node:24.5-alpine</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Node 22.20+, 24.5+, 26 (default)</th>
+<th>Node 20</th>
+<th>Server used</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tls.connect</code>, <code class="nb">https.get</code></td>
+<td>PQ</td>
+<td>classical</td>
+<td>OpenSSL s_server</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>global <code class="nb">fetch</code></td>
+<td>PQ</td>
+<td>classical</td>
+<td>s_server</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>undici <code class="nb">Agent</code></td>
+<td>PQ</td>
+<td>undici 8 doesn't load on Node 20</td>
+<td>s_server</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>axios, got, node-fetch</td>
+<td>PQ</td>
+<td>classical</td>
+<td>s_server</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK v3 (<code>NodeHttpHandler</code>)</td>
+<td>PQ</td>
+<td>classical</td>
+<td>s_server (handshake, then the expected parse error)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>@grpc/grpc-js</td>
+<td>PQ</td>
+<td>classical</td>
+<td>grpc-js server on Node 24</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>pg</td>
+<td>PQ</td>
+<td>classical</td>
+<td>PostgreSQL 18.7 with <code>ssl_groups</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>mysql2</td>
+<td>PQ</td>
+<td>classical</td>
+<td>MariaDB 11.8.6, groups from the OpenSSL config</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>ioredis</td>
+<td>PQ</td>
+<td>classical</td>
+<td>Redis 8.0.2, groups from the OpenSSL config</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>kafkajs</td>
+<td>PQ (TLS handshake level)</td>
+<td>classical</td>
+<td>s_server, not a Kafka broker</td>
+<td>Tested (handshake only)</td>
+</tr>
+</tbody>
+</table>
+<p>Database server settings (<code>ssl_groups</code>, RDS parameter
+groups) are on the Databases and data services tab.</p>
+<p>On 22.20+/24.5+ set nothing. Find and fix anything that narrows the
+group list or caps the protocol. Each setting below was run against the
+PQ-only server.</p>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Where TLS options go</th>
+<th>PQ-safe setting</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tls.connect</code></td>
+<td>options object</td>
+<td>omit <code class="nb">ecdhCurve</code>, or
+<code>ecdhCurve: 'X25519MLKEM768:X25519:P-256:P-384'</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code class="nb">https</code>, <code>https.Agent</code></td>
+<td><code>new https.Agent({...})</code></td>
+<td>same</td>
+<td>Tested (<code>ecdhCurve: 'X25519:P-256'</code> failed PQ-only)</td>
+</tr>
+<tr>
+<td>global <code class="nb">fetch</code></td>
+<td>none (bundled undici)</td>
+<td>nothing; or a <code>dispatcher</code> from npm undici</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>undici</td>
+<td><code>new Agent({ connect: {...} })</code></td>
+<td>omit <code class="nb">ecdhCurve</code>, or PQ-first</td>
+<td>Tested (<code>connect.ecdhCurve: 'X25519'</code> failed
+PQ-only)</td>
+</tr>
+<tr>
+<td>axios</td>
+<td><code>httpsAgent</code></td>
+<td>default agent or a PQ-safe <code>https.Agent</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>got</td>
+<td><code>https: {...}</code> or <code>agent: { https }</code></td>
+<td>default</td>
+<td>Tested (default only)</td>
+</tr>
+<tr>
+<td>node-fetch</td>
+<td><code class="nb">agent</code></td>
+<td>PQ-safe <code>https.Agent</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK v3</td>
+<td><code>requestHandler: new NodeHttpHandler({ httpsAgent })</code></td>
+<td>default, or a PQ-safe agent</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>@grpc/grpc-js</td>
+<td><code>credentials.createSsl(ca)</code></td>
+<td>default; no group option exposed</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>pg</td>
+<td><code>ssl: {...}</code> (passed to <code>tls.connect</code>)</td>
+<td>default</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>mysql2</td>
+<td><code>ssl: {...}</code></td>
+<td>default</td>
+<td>Tested; whether it passes <code class="nb">ecdhCurve</code> through was not
+checked</td>
+</tr>
+<tr>
+<td>ioredis</td>
+<td><code>tls: {...}</code></td>
+<td>default</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>kafkajs</td>
+<td><code>ssl: {...}</code></td>
+<td>default</td>
+<td>Tested (handshake)</td>
+</tr>
+</tbody>
+</table>
+<pre class="js"><code>// AWS SDK for JavaScript v3 with a custom agent (proxy, keep-alive, CA bundle)
+const { S3Client } = require(&#39;@aws-sdk/client-s3&#39;);
+const { NodeHttpHandler } = require(&#39;@smithy/node-http-handler&#39;);
+const s3 = new S3Client({ requestHandler: new NodeHttpHandler({ httpsAgent: new https.Agent({ keepAlive: true }) }) });</code></pre>
+<pre class="js"><code>// undici / fetch with an explicit dispatcher
+const { Agent, setGlobalDispatcher } = require(&#39;undici&#39;);
+setGlobalDispatcher(new Agent({ connect: { /* no ecdhCurve, or a PQ-first list */ } }));</code></pre>
+<h3 id="ch-05-nodejs--b-simple-server-https-http2-express-fastify-grpc-js">B. Simple
+server (https, http2, Express, Fastify, grpc-js)</h3>
+<p><strong>Who this is:</strong> <code>https.createServer</code>,
+<code>http2.createSecureServer</code>, <code>tls.createServer</code>,
+Express or Fastify over HTTPS, or a grpc-js server, configured with only
+a key and certificate.</p>
+<p><strong>What happens today:</strong> on 22.20+/24.5+ the server
+accepts X25519MLKEM768 and still serves classical and TLS 1.2 clients.
+Inside a Lambda function with AWS's config, a Node TLS server is
+classical too: PQ-only clients were refused on all servers in the case C
+matrix (Tested, baseline run).</p>
+<p><strong>What to change:</strong> nothing on 22.20+/24.5+; AL2023
+<code class="nb">dnf</code> Node takes the system fix.</p>
+<p>Tested with <code>openssl s_client</code> (OpenSSL 3.5.7) against
+each server on <code>node:24-slim</code>, <code>node:22-alpine</code>,
+<code>node:24.5-alpine</code> and <code>node:20-slim</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Server</th>
+<th>PQ-only client</th>
+<th>Classical client</th>
+<th>Default OpenSSL 3.5 client gets</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>https.createServer({ key, cert })</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>same + <code>ecdhCurve: 'X25519:P-256'</code></td>
+<td>handshake failure</td>
+<td>X25519</td>
+<td>X25519 (silent downgrade)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>same +
+<code>ecdhCurve: 'X25519MLKEM768:X25519:P-256:P-384'</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>http2.createSecureServer</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Express 5.3.0 on <code>https.createServer</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Fastify 5.12.8, <code>fastify({ https })</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>tls.createServer({ minVersion: 'TLSv1.3' })</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>grpc-js 1.14.7 <code>ServerCredentials.createSsl</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>X25519MLKEM768</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>NestJS <code>NestFactory.create(App, { httpsOptions })</code></td>
+<td>options reach <code>https.createServer</code></td>
+<td></td>
+<td></td>
+<td>Not tested</td>
+</tr>
+<tr>
+<td>Any of the above on Node 20</td>
+<td>handshake failure</td>
+<td>X25519</td>
+<td>X25519</td>
+<td>Tested; a PQ-first <code class="nb">ecdhCurve</code> crashes startup</td>
+</tr>
+</tbody>
+</table>
+<pre class="js"><code>https.createServer({ key, cert, minVersion: &#39;TLSv1.2&#39; }, app);           // Express: no ecdhCurve
+fastify({ https: { key, cert } });                                       // Fastify
+http2.createSecureServer({ key, cert, allowHTTP1: true }, handler);      // HTTP/2</code></pre>
+<p><strong>Behind a load balancer</strong> the client-facing handshake
+belongs to the load balancer (see Load balancers). With an NLB TCP
+(pass-through) listener, Node terminates TLS and the table above
+applies. On the target leg, with the load balancer modelled as the
+client (e2e r1117041043, Fargate and ECS on EC2): an
+<code>https.createServer</code> target on <code>node:24-slim</code>
+negotiated X25519MLKEM768 with no change; <code>node:20-slim</code> and
+unfixed AL2023 nodejs22 stayed classical; AL2023 nodejs20 with
+<code>OPENSSL_CONF</code>, and nodejs22 with <code>OPENSSL_CONF</code>
+or <code>DEFAULT:PQ</code>, gave X25519MLKEM768 (cases
+<code>srv-node-*</code>). Whether a real ALB offers ML-KEM to an HTTPS
+target was not checked on AWS. For nginx or Envoy in front of Node see
+Web servers and proxies; for mesh sidecars see Service mesh.</p>
+<p>A Node server has no API for the negotiated group (How to test, step
+3); probe it with <code class="nb">s_client</code>.</p>
+<h3 id="ch-05-nodejs--c-existing-server-certificates-keys-and-pfx-files">C. Existing
+server certificates, keys and PFX files</h3>
+<p><strong>Who this is:</strong> your server loads its own certificate
+and key, from files, a mounted secret, Secrets Manager, or env vars that
+point at files. Find it with:</p>
+<pre class="bash"><code>grep -rnE &quot;pfx|passphrase|SNICallback|addContext|createSecureContext|(key|cert)[[:space:]]*:[[:space:]]*(fs\.)?readFileSync|\.(pem|key|crt|pfx|p12)[&#39;\&quot;]&quot; --include=&#39;*.js&#39; --include=&#39;*.mjs&#39; --include=&#39;*.cjs&#39; --include=&#39;*.ts&#39; src/</code></pre>
+<p>Node has no global key store: there is no equivalent of
+<code>javax.net.ssl.keyStore</code>. Certificates always reach
+<code>tls.createSecureContext</code> as PEM or PFX buffers, whether a
+framework reads them for you (Fastify <code class="nb">https</code>, NestJS
+<code>httpsOptions</code>) or your code does. So the tests below cover
+every source: they differ only in where the bytes come from.</p>
+<p><strong>What changes in the store: nothing.</strong> The key exchange
+group is chosen separately from the certificate. The same files served
+X25519MLKEM768 to a PQ client and X25519 to a classical client, with no
+edit.</p>
+<p><strong>What happens today (Tested):</strong> each row is one Node
+server, probed with <code>openssl s_client</code> 3.5.7 as a PQ-only
+client (<code>-groups X25519MLKEM768 -tls1_3</code>), a classical client
+(<code>-groups X25519:secp256r1</code>) and a TLS 1.2 client. All four
+runtimes gave identical results; with AWS's Lambda file every PQ-only
+probe failed (handshake failure) and every classical probe passed.</p>
+<table>
+<thead>
+<tr>
+<th>Server setup (code excerpt)</th>
+<th>PQ-only client</th>
+<th>Classical / TLS 1.2 client</th>
+<th>Change needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RSA 2048 PEM: <code>{ key, cert }</code></td>
+<td>X25519MLKEM768, RSA cert</td>
+<td>X25519, RSA cert</td>
+<td>none</td>
+</tr>
+<tr>
+<td>EC P-256 PEM</td>
+<td>X25519MLKEM768, EC cert</td>
+<td>X25519, EC cert</td>
+<td>none</td>
+</tr>
+<tr>
+<td>RSA + EC in one context:
+<code>{ key: [rsaKey, ecKey], cert: [rsaCert, ecCert] }</code></td>
+<td>X25519MLKEM768, EC cert by default; RSA cert to an RSA-only client
+(<code>-sigalgs RSA-PSS+SHA256:RSA+SHA256</code>)</td>
+<td>X25519, EC cert</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Encrypted PKCS#8 EC key: <code>{ key, cert, passphrase }</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Encrypted traditional RSA PEM
+(<code class="nb">Proc-Type</code>/<code class="nb">DEK-Info</code>) +
+<code>passphrase</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td>PFX, RSA or EC, OpenSSL 3 default encryption (AES-256, PBKDF2):
+<code>{ pfx, passphrase }</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Legacy PFX (RC2-40 / 3DES, as exported by older Windows and Java
+tools)</td>
+<td>server fails to start:
+<code>ERR_CRYPTO_UNSUPPORTED_OPERATION Unsupported PKCS12 PFX data</code></td>
+<td>same</td>
+<td>Re-export the PFX (below). Not caused by the PQ change: it fails the
+same with AWS's file and on Node 20</td>
+</tr>
+<tr>
+<td><code>SNICallback</code> picking RSA (a.test), EC P-256 (b.test), EC
+P-384 (c.test), RSA default</td>
+<td>right cert per name, X25519MLKEM768</td>
+<td>right cert, X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>server.addContext('b.test', { pfx, passphrase })</code> with
+an RSA default</td>
+<td>right cert per name, X25519MLKEM768</td>
+<td>right cert, X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Express 5.3.0 on <code>https.createServer</code> (EC)</td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Fastify 5.12.8
+<code>fastify({ https: { pfx, passphrase } })</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>http2.createSecureServer({ key, cert, allowHTTP1, SNICallback })</code></td>
+<td>X25519MLKEM768 for every name</td>
+<td>X25519</td>
+<td>none (see note)</td>
+</tr>
+</tbody>
+</table>
+<pre class="js"><code>// Existing patterns that need no change (all Tested with X25519MLKEM768)
+https.createServer({ key: fs.readFileSync(process.env.TLS_KEY), cert: fs.readFileSync(process.env.TLS_CERT) }, app);
+https.createServer({ key: [rsaKey, ecKey], cert: [rsaCert, ecCert] }, app);           // RSA + EC
+https.createServer({ key: encryptedPem, cert, passphrase: process.env.TLS_KEY_PASS }, app);
+https.createServer({ pfx: fs.readFileSync(&#39;/etc/app/tls/server.pfx&#39;), passphrase }, app);
+const ctx = { &#39;a.test&#39;: tls.createSecureContext(rsa), &#39;b.test&#39;: tls.createSecureContext(ec) };
+https.createServer({ ...rsa, SNICallback: (name, cb) =&gt; cb(null, ctx[name]) }, app);   // SNI</code></pre>
+<p>Legacy PFX fix (Tested: the converted file loads on all four
+runtimes; the original loads on official Node only with
+<code>--openssl-legacy-provider</code>, and not on the Lambda nodejs24
+image even with that flag ("Unable to load legacy provider")):</p>
+<pre class="bash"><code>openssl pkcs12 -in old.pfx -legacy -nodes -passin env:PFX_PASS -out tmp.pem
+openssl pkcs12 -export -in tmp.pem -out new.pfx -passout env:PFX_PASS &amp;&amp; shred -u tmp.pem</code></pre>
+<p>Note on http2 with <code>SNICallback</code>: on Node 22.23.5 the RSA
+context returned for a.test was not used and the EC default was served;
+Node 24.22.3 served the RSA cert. This was the same with and without the
+PQ config, so it is not PQ-related. Not investigated further.</p>
+<p><strong>Side effects:</strong> none observed. The
+<code>passphrase</code>, PFX, SNI and multi-certificate behaviour is
+identical before and after the change.</p>
+<p><strong>Proof:</strong> <code class="nb">srv.cjs</code> and
+<code>run-cases.sh</code> (Full configuration files); outputs
+<code>out-node22.txt</code>, <code>out-node24.txt</code>,
+<code>out-lambda22-pq.txt</code>, <code>out-lambda24-pq.txt</code>,
+baseline <code>out-lambda2{2,4}-aws.txt</code>, legacy PFX
+<code>out-legacy-pfx.txt</code>.</p>
+<h3 id="ch-05-nodejs--d-custom-ca-trust-private-ca-bundles-system-store">D. Custom CA
+trust (private CA, bundles, system store)</h3>
+<p><strong>Who this is:</strong> your client trusts a private CA. Find
+it with:</p>
+<pre class="bash"><code>grep -rnE &quot;NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|SSL_CERT_DIR|use-openssl-ca|use-system-ca|NODE_USE_SYSTEM_CA|setDefaultCACertificates|[^a-zA-Z]ca[[:space:]]*:&quot; src/ Dockerfile* *.tf *.yaml *.json 2&gt;/dev/null</code></pre>
+<p><strong>What changes in the trust store: nothing.</strong> The PQ
+change touches only the key-exchange group list. The Lambda override
+file holds nothing but a <code class="nb">Groups</code> line, so it cannot change
+trust. Every trust method below verified the private-CA server and
+negotiated X25519MLKEM768.</p>
+<p><strong>What happens today (Tested):</strong> client connections to
+the PQ-only and classical servers, whose certificate chains to a private
+CA that is not in Node's bundled Mozilla list. Clients tried:
+<code>tls.connect</code>, <code class="nb">https.get</code> (default agent), global
+<code class="nb">fetch</code>, and an npm undici <code class="nb">Agent</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Trust method</th>
+<th>node:22, node:24</th>
+<th>Lambda 22/24 with <code>openssl-pq-node.cnf</code></th>
+<th>Change needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ca: fs.readFileSync('ca.pem')</code> in
+<code>tls.connect</code>, <code>https.Agent</code>, undici
+<code class="nb">connect</code></td>
+<td>PQ, verified</td>
+<td>PQ, verified</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>NODE_EXTRA_CA_CERTS=/path/ca.pem</code> (CA alone, or a bundle
+with several CAs)</td>
+<td>PQ, verified</td>
+<td>PQ, verified; also under the Runtime Interface Emulator with the
+real bootstrap</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>--use-openssl-ca</code> (flag or in <code>NODE_OPTIONS</code>)
++ <code>SSL_CERT_FILE=bundle.pem</code></td>
+<td>PQ, verified</td>
+<td>PQ, verified</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>--use-system-ca</code> + <code>SSL_CERT_FILE</code></td>
+<td>PQ, verified</td>
+<td>PQ, verified</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>NODE_USE_SYSTEM_CA=1</code> + <code>SSL_CERT_FILE</code></td>
+<td>PQ, verified</td>
+<td>PQ, verified</td>
+<td>none</td>
+</tr>
+<tr>
+<td>CA added to the OS store (<code>update-ca-certificates</code> on
+Debian, <code>update-ca-trust</code> on AL2023), then
+<code>--use-system-ca</code> or <code>--use-openssl-ca</code>, no
+<code>SSL_CERT_FILE</code></td>
+<td>PQ, verified (Debian store)</td>
+<td><strong>fails</strong> <code>UNABLE_TO_VERIFY_LEAF_SIGNATURE</code>,
+before and after the PQ change</td>
+<td>Lambda only: also set
+<code>SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt</code> (see
+below)</td>
+</tr>
+<tr>
+<td><code>tls.setDefaultCACertificates([...tls.getCACertificates('default'), pem])</code>
+at startup</td>
+<td>PQ, verified (tls and fetch)</td>
+<td>PQ, verified</td>
+<td>none</td>
+</tr>
+<tr>
+<td>No private CA anywhere (negative test)</td>
+<td>fails verification, as expected</td>
+<td>fails verification</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>The Lambda system-store finding: the Lambda Node binary links AWS's
+own shared OpenSSL, whose default certificate directory is a build path.
+Node prints
+<code>Cannot open directory /local/p4clients/pkgbuild-const/workspace/src/Openssl/build/private/install/ssl/certs to load OpenSSL certificates.</code>
+and <code>tls.getCACertificates('system')</code> returns 0 certificates.
+With <code>SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt</code> it
+returns 136 (Tested, nodejs24 image). This is independent of PQ. The
+real runtime may differ from the base image here; I'm not sure, as no
+AWS account was available.</p>
+<p>Lambda bootstrap and <code>NODE_EXTRA_CA_CERTS</code>: the bootstrap
+keeps your value. It sets its own value
+(<code>/etc/pki/tls/certs/ca-bundle.crt</code>) only when the variable
+is unset and the region name has three dashes (read from
+<code>/var/runtime/bootstrap</code> in both images). Under the emulator
+with the real bootstrap (Tested, <code>out-lambda-rie.txt</code>):</p>
+<table>
+<thead>
+<tr>
+<th>nodejs22 and nodejs24</th>
+<th>PQ-only server, CA via <code>NODE_EXTRA_CA_CERTS</code></th>
+<th>PQ-only server with mTLS</th>
+<th>Classical server</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OPENSSL_CONF</code> = PQ file +
+<code>NODE_EXTRA_CA_CERTS</code></td>
+<td>OK, X25519MLKEM768</td>
+<td>OK, X25519MLKEM768</td>
+<td>OK, X25519</td>
+</tr>
+<tr>
+<td>AWS default config + <code>NODE_EXTRA_CA_CERTS</code></td>
+<td>handshake failure</td>
+<td>handshake failure</td>
+<td>OK, X25519</td>
+</tr>
+<tr>
+<td>PQ file, no <code>NODE_EXTRA_CA_CERTS</code> (negative)</td>
+<td><code>UNABLE_TO_VERIFY_LEAF_SIGNATURE</code></td>
+<td><code>SELF_SIGNED_CERT_IN_CHAIN</code></td>
+<td><code>UNABLE_TO_VERIFY_LEAF_SIGNATURE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Flag availability (checked, not assumed):
+<code>--use-system-ca</code>, <code>--use-openssl-ca</code> and
+<code>--use-bundled-ca</code> all appear in <code>node --help</code> on
+22.23.5 and 24.22.3, and <code>--use-system-ca</code> works on Linux on
+both. The docs say <code>--use-system-ca</code> was added in v23.8.0,
+with non-Windows/macOS support in v23.9.0, and list no v22 backport;
+<code>NODE_USE_SYSTEM_CA=1</code> was added in v24.6.0 and v22.19.0 (<a
+href="https://nodejs.org/api/cli.html#--use-system-ca">Node CLI
+docs</a>, Documented). So on 22.x, check that your exact version has the
+flag (<code>node --help | grep use-system-ca</code>).
+<code>NODE_EXTRA_CA_CERTS</code> is read only at process start, and is
+ignored when code passes <code class="nb">ca:</code> explicitly (Documented, same
+page).</p>
+<pre class="js"><code>// Existing trust patterns that need no change (Tested with X25519MLKEM768)
+https.request({ host, ca: fs.readFileSync(&#39;/etc/app/ca/private-ca.pem&#39;) });   // ca option
+new undici.Agent({ connect: { ca: privateCa } });                              // undici / fetch dispatcher
+// NODE_EXTRA_CA_CERTS=/etc/app/ca/private-ca.pem node server.js               // env var
+// SSL_CERT_FILE=/etc/app/ca/bundle.pem node --use-openssl-ca server.js        // OpenSSL store
+tls.setDefaultCACertificates([...tls.getCACertificates(&#39;default&#39;), privateCaPem]);</code></pre>
+<p><strong>Side effects:</strong> none from the PQ change. Note
+<code class="nb">ca:</code> replaces the default roots for that connection; that is
+existing Node behaviour, unchanged.</p>
+<p><strong>Proof:</strong> <code class="nb">cli.cjs</code> groups
+<code>trust-none</code>, <code>trust-ca-option</code>,
+<code class="nb">trust-env</code>, <code class="nb">trust-api</code>;
+<code>run-cases.sh</code>; <code>run-lambda-rie.sh</code> +
+<code>fn/index.js</code>; outputs as in case C plus
+<code>out-lambda-rie.txt</code>.</p>
+<h3 id="ch-05-nodejs--e-mutual-tls-client-certificates">E. Mutual TLS (client
+certificates)</h3>
+<p><strong>Who this is:</strong> your client sends a certificate
+(<code class="nb">key</code>/<code class="nb">cert</code> or <code class="nb">pfx</code> in
+<code>tls.connect</code>, <code>https.Agent</code>, undici
+<code class="nb">connect</code>, an AWS SDK <code>NodeHttpHandler</code> agent), or
+your server sets <code>requestCert: true</code>.</p>
+<p><strong>What happens today (Tested):</strong> against an OpenSSL
+PQ-only server that requires and verifies a client certificate
+(<code>-Verify 1 -verify_return_error</code>), and a classical one:</p>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>PQ-only server, cert required</th>
+<th>Classical server, cert required</th>
+<th>Without a cert</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tls.connect({ key, cert, ca })</code>, EC P-256 client
+cert</td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td><code>ERR_SSL_TLSV13_ALERT_CERTIFICATE_REQUIRED</code></td>
+</tr>
+<tr>
+<td>same with an RSA client cert</td>
+<td>X25519MLKEM768</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>encrypted PKCS#8 key + <code>passphrase</code></td>
+<td>X25519MLKEM768</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code class="nb">pfx</code> + <code>passphrase</code></td>
+<td>X25519MLKEM768</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>https.Agent({ key, cert, ca })</code> +
+<code class="nb">https.get</code></td>
+<td>200, X25519MLKEM768, server saw the cert</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>npm undici <code>Agent({ connect: { key, cert, ca } })</code> with
+<code>undici.request</code> or <code>undici.fetch</code></td>
+<td>200</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Global <code class="nb">fetch</code> with an npm undici 8.12.4
+<code class="nb">Agent</code> as <code>dispatcher</code></td>
+<td><strong>fails</strong>
+<code>UND_ERR_INVALID_ARG: invalid onRequestStart method</code></td>
+<td></td>
+<td>Not PQ: Node bundles undici 6.29.1 (22) / 7.30.2 (24). Use
+<code class="nb">fetch</code> from the same undici package as the
+<code class="nb">Agent</code></td>
+</tr>
+<tr>
+<td>AWS SDK v3 <code class="nb">S3Client</code> with
+<code>requestHandler: new NodeHttpHandler({ httpsAgent: new https.Agent({ key, cert, ca }) })</code></td>
+<td>200 (GetObject)</td>
+<td></td>
+<td><code>ERR_SSL_TLSV13_ALERT_CERTIFICATE_REQUIRED</code></td>
+</tr>
+</tbody>
+</table>
+<p>Server side:
+<code>https.createServer({ key, cert, ca, requestCert: true, rejectUnauthorized: true })</code>:
+a PQ client with a valid cert got X25519MLKEM768 and the app saw
+<code class="nb">cn=client</code>; a PQ client without a cert got
+<code>alert certificate required</code>; a classical client with a cert
+got X25519 (Tested).</p>
+<p>Under the Lambda emulator, mTLS to the PQ-only server worked with the
+PQ file and failed with AWS's file (table in case D).</p>
+<p><strong>What to change:</strong> nothing in the certificates, keys or
+agents.</p>
+<p><strong>Side effects:</strong> TLS 1.3 behaviour to know: the
+client's <code>secureConnect</code> fires before the server checks the
+client cert, so a missing cert shows up as an error on the first read,
+not on connect (Tested: the no-cert <code>tls.connect</code> first
+reported success, then <code>CERTIFICATE_REQUIRED</code>). Health checks
+that only wait for <code>secureConnect</code> can report false success.
+This is TLS 1.3, not PQ.</p>
+<pre class="js"><code>// mTLS client patterns that need no change (Tested with X25519MLKEM768)
+const mtls = { key: fs.readFileSync(&#39;client.key&#39;), cert: fs.readFileSync(&#39;client.pem&#39;), ca: privateCa };
+https.get({ host, agent: new https.Agent(mtls) });
+const { Agent, fetch } = require(&#39;undici&#39;);            // fetch and Agent from the same package
+await fetch(url, { dispatcher: new Agent({ connect: mtls }) });
+new S3Client({ requestHandler: new NodeHttpHandler({ httpsAgent: new https.Agent(mtls) }) });</code></pre>
+<h3 id="ch-05-nodejs--f-explicit-tls-settings-that-block-pq">F. Explicit TLS settings
+that block PQ</h3>
+<p><strong>Who this is:</strong> code or config sets
+<code class="nb">ecdhCurve</code>, <code>tls.DEFAULT_ECDH_CURVE</code>,
+<code>maxVersion</code>, <code>secureProtocol</code>,
+<code>tls.DEFAULT_MAX_VERSION</code>, <code class="nb">ciphers</code>, or a
+<code class="nb">--tls-*</code> flag in <code>NODE_OPTIONS</code>. Find them with
+<code>ci/check-node-tls.sh</code> (below) or the grep in How to
+test.</p>
+<p><strong>What happens today (Tested, client and server, all four
+runtimes):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Client → PQ-only server</th>
+<th>Client → classical server</th>
+<th>Server ← PQ-only client</th>
+<th>Change to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ecdhCurve: 'X25519:P-256'</code></td>
+<td>handshake failure</td>
+<td>X25519</td>
+<td>handshake failure; every PQ client silently downgraded to
+X25519</td>
+<td>remove, or <code>'X25519MLKEM768:X25519:P-256:P-384'</code></td>
+</tr>
+<tr>
+<td><code>tls.DEFAULT_ECDH_CURVE = 'X25519:P-256'</code></td>
+<td>handshake failure (also global <code class="nb">fetch</code>)</td>
+<td></td>
+<td></td>
+<td>remove</td>
+</tr>
+<tr>
+<td><code>ecdhCurve: 'auto'</code></td>
+<td>PQ</td>
+<td>X25519</td>
+<td>PQ</td>
+<td>nothing (follows the OpenSSL config; on Lambda with AWS's file it
+stays classical)</td>
+</tr>
+<tr>
+<td><code>ecdhCurve: 'X25519MLKEM768:X25519:P-256:P-384'</code></td>
+<td>PQ, even with AWS's Lambda file</td>
+<td>X25519</td>
+<td>PQ</td>
+<td>recommended when a list is required</td>
+</tr>
+<tr>
+<td>server <code>ecdhCurve: 'X25519MLKEM768'</code>,
+<code>minVersion: 'TLSv1.3'</code></td>
+<td></td>
+<td></td>
+<td>PQ only; classical and TLS 1.2 clients refused</td>
+<td>only for deliberate PQ-only enforcement</td>
+</tr>
+<tr>
+<td><code class="nb">ciphers</code> with only TLS 1.2 suites, or
+<code>--tls-cipher-list=...</code></td>
+<td>PQ (TLS 1.3 suites are separate)</td>
+<td>X25519</td>
+<td>PQ</td>
+<td>nothing</td>
+</tr>
+<tr>
+<td><code>ciphers: 'TLS_AES_256_GCM_SHA384'</code></td>
+<td>PQ</td>
+<td>X25519</td>
+<td></td>
+<td>nothing</td>
+</tr>
+<tr>
+<td><code>maxVersion: 'TLSv1.2'</code>,
+<code>tls.DEFAULT_MAX_VERSION = 'TLSv1.2'</code>,
+<code>--tls-max-v1.2</code></td>
+<td><code>protocol version</code> alert</td>
+<td>TLS 1.2, X25519</td>
+<td><code>protocol version</code> alert</td>
+<td>remove the cap, or <code>maxVersion: 'TLSv1.3'</code></td>
+</tr>
+<tr>
+<td><code>secureProtocol: 'TLSv1_2_method'</code></td>
+<td><code>protocol version</code> alert</td>
+<td>TLS 1.2</td>
+<td><code>protocol version</code> alert</td>
+<td>replace with <code>minVersion: 'TLSv1.2'</code></td>
+</tr>
+<tr>
+<td><code>secureProtocol: 'TLS_method'</code></td>
+<td>PQ</td>
+<td>X25519</td>
+<td></td>
+<td>nothing</td>
+</tr>
+<tr>
+<td><code>secureProtocol: 'TLSv1_3_method'</code></td>
+<td>throws <code>ERR_TLS_INVALID_PROTOCOL_METHOD</code></td>
+<td>throws</td>
+<td></td>
+<td>use <code>minVersion: 'TLSv1.3'</code></td>
+</tr>
+<tr>
+<td><code>minVersion: 'TLSv1.3'</code>, <code>--tls-min-v1.3</code></td>
+<td>PQ</td>
+<td>X25519 (server supports 1.3)</td>
+<td></td>
+<td>nothing</td>
+</tr>
+<tr>
+<td><code>sigalgs: 'ECDSA+SHA256:RSA-PSS+SHA256'</code></td>
+<td>PQ</td>
+<td>X25519</td>
+<td></td>
+<td>nothing (no effect on groups)</td>
+</tr>
+</tbody>
+</table>
+<p>The common mistake, and the fix:</p>
+<pre class="js"><code>// BAD: pins classical groups. A PQ-only server rejects it; a hybrid server is downgraded to X25519.
+const agent = new https.Agent({ ecdhCurve: &#39;X25519:P-256&#39; });
+// GOOD: omit ecdhCurve. If a policy forces a list, put the hybrid group first.
+const agent = new https.Agent({ keepAlive: true }); // or ecdhCurve: &#39;X25519MLKEM768:X25519:P-256:P-384&#39;</code></pre>
+<p>A PQ-first <code class="nb">ecdhCurve</code> string throws
+<code>ERR_CRYPTO_OPERATION_FAILED: Failed to set ECDH curve</code> on
+Node 20 and other OpenSSL 3.0 builds (Tested). Code that must run on
+both should use <code>src/tls-pq.js</code> (full file below): it
+feature-detects before adding the group.</p>
+<p><code>tls.DEFAULT_ECDH_CURVE</code> is documented as the server
+default (<a
+href="https://nodejs.org/api/tls.html#tlsdefault_ecdh_curve">Node TLS
+docs</a>). In these tests it also changed client connections: set to
+<code>X25519:P-256</code> it broke PQ for <code>tls.connect</code> and
+<code class="nb">https.get</code>; set PQ-first it restored PQ on Lambda even with
+AWS's config file (Tested). There is no
+<code>--tls-default-ecdh-curve</code> flag (checked with
+<code>node --help</code> on 24.22.3).</p>
+<h3 id="ch-05-nodejs--g-fips-mode">G. FIPS mode</h3>
+<p><strong>Who this is:</strong> you start Node with
+<code>--enable-fips</code> or <code>--force-fips</code>, call
+<code>crypto.setFips(true)</code>, or point <code>OPENSSL_CONF</code> at
+a config that activates a FIPS provider.</p>
+<p><strong>What happens today:</strong> official Node builds include no
+FIPS provider; FIPS mode needs one you install and configure (<a
+href="https://nodejs.org/api/cli.html#--enable-fips">Node CLI docs</a>,
+Documented). Whether X25519MLKEM768 is negotiated under a FIPS provider
+was not tested here. A FIPS-validated OpenSSL 3.5 module with ML-KEM is
+not confirmed (submitted October 2025, <a
+href="https://mirror.openssl-library.org/post/2025-10-09-ossl3.5.4-fips-submission/">OpenSSL</a>).</p>
+<p><strong>What to change:</strong> if you already set
+<code>OPENSSL_CONF</code> for FIPS, don't replace it with the kit file
+(the layer leaves your value alone). Add the <code class="nb">Groups</code> line to
+a <code>system_default</code> section of your own file, then test with
+the PQ-only server. Unverified.</p>
+<p><strong>Side effects:</strong> for AWS endpoints in FIPS mode, see
+the AWS service endpoints chapter: the FIPS endpoints' PQ support is
+separate.</p>
+<h3 id="ch-05-nodejs--h-libraries-and-agents-with-their-own-tls-stack">H. Libraries
+and agents with their own TLS stack</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>TLS stack</th>
+<th>PQ follows Node?</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fetch/undici, axios, got, node-fetch, AWS SDK v3
+(<code>NodeHttpHandler</code>), @grpc/grpc-js, pg, mysql2, ioredis,
+kafkajs</td>
+<td><code class="nb">node:tls</code></td>
+<td>yes</td>
+<td>Tested (case A table)</td>
+</tr>
+<tr>
+<td>Native addons with their own OpenSSL or TLS: node-rdkafka
+(librdkafka), oracledb Thick mode (Oracle Client), <code class="nb">aws-crt</code>
+(AWS CRT, s2n-tls on Linux), older Prisma engines</td>
+<td>their own</td>
+<td>not necessarily</td>
+<td>Not tested. Find them with
+<code>find node_modules -name '*.node'</code> and probe each against the
+PQ-only server</td>
+</tr>
+<tr>
+<td>Child processes: <code class="nb">curl</code>, <code class="nb">git</code>,
+<code class="nb">wget</code> from <code>child_process</code></td>
+<td>the binary's library</td>
+<td>GnuTLS builds have no ML-KEM; OpenSSL-linked curl works</td>
+<td>Tested (GnuTLS builds on Debian 13, Ubuntu 26.04; see Hosts and
+OS)</td>
+</tr>
+<tr>
+<td>APM and tracing exporters (dd-trace, OpenTelemetry OTLP/HTTP)</td>
+<td><code>node:http(s)</code></td>
+<td>expected yes</td>
+<td>Unverified</td>
+</tr>
+<tr>
+<td>Deno, Bun</td>
+<td>rustls / BoringSSL</td>
+<td>own defaults (PQ)</td>
+<td>Tested (client)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-05-nodejs--i-certificate-or-key-pinning-hsm-and-kms-backed-keys">I.
+Certificate or key pinning, HSM and KMS-backed keys</h3>
+<p><strong>Pinning:</strong> an SPKI SHA-256 pin checked in
+<code>checkServerIdentity</code> keeps working with X25519MLKEM768, and
+a wrong pin is still rejected (Tested, all four runtimes,
+<code class="nb">pin.cjs</code>). The key exchange doesn't change the server's
+certificate or key, so existing pins stay valid. Pins on ML-DSA
+certificates are a separate change (see Certificates (ML-DSA)).</p>
+<p><strong>HSM / PKCS#11 / KMS:</strong> the server's private key only
+signs the handshake; the ML-KEM key exchange is ephemeral and doesn't
+use it. Node can load keys through OpenSSL engines
+(<code>privateKeyEngine</code>, <code>privateKeyIdentifier</code>,
+<code>clientCertEngine</code>); engines are deprecated in OpenSSL 3 and
+this path was not tested. Node has no hook for a KMS-held TLS key:
+terminate TLS at an ALB/NLB with ACM instead (see Load balancers).
+Unverified for HSM-backed keys.</p>
+<h3 id="ch-05-nodejs--j-other-cases">J. Other cases</h3>
+<ul>
+<li><strong>HTTPS proxy (<code>HTTPS_PROXY</code>, CONNECT
+tunnel):</strong> the TLS session runs end to end from Node through the
+tunnel, so the PQ outcome is Node's. A TLS-inspecting proxy
+re-terminates and its own stack decides (see Network devices and
+egress). Not tested here.</li>
+<li><strong>HTTP/2 and gRPC servers:</strong> covered in B and C
+(Tested).</li>
+<li><strong>WebSockets (<code class="nb">wss://</code> with
+<code class="nb">ws</code>):</strong> uses <code class="nb">node:tls</code>, expected to
+follow Node. Not tested.</li>
+<li><strong>Service mesh sidecar:</strong> the app speaks plaintext to
+the sidecar; the mesh decides (see Service mesh).</li>
+<li><strong><code>NODE_TLS_REJECT_UNAUTHORIZED=0</code> or
+<code>rejectUnauthorized: false</code>:</strong> doesn't affect PQ, but
+turns off the trust checks that cases D and E rely on. Remove it while
+you are in the code.</li>
+</ul>
+<h2 id="ch-05-nodejs--solution-and-automation">3.5 Solution and automation</h2>
+<ol type="1">
+<li><strong>Inventory.</strong> List Lambda runtimes and overrides,
+report every Node process on EC2 with the SSM document, and scan
+repositories with the CI check (How to test, steps 5 and 6).</li>
+<li><strong>Change, per compute type</strong> (below). Lambda zip and
+image need the config file; containers and EC2 on official Node need
+nothing.</li>
+<li><strong>Guardrails</strong> in CI and the base-image pipeline.</li>
+<li><strong>Canary rollout</strong> with a rollback switch (Rollout
+checklist).</li>
+</ol>
+<h3 id="ch-05-nodejs--lambda-zip-nodejs22x-nodejs24x">Lambda zip (nodejs22.x,
+nodejs24.x)</h3>
+<p>The bootstrap sets
+<code>OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf</code> when the
+variable is unset, and that file's <code class="nb">Groups</code> omits ML-KEM. Its
+own comment says "Customers can opt-in to PQC by setting
+OPENSSL_CONF=/dev/null" (read from <code>/var/runtime/bootstrap</code>
+in <code>public.ecr.aws/lambda/nodejs:22</code> and
+<code class="nb">:24</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Setting</th>
+<th>Result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ship the PQ config (recommended)</td>
+<td><code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf</code></td>
+<td>PQ; classical fallback OK</td>
+<td>Tested (e2e, RIE; 22 and 24)</td>
+</tr>
+<tr>
+<td>Command-line flag</td>
+<td><code>NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf</code></td>
+<td>PQ</td>
+<td>Tested (e2e, RIE)</td>
+</tr>
+<tr>
+<td><code class="nb">pq-tls</code> layer, no package change</td>
+<td><code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code></td>
+<td>PQ; leaves a function's own <code>OPENSSL_CONF</code> alone; chains
+an existing wrapper via <code>PQ_TLS_NEXT_WRAPPER</code></td>
+<td>Tested (e2e)</td>
+</tr>
+<tr>
+<td>AWS's opt-in</td>
+<td><code>OPENSSL_CONF=/dev/null</code></td>
+<td>PQ (OpenSSL built-in defaults)</td>
+<td>Tested (e2e, RIE)</td>
+</tr>
+<tr>
+<td>In code</td>
+<td><code>tls.DEFAULT_ECDH_CURVE = 'X25519MLKEM768:X25519:P-256:P-384'</code>
+before the first connection</td>
+<td>PQ, even with AWS's file</td>
+<td>Tested (e2e, preload via <code>NODE_OPTIONS=--require</code>)</td>
+</tr>
+<tr>
+<td>No change</td>
+<td>bootstrap default</td>
+<td>PQ-only server fails</td>
+<td>Tested (e2e, RIE)</td>
+</tr>
+</tbody>
+</table>
+<p>Prefer the shipped file: it keeps AWS's structure, so review sees any
+future AWS setting, and <code>check-lambda-node-conf.sh</code> (below)
+catches drift. The main change:</p>
+<pre class="text"><code>function.zip
+├── index.mjs
+├── node_modules/...
+└── pq-tls/openssl-pq-node.cnf</code></pre>
+<pre class="yaml"><code># SAM / CloudFormation (Terraform: environment { variables = { OPENSSL_CONF = &quot;...&quot; } })
+Environment:
+  Variables:
+    OPENSSL_CONF: /var/task/pq-tls/openssl-pq-node.cnf</code></pre>
+<p><code>nodejs18.x</code> and <code>nodejs20.x</code> have no
+in-process fix: change <code class="nb">Runtime</code>. For calls that must be PQ
+before then, the <code class="nb">pq-egress</code> extension makes the outbound TLS
+connection with X25519MLKEM768; the function sends plain HTTP to
+<code>http://127.0.0.1:2779/&lt;route&gt;/&lt;path&gt;</code> (Tested in
+e2e on 18, 20, 22 and 24; not tested for AWS SDK calls, which sign the
+host name). See Solutions by compute type.</p>
+<h3 id="ch-05-nodejs--lambda-container-image">Lambda container image</h3>
+<p>On <code>public.ecr.aws/lambda/nodejs:22</code> or <code class="nb">:24</code>,
+copy the file and set <code>ENV OPENSSL_CONF</code>; the bootstrap keeps
+a value that is already set (Tested, e2e). Full
+<code>Dockerfile.lambda</code> below.</p>
+<h3 id="ch-05-nodejs--fargate-ecs-eks">Fargate, ECS, EKS</h3>
+<p>Official <code class="nb">node:22</code>, <code class="nb">node:24</code> and
+<code class="nb">node:26</code> images (Debian or Alpine) need nothing: they set no
+<code>OPENSSL_CONF</code> and bundle OpenSSL 3.5 (Tested). Pin the image
+by digest and keep it at 22.20+/24.9+.</p>
+<p>For an AL2023 image with <code>dnf install nodejs20/22/24</code>, run
+<code>update-crypto-policies --set DEFAULT:PQ</code> in the Dockerfile
+(<a
+href="https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html">AL2023
+PQ guide</a>, Documented; Tested here), or set <code>OPENSSL_CONF</code>
+to <code>openssl-pq-node-system.cnf</code> in the task definition or pod
+spec. Keep <code>NODE_OPTIONS</code> free of
+<code>--tls-max-v1.2</code>.</p>
+<h3 id="ch-05-nodejs--ec2">EC2</h3>
+<p>Official Node 22.20+/24.9+ binaries are PQ by default; the crypto
+policy is not involved. With AL2023's <code>nodejs20/22/24</code>
+packages, set the host policy
+(<code>update-crypto-policies --set DEFAULT:PQ</code>, then restart
+services) or add <code>Environment=OPENSSL_CONF=...</code> to the unit.
+Debian 13 packages are PQ by default. Host-wide policy is on Hosts and
+OS.</p>
+<h3 id="ch-05-nodejs--guardrails">Guardrails</h3>
+<p><code>ci/check-node-tls.sh</code> fails the build on classical
+<code class="nb">ecdhCurve</code> / <code>DEFAULT_ECDH_CURVE</code> lists, TLS 1.2
+caps, <code>nodejs18.x</code>/<code>nodejs20.x</code>,
+<code>OPENSSL_CONF</code> pointing at AWS's file, and <code class="nb">node</code>
+base images below 22.20 / 24.5, and warns on <code>node_modules</code>
+that set these options. Tested against fixtures: 9 findings in the bad
+set, none in the good set (<code>ci-check.out</code>). A reviewed
+exception carries <code class="nb">pq-tls-ok</code> on the same line. Also add
+<code>RUN node pq-check.js</code> in Dockerfiles, and
+<code>check-lambda-node-conf.sh</code> in the pipeline that bumps the
+Lambda base image.</p>
+<pre class="yaml"><code>- name: PQ TLS guardrail (Node.js)
+  run: bash ci/check-node-tls.sh .</code></pre>
+<h2 id="ch-05-nodejs--how-to-test">3.6 How to test</h2>
+<ol type="1">
+<li><strong>Posture:</strong>
+<code>node -p "process.version + ' ' + process.versions.openssl"</code>
+must show 22.20+/24.5+ and 3.5+ (or a distro build linked to 3.5+). On
+Lambda also check <code>OPENSSL_CONF</code> and
+<code>NODE_OPTIONS</code>. <code>pq-check.js</code> prints these and
+whether the runtime can parse <code>X25519MLKEM768</code>. Capable is
+not enabled: Lambda with AWS's file reports capable and still sends a
+classical list.</li>
+<li><strong>Live test (client):</strong>
+<code>node pq-check.js pq-only.example.internal:443 classical.example.internal:443</code>.
+The PQ-only target must report <code class="nb">"pq":true</code>; the classical one
+must connect and report <code>"pq":false</code> (the script then exits 1
+by design).</li>
+<li><strong>Live test (server):</strong>
+<code>openssl s_client -connect host:443 -groups X25519MLKEM768 -tls1_3 -brief</code>
+must print <code>Negotiated TLS1.3 group: X25519MLKEM768</code>;
+<code>-groups X25519</code> must still connect. A Node server has no API
+for the negotiated group (<code>getEphemeralKeyInfo()</code> returns
+<code class="nb">null</code> on server sockets, <a
+href="https://nodejs.org/api/tls.html#tlssocketgetephemeralkeyinfo">Node
+TLS docs</a>).</li>
+<li><strong>Observed signal:</strong> in a client,
+<code>socket.getEphemeralKeyInfo()</code> returns
+<code>{"type":"TLSGroup","name":"X25519MLKEM768"}</code> on Node 24 and
+26, <code class="nb">{}</code> on Node 22 (TLS 1.3 with no EC key, here the hybrid
+group), and <code>{"type":"ECDH","name":"X25519",...}</code> when
+classical (Tested, also in every e2e client case). For AWS calls,
+CloudTrail <code>tlsDetails.keyExchange</code>: see AWS service
+endpoints.</li>
+<li><strong>Code and dependency scan:</strong>
+<code>grep -rnE "ecdhCurve|DEFAULT_ECDH_CURVE|maxVersion|secureProtocol|TLSv1_2_method|tls-max-v1\.2" --include='*.js' --include='*.mjs' --include='*.cjs' --include='*.ts' .</code>,
+including <code>node_modules</code>.</li>
+<li><strong>Fleet inventory:</strong>
+<code>aws lambda list-functions --query "Functions[?starts_with(Runtime,'nodejs')].[FunctionName,Runtime,Environment.Variables.OPENSSL_CONF]" --output text</code>.
+For EC2, the <code>pq-node-posture.json</code> SSM document. Blocking
+old runtimes is on Enforcement and guardrails.</li>
+</ol>
+<p>Case tests (scripts in Full configuration files; Docker on a laptop
+or CI runner, no AWS account):</p>
+<ol type="1">
+<li><code>bash gen-certs.sh</code> inside an OpenSSL 3.5 container:
+private CA, RSA/EC server certs, encrypted keys, PFX files, client
+certs. Swap in copies of your own files to test your real store.</li>
+<li><code>bash start-ossl.sh</code>: PQ-only 4431, classical 4432,
+PQ-only with client cert required 4433, classical with client cert
+4434.</li>
+<li><code>bash run-cases.sh node24 node@sha256:&lt;digest&gt; -</code>,
+and for Lambda
+<code>bash run-cases.sh lambda24-pq public.ecr.aws/lambda/nodejs@sha256:&lt;digest&gt; /k/openssl-pq-node.cnf</code>.
+Expect every PQ-only probe <code>X25519MLKEM768</code>, every classical
+probe <code class="nb">X25519</code>, the case F blockers to fail and the legacy
+PFX to fail.</li>
+<li>Your own server (case C): probe with
+<code>openssl s_client ... -groups X25519MLKEM768 -tls1_3 -brief</code>,
+then <code>-groups X25519</code>, then <code class="nb">-tls1_2</code>. Add
+<code>-servername &lt;name&gt;</code> for SNI and
+<code>-sigalgs RSA-PSS+SHA256:RSA+SHA256</code> to see the RSA cert of
+an RSA+EC store.</li>
+<li>Your trust setup (case D): <code>node cli.cjs trust-env</code> with
+your <code>NODE_EXTRA_CA_CERTS</code> / <code>SSL_CERT_FILE</code> /
+flags; <code>trust-none</code> must fail.</li>
+<li>Your client cert (case E): <code>node cli.cjs mtls</code>; the
+no-cert rows must fail with <code>CERTIFICATE_REQUIRED</code>.</li>
+<li>Lambda with the real bootstrap: <code>bash run-lambda-rie.sh</code>
+(Runtime Interface Emulator, host port 18661+).</li>
+<li>Rollback: rerun step 3 or 7 without <code>OPENSSL_CONF</code>.
+PQ-only targets must fail and classical ones pass.</li>
+</ol>
+<p>Results, 2026-11-14: about 170 checks on each of 6 runtime setups
+(node:22, node:24, Lambda 22 and 24 with and without the PQ file), 6
+emulator invocations, 8 pinning checks, 4 PFX checks and the CI
+fixtures. All matched except three findings not caused by PQ: legacy
+PFX, global <code class="nb">fetch</code> with an npm undici 8 dispatcher, and the
+Lambda image's empty system store.</p>
+<h2 id="ch-05-nodejs--rollout-checklist">3.7 Rollout checklist</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Inventory: Lambda functions by runtime and
+<code>OPENSSL_CONF</code>; container images by Node version and OpenSSL;
+EC2 services by binary (official or <code class="nb">dnf</code>)</td>
+<td>Every Node workload has a row and a fix from Quick start</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Move <code>nodejs18.x</code> and <code>nodejs20.x</code> to
+<code>nodejs24.x</code> first (update block 2027-08-31);
+<code class="nb">pq-egress</code> only where a call must be PQ sooner</td>
+<td>No 18/20 functions, or a recorded exception</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Run <code>ci/check-node-tls.sh</code> in warn mode on every repo;
+fix pinned <code class="nb">ecdhCurve</code>, <code>DEFAULT_ECDH_CURVE</code> and
+TLS 1.2 caps</td>
+<td>No findings, or <code class="nb">pq-tls-ok</code> with a reviewer</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Add <code>openssl-pq-node.cnf</code> to the shared Lambda build
+template; add <code>check-lambda-node-conf.sh</code> to the base-image
+bump pipeline</td>
+<td>Template release published</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Re-export legacy RC2/3DES PFX files (case C); on Lambda images set
+<code>SSL_CERT_FILE</code> if you rely on the OS store (case D)</td>
+<td><code>run-cases.sh</code> passes with your files</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Canary: Lambda, publish a version and shift 10% with alias weighted
+routing (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html">Lambda
+alias routing</a>, Documented); ECS, deployment circuit breaker with
+rollback; EKS, rolling update with a readiness probe; EC2, one instance
+per Auto Scaling group</td>
+<td>Errors and latency flat for the canary period</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Verify on the canary: CloudTrail <code>tlsDetails.keyExchange</code>
+for KMS, STS, Secrets Manager calls from its role;
+<code>pq-check.js</code> for third-party targets</td>
+<td><code>X25519MLKEM768</code> observed</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Roll out to 100%, then the launch template or base image</td>
+<td>All workloads on the fix</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Turn the CI check to fail mode and add the runtime guardrail
+(Enforcement and guardrails)</td>
+<td>New code can't regress</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-05-nodejs--pitfalls-and-rollback">3.8 Pitfalls and rollback</h2>
+<table>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>Effect</th>
+<th>Fix</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Classical <code class="nb">ecdhCurve</code> on a client</td>
+<td>PQ-only server rejects; hybrid servers downgrade to X25519</td>
+<td>remove it, or put <code>X25519MLKEM768</code> first</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Classical <code class="nb">ecdhCurve</code> on a server</td>
+<td>every client silently gets X25519</td>
+<td>same</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>PQ-first <code class="nb">ecdhCurve</code> on Node 20 / OpenSSL 3.0</td>
+<td>throws at startup; a server process crashes</td>
+<td>upgrade, or feature-detect (<code class="nb">tls-pq.js</code>)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>tls.DEFAULT_ECDH_CURVE</code> set to a classical list</td>
+<td>clients and servers lose PQ, even with the PQ file set</td>
+<td>remove it</td>
+<td>Tested (e2e <code>node-lambda-n24-code-ecdh-classical</code>)</td>
+</tr>
+<tr>
+<td><code>--tls-max-v1.2</code>, <code>maxVersion: 'TLSv1.2'</code>,
+<code>secureProtocol: 'TLSv1_2_method'</code></td>
+<td>no TLS 1.3, so no ML-KEM</td>
+<td>remove the cap</td>
+<td>Tested (e2e <code>-tls-max-12</code> on Lambda and Fargate)</td>
+</tr>
+<tr>
+<td>Lambda bootstrap config</td>
+<td>nodejs22/24 stay classical</td>
+<td>ship <code>openssl-pq-node.cnf</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Lambda <code>nodejs26.x</code> preview with
+<code>AWS_LAMBDA_TLS_PROFILE=aws</code></td>
+<td><code>commercial-2025</code> profile, classical</td>
+<td>set <code>OPENSSL_CONF</code> as for 22/24</td>
+<td>Tested (Docker, base image); real sandbox value not sure</td>
+</tr>
+<tr>
+<td>Function already sets <code>OPENSSL_CONF</code> (FIPS, custom
+engine)</td>
+<td>the layer leaves it alone, so the function stays classical</td>
+<td>merge the <code class="nb">Groups</code> line into their file</td>
+<td>Tested (e2e <code>node-lambda-n24-layer-ownconf</code>); FIPS config
+not tested</td>
+</tr>
+<tr>
+<td>AL2023 <code class="nb">dnf</code> Node, including <code class="nb">nodejs20</code></td>
+<td>follows the system crypto policy; classical by default</td>
+<td><code>DEFAULT:PQ</code> or <code>OPENSSL_CONF</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>"Node 20 is never PQ"</td>
+<td>wrong for Debian 13's 20.19.2 (OpenSSL 3.5.7) and AL2023
+<code class="nb">nodejs20</code> 20.20.2 (3.5.8) once fixed</td>
+<td>check <code>process.versions.openssl</code>, not the major</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Bun reports <code>process.versions.openssl</code> =
+<code class="nb">1.1.0</code></td>
+<td>version-based posture checks misread it</td>
+<td>live test instead</td>
+<td>Tested (Bun 1.4.4 is PQ)</td>
+</tr>
+<tr>
+<td>Lambda runtime pinned in Manual update mode</td>
+<td>could stay below 22.20</td>
+<td>check the runtime version ARN</td>
+<td>Unverified</td>
+</tr>
+<tr>
+<td>Larger ClientHello (about 1.2 KB more key share)</td>
+<td>some middleboxes drop it</td>
+<td>live test through the real network path</td>
+<td>not observed here</td>
+</tr>
+<tr>
+<td>Legacy PFX (RC2-40/3DES)</td>
+<td><code>Unsupported PKCS12 PFX data</code>; the Lambda nodejs24 image
+can't load the legacy provider</td>
+<td>re-export (case C)</td>
+<td>Tested (e2e on Lambda 20, 22, 24 and Fargate)</td>
+</tr>
+<tr>
+<td>Global <code class="nb">fetch</code> with a <code>dispatcher</code> from a
+different undici major</td>
+<td><code>UND_ERR_INVALID_ARG: invalid onRequestStart method</code></td>
+<td>import <code class="nb">fetch</code> and <code class="nb">Agent</code> from the same
+<code class="nb">undici</code> package</td>
+<td>Tested (undici 8.12.4 on Node 22/24)</td>
+</tr>
+<tr>
+<td>Lambda image: CA in the OS store,
+<code>--use-system-ca</code>/<code>--use-openssl-ca</code> without
+<code>SSL_CERT_FILE</code></td>
+<td>no system CAs load; private CA not trusted</td>
+<td><code>SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt</code>, or
+<code>NODE_EXTRA_CA_CERTS</code></td>
+<td>Tested (base image; real runtime not checked)</td>
+</tr>
+<tr>
+<td>TLS 1.3 mTLS without a client cert</td>
+<td><code>secureConnect</code> fires, error arrives on first read</td>
+<td>check the first response, not just the connect</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>secureProtocol: 'TLSv1_3_method'</code></td>
+<td>throws <code>ERR_TLS_INVALID_PROTOCOL_METHOD</code></td>
+<td><code>minVersion: 'TLSv1.3'</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Node TLS server inside a Lambda function</td>
+<td>AWS's file governs it too: PQ-only clients refused</td>
+<td>same <code>OPENSSL_CONF</code> fix</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rollback</strong> is a config change each time: remove
+<code>OPENSSL_CONF</code> or <code>NODE_OPTIONS</code> from the
+function, or set <code>PQ_TLS_DISABLE=1</code> with the layer still
+attached (Tested, e2e <code>node-lambda-n24-layer-disabled</code>: back
+to classical); remove the <code class="nb">ENV</code> line from a Lambda image;
+redeploy the previous image digest for containers;
+<code>update-crypto-policies --set DEFAULT</code> on AL2023. On a
+server, <code>TLS_ECDH_CURVE=X25519:P-256:P-384</code> in
+<code class="nb">server.js</code> (below) is a temporary classical-only switch.</p>
+<h2 id="ch-05-nodejs--test-evidence">3.9 Test evidence</h2>
+<p>The LocalStack end-to-end suite (run r1117041043, 2026-11-16) deploys
+each Node.js workload into LocalStack Pro, on AWS's own Lambda images
+(<code>public.ecr.aws/lambda/nodejs</code>), official <code class="nb">node</code>
+images and AL2023 2023.12.20261109, and grades what it negotiates
+against a TLS observer. <strong>100 Node.js cases, 100 pass</strong>: 93
+client cases and 7 load balancer target cases. "Pass" means the
+behaviour matched this chapter, which for a baseline is "classical".
+Each client case runs eight targets: hybrid, PQ-only, mTLS, EC
+certificate, TLS 1.2, and three ML-DSA targets.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>What it proved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip, <code>nodejs22.x</code> / <code>nodejs24.x</code></td>
+<td>31</td>
+<td>Baseline classical. Fixed by the bundled file,
+<code>--openssl-config</code>, the layer, <code class="nb">/dev/null</code> and a
+PQ-first <code>DEFAULT_ECDH_CURVE</code>. Layer leaves a function's own
+config alone, chains an existing wrapper, rolls back with
+<code>PQ_TLS_DISABLE=1</code>. Pitfalls reproduced: classical
+<code>DEFAULT_ECDH_CURVE</code>, <code>--tls-max-v1.2</code>.
+<code>NODE_EXTRA_CA_CERTS</code>, global <code class="nb">fetch</code> and modern
+PFX work with the fix; legacy PFX fails mTLS only</td>
+</tr>
+<tr>
+<td>Lambda zip, <code>nodejs18.x</code> / <code>nodejs20.x</code></td>
+<td>13</td>
+<td>Classical with every in-process method (file, flag, layer), startup
+unaffected; the <code class="nb">pq-egress</code> extension (alone or in the
+combined layer) gives X25519MLKEM768 on the hybrid, PQ-only, mTLS and
+EC-certificate targets</td>
+</tr>
+<tr>
+<td>Lambda container image, nodejs 22 / 24</td>
+<td>4</td>
+<td>Base image classical; <code class="nb">COPY</code> +
+<code>ENV OPENSSL_CONF</code> gives PQ</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>28 client, 6 target</td>
+<td>Official images: 20 and 22.19 / 24.4 classical, 22.20 / 24.5 / 26 PQ
+(slim and alpine). Debian 13 and Alpine 3.22 distro Node PQ. AL2023
+<code class="nb">dnf</code> nodejs20/22/24: classical, PQ with
+<code>OPENSSL_CONF</code> or <code>DEFAULT:PQ</code>. Target leg behind
+a PQ ALB policy: PQ for <code>node:24-slim</code> and fixed AL2023
+servers, classical for <code>node:20-slim</code> and unfixed AL2023</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>5 client, 1 target</td>
+<td>Same results as Fargate for <code>node:24-slim</code>,
+<code>node:20-slim</code> and AL2023 nodejs22/24</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>12</td>
+<td>AL2023 <code class="nb">dnf</code> nodejs20/22/24: classical, PQ with a
+per-service <code>OPENSSL_CONF</code> or host <code>DEFAULT:PQ</code>.
+Official 22 and 24 binaries PQ; host <code>DEFAULT:PQ</code> does not
+change them</td>
+</tr>
+</tbody>
+</table>
+<p><strong>ML-DSA (separate track).</strong> Every client on OpenSSL 3.5
+with TLS 1.3 allowed (official 22.20+/24.5+/26, Debian 13, Alpine 3.22)
+accepted an ML-DSA server certificate, an ML-DSA-only server and ML-DSA
+mutual TLS, including Lambda 22/24 with AWS's classical file (that file
+restricts groups, not signatures). AL2023 <code class="nb">dnf</code> Node does so
+only after <code>DEFAULT:PQ</code> or the system file. Unfixed AL2023
+Node, Node 20 / 22.19 / 24.4 and <code>--tls-max-v1.2</code> get ECDSA
+from a dual-certificate server and fail ML-DSA-only. The
+<code class="nb">pq-egress</code> cases did not run the ML-DSA targets.</p>
+<p><strong>Not tested:</strong> real AWS (LocalStack and Docker on arm64
+only); EKS; Lambda <code>nodejs26.x</code> in the suite (Docker only,
+above); FIPS providers; <code class="nb">pq-egress</code> for AWS SDK calls; native
+addons with their own TLS (case H).</p>
+<p>Code and results: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/node.py">e2e/cases/node.py</a> (client cases and
+expectations), <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/server.py">e2e/cases/server.py</a> (target cases),
+<a href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/node/index.js">e2e/clients/node/index.js</a>
+(probe), <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/node.sh">e2e/build/node.sh</a>
+(packages and images, built from <code>configs/nodejs/</code>), <a
+href="https://github.com/moolivkkr/PQC/tree/main/e2e/lambda/extension/pq-egress">e2e/lambda/extension/pq-egress</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md">e2e/results/latest/summary.md</a>.
+Earlier case tests (C to I, client libraries, servers, emulator) with
+outputs: <a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/node">tests/deep/node</a> and <a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/node/v2">tests/deep/node/v2</a>. The per-case list
+is in Appendix A.</p>
+<h2 id="ch-05-nodejs--full-configuration-files">3.10 Configuration files</h2>
+<p>The complete files for this chapter are in the repository under <a href="https://github.com/moolivkkr/PQC/tree/main/configs/nodejs"><code>configs/nodejs/</code></a>. This paper shows only the main change from each; copy from the repository, not from the paper. 28 files:</p><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/pq-tls/openssl-pq-node.cnf"><code>configs/nodejs/pq-tls/openssl-pq-node.cnf</code></a></td><td><code>pq-tls/openssl-pq-node.cnf</code> (Lambda nodejs22/24: AWS's file with the hybrid group added first; Tested)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/etc/app/openssl-pq-node-system.cnf"><code>configs/nodejs/etc/app/openssl-pq-node-system.cnf</code></a></td><td><code>/etc/app/openssl-pq-node-system.cnf</code> (distro Node on system OpenSSL 3.5+ when you can't change the host policy; Tested on AL2023 nodejs22)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/check-lambda-node-conf.sh"><code>configs/nodejs/check-lambda-node-conf.sh</code></a></td><td><code>check-lambda-node-conf.sh</code> (pipeline check; Tested against nodejs22 and nodejs24 images: "OK: only Groups differs")</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/src/tls-pq.js"><code>configs/nodejs/src/tls-pq.js</code></a></td><td><code>src/tls-pq.js</code> (shared TLS options with feature detection; Tested on Node 20, 22, 24)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/pq-check.js"><code>configs/nodejs/pq-check.js</code></a></td><td><code>pq-check.js</code> (posture and live check; exits 1 if the runtime can't do ML-KEM or any target is not PQ; Tested)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/server.js"><code>configs/nodejs/server.js</code></a></td><td><code class="nb">server.js</code> (Express on HTTPS; Tested on <code>node:24-slim</code>: PQ client got X25519MLKEM768, classical client X25519, TLS 1.2 client connected)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/template.yaml"><code>configs/nodejs/template.yaml</code></a></td><td><code>template.yaml</code> (SAM, Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/lambda-cfn.yaml"><code>configs/nodejs/lambda-cfn.yaml</code></a></td><td><code>lambda-cfn.yaml</code> (CloudFormation, Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/lambda.tf"><code>configs/nodejs/lambda.tf</code></a></td><td><code class="nb">lambda.tf</code> (Terraform, Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/Dockerfile.lambda"><code>configs/nodejs/Dockerfile.lambda</code></a></td><td><code>Dockerfile.lambda</code> (Lambda container image)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/Dockerfile"><code>configs/nodejs/Dockerfile</code></a></td><td><code>Dockerfile</code> (Fargate / ECS / EKS on an official image: nothing PQ-specific)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/Dockerfile.al2023"><code>configs/nodejs/Dockerfile.al2023</code></a></td><td><code>Dockerfile.al2023</code> (AL2023 base with the distro Node package; policy step Tested)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/taskdef.json"><code>configs/nodejs/taskdef.json</code></a></td><td><code>taskdef.json</code> (ECS / Fargate; no TLS setting needed)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/ecs.tf"><code>configs/nodejs/ecs.tf</code></a></td><td><code class="nb">ecs.tf</code> (Terraform; distro-Node images only need the commented line)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/ecs-cfn.yaml"><code>configs/nodejs/ecs-cfn.yaml</code></a></td><td><code>ecs-cfn.yaml</code> (CloudFormation)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/deployment.yaml"><code>configs/nodejs/deployment.yaml</code></a></td><td><code>deployment.yaml</code> (EKS)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/etc/systemd/system/orders.service"><code>configs/nodejs/etc/systemd/system/orders.service</code></a></td><td><code>/etc/systemd/system/orders.service</code> (EC2)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/pq-node-posture.json"><code>configs/nodejs/pq-node-posture.json</code></a></td><td><code>pq-node-posture.json</code> (SSM Command document: reports every running Node process on an instance)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/ci/check-node-tls.sh"><code>configs/nodejs/ci/check-node-tls.sh</code></a></td><td><code>ci/check-node-tls.sh</code> (CI guardrail; Tested against fixtures, ci-check.out)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/gen-certs.sh"><code>configs/nodejs/test/gen-certs.sh</code></a></td><td><code>test/gen-certs.sh</code> (private CA, RSA/EC server certs, encrypted keys, PFX files, client certs; run inside an OpenSSL 3.5 container with this dir at /w)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/start-ossl.sh"><code>configs/nodejs/test/start-ossl.sh</code></a></td><td><code>test/start-ossl.sh</code> (the four reference servers: PQ-only, classical, and both with client certs required)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/srv.cjs"><code>configs/nodejs/test/srv.cjs</code></a></td><td><code>test/srv.cjs</code> (server probe for cases C, E (server side) and F)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/cli.cjs"><code>configs/nodejs/test/cli.cjs</code></a></td><td><code>test/cli.cjs</code> (client probe for cases D, E and F)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/pin.cjs"><code>configs/nodejs/test/pin.cjs</code></a></td><td><code>test/pin.cjs</code> (case I: SPKI pinning)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/run-cases.sh"><code>configs/nodejs/test/run-cases.sh</code></a></td><td><code>test/run-cases.sh</code> (runs C, D, E and F for one runtime image)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/fn/index.js"><code>configs/nodejs/test/fn/index.js</code></a></td><td><code>test/fn/index.js</code> (Lambda handler for the emulator test)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/run-lambda-rie.sh"><code>configs/nodejs/test/run-lambda-rie.sh</code></a></td><td><code>test/run-lambda-rie.sh</code> (Lambda nodejs22/24 under the Runtime Interface Emulator with NODE_EXTRA_CA_CERTS and mTLS)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/nodejs/test/run-pin.sh"><code>configs/nodejs/test/run-pin.sh</code></a></td><td><code>test/run-pin.sh</code> (runs pin.cjs on the four runtimes)</td></tr></tbody></table>
+
+<h1 id="ch-tests-nodejs">4 Test evidence and test cases</h1>
+<p>Run r1117041043 (2026-11-16), LocalStack Pro end-to-end suite. Each
+case deploys the runtime and fix on real Lambda, ECS or EC2 resources in
+LocalStack and connects to a TLS observer; PASS means the observed
+result matched the expectation in the case file (a baseline that stays
+classical as documented passes). Not run on real AWS or x86_64.</p>
+<h2 id="ch-tests-nodejs--summary">4.1 Summary</h2>
+<p>93 client cases and 7 load balancer target cases; 100 passed.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>PQ on <code class="nb">hybrid</code></th>
+<th>Connected to <code class="nb">pqonly</code></th>
+<th>Runtimes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda</td>
+<td>48</td>
+<td>29</td>
+<td>29</td>
+<td>image, nodejs18.x, nodejs20.x, nodejs22.x, nodejs24.x</td>
+</tr>
+<tr>
+<td>ECS Fargate</td>
+<td>28</td>
+<td>20</td>
+<td>20</td>
+<td>pqc-node:al2023 node-20, pqc-node:al2023 node-22, pqc-node:al2023
+node-24, pqc-node:al2023-policy node-20, pqc-node:al2023-policy node-22,
+pqc-node:al2023-policy node-24, pqc-node:distro-alpine322 node,
+pqc-node:distro-debian13 node and 11 more</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>5</td>
+<td>3</td>
+<td>3</td>
+<td>pqc-node:al2023 node-22, pqc-node:al2023-policy node-24,
+pqc-node:lib-20-slim node, pqc-node:lib-24-slim node</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>12</td>
+<td>9</td>
+<td>9</td>
+<td>pqc-al2023 /opt/pqc/node/official-22/bin/node, pqc-al2023
+/opt/pqc/node/official-24/bin/node, pqc-al2023 node-20, pqc-al2023
+node-22, pqc-al2023 node-24</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What the cases vary:</strong> no change: the runtime's
+default (expected classical where the paper says so) (35); kit files
+bundled in the Lambda package (18); the <code class="nb">pq-tls</code> layer and
+<code>AWS_LAMBDA_EXEC_WRAPPER</code> (9); the <code class="nb">pq-egress</code>
+Lambda extension (8);
+<code>update-crypto-policies --set DEFAULT:PQ</code> (image or host)
+(8); OpenSSL config file and <code>OPENSSL_CONF</code> (7); a code-level
+group setting (4); Lambda container image, unchanged (2); Lambda
+container image with the fix in the Dockerfile (2).</p>
+<p><strong>ML-DSA:</strong> 62 used ML-DSA on all three targets; 23 got
+ECDSA from the dual server and failed the ML-DSA-only targets.</p>
+<p><strong>Load balancer target leg:</strong> 7 servers (ecs-ec2,
+ecs-fargate); 5 negotiated PQ with the ALB's PQ backend policy (the rest
+are baselines); 7 of 7 negotiated classical TLS 1.2 with the classic
+policy.</p>
+<table>
+<thead>
+<tr>
+<th>Test component</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case definitions (one entry per case, with its expectation)</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/node.py">e2e/cases/node.py</a></td>
+</tr>
+<tr>
+<td>Probe deployed in every case</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/node/index.js">e2e/clients/node/index.js</a></td>
+</tr>
+<tr>
+<td>Build and deploy script</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/node.sh">e2e/build/node.sh</a></td>
+</tr>
+<tr>
+<td>Load balancer target server</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/server.js">e2e/clients/server/server.js</a></td>
+</tr>
+<tr>
+<td>Earlier tests: existing certificates, keystores, libraries
+(containers)</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/node">tests/deep/node/</a></td>
+</tr>
+<tr>
+<td>Earlier tests: Lambda base images under the Runtime Interface
+Emulator</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/client.js">tests/lambda/client.js</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-matrix.sh">tests/lambda/run-matrix.sh</a></td>
+</tr>
+<tr>
+<td>Configuration and test harness files from the chapter</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/configs/nodejs">configs/nodejs/</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-nodejs--every-client-case">4.2 Every client case</h2>
+<p>Cells: what the client negotiated with each target (hybrid, PQ-only,
+mutual TLS, TLS 1.2 only) and the certificate it got from the dual
+ML-DSA/ECDSA server.</p>
+<h3 id="ch-tests-nodejs--lambda-48-cases">Lambda (48 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node-lambda-image-n22-baseline</code></td>
+<td>v22.23.5</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-image-n22-fixed</code></td>
+<td>v22.23.5</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-image-n24-baseline</code></td>
+<td>v24.22.3</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-image-n24-fixed</code></td>
+<td>v24.22.3</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n18-baseline</code></td>
+<td>v18.20.8</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n18-bundled-conf</code></td>
+<td>v18.20.8</td>
+<td>bundled</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n18-bundled-flag</code></td>
+<td>v18.20.8</td>
+<td>bundled</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n18-combined</code></td>
+<td>v18.20.8</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n18-extension</code></td>
+<td>v18.20.8</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n18-layer</code></td>
+<td>v18.20.8</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-baseline</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-bundled-conf</code></td>
+<td>v20.20.2</td>
+<td>bundled</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-bundled-flag</code></td>
+<td>v20.20.2</td>
+<td>bundled</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-combined</code></td>
+<td>v20.20.2</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-extension</code></td>
+<td>v20.20.2</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-layer</code></td>
+<td>v20.20.2</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n20-pfx-legacy</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-baseline</code></td>
+<td>v22.23.5</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-bundled-conf</code></td>
+<td>v22.23.5</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-bundled-flag</code></td>
+<td>v22.23.5</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-combined</code></td>
+<td>v22.23.5</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-devnull</code></td>
+<td>v22.23.5</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-extension</code></td>
+<td>v22.23.5</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-layer</code></td>
+<td>v22.23.5</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-layer-chain</code></td>
+<td>v22.23.5</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-nec-bundled</code></td>
+<td>v22.23.5</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-nec-layer</code></td>
+<td>v22.23.5</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n22-pfx-legacy</code></td>
+<td>v22.23.5</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-baseline</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-bundled-conf</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-bundled-flag</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-code-ecdh</code></td>
+<td>v24.22.3</td>
+<td>code</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-code-ecdh-classical</code></td>
+<td>v24.22.3</td>
+<td>code</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-combined</code></td>
+<td>v24.22.3</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-combined-wrapper</code></td>
+<td>v24.22.3</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-devnull</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-extension</code></td>
+<td>v24.22.3</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-fetch-nec</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>—</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-layer</code></td>
+<td>v24.22.3</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-layer-disabled</code></td>
+<td>v24.22.3</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-layer-ownconf</code></td>
+<td>v24.22.3</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-nec-aws</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-nec-bundled</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-nec-none</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-pfx</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-pfx-legacy</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-pfx-legacy-provider</code></td>
+<td>v24.22.3</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-lambda-n24-tls-max-12</code></td>
+<td>v24.22.3</td>
+<td>code</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-nodejs--ecs-fargate-28-cases">ECS Fargate (28 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node-fargate-al2023-n20-baseline</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n20-conf</code></td>
+<td>v20.20.2</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n20-policy</code></td>
+<td>v20.20.2</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n22-baseline</code></td>
+<td>v22.23.4</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n22-conf</code></td>
+<td>v22.23.4</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n22-policy</code></td>
+<td>v22.23.4</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n24-baseline</code></td>
+<td>v24.22.1</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n24-conf</code></td>
+<td>v24.22.1</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-al2023-n24-policy</code></td>
+<td>v24.22.1</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-distro-alpine322</code></td>
+<td>v22.23.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-distro-debian13</code></td>
+<td>v20.19.2</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-20-alpine</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-20-slim</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-22-alpine</code></td>
+<td>v22.23.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-22-slim</code></td>
+<td>v22.23.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-22-slim-fetch</code></td>
+<td>v22.23.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>—</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-2219-alpine</code></td>
+<td>v22.19.0</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-2220-alpine</code></td>
+<td>v22.20.0</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-alpine</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-slim</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-slim-nec</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-slim-pfx</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-slim-pfx-legacy</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-slim-pfx-legacy-provider</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-24-slim-tls-max-12</code></td>
+<td>v24.22.3</td>
+<td>code</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-244-alpine</code></td>
+<td>v24.4.1</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-245-alpine</code></td>
+<td>v24.5.0</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-fargate-lib-26-slim</code></td>
+<td>v26.13.1</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-nodejs--ecs-on-ec2-5-cases">ECS on EC2 (5 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node-ecsec2-al2023-n22-baseline</code></td>
+<td>v22.23.4</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ecsec2-al2023-n22-conf</code></td>
+<td>v22.23.4</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ecsec2-al2023-n24-policy</code></td>
+<td>v24.22.1</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ecsec2-lib-20-slim</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ecsec2-lib-24-slim</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-nodejs--ec2-12-cases">EC2 (12 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node-ec2-al2023-n20-baseline</code></td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n20-host-policy</code></td>
+<td>v20.20.2</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n20-service-conf</code></td>
+<td>v20.20.2</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n22-baseline</code></td>
+<td>v22.23.4</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n22-host-policy</code></td>
+<td>v22.23.4</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n22-service-conf</code></td>
+<td>v22.23.4</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n24-baseline</code></td>
+<td>v24.22.1</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n24-host-policy</code></td>
+<td>v24.22.1</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-n24-service-conf</code></td>
+<td>v24.22.1</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-official22-baseline</code></td>
+<td>v22.23.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-official24-baseline</code></td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>node-ec2-al2023-official24-host-default-pq</code></td>
+<td>v24.22.3</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td><strong>ML-DSA</strong></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-nodejs--load-balancer-target-cases-7">4.3 Load balancer target cases
+(7)</h2>
+<p>The workload is the HTTPS server; the observer connects like an ALB
+with the PQ backend policy (alb-pq) or the classic one
+(alb-classic).</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Compute</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>alb-pq</th>
+<th>alb-classic</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>srv-node-ecsec2-lib-24-slim</code></td>
+<td>ecs-ec2</td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-node-fargate-al2023-n20-conf</code></td>
+<td>ecs-fargate</td>
+<td>v20.20.2</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-node-fargate-al2023-n22-baseline</code></td>
+<td>ecs-fargate</td>
+<td>v22.23.4</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-node-fargate-al2023-n22-conf</code></td>
+<td>ecs-fargate</td>
+<td>v22.23.4</td>
+<td>config</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-node-fargate-al2023-n22-policy</code></td>
+<td>ecs-fargate</td>
+<td>v22.23.4</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-node-fargate-lib-20-slim</code></td>
+<td>ecs-fargate</td>
+<td>v20.20.2</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-node-fargate-lib-24-slim</code></td>
+<td>ecs-fargate</td>
+<td>v24.22.3</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+</body></html>

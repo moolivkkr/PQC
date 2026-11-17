@@ -1,0 +1,3372 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Post-Quantum TLS on AWS: Go</title><style>
+body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
+h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
+h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:9pt;page-break-inside:auto}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#e8edf3} tr{page-break-inside:avoid}
+code{font-family:Menlo,Consolas,monospace;font-size:8.5pt;background:#f2f2f2;padding:0 2px;word-break:break-word}
+code.nb{white-space:nowrap;word-break:normal}
+pre{background:#f2f2f2;padding:8px;font-size:8pt;white-space:pre-wrap;word-break:break-all;border:1px solid #ddd}
+pre code{background:none;padding:0}
+p.excerpt{font-size:9pt;margin-top:-4px}
+.cover{text-align:left;padding-top:160px}.cover h1{page-break-before:avoid;border:none;font-size:28pt}
+.cover .sub{font-size:14pt;color:#444}.cover .meta{margin-top:60px;font-size:10.5pt}
+.toc ul{padding-left:0}.toc li{list-style:none;margin:2px 0}.toc li.l0{margin-top:8px;font-weight:600}
+.toc li.l1{margin-left:22px;font-weight:400;font-size:9.5pt}.toc li.l2{margin-left:22px;font-weight:400;font-size:9.5pt}
+a{color:#0b57d0;text-decoration:none}
+@media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
+@page{size:A4;margin:16mm 14mm}
+</style></head><body>
+<div class="cover"><h1 class="title">Post-Quantum TLS on AWS: Go</h1>
+<p class="sub">For Go application teams: what to change on Lambda, ECS, EKS and EC2, every case, how to test, and the evidence</p><p>Start with the one-page summary. The detailed guide covers every Go version, the cases teams meet (own keystores, custom CA trust, mutual TLS, explicit TLS settings, FIPS, libraries with their own TLS), how to test and roll back, and the configuration files. The last chapter lists every end-to-end test case run for Go.</p>
+<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="https://github.com/moolivkkr/PQC">https://github.com/moolivkkr/PQC</a></p></div>
+<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul><li class="l0"><a href="#ch-summary-go">1 Summary for Go teams</a></li><li class="l0"><a href="#ch-lang-context">2 Context for application
+teams</a><ul><li class="l2"><a href="#ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</a></li><li class="l2"><a href="#ch-lang-context--how-the-fix-ships">2.2 How the fix ships</a></li><li class="l2"><a href="#ch-lang-context--evidence-labels">2.3 Evidence labels</a></li><li class="l2"><a href="#ch-lang-context--related-documents">2.4 Related documents</a></li></ul></li><li class="l0"><a href="#ch-03-go">3 Go: detailed guide</a><ul><li class="l2"><a href="#ch-03-go--problem-statement">3.1 Problem statement</a></li><li class="l2"><a href="#ch-03-go--quick-start-by-compute-type">3.2 Quick start by compute type</a></li><li class="l2"><a href="#ch-03-go--versions-and-native-support">3.3 Versions and native support</a></li><li class="l2"><a href="#ch-03-go--cases-what-to-change">3.4 Cases: what to change</a></li><li class="l2"><a href="#ch-03-go--solution-and-automation">3.5 Solution and automation</a></li><li class="l2"><a href="#ch-03-go--how-to-test">3.6 How to test</a></li><li class="l2"><a href="#ch-03-go--rollout-checklist">3.7 Rollout checklist</a></li><li class="l2"><a href="#ch-03-go--pitfalls-and-rollback">3.8 Pitfalls and rollback</a></li><li class="l2"><a href="#ch-03-go--test-evidence">3.9 Test evidence</a></li><li class="l2"><a href="#ch-03-go--full-configuration-files">3.10 Configuration files</a></li></ul></li><li class="l0"><a href="#ch-tests-go">4 Test evidence and test cases</a><ul><li class="l2"><a href="#ch-tests-go--summary">4.1 Summary</a></li><li class="l2"><a href="#ch-tests-go--every-client-case">4.2 Every client case</a></li><li class="l2"><a href="#ch-tests-go--load-balancer-target-cases-5">4.3 Load balancer target cases
+(5)</a></li></ul></li></ul></div>
+<h1 id="ch-summary-go">1 Summary for Go teams</h1>
+<p><strong>What decides PQ.</strong> Go's own <code>crypto/tls</code> is
+compiled into the binary, so the OS, base image and Lambda runtime play
+no part. Three things decide the result: the toolchain version, the
+<code class="nb">go</code> line in <code class="nb">go.mod</code>, and any explicit TLS
+settings in code. A binary built with Go 1.24+ <strong>and</strong> a
+<code class="nb">go</code> line of 1.24+ negotiates X25519MLKEM768 by default on
+every compute type.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (<code>provided.al2023</code>,
+<code>provided.al2</code>)</td>
+<td>Yes with Go 1.24+ and <code class="nb">go</code> ≥ 1.24</td>
+<td>Rebuild with Go 1.26, raise the <code class="nb">go</code> line; or
+<code>GODEBUG=tlsmlkem=1</code></td>
+</tr>
+<tr>
+<td>ECS Fargate, ECS on EC2, EKS</td>
+<td>Same rule; the base image does not matter</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Same rule</td>
+<td>Same; the systemd unit can carry <code class="nb">GODEBUG</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li><code>go version -m &lt;binary&gt;</code> shows Go 1.23 or older:
+rebuild with Go 1.26. Nothing else helps (1.23 offers only the
+pre-standard Kyber draft).</li>
+<li>The <code class="nb">go</code> line is below 1.24: raise it to 1.26. If you
+can't yet, <code>godebug tlsmlkem=1</code> in <code class="nb">go.mod</code> or
+<code>GODEBUG=tlsmlkem=1</code> in the deployment.</li>
+<li>Code or a library sets <code>CurvePreferences</code> or
+<code>MaxVersion: tls.VersionTLS12</code>: add X25519MLKEM768 or remove
+the setting.</li>
+<li>FIPS mode: use Go 1.26+ native FIPS 140-3 (1.24 has no PQ in FIPS
+mode; <code>fips140=only</code> on 1.25 fails every handshake). The AWS
+SDK for Go v2 in FIPS mode forces classical curves: re-add the hybrids
+with <code>WithTransportOptions</code>.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change. Watch two
+things: <code>SSL_CERT_FILE</code> replaces the system bundle rather
+than adding to it, and <code>x/crypto/pkcs12</code> cannot read OpenSSL
+3 PKCS#12 files (use <code class="nb">go-pkcs12</code>). <strong>ML-DSA:</strong>
+Go 1.23 to 1.27 never negotiate ML-DSA in TLS; they get the ECDSA
+certificate from a dual-certificate server and fail an ML-DSA-only
+one.</p>
+<p><strong>Rollback:</strong>
+<code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code> in the environment; no
+rebuild. <strong>Detect:</strong> CloudTrail for AWS calls; Go 1.25+ can
+log <code>ConnectionState().CurveID</code> itself.</p>
+<p><strong>Tested:</strong> 118 client cases (Lambda 77, Fargate 22, ECS
+on EC2 5, EC2 14) and 5 load balancer target cases, all passing,
+covering Go 1.23 to 1.27, every <code class="nb">go</code> line,
+<code class="nb">GODEBUG</code>, FIPS modes and the AWS SDK fix.</p>
+
+<h1 id="ch-lang-context">2 Context for application
+teams</h1>
+<h2 id="ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</h2>
+<p>A <strong>PQ connection</strong> is a TLS 1.3 handshake that
+negotiated a hybrid ML-KEM key exchange group, X25519MLKEM768 (ML-KEM is
+FIPS 203). It protects traffic recorded today from being decrypted by a
+future quantum computer. Your service is <strong>PQ-enabled</strong>
+when it offers or accepts that group first <strong>and</strong> still
+connects to classical peers, so nothing breaks. It is
+<strong>done</strong> when the programme's dashboards show its
+connections as PQ, not when the change is deployed.</p>
+<p>What does <strong>not</strong> change: your certificates, keystores,
+private CA trust and mutual TLS. ML-KEM works with today's RSA and ECDSA
+certificates. ML-DSA (PQ certificates, FIPS 204) is a separate, later
+track; your summary page says what your runtime can do with it.</p>
+<h2 id="ch-lang-context--how-the-fix-ships">2.2 How the fix ships</h2>
+<p>Every fix is one of: a configuration file plus a variable, a Java
+agent, a base image or a version. The shared <code class="nb">pq-tls</code> kit
+versions these files once, and the shared build template adds them, so
+your service picks the fix up on its next release and rolls back by
+removing one setting. Guardrails in the pipeline warn first and fail
+later on settings that block PQ.</p>
+<table>
+<thead>
+<tr>
+<th>Where a variable goes</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (zip or image)</td>
+<td><code>Environment.Variables</code> (CloudFormation, SAM),
+<code>environment</code> (CDK, Terraform)</td>
+</tr>
+<tr>
+<td>Container images</td>
+<td><code>ENV NAME=value</code> in the Dockerfile</td>
+</tr>
+<tr>
+<td>ECS task, EKS pod (override)</td>
+<td><code>containerDefinitions[].environment</code>;
+<code>spec.containers[].env</code></td>
+</tr>
+<tr>
+<td>EC2 service</td>
+<td><code>Environment=NAME=value</code> in the systemd unit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--evidence-labels">2.3 Evidence labels</h2>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tested</td>
+<td>Run between 2026-11-12 and 2026-11-16 in Lambda base images,
+official images or the LocalStack end-to-end suite. Not run on real
+AWS</td>
+</tr>
+<tr>
+<td>Documented</td>
+<td>Stated in vendor documentation, not tested here</td>
+</tr>
+<tr>
+<td>Claimed</td>
+<td>A vendor plan, not shipped</td>
+</tr>
+<tr>
+<td>Unverified</td>
+<td>Believed true; confirm before relying on it</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--related-documents">2.4 Related documents</h2>
+<p>The programme's white paper (<code>docs/PQC-White-Paper.pdf</code>)
+explains detection, the inventory and the rollout. The complete guide
+(<code>PQC-Detection-and-Remediation.pdf</code>) holds the
+infrastructure detail (load balancers, databases, service mesh, hosts).
+Every configuration file named in this document is in the repository
+under <code class="nb">configs/</code>, and every test under <code class="nb">e2e/</code> and
+<code class="nb">tests/</code>.</p>
+
+<h1 id="ch-03-go">3 Go: detailed guide</h1>
+<h2 id="ch-03-go--problem-statement">3.1 Problem statement</h2>
+<p>Go's own <code>crypto/tls</code>, compiled into the binary, controls
+every handshake. OpenSSL, the OS crypto policy, the base image and the
+Lambda runtime play no part (Tested: an AL2023 host or image with
+<code>update-crypto-policies --set DEFAULT:PQ</code>, and Amazon Linux 2
+with OpenSSL 1.0.2, gave the same results as <code class="nb">scratch</code>). Five
+inputs decide the result:</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Classical when</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toolchain</td>
+<td>Go 1.23 or older (no ML-KEM; 1.23 offers only the Kyber draft)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code class="nb">go</code> line in the main module's <code class="nb">go.mod</code> (sets
+<code>DefaultGODEBUG</code>)</td>
+<td>Below 1.24 (<code>tlsmlkem=0</code>), whatever the toolchain</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code class="nb">GODEBUG</code> at run time</td>
+<td><code>tlsmlkem=0</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>tls.Config</code> in your code or a library</td>
+<td><code>CurvePreferences</code> without a hybrid, or
+<code>MaxVersion: tls.VersionTLS12</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>FIPS 140-3 mode</td>
+<td>Go 1.24 FIPS, or boringcrypto with <code>crypto/tls/fipsonly</code>;
+Go 1.25 <code>fips140=only</code> fails every handshake</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p>The handshake still succeeds over X25519, so nothing breaks and
+nothing is logged: the gap is silent (Tested). The risk is
+harvest-now-decrypt-later; hybrid X25519MLKEM768 removes it for new
+sessions. Certificates are a separate track (see Certificates (ML-DSA)).
+Not tested: the Microsoft build of Go and Red Hat's Go toolset, which
+can route crypto to OpenSSL in FIPS mode.</p>
+<h2 id="ch-03-go--quick-start-by-compute-type">3.2 Quick start by compute type</h2>
+<p>The fix is the same everywhere: build with Go 1.26+ and
+<code>go 1.26</code> in <code class="nb">go.mod</code>. Where the <code class="nb">go</code>
+line can't move yet, set <code>GODEBUG=tlsmlkem=1,tlssecpmlkem=1</code>
+in the deployment (needs a Go 1.24+ binary; Go ignores unknown
+<code class="nb">GODEBUG</code> names at run time, <a
+href="https://go.dev/doc/godebug">Documented</a>). The compute type only
+changes where you check, where the variable goes and how you roll
+back.</p>
+<p><strong>What to check (every compute type):</strong>
+<code>go version -m &lt;binary&gt;</code> shows <code class="nb">go1.24</code> or
+later and no <code>tlsmlkem=0</code>; the deployment sets no
+<code>GODEBUG=tlsmlkem=0</code>; <code>go-pq-lint.sh</code> finds no
+blocking <code>tls.Config</code> (<a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go-pq-posture.sh">configs/go/go-pq-posture.sh</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go-pq-lint.sh">configs/go/go-pq-lint.sh</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Where to check</th>
+<th>The one change</th>
+<th>How to verify</th>
+<th>How to roll back</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip (<code>provided.al2023</code>,
+<code>provided.al2</code>)</td>
+<td><code class="nb">bootstrap</code> from the deployed zip
+(<code>aws lambda get-function</code> gives the code URL); function
+<code>Environment</code></td>
+<td>Rebuild <code class="nb">bootstrap</code> with Go 1.26+ and
+<code>go 1.26</code>. Interim: <code class="nb">GODEBUG</code> in
+<code>Environment.Variables</code></td>
+<td>CloudTrail <code>tlsDetails.keyExchange</code> for the function
+role's KMS, STS, IAM, Secrets Manager and ACM calls; the function's own
+<code class="nb">CurveID</code> log</td>
+<td><code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code> in the function
+environment, or shift the alias back to the previous version</td>
+<td>Tested (e2e, 75 zip cases)</td>
+</tr>
+<tr>
+<td>Lambda container image</td>
+<td>Builder stage <code class="nb">golang:</code> tag; binary copied out of the
+image</td>
+<td>Builder <code>golang:1.26</code>, <code>go 1.26</code>; final stage
+<code>public.ecr.aws/lambda/provided:al2023</code></td>
+<td>As for zip</td>
+<td>Function environment overrides image <code class="nb">ENV</code>; or the
+previous image digest</td>
+<td>Tested (e2e, 2 image cases)</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>Binary from the image; task definition <code>environment</code></td>
+<td>Rebuild the image. Any base works (<code class="nb">scratch</code>, distroless,
+<code class="nb">golang</code>, AL2023, AL2). Interim: <code class="nb">GODEBUG</code> in the
+task definition</td>
+<td>CloudTrail; application <code class="nb">CurveID</code> log; for a load
+balancer target, the ALB/NLB target leg</td>
+<td>New task definition revision with
+<code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code>, or the previous image
+tag</td>
+<td>Tested (e2e, 22 client + 4 target cases)</td>
+</tr>
+<tr>
+<td>ECS on EC2, EKS</td>
+<td>As for Fargate; pod <code class="nb">env</code> on EKS</td>
+<td>As for Fargate; the node OS doesn't matter</td>
+<td>As for Fargate, plus Zeek <code class="nb">ssl.log</code> on mirrored node
+ENIs</td>
+<td>As for Fargate; on EKS a pod <code class="nb">env</code> change rolls the
+Deployment</td>
+<td>Tested on ECS EC2 (5 client + 1 target cases); EKS not run
+(Unverified, same image)</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Binary on the host (<code>go-pq-posture.sh</code> through SSM Run
+Command); systemd unit</td>
+<td>Redeploy a binary built with Go 1.26+. Interim:
+<code>Environment=GODEBUG=...</code> drop-in</td>
+<td>CloudTrail; Zeek; application log</td>
+<td>Drop-in with <code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code> and
+restart, or the previous binary</td>
+<td>Tested (e2e, 14 cases on AL2023 and AL2 AMIs)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lambda: shared kit pieces.</strong> The <code class="nb">pq-tls</code>
+layer (<code>AWS_LAMBDA_EXEC_WRAPPER</code>) does nothing for Go: it has
+no <code>provided.*</code> branch and Go ignores
+<code>OPENSSL_CONF</code> (Tested: Go 1.23 stayed classical, Go 1.27
+stayed PQ, 4 cases). A Go 1.23 function that can't be rebuilt soon can
+send its calls through the <code class="nb">pq-egress</code> extension, which makes
+the TLS connection with X25519MLKEM768 (Tested, 3 cases; not tested for
+AWS SDK calls; see Solutions by compute type). The <code class="nb">go1.x</code>
+managed runtime is retired; use <code>provided.al2023</code> (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/golang-package.html">AWS</a>).
+<code>provided.al2</code> works, but AWS blocks updates to it from
+2027-08-31.</p>
+<h2 id="ch-03-go--versions-and-native-support">3.3 Versions and native support</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>PQ client and server by default</th>
+<th>API to set groups</th>
+<th>FIPS-mode behaviour</th>
+<th>Proposed solution</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.27.x (supported; 1.27.4 tested)</td>
+<td>Yes when <code class="nb">go</code> ≥ 1.24: X25519MLKEM768; plus
+SecP256r1MLKEM768 and SecP384r1MLKEM1024 when <code class="nb">go</code> ≥
+1.26</td>
+<td><code>CurvePreferences</code> (an explicit list now beats
+<code>tlsmlkem=0</code>); <code class="nb">GODEBUG</code> <code class="nb">tlsmlkem</code>,
+<code>tlssecpmlkem</code>; opt-in <code class="nb">MLKEM1024</code></td>
+<td><code>fips140=on</code> or <code class="nb">only</code>: the three hybrids +
+P-256, P-384, P-521</td>
+<td>Keep; set <code>go 1.26</code>+</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>1.26.x (supported; 1.26.11 tested)</td>
+<td>Same rule as 1.27</td>
+<td><code>CurvePreferences</code>; <code class="nb">GODEBUG</code>
+(<code>tlsmlkem=0</code> beats an explicit list)</td>
+<td>Same as 1.27</td>
+<td><strong>Target.</strong> Build with 1.26+, <code>go 1.26</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>1.25.x (no security fixes since 1.27.0, 2026-08-19)</td>
+<td>Yes if <code class="nb">go</code> ≥ 1.24, X25519MLKEM768 only</td>
+<td>Same as 1.26</td>
+<td><code class="nb">on</code>: X25519MLKEM768 + P-256, P-384, P-521;
+<code class="nb">only</code>: <strong>every handshake fails</strong></td>
+<td>Upgrade to 1.26</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>1.24.x (unsupported)</td>
+<td>Yes if <code class="nb">go</code> ≥ 1.24; <strong>no</strong> with
+<code>go 1.23</code> or lower (<code>tlsmlkem=0</code>), as client and
+as server</td>
+<td>Same</td>
+<td><code class="nb">on</code> or <code class="nb">only</code>: P-256, P-384, P-521,
+<strong>no PQ</strong></td>
+<td>Upgrade; interim <code>GODEBUG=tlsmlkem=1</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>1.23 and older (unsupported)</td>
+<td><strong>No ML-KEM.</strong> 1.23 offers the pre-standard
+<code>X25519Kyber768Draft00</code> (0x6399), which PQ-only servers
+reject</td>
+<td><code class="nb">tlskyber</code> only</td>
+<td>No PQ</td>
+<td>Rebuild with 1.26</td>
+<td>Tested (1.23.12)</td>
+</tr>
+</tbody>
+</table>
+<p>Support: "each major Go release is supported until there are two
+newer major releases", so 1.27 and 1.26 today (<a
+href="https://go.dev/doc/devel/release">release history</a>;
+Documented).</p>
+<p><strong>Decision guide</strong></p>
+<table>
+<thead>
+<tr>
+<th><code>go version -m</code> or the code shows</th>
+<th>Do this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="nb">go1.23</code> or older</td>
+<td>Rebuild with Go 1.26. Nothing else helps (or <code class="nb">pq-egress</code>
+on Lambda, interim)</td>
+</tr>
+<tr>
+<td><code>tlsmlkem=0</code> in <code>DefaultGODEBUG</code></td>
+<td>Raise the <code class="nb">go</code> line to 1.26; interim
+<code>godebug tlsmlkem=1</code> in <code class="nb">go.mod</code> or
+<code>GODEBUG=tlsmlkem=1</code></td>
+</tr>
+<tr>
+<td><code>CurvePreferences</code> without a hybrid, or
+<code>MaxVersion: tls.VersionTLS12</code></td>
+<td>Fix the setting (case F)</td>
+</tr>
+<tr>
+<td><code>GOFIPS140=</code>, <code>fips140=on</code> or
+<code>GOEXPERIMENT=boringcrypto</code></td>
+<td>Go 1.26+ native FIPS, not boringcrypto; AWS SDK fix (cases G,
+H)</td>
+</tr>
+<tr>
+<td>None of these</td>
+<td>Already PQ. Verify (How to test) and move on</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-03-go--detail-toolchain-and-go-line">Detail: toolchain and go line</h3>
+<p>Client with default <code>tls.Config</code> against one server per
+group (Tested: e2e on Lambda, ECS and EC2, and <code class="nb">golang</code>
+images pinned by digest, linux/arm64).</p>
+<table>
+<thead>
+<tr>
+<th>Toolchain</th>
+<th><code class="nb">go</code> line</th>
+<th>X25519MLKEM768</th>
+<th>SecP256r1MLKEM768, SecP384r1MLKEM1024</th>
+<th>Classical server still works</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.27.4</td>
+<td>1.27</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.27.4</td>
+<td>1.23</td>
+<td>No (<code>tlsmlkem=0</code>)</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.26.11</td>
+<td>1.26</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.26.11</td>
+<td>1.25</td>
+<td>Yes</td>
+<td>No (<code>tlssecpmlkem=0</code>)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.26.11</td>
+<td>1.23</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.25.14</td>
+<td>1.25</td>
+<td>Yes</td>
+<td>No (added in 1.26)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.25.14</td>
+<td>1.23</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.24.13</td>
+<td>1.24</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.24.13</td>
+<td>1.23</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1.23.12</td>
+<td>any</td>
+<td>No (no ML-KEM in 1.23)</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>All rows Tested. The rules behind the table:</p>
+<ol type="1">
+<li><strong>Toolchain</strong> sets what exists: 1.24 added
+X25519MLKEM768, 1.26 added the two SecP hybrids to the defaults, 1.27
+added opt-in pure <code class="nb">MLKEM1024</code>, offered only when listed in
+<code>CurvePreferences</code> (<a href="https://go.dev/doc/go1.26">Go
+1.26</a>, <a href="https://go.dev/doc/go1.27">Go 1.27</a>; Tested).</li>
+<li><strong>The <code class="nb">go</code> line</strong> of the main module (or
+<code class="nb">go.work</code>) sets the defaults: below 1.24 gives
+<code>tlsmlkem=0</code>, below 1.26 gives <code>tlssecpmlkem=0</code>. A
+dependency's <code class="nb">go.mod</code> doesn't count (<a
+href="https://go.dev/doc/godebug">Documented</a>; Tested).</li>
+<li><strong>Override at build time</strong> without raising the
+<code class="nb">go</code> line: <code>godebug tlsmlkem=1</code> in
+<code class="nb">go.mod</code> (Go 1.23+ toolchains) or
+<code>//go:debug tlsmlkem=1</code> above <code>package main</code>. Both
+put <code>tlsmlkem=1</code> into <code>DefaultGODEBUG</code> (Tested
+1.24 to 1.27). Add <code>tlssecpmlkem=1</code> on 1.26+ only: a 1.24 or
+1.25 build fails with <code>unknown godebug "tlssecpmlkem"</code>
+(Tested, e2e build log; <a
+href="https://go.dev/doc/godebug">Documented</a>).</li>
+<li><strong>Run-time <code class="nb">GODEBUG</code></strong> beats both:
+<code>tlsmlkem=1</code> turns PQ on with no rebuild,
+<code>tlsmlkem=0</code> turns it off (Tested). Unknown names are ignored
+at run time, so one value <code>tlsmlkem=1,tlssecpmlkem=1</code> is safe
+on 1.24+ (<a href="https://go.dev/doc/godebug">Documented</a>; tested on
+1.26 only).</li>
+<li><strong>Explicit <code>CurvePreferences</code> vs
+<code>tlsmlkem=0</code>.</strong> On 1.24 to 1.26,
+<code>tlsmlkem=0</code> drops X25519MLKEM768 even from an explicit list.
+From 1.27 an explicit list wins (<a
+href="https://go.dev/doc/go1.27">Documented</a>; Tested both).</li>
+</ol>
+<p>Raising the <code class="nb">go</code> line changes other defaults too. Going to
+1.27 removes the <code>tls10server</code>, <code class="nb">tlsrsakex</code>,
+<code class="nb">tls3des</code>, <code>tlsunsafeekm</code>,
+<code>x509keypairleaf</code> and <code>asynctimerchan</code> settings
+(<a href="https://go.dev/doc/go1.27">Go 1.27</a>; Documented), so run
+the service tests. The <code class="nb">GODEBUG</code> route changes only the TLS
+groups.</p>
+<h2 id="ch-03-go--cases-what-to-change">3.4 Cases: what to change</h2>
+<p>Every case below was tested with Go 1.24.13 (<code>go 1.24</code>),
+1.25.14 and 1.26.11 against OpenSSL 3.5.7 and Go test servers, unless a
+row says otherwise; Go 1.23.12 and
+<code>go 1.22</code>/<code class="nb">1.23</code> builds were classical in every
+row, so the case was never the cause. Programs: <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/go/v2/cases/main.go">tests/deep/go/v2/cases/main.go</a>,
+<a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/go/v2/deps/main.go">tests/deep/go/v2/deps/main.go</a>;
+outputs: <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/go/v2/run-v2.out">tests/deep/go/v2/run-v2.out</a>,
+<a href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/go/v2/run-v2b.out">run-v2b.out</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/deep/go/v2/run-v2c.out">run-v2c.out</a>.</p>
+<h3 id="ch-03-go--a-simple-client">A. Simple client</h3>
+<p><strong>Who this is.</strong> No TLS settings in code:
+<code>grep -rnE --include='*.go' 'tls\.Config|TLSClientConfig|CurvePreferences|MaxVersion' .</code>
+finds nothing. You use <code class="nb">http.Get</code>, the AWS SDK default
+client, or a driver with a DSN.</p>
+<p><strong>What happens today.</strong> PQ when the toolchain and the
+<code class="nb">go</code> line are both 1.24+; classical otherwise (Tested).
+<strong>What to change.</strong> Nothing in code: raise the
+<code class="nb">go</code> line and rebuild. <strong>Side effects.</strong> The
+ClientHello grows by about 1.2 KB (Pitfalls).</p>
+<p>Rule for every library: pass a <code>tls.Config</code> without
+<code>CurvePreferences</code>, or none. Tested with Go 1.26.11
+(<code>go 1.26</code>) against a Go server that accepts only
+X25519MLKEM768:</p>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Version tested</th>
+<th>Where TLS is set</th>
+<th>PQ by default</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>crypto/tls</code> <code class="nb">Dialer</code>,
+<code class="nb">tls.Dial</code></td>
+<td>stdlib</td>
+<td><code>tls.Config</code></td>
+<td>Yes</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code class="nb">net/http</code> default client,
+<code>DefaultTransport.Clone()</code></td>
+<td>stdlib</td>
+<td><code>Transport.TLSClientConfig</code></td>
+<td>Yes</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td>gRPC-go</td>
+<td>v1.85.0</td>
+<td><code>credentials.NewTLS(cfg)</code></td>
+<td>Yes; it doesn't set <code>CurvePreferences</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK for Go v2</td>
+<td>v1.48.0</td>
+<td><code>awshttp.NewBuildableClient()</code></td>
+<td>Yes, outside FIPS mode</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td>AWS SDK for Go v2, FIPS mode</td>
+<td>v1.48.0</td>
+<td>same</td>
+<td><strong>No</strong>: the SDK forces P-256/P-384/P-521</td>
+<td>Tested (also e2e); fix in case H</td>
+</tr>
+<tr>
+<td>pgx (and <code>database/sql</code> via
+<code>pgx/v5/stdlib</code>)</td>
+<td>v5.13.0</td>
+<td><code>sslmode=require/verify-full</code>,
+<code>ConnConfig.TLSConfig</code></td>
+<td>Yes</td>
+<td>Tested with <code>sslnegotiation=direct</code></td>
+</tr>
+<tr>
+<td>go-redis</td>
+<td>v9.23.0</td>
+<td><code>Options.TLSConfig</code></td>
+<td>Yes</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>segmentio/kafka-go</td>
+<td>v0.4.51</td>
+<td><code>Dialer.TLS</code>, <code>Transport.TLS</code></td>
+<td>Yes</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>IBM/sarama</td>
+<td>v1.61.1</td>
+<td><code>Config.Net.TLS.Config</code></td>
+<td>Yes</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>lib/pq, mongo-go-driver, others</td>
+<td>—</td>
+<td>their <code>tls.Config</code></td>
+<td>Probably, if they don't set <code>CurvePreferences</code></td>
+<td>Unverified: grep them (case F)</td>
+</tr>
+</tbody>
+</table>
+<p>Whether the far end accepts ML-KEM is a server question: see AWS
+service endpoints and Databases and data services. If a team insists on
+an explicit list, keep the hybrids in it; since Go 1.24 the order of
+<code>CurvePreferences</code> is ignored (<a
+href="https://pkg.go.dev/crypto/tls#Config">Documented</a>).</p>
+<pre class="go"><code>tr := http.DefaultTransport.(*http.Transport).Clone()
+tr.TLSClientConfig = &amp;tls.Config{MinVersion: tls.VersionTLS12} // no CurvePreferences
+client := &amp;http.Client{Transport: tr}
+
+// Only if a list is mandatory (Go 1.26+ constants):
+cfg := &amp;tls.Config{CurvePreferences: []tls.CurveID{
+    tls.X25519MLKEM768, tls.SecP256r1MLKEM768, tls.X25519, tls.CurveP256}}</code></pre>
+<h3 id="ch-03-go--b-simple-server">B. Simple server</h3>
+<p><strong>Who this is.</strong> <code>http.ListenAndServeTLS</code>,
+frameworks on <code class="nb">net/http</code> (chi, gin, echo), or a gRPC server
+with <code>credentials.NewTLS</code>, with no
+<code>CurvePreferences</code>.</p>
+<p><strong>What happens today.</strong> With 1.24+ and <code class="nb">go</code> ≥
+1.24, RSA and EC servers negotiate X25519MLKEM768 with a PQ client and
+X25519 with a classical one. The <code class="nb">go</code> line governs servers
+too: a 1.24 build with <code>go 1.22</code> refused a PQ-only client
+until <code>GODEBUG=tlsmlkem=1</code> was set, with no rebuild (Tested).
+<strong>What to change.</strong> Nothing beyond the build. <strong>Side
+effects.</strong> None seen.</p>
+<table>
+<thead>
+<tr>
+<th>Server setup</th>
+<th>PQ client</th>
+<th>Classical client</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="nb">net/http</code> <code>ListenAndServeTLS</code>, default
+<code>tls.Config</code></td>
+<td>X25519MLKEM768 and SecP256r1MLKEM768 negotiated</td>
+<td>Works (X25519, or P-256 on TLS 1.2)</td>
+<td>Tested, Go 1.26.11</td>
+</tr>
+<tr>
+<td><code>CurvePreferences: {X25519, P256}</code> (the pitfall)</td>
+<td>PQ-only client <strong>fails</strong>; hybrid-capable client
+silently gets X25519</td>
+<td>Works</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>PQ-only: <code>MinVersion: TLS13</code>,
+<code>CurvePreferences: {X25519MLKEM768}</code></td>
+<td>Works</td>
+<td>Rejected; TLS 1.2 rejected</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>gRPC server, <code>credentials.NewTLS(default)</code></td>
+<td>X25519MLKEM768 with ALPN h2</td>
+<td>Works</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<pre class="go"><code>srv := &amp;http.Server{Addr: &quot;:8443&quot;, Handler: mux,
+    TLSConfig: &amp;tls.Config{MinVersion: tls.VersionTLS12}} // no CurvePreferences
+log.Fatal(srv.ListenAndServeTLS(&quot;/etc/tls/tls.crt&quot;, &quot;/etc/tls/tls.key&quot;))</code></pre>
+<p><strong>Behind an ALB or NLB TLS listener</strong> (e2e run
+r1117041043, the load balancer modelled as the client on the target
+leg): a <code class="nb">net/http</code> target built with Go 1.26 and
+<code>go 1.26</code> negotiated X25519MLKEM768 under the PQ backend
+policy, on Fargate and ECS on EC2. Go 1.26 with <code>go 1.23</code>
+stayed classical until <code>GODEBUG=tlsmlkem=1,tlssecpmlkem=1</code>
+was set in the task definition; Go 1.23 stayed classical (rebuild is the
+only fix). Under the classic backend policy every target negotiated
+classical TLS 1.2 (Tested, cases <code class="nb">srv-go-*</code>; see Load
+balancers).</p>
+<h3 id="ch-03-go--c-existing-server-certificates-in-your-own-files-or-keystore">C.
+Existing server certificates in your own files or keystore</h3>
+<p><strong>Who this is.</strong>
+<code>grep -rnE --include='*.go' 'LoadX509KeyPair|X509KeyPair|GetCertificate|pkcs12\.|DecryptPEMBlock|pkcs8\.' .</code></p>
+<p><strong>What happens today.</strong> The certificate store has no
+effect on key exchange. Every setup below negotiated X25519MLKEM768 with
+an OpenSSL PQ-only client and X25519 with a classical client
+(Tested).</p>
+<table>
+<thead>
+<tr>
+<th>Setup</th>
+<th>Code</th>
+<th>Which certificate is served</th>
+<th>Store change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RSA 2048 or EC P-256 PEM pair</td>
+<td><code>tls.LoadX509KeyPair(crt, key)</code></td>
+<td>RSA or EC</td>
+<td>None</td>
+</tr>
+<tr>
+<td>RSA and EC together</td>
+<td><code>Certificates: {rsa, ec}</code></td>
+<td>The <strong>first</strong> the client supports: RSA to a default
+client, EC to an ECDSA-only client</td>
+<td>None; order picks the cert, not the group</td>
+</tr>
+<tr>
+<td>EC and RSA together</td>
+<td><code>Certificates: {ec, rsa}</code></td>
+<td>EC to a default client, RSA to an RSA-only client</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Two hostnames</td>
+<td><code>Certificates: {a.test, b.test}</code></td>
+<td>Matched by SNI; unknown SNI gets the first</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Callback</td>
+<td><code>GetCertificate</code> by
+<code>ClientHelloInfo.ServerName</code></td>
+<td>Per SNI, with your fallback</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Legacy encrypted PEM (<code>Proc-Type: 4,ENCRYPTED</code>)</td>
+<td><code>x509.DecryptPEMBlock</code> then
+<code>tls.X509KeyPair</code></td>
+<td>RSA</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Encrypted PKCS#8 (<code>BEGIN ENCRYPTED PRIVATE KEY</code>)</td>
+<td><code>github.com/youmark/pkcs8</code>
+<code>ParsePKCS8PrivateKey</code></td>
+<td>EC</td>
+<td>None</td>
+</tr>
+<tr>
+<td>PKCS#12, OpenSSL 3 default (AES-256-CBC, PBKDF2, SHA-256 MAC)</td>
+<td><code>software.sslmate.com/src/go-pkcs12</code> v0.7.4
+<code>DecodeChain</code></td>
+<td>EC</td>
+<td>None</td>
+</tr>
+<tr>
+<td>PKCS#12, legacy 3DES/SHA-1</td>
+<td><code>golang.org/x/crypto/pkcs12</code> v0.59.0
+<code class="nb">Decode</code></td>
+<td>RSA</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Same x/crypto package on the OpenSSL 3 default file</td>
+<td><code class="nb">Decode</code></td>
+<td>Fails at load:
+<code>pkcs12: unknown digest algorithm: 2.16.840.1.101.3.4.2.1</code></td>
+<td>Switch to go-pkcs12 (also e2e)</td>
+</tr>
+<tr>
+<td>Cert and key PEM in env vars (ECS <code class="nb">secrets</code>, Lambda
+env)</td>
+<td><code>tls.X509KeyPair([]byte(os.Getenv(...)))</code></td>
+<td>RSA</td>
+<td>None (also e2e, client side)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change.</strong> Nothing in the store: same files,
+formats, passwords, key types and chains. The <code>tls.Config</code>
+your loader fills must not set <code>CurvePreferences</code> without a
+hybrid, nor <code>MaxVersion: tls.VersionTLS12</code>. The one code
+change any team may need is the PKCS#12 import:</p>
+<pre class="go"><code>// Was golang.org/x/crypto/pkcs12 (frozen; can&#39;t read OpenSSL 3 default files)
+import pkcs12 &quot;software.sslmate.com/src/go-pkcs12&quot;
+
+key, leaf, chain, err := pkcs12.DecodeChain(p12Bytes, os.Getenv(&quot;TLS_KEY_PASS&quot;))
+c := tls.Certificate{PrivateKey: key, Leaf: leaf, Certificate: [][]byte{leaf.Raw}}
+for _, ca := range chain { c.Certificate = append(c.Certificate, ca.Raw) }
+cfg := &amp;tls.Config{Certificates: []tls.Certificate{c}} // no CurvePreferences</code></pre>
+<p>The alternative, re-exporting with
+<code>openssl pkcs12 -export -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1</code>,
+keeps 3DES and SHA-1, so prefer the import change.
+<code>x/crypto/pkcs12</code> is frozen and its docs point to go-pkcs12
+(<a
+href="https://pkg.go.dev/golang.org/x/crypto/pkcs12">Documented</a>).</p>
+<p><strong>Encrypted keys.</strong> The standard library can't read
+encrypted PKCS#8, and <code>x509.DecryptPEMBlock</code> is deprecated as
+insecure by design (<a
+href="https://pkg.go.dev/crypto/x509#DecryptPEMBlock">Documented</a>).
+In order of preference: keep the key unencrypted inside a secret store
+(Secrets Manager, Kubernetes Secret, ECS <code class="nb">secrets</code>) and load
+it with <code>tls.X509KeyPair</code>; decrypt at start-up with
+<code>youmark/pkcs8</code>, the passphrase from Secrets Manager; or move
+the key to KMS or an HSM (case I). All three loaders were tested
+above.</p>
+<p><strong>Side effects.</strong> None for PQ. If RSA is listed before
+EC, default clients get RSA; that was already true.</p>
+<h3 id="ch-03-go--d-custom-ca-trust">D. Custom CA trust</h3>
+<p><strong>Who this is.</strong>
+<code>grep -rnE 'SystemCertPool|AppendCertsFromPEM|RootCAs|SSL_CERT_FILE|SSL_CERT_DIR|AWS_CA_BUNDLE|WithCustomCABundle|sslrootcert'</code>
+in code and deployment files.</p>
+<p><strong>What happens today.</strong> Trust and key exchange are
+independent (Tested; the first six rows also in e2e on Lambda and
+Fargate <code class="nb">scratch</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Trust setup</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SSL_CERT_FILE=&lt;bundle&gt;</code> or
+<code>SSL_CERT_DIR=&lt;dir&gt;</code>, <code class="nb">RootCAs</code> nil</td>
+<td>PQ and fallback OK</td>
+</tr>
+<tr>
+<td>Neither set, private CA not in the system store (or
+<code class="nb">scratch</code> with no bundle)</td>
+<td><code>x509: certificate signed by unknown authority</code>
+(expected)</td>
+</tr>
+<tr>
+<td><code>x509.SystemCertPool()</code> +
+<code>AppendCertsFromPEM</code></td>
+<td>PQ and fallback OK</td>
+</tr>
+<tr>
+<td><code class="nb">RootCAs</code> = new pool with only the private CA</td>
+<td>PQ and fallback OK</td>
+</tr>
+<tr>
+<td><code class="nb">RootCAs</code> = empty pool</td>
+<td>Unknown authority (expected)</td>
+</tr>
+<tr>
+<td>AWS SDK <code>AWS_CA_BUNDLE</code> or
+<code>config.WithCustomCABundle</code>, default HTTP client</td>
+<td>PQ OK</td>
+</tr>
+<tr>
+<td>AWS SDK CA bundle + a plain <code>*http.Client</code></td>
+<td><strong>Config error</strong>:
+<code>unable to add custom RootCAs HTTPClient, has no WithTransportOptions, *http.Client</code></td>
+</tr>
+<tr>
+<td>gRPC <code>credentials.NewClientTLSFromFile(ca.pem, ...)</code></td>
+<td>PQ OK</td>
+</tr>
+<tr>
+<td>pgx DSN <code>sslrootcert=</code></td>
+<td>PQ OK</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change.</strong> Nothing in the truststore. Two
+traps: <code>SSL_CERT_FILE</code> and <code>SSL_CERT_DIR</code> replace
+the default locations rather than adding to them, so the bundle must
+hold public roots too if the service calls public endpoints (<a
+href="https://pkg.go.dev/crypto/x509#SystemCertPool">Documented</a>);
+and <code class="nb">scratch</code> or distroless static images have no bundle, so
+copy one in
+(<code>COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/</code>).
+The one code change is for the AWS SDK with your own client:</p>
+<pre class="go"><code>// Not: a plain *http.Client together with AWS_CA_BUNDLE / WithCustomCABundle (config error)
+hc := awshttp.NewBuildableClient().WithTransportOptions(func(t *http.Transport) {
+    t.TLSClientConfig = &amp;tls.Config{RootCAs: pool} // no CurvePreferences
+})
+cfg, err := config.LoadDefaultConfig(ctx, config.WithHTTPClient(hc))</code></pre>
+<p><strong>Side effects.</strong> None.</p>
+<h3 id="ch-03-go--e-mutual-tls-client-certificates">E. Mutual TLS (client
+certificates)</h3>
+<p><strong>Who this is.</strong>
+<code>grep -rnE --include='*.go' 'ClientAuth|ClientCAs|GetClientCertificate|Certificates:' .</code></p>
+<p><strong>What happens today.</strong> Client certificates don't change
+the group (Tested; client side also in e2e:
+<code>GetClientCertificate</code>, PEM from env vars, PKCS#12):</p>
+<ul>
+<li>Go client with an RSA cert in <code>Certificates</code> or an EC
+cert from <code>GetClientCertificate</code>: X25519MLKEM768 to a PQ-only
+mTLS server, X25519 to a classical one.</li>
+<li>Go server with
+<code>ClientAuth: tls.RequireAndVerifyClientCert</code>: RSA and EC
+clients over X25519MLKEM768, <code class="nb">client_cn</code> logged; classical
+clients over X25519.</li>
+<li>No client cert: refused. In TLS 1.3 the client sees
+<code>remote error: tls: certificate required</code> on its first read;
+the server logs
+<code>tls: client didn't provide a certificate</code>.</li>
+</ul>
+<p><strong>What to change.</strong> Nothing. <strong>Side
+effects.</strong> None.</p>
+<h3 id="ch-03-go--f-explicit-tls-settings-that-block-pq">F. Explicit TLS settings
+that block PQ</h3>
+<p><strong>Who this is.</strong> Run <a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go-pq-lint.sh">go-pq-lint.sh</a>, or:</p>
+<pre class="sh"><code>grep -rnE --include=&#39;*.go&#39; &#39;CurvePreferences|MaxVersion|CipherSuites|tlsmlkem|tlskyber|fipsonly&#39; . $(go env GOMODCACHE) | grep -v _test.go
+grep -rnE &#39;GODEBUG|godebug&#39; go.mod go.work Dockerfile* *.yaml *.json *.tf 2&gt;/dev/null</code></pre>
+<p>In the tested dependency versions only the AWS SDK hit (its FIPS
+list, case H).</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Client to PQ-only server</th>
+<th>Client to classical</th>
+<th>As a server</th>
+<th>Change to</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CurvePreferences: {X25519, P256}</code></td>
+<td>Fails: <code>handshake failure</code></td>
+<td>X25519</td>
+<td>PQ-only client fails; hybrid client silently gets X25519</td>
+<td>Remove it, or add <code>tls.X25519MLKEM768</code> (and
+<code>tls.SecP256r1MLKEM768</code> on 1.26+)</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td><code>CurvePreferences: {X25519MLKEM768, X25519, P256}</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>—</td>
+<td>Fine; but <code>tlsmlkem=0</code> drops the hybrid from it on 1.24
+to 1.26</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td><code>MaxVersion: tls.VersionTLS12</code></td>
+<td>Fails: <code>protocol version not supported</code></td>
+<td>TLS 1.2, X25519</td>
+<td>TLS 1.2 only, never PQ</td>
+<td>Remove it: the hybrids exist only in TLS 1.3</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td><code>MinVersion: tls.VersionTLS13</code></td>
+<td>X25519MLKEM768</td>
+<td>X25519 (TLS 1.2-only servers refused)</td>
+<td>—</td>
+<td>Fine</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td><code>CipherSuites</code> (a TLS 1.2 list)</td>
+<td>X25519MLKEM768</td>
+<td>X25519</td>
+<td>PQ on TLS 1.3</td>
+<td>Keep: it doesn't touch TLS 1.3</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td><code>GODEBUG=tlsmlkem=0</code> at run time</td>
+<td>Fails</td>
+<td>X25519</td>
+<td>—</td>
+<td>Remove it</td>
+<td>Tested (also e2e)</td>
+</tr>
+<tr>
+<td>Go 1.23 with curve 4588 listed by number</td>
+<td>Fails even to classical:
+<code>tls: CurvePreferences includes unsupported curve</code></td>
+<td>Fails</td>
+<td>—</td>
+<td>Upgrade the toolchain</td>
+<td>Tested (also e2e)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>PQ-only enforcement</strong> (internal endpoints, last, after
+logs show no classical clients):</p>
+<pre class="go"><code>cfg := &amp;tls.Config{MinVersion: tls.VersionTLS13,
+    CurvePreferences: []tls.CurveID{tls.X25519MLKEM768, tls.SecP256r1MLKEM768}}</code></pre>
+<p><strong>Side effects.</strong> Removing <code>MaxVersion</code> lets
+TLS 1.3 through; check peers that pin TLS 1.2 behaviour, such as
+inspection proxies.</p>
+<h3 id="ch-03-go--g-fips-mode">G. FIPS mode</h3>
+<p><strong>Who this is.</strong> <code>go version -m</code> shows
+<code>GOFIPS140=</code>, <code>DefaultGODEBUG=fips140=on</code> or
+<code>GOEXPERIMENT=boringcrypto</code>, or the environment sets
+<code>GODEBUG=fips140=on|only</code>.</p>
+<p><strong>What to change.</strong> Build with Go 1.26+ and
+<code>GOFIPS140=v1.26.0</code> (or <code class="nb">latest</code>), not
+boringcrypto, and add the AWS SDK fix (case H). In FIPS mode
+<code>crypto/tls</code> silently drops non-approved groups (<a
+href="https://go.dev/doc/security/fips140">Documented</a>). Groups the
+client offers (a server that prefers P-256 negotiates P-256):</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>1.24.13</th>
+<th>1.25.14</th>
+<th>1.26.11</th>
+<th>1.27.4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fips140=on</code></td>
+<td>P-256, P-384, P-521: <strong>no PQ</strong>, no X25519</td>
+<td>X25519MLKEM768, P-256, P-384, P-521</td>
+<td>The three hybrids, P-256, P-384, P-521</td>
+<td>Same as 1.26</td>
+</tr>
+<tr>
+<td><code>fips140=only</code></td>
+<td>P-256, P-384, P-521</td>
+<td><strong>Every handshake fails</strong>:
+<code>crypto/ecdh: use of X25519 is not allowed in FIPS 140-only mode</code></td>
+<td>Same as <code class="nb">on</code></td>
+<td>Same as <code class="nb">on</code></td>
+</tr>
+<tr>
+<td>boringcrypto, no <code class="nb">fipsonly</code></td>
+<td>Same as non-FIPS (PQ)</td>
+<td>Same</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>boringcrypto + <code>import _ "crypto/tls/fipsonly"</code></td>
+<td>not run</td>
+<td>P-256, P-384, P-521, no PQ</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>boringcrypto + <code>fips140=on</code></td>
+<td>Panics at start:
+<code>FIPS 140-3 mode is incompatible with GOEXPERIMENT=boringcrypto</code></td>
+<td>Same</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+</tbody>
+</table>
+<p>All cells Tested (e2e on Lambda, Fargate and EC2, and container
+builds). The TLS group policy follows the toolchain, not the module
+version: <code>GOFIPS140=v1.0.0</code> built with Go 1.26 offered the
+SecP hybrids (Tested). Module v1.0.0 holds CMVP certificate #5247;
+v1.26.0 was "Pending Review" in the CMVP Modules In Process List as of
+2026-04-28 (<a href="https://go.dev/doc/security/fips140">Go FIPS
+page</a>; Documented). In FIPS mode a server that offers only X25519
+can't be reached, whatever the PQ setting.</p>
+<h3 id="ch-03-go--h-libraries-with-their-own-tls-settings">H. Libraries with their
+own TLS settings</h3>
+<p><strong>Who this is.</strong> You pass a <code>tls.Config</code> to
+the AWS SDK, gRPC or a database driver, often to add a private CA or a
+client certificate.</p>
+<p><strong>What happens today.</strong> All three pass your
+<code>tls.Config</code> through unchanged, PQ included. Tested with Go
+1.26.11, a config holding the private CA and an EC client cert, against
+a Go PQ-only mTLS server that logs the group and client CN, and OpenSSL
+PQ-only and classical mTLS servers:</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>How the config was passed</th>
+<th>Result</th>
+<th>Same config + <code>CurvePreferences {X25519, P256}</code></th>
+<th>With <code>GODEBUG=tlsmlkem=0</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>aws-sdk-go-v2 v1.48.0, config v1.33.18</td>
+<td><code>NewBuildableClient().WithTransportOptions(...)</code> or a
+plain <code>*http.Client</code> via
+<code>config.WithHTTPClient</code></td>
+<td>X25519MLKEM768, <code>client_cn=cli-ec</code>; classical fallback
+OK</td>
+<td>Fails to PQ-only</td>
+<td>Fails to PQ-only (also e2e)</td>
+</tr>
+<tr>
+<td>grpc-go v1.85.0</td>
+<td><code>credentials.NewTLS(cfg)</code> or
+<code>NewClientTLSFromFile</code></td>
+<td>X25519MLKEM768</td>
+<td>Fails</td>
+<td>Fails</td>
+</tr>
+<tr>
+<td>pgx v5.13.0</td>
+<td><code>ConnConfig.TLSConfig</code>, or DSN
+<code>sslrootcert</code>/<code class="nb">sslcert</code>/<code class="nb">sslkey</code>;
+<code>sslnegotiation=direct</code></td>
+<td>X25519MLKEM768, <code>client_cn=cli-ec</code></td>
+<td>Fails</td>
+<td>Fails</td>
+</tr>
+</tbody>
+</table>
+<p>pgx with the default <code>sslnegotiation=postgres</code> (TLS after
+<code>SSLRequest</code>) uses the same <code>tls.Config</code> but was
+not run (Unverified). Outside Go's TLS: <code>confluent-kafka-go</code>
+uses librdkafka with its own OpenSSL, and anything you exec (curl, git,
+wget) uses the image's TLS library (not tested from Go; Unverified).</p>
+<p><strong>AWS SDK for Go v2 in FIPS mode</strong> is the one library
+default that blocks PQ: v1.48.0's
+<code>aws/transport/http/client.go</code> sets
+<code>CurvePreferences</code> to P-256, P-384 and P-521 when FIPS mode
+is on, so a PQ-only server fails (Tested, also e2e). Not sure which SDK
+release added this. Put the approved hybrids back (Tested, also e2e:
+PQ-only server then succeeded):</p>
+<pre class="go"><code>hc := awshttp.NewBuildableClient().WithTransportOptions(func(t *http.Transport) {
+    if fips140.Enabled() {
+        t.TLSClientConfig.CurvePreferences = []tls.CurveID{
+            tls.SecP256r1MLKEM768, tls.X25519MLKEM768, tls.CurveP256, tls.CurveP384}
+    }
+})
+cfg, _ := config.LoadDefaultConfig(ctx, config.WithHTTPClient(hc))</code></pre>
+<p>For gRPC, pgx, go-redis, kafka-go and sarama nothing changes: pass a
+<code>tls.Config</code> with <code>ServerName</code> or
+<code class="nb">RootCAs</code> and no curves, and avoid helpers that build a
+config with a fixed curve list.</p>
+<h3 id="ch-03-go--i-pinning-and-hsm-pkcs11-or-kms-keys">I. Pinning, and HSM,
+PKCS#11 or KMS keys</h3>
+<p><strong>Who this is.</strong> <code>VerifyPeerCertificate</code> or
+<code>VerifyConnection</code> with SPKI hashes; a
+<code>tls.Certificate</code> whose <code>PrivateKey</code> is a KMS,
+CloudHSM or PKCS#11 <code>crypto.Signer</code>.</p>
+<p><strong>What happens today.</strong></p>
+<ul>
+<li>SPKI pinning in <code>VerifyConnection</code>: the right pin passed
+over X25519MLKEM768 and X25519; a wrong pin failed with your error
+(Tested 1.24.13, 1.26.11; also e2e). Key exchange doesn't touch
+certificates, so pins stay valid until you move to ML-DSA
+certificates.</li>
+<li>A server key behind an opaque <code>crypto.Signer</code> (only
+<code class="nb">Public</code> and <code class="nb">Sign</code>), RSA and EC:
+<code class="nb">Sign</code> was called once per handshake and X25519MLKEM768 was
+negotiated (Tested 1.24.13, 1.26.11). ML-KEM runs in software in
+<code>crypto/tls</code>; the HSM only signs. A real KMS, CloudHSM or
+PKCS#11 module was not tested (Unverified).</li>
+</ul>
+<p><strong>What to change.</strong> Nothing. <strong>Side
+effects.</strong> None.</p>
+<h3 id="ch-03-go--j-other-cases">J. Other cases</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>What decides</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ALB HTTPS or NLB TLS listener</td>
+<td>The load balancer's security policy for the client-facing leg; your
+Go server only for the target leg (case B)</td>
+<td>Documented; target leg Tested</td>
+</tr>
+<tr>
+<td>NLB TCP listener (passthrough)</td>
+<td>Your Go server: everything above applies</td>
+<td>Documented</td>
+</tr>
+<tr>
+<td>API Gateway, CloudFront</td>
+<td>The front door; origin legs are classical</td>
+<td>Documented (see Edge and API front doors)</td>
+</tr>
+<tr>
+<td><code>HTTPS_PROXY</code></td>
+<td><code class="nb">net/http</code> tunnels TLS through <code class="nb">CONNECT</code>, so
+the Go client decides, unless the proxy intercepts TLS</td>
+<td>Unverified (see Network devices and egress)</td>
+</tr>
+<tr>
+<td>HTTP/2 and gRPC servers</td>
+<td>ALPN <code class="nb">h2</code> and X25519MLKEM768 work together</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>WebSockets (<code>gorilla/websocket</code>,
+<code>coder/websocket</code>)</td>
+<td>They dial through <code class="nb">net/http</code> or a
+<code>tls.Config</code>; same rules</td>
+<td>Unverified</td>
+</tr>
+<tr>
+<td>Service mesh sidecar</td>
+<td>If the app talks plaintext to the sidecar, the mesh decides</td>
+<td>See Service mesh</td>
+</tr>
+<tr>
+<td>ML-DSA server or client certificates</td>
+<td>Go 1.23 to 1.27 don't negotiate ML-DSA: they get the ECDSA
+certificate from a dual-certificate server, fail an ML-DSA-only server
+(<code>handshake failure</code>) and can't load an ML-DSA client key
+(<code>tls: failed to parse private key</code>)</td>
+<td>Tested (e2e, every Go client case)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-03-go--solution-and-automation">3.5 Solution and automation</h2>
+<ol type="1">
+<li><strong>Inventory.</strong> <code>go-pq-posture.sh</code> over every
+built artifact (Lambda <code class="nb">bootstrap</code>, binaries copied out of
+images, EC2 binaries); <code>go-pq-lint.sh</code> over every repo;
+export <code class="nb">GODEBUG</code> from Lambda configurations, task
+definitions, pod specs and systemd units.</li>
+<li><strong>Change.</strong> Raise the <code class="nb">go</code> line to 1.26 and
+rebuild with Go 1.26+. Remove blocking settings (case F). For FIPS,
+native <code class="nb">GOFIPS140</code> and the AWS SDK fix (cases G, H). Where
+the <code class="nb">go</code> line can't move yet,
+<code>GODEBUG=tlsmlkem=1,tlssecpmlkem=1</code>.</li>
+<li><strong>CI guardrails.</strong> Fail the build on
+<code>go-pq-lint.sh</code> findings before compiling, then run
+<code>go-pq-posture.sh</code> on the built binary (Tested on the e2e
+build: FAIL for every classical-by-build probe, WARN for boringcrypto).
+The lint is a file-level heuristic: a file that mentions ML-KEM anywhere
+passes its <code>CurvePreferences</code> check, so review hits by
+hand.</li>
+</ol>
+<h3 id="ch-03-go--packaging-per-compute-type">Packaging per compute type</h3>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Build</th>
+<th>Optional <code class="nb">GODEBUG</code> goes in</th>
+<th>Full file</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip</td>
+<td><code>GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o bootstrap .</code>;
+<code class="nb">bootstrap</code> at the zip root (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/golang-package.html">AWS</a>)</td>
+<td><code>Environment.Variables</code> (SAM:
+<code>BuildMethod: go1.x</code>, <code>Runtime: provided.al2023</code>,
+<code>Handler: bootstrap</code>)</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/template.yaml">configs/go/template.yaml</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/lambda.tf">configs/go/lambda.tf</a></td>
+</tr>
+<tr>
+<td>Lambda image</td>
+<td><code>golang:1.26</code> builder,
+<code>public.ecr.aws/lambda/provided:al2023</code> final stage (<a
+href="https://docs.aws.amazon.com/lambda/latest/dg/go-image.html">AWS</a>)</td>
+<td>Dockerfile <code class="nb">ENV</code> or the function environment</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Dockerfile.lambda">configs/go/Dockerfile.lambda</a></td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td><code>golang:1.26</code> builder,
+<code>distroless/static-debian12:nonroot</code> or <code class="nb">scratch</code>
+(copy CA certificates)</td>
+<td>Task definition <code>environment</code> or pod
+<code class="nb">env</code></td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Dockerfile">configs/go/Dockerfile</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/taskdef.json">configs/go/taskdef.json</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/deployment.yaml">configs/go/deployment.yaml</a></td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Ship the binary (no OS dependency with
+<code>CGO_ENABLED=0</code>)</td>
+<td><code>Environment=</code> in the systemd unit, via SSM or the AMI
+pipeline</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/configs/go/etc">configs/go/etc</a></td>
+</tr>
+<tr>
+<td>FIPS builds</td>
+<td><code>GOFIPS140=v1.26.0</code> (or <code class="nb">latest</code>);
+<code>go version -m</code> shows <code>GOFIPS140=</code> and
+<code>DefaultGODEBUG=fips140=on</code></td>
+<td>—</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Dockerfile.fips">configs/go/Dockerfile.fips</a></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>configs/go/Dockerfile</code>, <code>Dockerfile.fips</code>
+and <code>Dockerfile.lambda</code> builds ran in e2e, and so did the
+<code class="nb">GODEBUG</code> value from <code>template.yaml</code>,
+<code class="nb">lambda.tf</code> and <code>taskdef.json</code> as function and
+task environment (Tested). The IaC files themselves were not deployed to
+real AWS.</p>
+<h2 id="ch-03-go--how-to-test">3.6 How to test</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Command or signal</th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Posture</td>
+<td><code>go version -m &lt;binary&gt;</code> or
+<code>go-pq-posture.sh &lt;dir&gt;</code></td>
+<td><code class="nb">go1.24</code>+ and no <code>tlsmlkem=0</code> (table
+below)</td>
+</tr>
+<tr>
+<td>2. Code scan</td>
+<td><code>go-pq-lint.sh .</code></td>
+<td>Prints <code>go-pq-lint: OK</code></td>
+</tr>
+<tr>
+<td>3. Local client test</td>
+<td><code>gen-certs.sh</code> and <code>pq-servers.sh</code> in
+<code>debian:trixie-slim</code> (OpenSSL 3.5): PQ-only on 8443,
+classical on 8444, mTLS versions on 8445 and 8446</td>
+<td>Your client reaches 8443 (PQ) and 8444 (fallback)</td>
+</tr>
+<tr>
+<td>4. Your server</td>
+<td><code>openssl s_client -brief -connect host:port -CAfile ca.pem -groups X25519MLKEM768 -tls1_3</code>,
+then <code>-groups X25519</code></td>
+<td><code>Negotiated TLS1.3 group: X25519MLKEM768</code>; classical
+still connects</td>
+</tr>
+<tr>
+<td>5. Certificates and trust (cases C, D)</td>
+<td>Step 4 with <code>-servername &lt;each name&gt;</code> and
+<code>-sigalgs ecdsa_secp256r1_sha256</code> or
+<code>rsa_pss_rsae_sha256</code>; client against 8443 with your CA
+setup, then with none</td>
+<td>Each certificate served over PQ; no CA fails with
+<code>unknown authority</code></td>
+</tr>
+<tr>
+<td>6. mTLS (case E)</td>
+<td>Client with its cert against 8445;
+<code>s_client ... -cert client.pem -key client.key</code> to your
+server</td>
+<td>Succeeds; without the cert, <code>certificate required</code>;
+server logs <code class="nb">client_cn</code></td>
+</tr>
+<tr>
+<td>7. Rollback</td>
+<td>Restart with <code>GODEBUG=tlsmlkem=0</code></td>
+<td>8443 fails, 8444 works; remove it and 8443 works again</td>
+</tr>
+<tr>
+<td>8. In-cloud signal</td>
+<td>Server <code>tls_group=</code> log; CloudTrail
+<code>tlsDetails.keyExchange</code></td>
+<td><code>X25519MLKEM768</code></td>
+</tr>
+</tbody>
+</table>
+<p>For a TLS 1.2 probe of an ECDSA P-256 certificate, offer
+<code>-groups X25519:P-256</code>; with X25519 alone OpenSSL fails with
+<code>wrong curve</code>, a probe artifact.</p>
+<p><strong>Posture without running anything.</strong>
+<code>go version -m</code> reads the build info from any Go binary
+(Tested):</p>
+<pre class="text"><code>$ go version -m probe-go1.26-mod1.23
+probe-go1.26-mod1.23: go1.26.11
+        build   DefaultGODEBUG=...,tlsmlkem=0,tlssecpmlkem=0,...
+$ go version -m probe-go1.26-mod1.26
+probe-go1.26-mod1.26: go1.26.11            # no DefaultGODEBUG line = toolchain defaults = PQ</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>go version -m</code> shows</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="nb">go1.23.x</code> or older</td>
+<td>No PQ possible: rebuild</td>
+</tr>
+<tr>
+<td><code>tlsmlkem=0</code> in <code>DefaultGODEBUG</code></td>
+<td>Classical: raise the <code class="nb">go</code> line or set
+<code>tlsmlkem=1</code></td>
+</tr>
+<tr>
+<td><code>tlssecpmlkem=0</code></td>
+<td>X25519MLKEM768 only, no SecP hybrids (matters for FIPS peers)</td>
+</tr>
+<tr>
+<td><code>GOEXPERIMENT=boringcrypto</code></td>
+<td>Check for <code>crypto/tls/fipsonly</code> (no PQ with it)</td>
+</tr>
+<tr>
+<td><code>GOFIPS140=</code> / <code>fips140=on</code></td>
+<td>FIPS mode: Go 1.25+ for any PQ, 1.26+ for the SecP hybrids</td>
+</tr>
+</tbody>
+</table>
+<p>Run-time <code class="nb">GODEBUG</code> isn't in the binary, so also check the
+function, task, pod or unit environment.</p>
+<p><strong>Log the group.</strong> Go 1.25+ exposes it as
+<code>ConnectionState.CurveID</code> (<a
+href="https://go.dev/doc/go1.25">Go 1.25</a>; Documented): log
+<code>r.TLS.CurveID</code> in HTTP handlers,
+<code>resp.TLS.CurveID</code> in clients and
+<code>credentials.TLSInfo.State.CurveID</code> in a gRPC interceptor
+(full server in <code>cmd/server/main.go</code> below). CloudTrail
+<code>tlsDetails.keyExchange</code> covers only KMS, STS, IAM, Secrets
+Manager and ACM calls (see AWS service endpoints and Detection).</p>
+<pre class="text"><code>grpc addr=:9446 tls_group=X25519MLKEM768
+raw addr=:9449 handshake_error=tls: no key exchanges supported by both client and server</code></pre>
+<h2 id="ch-03-go--rollout-checklist">3.7 Rollout checklist</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Owner</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Inventory binaries: <code>go-pq-posture.sh</code> over Lambda
+<code class="nb">bootstrap</code> files, image binaries and EC2 hosts (SSM Run
+Command)</td>
+<td>Platform team</td>
+<td>Every Go workload has a toolchain, <code class="nb">go</code> line and FIPS
+mode recorded in the inventory</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Inventory source and IaC: <code>go-pq-lint.sh</code> per repo;
+export <code class="nb">GODEBUG</code> from functions, task definitions, pod specs
+and units</td>
+<td>Service team</td>
+<td>Every <code>CurvePreferences</code>, <code>MaxVersion</code>,
+<code class="nb">fipsonly</code> and <code>tlsmlkem=0</code> hit has a ticket</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Classify each workload: rebuild only; <code class="nb">go</code> line; settings
+(F); FIPS (G, H); Go 1.23 that can't be rebuilt</td>
+<td>Service team</td>
+<td>Each workload has one fix from the decision guide, or an
+exception</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Change: Go 1.26+ toolchain and <code>go 1.26</code>; fix settings;
+FIPS on native <code class="nb">GOFIPS140</code> with the AWS SDK fix. Use
+<code class="nb">GODEBUG</code> only where the <code class="nb">go</code> line can't move</td>
+<td>Service team</td>
+<td><code>go-pq-lint.sh</code> and <code>go-pq-posture.sh</code> pass in
+CI</td>
+</tr>
+<tr>
+<td>5</td>
+<td>CI gate: lint before build, posture after build, in warn mode first,
+then fail</td>
+<td>Platform team</td>
+<td>New Go builds can't ship classical</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Canary clients first (they fall back, so they can't break a
+classical server): one Lambda alias weight, one ECS task set, one
+Deployment, or one EC2 host by tag</td>
+<td>Service team</td>
+<td>A day with no rise in handshake errors or p99 latency</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Verify observed: CloudTrail <code>tlsDetails.keyExchange</code> =
+<code>X25519MLKEM768</code> for the workload's role; application
+<code>tls_group=</code> logs; Zeek on EC2-backed nodes</td>
+<td>Security / detection</td>
+<td>The workload's AWS API calls and logged handshakes show the
+hybrid</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Servers next (they still accept classical clients); for load
+balancer targets, move the listener to a PQ policy</td>
+<td>Service team</td>
+<td>Target leg and server logs show PQ</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Exceptions: peers that stay classical (third parties, AWS legs that
+don't support PQ), and every interim <code class="nb">GODEBUG</code> override,
+recorded with an owner and end date</td>
+<td>Service owner</td>
+<td>Exception list reviewed; no unowned override</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Clean up: raise the <code class="nb">go</code> line and remove
+<code class="nb">GODEBUG</code> overrides; PQ-only (case F) last, per endpoint,
+after logs show no classical clients</td>
+<td>Service team</td>
+<td>No <code class="nb">GODEBUG</code> TLS overrides left; PQ-only only where
+planned</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-03-go--pitfalls-and-rollback">3.8 Pitfalls and rollback</h2>
+<table>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>What happens</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>New toolchain, old <code class="nb">go</code> line</td>
+<td>The most common miss: Go 1.27 with <code>go 1.23</code> stays
+classical. Check <code>DefaultGODEBUG</code>, not the toolchain</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>CurvePreferences</code> set anywhere</td>
+<td>One list without a hybrid makes that client or server classical,
+silently; check libraries (AWS SDK in FIPS mode)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>tlsmlkem=0</code> left set "temporarily"</td>
+<td>On 1.24 to 1.26 it beats even an explicit hybrid list</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>FIPS on Go 1.24, or boringcrypto + <code class="nb">fipsonly</code></td>
+<td>No PQ at all; Go 1.25 <code>fips140=only</code> fails every
+handshake</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Go 1.26 with <code>go 1.25</code></td>
+<td>X25519MLKEM768 works, SecP256r1MLKEM768 doesn't: the only hybrid
+some FIPS-oriented servers accept</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>godebug tlssecpmlkem=1</code> in <code class="nb">go.mod</code> on a 1.24
+or 1.25 toolchain</td>
+<td>Build fails: <code>unknown godebug "tlssecpmlkem"</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Go 1.23 isn't "almost PQ"</td>
+<td>Its Kyber draft (0x6399) isn't ML-KEM; PQ-only servers refuse it,
+and no <code class="nb">GODEBUG</code> or Lambda layer fixes it</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Big ClientHello</td>
+<td>ML-KEM adds about 1.2 KB, so the ClientHello spans two TCP segments;
+broken middleboxes time out (<a
+href="https://tldr.fail/">tldr.fail</a>). See Network devices and
+egress</td>
+<td>Documented</td>
+</tr>
+<tr>
+<td><code>x/crypto/pkcs12</code> on OpenSSL 3 PKCS#12 files</td>
+<td>Fails at start-up with <code>unknown digest algorithm</code>; use
+go-pkcs12</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS CA bundle with your own <code>*http.Client</code></td>
+<td><code>AWS_CA_BUNDLE</code> or <code>WithCustomCABundle</code> fails
+at config load</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td><code>SSL_CERT_FILE</code> with only a private CA</td>
+<td>Public endpoints then fail with <code>unknown authority</code>: it
+replaces the system bundle</td>
+<td>Documented</td>
+</tr>
+<tr>
+<td>mTLS errors in TLS 1.3</td>
+<td>A missing client cert shows as <code>certificate required</code> on
+the first read, not on dial</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>RSA listed before EC</td>
+<td>Default clients get RSA; not a PQ issue, but surprising during
+certificate moves</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rollback</strong>, fastest first; no code change needed
+(Tested in e2e: <code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code> on a Go
+1.26 build turned it classical):</p>
+<ol type="1">
+<li>Set <code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code> in the function,
+task, pod or unit environment, then redeploy or restart.</li>
+<li>Rebuild with <code>godebug tlsmlkem=0</code> in
+<code class="nb">go.mod</code>.</li>
+<li>Redeploy the previous artifact.</li>
+</ol>
+<p>Record any rollback as a temporary exception with an owner and an end
+date, and remove the override once the peer is fixed.</p>
+<h2 id="ch-03-go--test-evidence">3.9 Test evidence</h2>
+<p><strong>e2e suite, run r1117041043 (2026-11-16, LocalStack Pro on
+arm64; not real AWS): 123 Go cases, all pass</strong> — 118 client cases
+and 5 load balancer target cases. "Pass" means the observed behaviour
+matched the expectation in the case file, which is "classical" for
+baseline and negative cases. Each client case connects to the observer's
+hybrid, PQ-only, mTLS, EC-certificate, TLS 1.2 and three ML-DSA
+listeners and also checks the exact list of groups the client
+offered.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>Modes covered</th>
+<th>What it proved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip, <code>provided.al2023</code> and
+<code>provided.al2</code></td>
+<td>75</td>
+<td>baseline (10), <code class="nb">go</code> line (5), <code class="nb">GODEBUG</code> (9),
+settings (9), trust (7), mTLS (6), pinning (2), FIPS (16), AWS SDK (4),
+<code class="nb">pq-tls</code> layer (4), <code class="nb">pq-egress</code> extension (3)</td>
+<td>Go 1.24 to 1.27 PQ by default on both runtimes, 1.23 classical;
+<code class="nb">go</code> line &lt; 1.24 classical on every toolchain;
+<code class="nb">GODEBUG</code> env, <code class="nb">go.mod</code> <code class="nb">godebug</code> and
+<code>//go:debug</code> fix it; F, G and H tables as stated; layer no
+effect; extension makes Go 1.23 PQ</td>
+</tr>
+<tr>
+<td>Lambda container image</td>
+<td>2</td>
+<td>image</td>
+<td><code>configs/go/Dockerfile.lambda</code> with
+<code>golang:1.26</code> PQ; <code>golang:1.23</code> classical</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>22 + 4 target</td>
+<td>baseline on AL2023, AL2, <code class="nb">scratch</code>, distroless,
+<code class="nb">golang</code> (14), AL2023 <code>DEFAULT:PQ</code> policy (2),
+task definition <code class="nb">GODEBUG</code> (1), trust (2),
+<code>configs/go/Dockerfile</code> (1), FIPS (2)</td>
+<td>Base image and OS crypto policy make no difference; task definition
+<code class="nb">GODEBUG</code> fixes an old <code class="nb">go</code> line;
+<code>Dockerfile.fips</code> PQ in FIPS mode; boringcrypto +
+<code>fips140=on</code> panics</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>5 + 1 target</td>
+<td>baseline on four bases</td>
+<td>Same as Fargate</td>
+</tr>
+<tr>
+<td>EC2, AL2023 and AL2 AMIs</td>
+<td>14</td>
+<td>baseline (8), host <code>DEFAULT:PQ</code> (2), distro
+<code class="nb">golang</code> package build (2), systemd <code class="nb">GODEBUG</code> (1),
+FIPS (1)</td>
+<td>Host policy and OS OpenSSL make no difference; the distro toolchain
+in the test AMIs (1.26.10) builds a PQ binary; systemd
+<code class="nb">GODEBUG</code> fixes an old <code class="nb">go</code> line</td>
+</tr>
+<tr>
+<td>Load balancer target leg (server)</td>
+<td>5</td>
+<td>baseline, <code class="nb">GODEBUG</code></td>
+<td>Go 1.26 target PQ under the PQ backend policy; <code>go 1.23</code>
+line classical until <code class="nb">GODEBUG</code>; Go 1.23 classical; classic
+policy always TLS 1.2 classical</td>
+</tr>
+</tbody>
+</table>
+<p>ML-DSA listeners: every Go case got the ECDSA certificate from the
+dual-certificate server and failed the ML-DSA-only and ML-DSA
+client-certificate listeners (case J).</p>
+<p><strong>Test code.</strong> Case definitions and expectations: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/go.py">e2e/cases/go.py</a>; probe client: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/go/probe.go">e2e/clients/go/probe.go</a> and the
+other files in <a href="https://github.com/moolivkkr/PQC/tree/main/e2e/clients/go">e2e/clients/go</a>; builds
+(one static binary per toolchain, <code class="nb">go</code> line and FIPS mode):
+<a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/go.sh">e2e/build/go.sh</a>; load balancer target
+cases and server: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/server.py">e2e/cases/server.py</a>, <a
+href="https://github.com/moolivkkr/PQC/tree/main/e2e/clients/server/go">e2e/clients/server/go</a>; results: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md">e2e/results/latest/summary.md</a>.
+The per-case list is in the Go test appendix.</p>
+<p><strong>Container tests (2026-11-12 to 2026-11-14, Docker,
+<code class="nb">golang</code> and <code>debian:trixie-slim</code> images pinned by
+digest).</strong> Cases C to I, the library table, servers and the
+toolchain matrix: <a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/go">tests/deep/go</a>, with
+programs in <a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/go/v2">tests/deep/go/v2</a> and
+outputs in <code>run-v2.out</code>, <code>run-v2b.out</code>,
+<code>run-v2c.out</code>, <code class="nb">libs.out</code> and
+<code>server-tests.out</code>.</p>
+<p><strong>Not tested:</strong> real AWS (all runs on LocalStack and
+Docker); EKS; a real KMS, CloudHSM or PKCS#11 key; pgx with
+<code>sslnegotiation=postgres</code>; lib/pq, mongo-go-driver and
+WebSocket libraries; <code>HTTPS_PROXY</code> through an intercepting
+proxy; the Microsoft and Red Hat Go builds; run-time
+<code>tlssecpmlkem=1</code> on Go 1.24 and 1.25 (Documented as ignored);
+<code class="nb">pq-egress</code> for AWS SDK calls.</p>
+<h2 id="ch-03-go--full-configuration-files">3.10 Configuration files</h2>
+<p>The complete files for this chapter are in the repository under <a href="https://github.com/moolivkkr/PQC/tree/main/configs/go"><code>configs/go/</code></a>. This paper shows only the main change from each; copy from the repository, not from the paper. 26 files:</p><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go.mod"><code>configs/go/go.mod</code></a></td><td><code class="nb">go.mod</code> (preferred: raise the <code class="nb">go</code> line)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go.variant2.mod"><code>configs/go/go.variant2.mod</code></a></td><td><code class="nb">go.mod</code> (alternative: keep an old <code class="nb">go</code> line, turn PQ on)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cmd/client/main.go"><code>configs/go/cmd/client/main.go</code></a></td><td><code>cmd/client/main.go</code> (HTTP and AWS SDK client, FIPS-safe)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cmd/server/main.go"><code>configs/go/cmd/server/main.go</code></a></td><td><code>cmd/server/main.go</code> (HTTPS and gRPC server that logs the group)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cmd/lambda/main.go"><code>configs/go/cmd/lambda/main.go</code></a></td><td><code>cmd/lambda/main.go</code> (Lambda handler)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Makefile"><code>configs/go/Makefile</code></a></td><td><code class="nb">Makefile</code> (Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Dockerfile"><code>configs/go/Dockerfile</code></a></td><td><code>Dockerfile</code> (ECS, Fargate, EKS: distroless)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Dockerfile.lambda"><code>configs/go/Dockerfile.lambda</code></a></td><td><code>Dockerfile.lambda</code> (Lambda container image)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/Dockerfile.fips"><code>configs/go/Dockerfile.fips</code></a></td><td><code>Dockerfile.fips</code> (FIPS 140-3 build)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/template.yaml"><code>configs/go/template.yaml</code></a></td><td><code>template.yaml</code> (SAM, Lambda zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/lambda-cfn.yaml"><code>configs/go/lambda-cfn.yaml</code></a></td><td><code>lambda-cfn.yaml</code> (plain CloudFormation, zip in S3)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/lambda.tf"><code>configs/go/lambda.tf</code></a></td><td><code class="nb">lambda.tf</code> (Terraform, zip and image)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/taskdef.json"><code>configs/go/taskdef.json</code></a></td><td><code>taskdef.json</code> (ECS / Fargate)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/ecs-task.tf"><code>configs/go/ecs-task.tf</code></a></td><td><code>ecs-task.tf</code> (Terraform for the same task definition)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/deployment.yaml"><code>configs/go/deployment.yaml</code></a></td><td><code>deployment.yaml</code> (EKS)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/etc/systemd/system/payments-api.service"><code>configs/go/etc/systemd/system/payments-api.service</code></a></td><td><code>/etc/systemd/system/payments-api.service</code> (EC2)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go-pq-posture.sh"><code>configs/go/go-pq-posture.sh</code></a></td><td><code>go-pq-posture.sh</code> (CI gate and host or image scan)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/go-pq-lint.sh"><code>configs/go/go-pq-lint.sh</code></a></td><td><code>go-pq-lint.sh</code> (CI check: source, go.mod and IaC settings that block PQ)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/gen-certs.sh"><code>configs/go/gen-certs.sh</code></a></td><td><code>gen-certs.sh</code> (test PKI: private CA, RSA and EC server certs, SNI certs, client certs, encrypted keys, PKCS#12)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/pq-servers.sh"><code>configs/go/pq-servers.sh</code></a></td><td><code>pq-servers.sh</code> (the four OpenSSL 3.5 test servers)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cases/main.go"><code>configs/go/cases/main.go</code></a></td><td><code>cases/main.go</code> (cases C, D, E, F, standard library only; build with a go.mod of <code>module cases</code> and the <code class="nb">go</code> line under test)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cases/casei.go"><code>configs/go/cases/casei.go</code></a></td><td><code>cases/casei.go</code> (case I: pinning and an opaque crypto.Signer key)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cases/curve_new.go"><code>configs/go/cases/curve_new.go</code></a></td><td><code>cases/curve_new.go</code> (group name on Go 1.25+)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/cases/curve_old.go"><code>configs/go/cases/curve_old.go</code></a></td><td><code>cases/curve_old.go</code> (fallback for Go 1.23 and 1.24)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/deps/go.mod"><code>configs/go/deps/go.mod</code></a></td><td><code>deps/go.mod</code> (versions resolved for the library tests)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/go/deps/main.go"><code>configs/go/deps/main.go</code></a></td><td><code>deps/main.go</code> (cases C (PKCS#12, encrypted PKCS#8) and H (AWS SDK, gRPC, pgx))</td></tr></tbody></table>
+
+<h1 id="ch-tests-go">4 Test evidence and test cases</h1>
+<p>Run r1117041043 (2026-11-16), LocalStack Pro end-to-end suite. Each
+case deploys the runtime and fix on real Lambda, ECS or EC2 resources in
+LocalStack and connects to a TLS observer; PASS means the observed
+result matched the expectation in the case file (a baseline that stays
+classical as documented passes). Not run on real AWS or x86_64.</p>
+<h2 id="ch-tests-go--summary">4.1 Summary</h2>
+<p>118 client cases and 5 load balancer target cases; 123 passed.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>PQ on <code class="nb">hybrid</code></th>
+<th>Connected to <code class="nb">pqonly</code></th>
+<th>Runtimes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda</td>
+<td>77</td>
+<td>46</td>
+<td>46</td>
+<td>image, provided.al2, provided.al2023</td>
+</tr>
+<tr>
+<td>ECS Fargate</td>
+<td>22</td>
+<td>14</td>
+<td>14</td>
+<td>pqc-go:al2 probe-1.23, pqc-go:al2 probe-1.27, pqc-go:al2023
+probe-1.23, pqc-go:al2023 probe-1.24, pqc-go:al2023 probe-1.26-boring,
+pqc-go:al2023 probe-1.26-go1.23, pqc-go:al2023 probe-1.27,
+pqc-go:al2023-policy probe-1.23 and 12 more</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>5</td>
+<td>4</td>
+<td>4</td>
+<td>pqc-go:al2023 probe-1.23, pqc-go:al2023 probe-1.27,
+pqc-go:distroless probe-1.24, pqc-go:golang probe-1.26, pqc-go:scratch
+probe-1.27</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>14</td>
+<td>11</td>
+<td>11</td>
+<td>pqc-al2 probe-1.23, pqc-al2 probe-1.26, pqc-al2 probe-1.27, pqc-al2
+probe-distro, pqc-al2023 probe-1.23, pqc-al2023 probe-1.24, pqc-al2023
+probe-1.24-go1.23, pqc-al2023 probe-1.25 and 3 more</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What the cases vary:</strong> no change: the runtime's
+default (expected classical where the paper says so) (37); FIPS modes
+(Go FIPS 140-3, boringcrypto, Java and .NET FIPS settings) (19);
+<code>GODEBUG=tlsmlkem=1</code> or a <code>//go:debug</code> directive
+(11); explicit TLS settings that block PQ (case F) (9); custom CA trust
+(case D) (9); mutual TLS (case E) (6); <code class="nb">go</code> line in
+<code class="nb">go.mod</code> below and above 1.24 (5); the <code class="nb">pq-tls</code>
+layer and <code>AWS_LAMBDA_EXEC_WRAPPER</code> (4); libraries with their
+own TLS stack (case H) (4);
+<code>update-crypto-policies --set DEFAULT:PQ</code> (image or host)
+(4); the <code class="nb">pq-egress</code> Lambda extension (3); container image
+variants (3); certificate or key pinning (case I) (2); distro-packaged
+toolchain or runtime (2).</p>
+<p><strong>ML-DSA:</strong> 113 got ECDSA from the dual server and
+failed the ML-DSA-only targets; 2 failed every target for reasons
+unrelated to ML-DSA.</p>
+<p><strong>Load balancer target leg:</strong> 5 servers (ecs-ec2,
+ecs-fargate); 3 negotiated PQ with the ALB's PQ backend policy (the rest
+are baselines); 5 of 5 negotiated classical TLS 1.2 with the classic
+policy.</p>
+<table>
+<thead>
+<tr>
+<th>Test component</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case definitions (one entry per case, with its expectation)</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/go.py">e2e/cases/go.py</a></td>
+</tr>
+<tr>
+<td>Probe deployed in every case</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/go/probe.go">e2e/clients/go/probe.go</a></td>
+</tr>
+<tr>
+<td>Build and deploy script</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/go.sh">e2e/build/go.sh</a></td>
+</tr>
+<tr>
+<td>Load balancer target server</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/go/main.go">e2e/clients/server/go/main.go</a></td>
+</tr>
+<tr>
+<td>Earlier tests: existing certificates, keystores, libraries
+(containers)</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/go">tests/deep/go/</a></td>
+</tr>
+<tr>
+<td>Earlier tests: Lambda base images under the Runtime Interface
+Emulator</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/tests/lambda/goprobe">tests/lambda/goprobe/</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-dotnet-go.sh">tests/lambda/run-dotnet-go.sh</a></td>
+</tr>
+<tr>
+<td>Configuration and test harness files from the chapter</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/configs/go">configs/go/</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-go--every-client-case">4.2 Every client case</h2>
+<p>Cells: what the client negotiated with each target (hybrid, PQ-only,
+mutual TLS, TLS 1.2 only) and the certificate it got from the dual
+ML-DSA/ECDSA server.</p>
+<h3 id="ch-tests-go--lambda-77-cases">Lambda (77 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>go-lambda-al2-go123-baseline</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go123-clientcert-callback</code></td>
+<td>go1.23.12</td>
+<td>mtls</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go123-extension</code></td>
+<td>go1.23.12</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go123-pqtls-layer</code></td>
+<td>go1.23.12</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go124-baseline</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go124-gofips140</code></td>
+<td>go1.24.13</td>
+<td>fips</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go124-mod123-godebug-gomod</code></td>
+<td>go1.24.13</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go124-tlsmlkem0</code></td>
+<td>go1.24.13</td>
+<td>godebug</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go125-baseline</code></td>
+<td>go1.25.14</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go125-mod123</code></td>
+<td>go1.25.14</td>
+<td>go-line</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go126-baseline</code></td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go126-gofips140-v100</code></td>
+<td>go1.26.11</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go127-baseline</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2-go127-trust-ssl-cert-dir</code></td>
+<td>go1.27.4</td>
+<td>trust</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-baseline</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-combined</code></td>
+<td>go1.23.12</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-combined-wrapper</code></td>
+<td>go1.23.12</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-curve4588</code></td>
+<td>go1.23.12</td>
+<td>settings</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-extension</code></td>
+<td>go1.23.12</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-pqtls-layer</code></td>
+<td>go1.23.12</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go123-trust-ssl-cert-file</code></td>
+<td>go1.23.12</td>
+<td>trust</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go124-baseline</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go124-fips140-on</code></td>
+<td>go1.24.13</td>
+<td>fips</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go124-fips140-only</code></td>
+<td>go1.24.13</td>
+<td>fips</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go124-mod123</code></td>
+<td>go1.24.13</td>
+<td>go-line</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go124-mod123-godebug-env</code></td>
+<td>go1.24.13</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go124-trust-ssl-cert-file</code></td>
+<td>go1.24.13</td>
+<td>trust</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go125-baseline</code></td>
+<td>go1.25.14</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go125-boring-fipsonly</code></td>
+<td>go1.25.14 X:boringcrypto</td>
+<td>fips</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go125-fips140-on</code></td>
+<td>go1.25.14</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go125-fips140-only</code></td>
+<td>go1.25.14</td>
+<td>fips</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-awssdk</code></td>
+<td>go1.26.11</td>
+<td>library</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-awssdk-fips</code></td>
+<td>go1.26.11</td>
+<td>library</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-awssdk-fips-fix</code></td>
+<td>go1.26.11</td>
+<td>library</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-baseline</code></td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-boring</code></td>
+<td>go1.26.11-X:boringcrypto</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-boring-fipsonly</code></td>
+<td>go1.26.11-X:boringcrypto</td>
+<td>fips</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-ciphers12</code></td>
+<td>go1.26.11</td>
+<td>settings</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-clientcert-callback</code></td>
+<td>go1.26.11</td>
+<td>mtls</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-clientcert-env-pem</code></td>
+<td>go1.26.11</td>
+<td>mtls</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-clientcert-none</code></td>
+<td>go1.26.11</td>
+<td>mtls</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-curves-classical</code></td>
+<td>go1.26.11</td>
+<td>settings</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-curves-hybrid</code></td>
+<td>go1.26.11</td>
+<td>settings</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-curves-hybrid-tlsmlkem0</code></td>
+<td>go1.26.11</td>
+<td>settings</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-fips140-on</code></td>
+<td>go1.26.11</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-fips140-only</code></td>
+<td>go1.26.11</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-gofips140-v1260</code></td>
+<td>go1.26.11</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-max12</code></td>
+<td>go1.26.11</td>
+<td>settings</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-min13</code></td>
+<td>go1.26.11</td>
+<td>settings</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-mod123</code></td>
+<td>go1.26.11</td>
+<td>go-line</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-mod123-godebug-env</code></td>
+<td>go1.26.11</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-mod123-godebug-gomod</code></td>
+<td>go1.26.11</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-mod125</code></td>
+<td>go1.26.11</td>
+<td>go-line</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-p12-sslmate</code></td>
+<td>go1.26.11</td>
+<td>mtls</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-p12-xcrypto</code></td>
+<td>go1.26.11</td>
+<td>mtls</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-pin-ca</code></td>
+<td>go1.26.11</td>
+<td>pinning</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-pin-wrong</code></td>
+<td>go1.26.11</td>
+<td>pinning</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-rollback</code></td>
+<td>go1.26.11</td>
+<td>godebug</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-tlssecpmlkem0</code></td>
+<td>go1.26.11</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-trust-empty</code></td>
+<td>go1.26.11</td>
+<td>trust</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-trust-none</code></td>
+<td>go1.26.11</td>
+<td>trust</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-trust-ssl-cert-file</code></td>
+<td>go1.26.11</td>
+<td>trust</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go126-trust-system-plus-ca</code></td>
+<td>go1.26.11</td>
+<td>trust</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-awssdk-tlsmlkem0</code></td>
+<td>go1.27.4</td>
+<td>library</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-baseline</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-boring-fipsonly</code></td>
+<td>go1.27.4-X:boringcrypto</td>
+<td>fips</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-curves-hybrid-tlsmlkem0</code></td>
+<td>go1.27.4</td>
+<td>settings</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-fips140-on</code></td>
+<td>go1.27.4</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-fips140-only</code></td>
+<td>go1.27.4</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-gofips140</code></td>
+<td>go1.27.4</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-mlkem1024</code></td>
+<td>go1.27.4</td>
+<td>settings</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-mod123</code></td>
+<td>go1.27.4</td>
+<td>go-line</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-mod123-directive</code></td>
+<td>go1.27.4</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-pqtls-layer</code></td>
+<td>go1.27.4</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-al2023-go127-tlsmlkem0</code></td>
+<td>go1.27.4</td>
+<td>godebug</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-image-go123</code></td>
+<td>go1.23.12</td>
+<td>image</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-lambda-image-go126</code></td>
+<td>go1.26.11</td>
+<td>image</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-go--ecs-fargate-22-cases">ECS Fargate (22 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>go-fargate-al2-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-go124</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-go126-boring-fips140-on</code></td>
+<td>unknown (crashed: probe-1.26-boring)</td>
+<td>fips</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-go126-mod123-taskdef-godebug</code></td>
+<td>go1.26.11</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-policy-go123</code></td>
+<td>go1.23.12</td>
+<td>crypto-policy</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-al2023-policy-go127</code></td>
+<td>go1.27.4</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-distroless-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-distroless-go124</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-distroless-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-doc-dockerfile</code></td>
+<td>go1.26.11</td>
+<td>image</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-doc-dockerfile-fips</code></td>
+<td>go1.26.11</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-golang-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-golang-go124</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-golang-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-scratch-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-scratch-go124</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-scratch-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-scratch-go127-no-bundle</code></td>
+<td>go1.27.4</td>
+<td>trust</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-fargate-scratch-go127-ssl-cert-file</code></td>
+<td>go1.27.4</td>
+<td>trust</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-go--ecs-on-ec2-5-cases">ECS on EC2 (5 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>go-ecsec2-al2023-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ecsec2-al2023-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ecsec2-distroless-go124</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ecsec2-golang-go126</code></td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ecsec2-scratch-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-go--ec2-14-cases">EC2 (14 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>go-ec2-al2-distro-golang</code></td>
+<td>go1.26.10-X:nodwarf5</td>
+<td>distro-toolchain</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2-go126</code></td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-distro-golang</code></td>
+<td>go1.26.10-X:nodwarf5</td>
+<td>distro-toolchain</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go123</code></td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go123-host-policy</code></td>
+<td>go1.23.12</td>
+<td>crypto-policy</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go124</code></td>
+<td>go1.24.13</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go124-mod123-systemd-godebug</code></td>
+<td>go1.24.13</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go125</code></td>
+<td>go1.25.14</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go126</code></td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go127</code></td>
+<td>go1.27.4</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go127-fips140-on</code></td>
+<td>go1.27.4</td>
+<td>fips</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>go-ec2-al2023-go127-host-policy</code></td>
+<td>go1.27.4</td>
+<td>crypto-policy</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-go--load-balancer-target-cases-5">4.3 Load balancer target cases
+(5)</h2>
+<p>The workload is the HTTPS server; the observer connects like an ALB
+with the PQ backend policy (alb-pq) or the classic one
+(alb-classic).</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Compute</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>alb-pq</th>
+<th>alb-classic</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>srv-go-ecsec2-go126</code></td>
+<td>ecs-ec2</td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-go-fargate-go123</code></td>
+<td>ecs-fargate</td>
+<td>go1.23.12</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-go-fargate-go126</code></td>
+<td>ecs-fargate</td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-go-fargate-go126-mod123</code></td>
+<td>ecs-fargate</td>
+<td>go1.26.11</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-go-fargate-go126-mod123-godebug</code></td>
+<td>ecs-fargate</td>
+<td>go1.26.11</td>
+<td>godebug</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+</body></html>

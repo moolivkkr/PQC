@@ -2,209 +2,151 @@
 
 ## Problem statement
 
-Java services on JDK 8 to 21 negotiate classical key exchange only (X25519 or P-256). Traffic recorded today can be decrypted later by a quantum computer: harvest-now, decrypt-later. This affects outbound calls to AWS APIs, databases and partners, and any TLS the JVM terminates itself.
+Java services on JDK 8 to 21 negotiate classical key exchange only (X25519 or P-256), so traffic recorded today can be decrypted later by a quantum computer. That covers outbound calls to AWS APIs, databases and partners, and any TLS the JVM terminates itself.
 
-The JDK's TLS provider (JSSE) controls the handshake for almost every Java library. Apache HttpClient, OkHttp, the JDK HttpClient, JDBC drivers, Kafka, Tomcat, Jetty and Spring Boot all follow it. The OS and its OpenSSL don't matter, except for libraries that ship their own TLS stack: Netty tcnative (BoringSSL) and the AWS CRT client (s2n-tls). JDK 25.0.5 and later offer X25519MLKEM768 by default. Older JDKs have no ML-KEM group at all, so on them a provider has to change: the pq-tls kit puts Bouncy Castle JSSE (BCJSSE) in front of JSSE.
+**What decides PQ is the JVM's TLS provider (JSSE), not the OS.** Apache HttpClient, OkHttp, the JDK `HttpClient`, `HttpsURLConnection`, JDBC drivers, Kafka, Tomcat, Jetty and Spring Boot all hand TLS to JSSE, so the base image's OpenSSL and crypto policy make no difference to them.
 
-Most teams already have their own certificates, keystores and truststores. This tab shows, case by case, that **you don't change the stores themselves**. On JDK 8 to 21 with the kit, one setting matters for certificates: `ssl.KeyManagerFactory.algorithm=PKIX`. Kit v2 ships it. Without it, BCJSSE can't use EC certificates (server, or client certificates for mTLS).
-**JDK 25.0.5 and later (released 2026-10-20) offer and prefer X25519MLKEM768 by default**, as client and as server ([Oracle 25.0.5 release note, JDK-8314323](https://www.oracle.com/java/technologies/javase/25-0-5-relnotes.html)).
+| JDK | PQ by default? | Fix |
+| --- | --- | --- |
+| 25.0.5 and later, 27 | Yes, client and server, X25519MLKEM768 first (Tested on Corretto and Temurin 25.0.5). SecP256r1MLKEM768 and SecP384r1MLKEM1024 are also supported (Documented, [Oracle 25.0.5 release notes](https://www.oracle.com/java/technologies/javase/25-0-5-relnotes.html), JDK-8314323) | Nothing |
+| 25.0.0 to 25.0.4 | No (Documented) | Patch to 25.0.5+ |
+| 8, 11, 17, 21 | No: SunJSSE has no ML-KEM group | Kit v2: Bouncy Castle JSSE (BCJSSE) 1.87 as the TLS provider, loaded by `pq-tls-agent.jar`; or move to 25.0.5+ |
 
-Why other pages say "JDK 27": [JEP 527](https://openjdk.org/jeps/527) (hybrid ML-KEM key exchange in TLS 1.3) targets JDK 27, and Oracle backported it to JDK 25.0.5 ([Oracle JDK 25.0.5 release notes](https://www.oracle.com/java/technologies/javase/25-0-5-relnotes.html): X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024, with X25519MLKEM768 most preferred by default). So 25.0.5+ and 27 both qualify; 25.0.0 to 25.0.4 do not (Documented; 25.0.5 Tested on Corretto and Temurin).
+Why other pages say "JDK 27": [JEP 527](https://openjdk.org/jeps/527) (hybrid ML-KEM key exchange in TLS 1.3) shipped in JDK 27 (released 2026-09-15), and the AWS SDK guide names only JDK 27 ([AWS SDKs and Tools guide](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html)). The October 2026 update 25.0.5 carries the same feature as a backport (Documented). Oracle plans PQ TLS for 21 and 17, then 11 and 8 ([Oracle Java blog, 2026-08](https://blogs.oracle.com/java/post-quantum-cryptography-in-long-term-support-jdk-releases)); secondary reports put 21 and 17 in H1 2027 and 11 and 8 in H2 2027. Claimed, not shipped; we could not open Oracle's own table, so the dates are not sure. Remove the kit when your vendor ships it.
 
-Three exceptions bypass JSSE and bring their own TLS library, so the JDK version does not matter for them:
+Three stacks bypass JSSE, so the JDK version does not matter for them:
 
-- **Netty with `netty-tcnative-boringssl-static`** (`SslProvider.OPENSSL`): BoringSSL decides. Tested PQ by default on JDK 17 and 21.
-- **AWS SDK for Java v2 CRT HTTP client** (`AwsCrtHttpClient`): s2n-tls on Linux decides. PQ by default from SDK 2.35.11 ([AWS SDKs and Tools guide](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html)).
-- **Tomcat with the OpenSSL implementation** (Tomcat Native or the FFM OpenSSL connector): the linked OpenSSL decides (the Web servers and proxies tab tested Tomcat 11.0.29's OpenSSL connector on OpenSSL 3.5.5: PQ, set with `<OpenSSLConfCmd name="Groups">`).
+- **Netty with `netty-tcnative-boringssl-static`** (`SslProvider.OPENSSL`; gRPC-Java, Reactor Netty or Vert.x with native SSL): BoringSSL decides. PQ by default (Tested 2.0.85 on JDK 17 and 21).
+- **AWS SDK for Java v2 CRT client** (`AwsCrtHttpClient`): s2n-tls on Linux decides. PQ by default from SDK 2.35.11 (Documented, [AWS SDKs and Tools guide](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html); Tested 2.59.1 PQ, 2.35.10 classical). On macOS and Windows it uses the OS TLS library.
+- **Tomcat with the OpenSSL implementation** (Tomcat Native or the FFM connector): the linked OpenSSL decides (Tomcat 11.0.29 on OpenSSL 3.5.5 Tested PQ in the Web servers and proxies chapter).
 
-Oracle has said it will bring PQC to its LTS releases 21, 17, 11 and 8 ([Oracle Java blog, 2026-08](https://blogs.oracle.com/java/post-quantum-cryptography-in-long-term-support-jdk-releases)); secondary reports put 21/17 in H1 2027 and 11/8 in H2 2027 (Claimed, not shipped). Remove the kit when your vendor ships it.
+**Certificates and stores do not change.** JKS and PKCS#12 keystores, `cacerts`, `javax.net.ssl.trustStore` and mutual TLS keep working. Under BCJSSE one security property matters: `ssl.KeyManagerFactory.algorithm=PKIX`, which kit v2 sets. Without it BCJSSE cannot use EC certificates, as a server or as an mTLS client (Tested).
+
+## Quick start by compute type
+
+Kit v2 = the `pq-tls/` directory (`pq-tls-agent.jar` v2, `pq-tls.security`, three Bouncy Castle 1.87 jars) plus `JAVA_TOOL_OPTIONS` with both flags. Source: [kit/java-v2](REPO/kit/java-v2). Below, `KIT` stands for `-Djava.security.properties=<dir>/pq-tls/pq-tls.security -javaagent:<dir>/pq-tls/pq-tls-agent.jar`, where `<dir>` is `/var/task` on Lambda and `/opt` elsewhere. **Append** `KIT` to an existing `JAVA_TOOL_OPTIONS`; don't replace it (APM agents live there).
+
+**Java 8 adds two flags.** `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` everywhere: without it every `HttpsURLConnection` handshake fails under BCJSSE. `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` on Lambda only: the Lambda Java 8 runtime limits clients to TLS 1.2. The `pq-tls` layer adds both (Tested).
+
+### Clients
+
+| Compute | Check | One change | Verify | Roll back |
+| --- | --- | --- | --- | --- |
+| Lambda `java8.al2`, `java11`, `java17`, `java21` (zip) | `Runtime` in the function configuration | `pq-tls/` at the zip root and `JAVA_TOOL_OPTIONS=KIT` (Java 8: plus both Java 8 flags). Or the `pq-tls` layer with `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` | Log line `pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,... ssl.KeyManagerFactory.algorithm=PKIX`; CloudTrail `tlsDetails.keyExchange` on the role's KMS or STS calls | Delete the variable, or set `PQ_TLS_DISABLE=1` with the layer; the next cold start is classical |
+| Lambda `java25` | `Runtime` = `java25` | Nothing (25.0.5 Tested) | CloudTrail `keyExchange` | n/a |
+| Lambda container image (`public.ecr.aws/lambda/java:8.al2023` to `:21`) | Base image tag and digest | `COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/` and `ENV JAVA_TOOL_OPTIONS=KIT`; or base `lambda/java:25` and no change | As for zip | Revert the image; a function variable overrides image `ENV` without a rebuild |
+| ECS on Fargate | `docker run --rm --entrypoint java <image> -version` | Base image `amazoncorretto:25` or `eclipse-temurin:25` (25.0.5+). Or `COPY pq-tls/ /opt/pq-tls/` and `ENV JAVA_TOOL_OPTIONS=KIT`, or the same variable in the task definition | Startup log line; CloudTrail; your server or egress proxy logs the group | Revert the image tag, or remove the task definition variable |
+| ECS on EC2, EKS | As for Fargate | As for Fargate; EKS sets the variable in `spec.containers[].env` | As for Fargate, plus Zeek on mirrored node ENIs | As for Fargate |
+| EC2 | `java -version` for the service's own `java` (via SSM) | `dnf install java-25-amazon-corretto-headless` and point the unit at it. Or kit v2 in `/opt/pq-tls/` and a systemd drop-in `Environment="JAVA_TOOL_OPTIONS=KIT"` | `journalctl -u <service> \| grep 'pq-tls agent v2'`; CloudTrail; Zeek | Remove the drop-in, `systemctl daemon-reload`, restart |
+
+Notes, all Tested in e2e unless marked:
+
+- **Lambda zip, static `java.security` registration does not work** (the bootstrap class path is `/var/runtime/lib` only); use the agent.
+- **Lambda container image with JDK 8:** the bundled kit needs both Java 8 flags. Tested only with the layer's files in `/opt` plus the wrapper; the bundled form with both flags is Unverified.
+- **Containers, JDK 17 and 21, without an agent:** `bc-static.security` plus the BC jars on `-cp` also gives PQ (Tested, Fargate and ECS on EC2).
+- **EC2 with several Corretto packages:** on AL2023, `java` on `PATH` resolved to 25 once 25 was installed (`alternatives` picks the highest). Check which binary the unit starts.
+- **JDK 8 on ECS on EC2 and on EC2** with the full fix were not run; Fargate JDK 8 was.
+
+### Servers (the JVM terminates TLS)
+
+If an ALB, NLB TLS listener, API Gateway or CloudFront terminates TLS in front of the JVM, set the PQ policy there; the JVM's own TLS matters for the target leg (ALB re-encryption), NLB TCP pass-through and internal services. See the Load balancers chapter.
+
+| Server situation | One change | Verify | Evidence |
+| --- | --- | --- | --- |
+| JDK 25.0.5+, any certificate | Nothing. One keystore with several certificates for SNI: also add `pq-tls.security` (PKIX), or the wrong certificate is served | `openssl s_client -connect <host>:8443 -tls1_3 -groups X25519MLKEM768 -brief` prints `Negotiated TLS1.3 group: X25519MLKEM768`; `-groups X25519` still connects | Tested |
+| JDK 8 to 21, RSA certificate | Kit v2 (Java 8: plus the host-name flag) | As above | Tested (8, 17, 21 in e2e) |
+| JDK 8 to 21, **EC certificate** | Kit v2, which sets `ssl.KeyManagerFactory.algorithm=PKIX`. Remove any hard-coded `SunX509` (code or Tomcat `keyManagerAlgorithm`) or every handshake fails | As above, plus `-servername` for each SNI name | Tested 17, 21; JDK 8 and 11 Unverified |
+| Any JDK, Netty with tcnative | Nothing | As above | Tested 21 |
 
 ## Versions and native support
 
-| Version | TLS stack | PQ client by default? | PQ server by default? | API to set groups | FIPS-mode behaviour | Proposed solution | Evidence |
+| Version | TLS stack | PQ client by default? | PQ server by default? | API to set groups | FIPS mode | Proposed solution | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| JDK 25.0.5+ (Corretto, Temurin) | SunJSSE | Yes on every compute type (Lambda `java25`, `lambda/java:25`, `amazoncorretto:25`, `eclipse-temurin:25`, Corretto 25 on AL2023) | Yes (Tomcat, Jetty, `HttpsServer`, Netty JDK provider) | `-Djdk.tls.namedGroups`, `SSLParameters.setNamedGroups` (JDK 20+), Tomcat `SSLHostConfig groups` | Depends on the FIPS provider in use; not tested | Upgrade. No other change. Optional: `ssl.KeyManagerFactory.algorithm=PKIX` if one keystore holds several certificates for SNI (see case C) | Tested (client, server, keystores, mTLS); Documented ([25.0.5 notes](https://builds.shipilev.net/backports-monitor/release-notes-25.0.5.txt)) |
-| JDK 21 (21.0.13) | SunJSSE | No (Lambda, container, EC2) | No | `jdk.tls.namedGroups` (no ML-KEM names) | Not tested | pq-tls kit v2 (agent + `pq-tls.security`), or upgrade to 25 | Tested |
+| JDK 25.0.5+ (Corretto, Temurin) | SunJSSE | Yes on every compute type | Yes (Tomcat, Jetty, `HttpsServer`, Netty JDK provider) | `-Djdk.tls.namedGroups`, `SSLParameters.setNamedGroups` (JDK 20+), Tomcat `SSLHostConfig groups` | Not tested | Upgrade. Optional `pq-tls.security` (PKIX) for multi-certificate SNI stores (case C) | Tested (client, server, keystores, mTLS); Documented |
+| JDK 21 (21.0.13) | SunJSSE | No | No | `jdk.tls.namedGroups` (no ML-KEM names) | Not tested | Kit v2, or upgrade to 25 | Tested |
 | JDK 17 (17.0.21) | SunJSSE | No | No | Same | Not tested | Kit v2, or upgrade | Tested |
-| JDK 11 | SunJSSE | No | No | Same | Not tested | Kit v2 | Tested: e2e Lambda `java11` zip, layer and extension, `lambda/java:11` image, Fargate `amazoncorretto:11`, EC2 AL2 and AL2023 (client, including mutual TLS; `java-*-j11-*`, `java-*-corretto11-*`). Server not tested on 11 |
-| JDK 8 | SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only (plain Corretto 8u512 offers TLS 1.3) | No | No | Same | Not tested | Kit v2 + `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Tested: e2e Lambda `java8.al2` zip/layer, `lambda/java:8.al2023` image, Fargate and ECS-EC2 `amazoncorretto:8` (8u512, HttpsURLConnection, mTLS); server: e2e `srv-java-fargate-corretto8-agent` (HttpsServer, kit v2) |
-| Any JDK + Netty tcnative-boringssl-static 2.0.85 | BoringSSL | Yes | Yes | `OpenSslContextOption.GROUPS`; also reads `jdk.tls.namedGroups` | n/a | Nothing (keep it) | Tested |
-| Any JDK + AWS SDK v2 CRT client (2.35.11+) | s2n-tls | Yes, AWS API calls only | n/a | n/a | Not tested | Nothing; CRT before 2.35.11: upgrade | Tested (2.59.1); Documented |
+| JDK 11 (11.0.33) | SunJSSE | No | No | Same | Not tested | Kit v2 | Tested client (Lambda zip, layer, image; Fargate; EC2 AL2 and AL2023). Server not tested |
+| JDK 8 (8u512) | SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only (plain Corretto 8u512 offers TLS 1.3) | No | No | Same | Not tested | Kit v2 + host-name flag; on Lambda also the protocols flag | Tested client (Lambda zip, layer, image with layer files; Fargate) and server (Fargate, RSA certificate) |
+| Any JDK + Netty tcnative-boringssl-static 2.0.85 | BoringSSL | Yes | Yes | `OpenSslContextOption.GROUPS`; also reads `jdk.tls.namedGroups` | n/a | Nothing | Tested |
+| Any JDK + AWS SDK v2 CRT client (2.35.11+) | s2n-tls (Linux) | Yes, AWS API calls only | n/a | n/a | Not tested | Nothing; before 2.35.11, upgrade | Tested 2.59.1; Documented |
 
 ### By JDK and compute type
 
-All "Tested" rows ran on 2026-11-14 in containers (arm64) against an OpenSSL 3.5.7 PQ-only server (`-tls1_3 -groups X25519MLKEM768`, or nginx `ssl_ecdh_curve X25519MLKEM768`) and a classical-only server (`X25519`). PQ = the PQ-only server connected; every row also connected to the classical server, so fallback works. Images: `eclipse-temurin:17-jre` (17.0.21), `:21-jre` (21.0.13), `:25-jre` (25.0.5), `amazoncorretto:25` (25.0.5), pinned by digest in the test output. Kit = agent v2 + pq-tls.security; v1 rows were tested with the v1 agent.
+PQ = connected to a PQ-only server; every PQ cell also connected to a classical-only server, so fallback works. Evidence is the LocalStack e2e run r1117041043 (2026-11-16) unless marked; see Test evidence below.
 
-| JDK | Lambda zip | Lambda image | Fargate / ECS / EKS | EC2 | Evidence |
-|----|----|----|----|----|----|
-| 25.0.5+ (Corretto, Temurin) | PQ: runtime `java25` | PQ: `lambda/java:25` | PQ: `amazoncorretto:25`, `eclipse-temurin:25` | PQ: Corretto 25 package | Tested (client and server); Documented ([25.0.5 release notes](https://builds.shipilev.net/backports-monitor/release-notes-25.0.5.txt)) |
-| 21 (21.0.13) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static `java.security` gives PQ | Same as containers | Tested |
-| 17 (17.0.21) | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Not PQ; agent or static gives PQ | Same as containers | Tested |
-| 11 | Not PQ; agent gives PQ | Not PQ; agent gives PQ | Agent gives PQ | Same as containers | Tested (e2e `java-lambda-j11-*`, `java-lambda-image-j11-*`, `java-fargate-corretto11-*`, `java-ec2-*-j11-*`) |
-| 8 | Agent + `jdk.tls.client.protocols=TLSv1.3,TLSv1.2` + `assumeOriginalHostName=true` gives PQ. Without the host-name flag every `HttpsURLConnection` handshake fails | Same (protocols flag not needed off Lambda) | Same | Same | Tested (e2e `java-*-j8-*`, `java-fargate-corretto8-*`) |
+| JDK | Lambda zip | Lambda image | Fargate | ECS on EC2 / EKS | EC2 |
+| --- | --- | --- | --- | --- | --- |
+| 25.0.5 | PQ, runtime `java25` | PQ, `lambda/java:25` | PQ, `amazoncorretto:25`; AL2023 `dnf` Corretto 25 | PQ, `amazoncorretto:25` | PQ, AL2023 Corretto 25 package |
+| 21.0.13 | Classical; kit or layer gives PQ; static registration does not | Classical; kit gives PQ | Classical; kit or static gives PQ (Corretto, Temurin, AL2023 `dnf`) | Classical; kit gives PQ | Classical; kit gives PQ (AL2023) |
+| 17.0.21 | Classical; kit or layer gives PQ | Classical; kit gives PQ | Classical; kit or static gives PQ | Static gives PQ; kit not run | Classical; kit gives PQ (AL2, AL2023) |
+| 11.0.33 | Classical; kit or layer gives PQ | Classical; kit gives PQ | Classical; kit gives PQ | Not run | Classical; kit gives PQ (AL2, AL2023) |
+| 8u512 | TLS 1.2 classical; kit + both Java 8 flags, or the layer, gives PQ | TLS 1.2 classical; layer files + wrapper give PQ | TLS 1.3 classical; kit + host-name flag gives PQ (protocols flag not needed) | Kit without the host-name flag fails every handshake; full fix not run | Not run |
+
+The `pq-egress` Lambda extension also gave PQ on `java8.al2` to `java25` (it originates the TLS itself).
 
 ### Decision guide
 
-- On JDK 25.0.5 or later, change nothing. Look for pins (case F).
-- On JDK 8 to 21, roll out kit v2 and plan the upgrade to 25. Kit v2 = `pq-tls-agent.jar` v2 + `pq-tls.security` in `JAVA_TOOL_OPTIONS`.
-- Already shipped kit v1 (agent only)? Add `-Djava.security.properties=<dir>/pq-tls.security`, or swap in the v2 agent jar. This is required if any JVM uses an EC certificate, as a server or as an mTLS client.
-- If you use Netty tcnative or the CRT client, those connections are already PQ. Everything else in the same JVM still needs the kit.
-- On a FIPS JVM, don't add the kit (case G).
+- JDK 25.0.5 or later: change nothing; look for pins (case F).
+- JDK 8 to 21: roll out kit v2 and plan the upgrade to 25.
+- Already shipped kit v1 (agent only)? Add the `pq-tls.security` flag or swap in the v2 jar before any JVM with an EC certificate, server or mTLS client, gets it.
+- Netty tcnative or the CRT client: those connections are already PQ; everything else in the JVM still needs the kit.
+- FIPS JVM: don't add the kit (case G).
 
 ## Cases: what to change
 
-All Tested rows in this section: 2026-11-14, containers (arm64), `eclipse-temurin:17-jre` 17.0.21, `:21-jre` 21.0.13, `:25-jre` 25.0.5 (digests in the output files), BC 1.87. The test peers are OpenSSL 3.5.7 on `debian:trixie-slim`. "PQ" means OpenSSL printed `Negotiated TLS1.3 group: X25519MLKEM768`. Every PQ row also connected with a classical-only peer (`-groups X25519`), unless the row says it is PQ-only. Kit v2 = `JAVA_TOOL_OPTIONS=-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar`.
+Deep tests (marked "Tested" in this section unless an e2e case is named): 2026-11-14, containers on arm64, `eclipse-temurin:17-jre` 17.0.21, `:21-jre` 21.0.13, `:25-jre` 25.0.5, BC 1.87, peers OpenSSL 3.5.7 on `debian:trixie-slim`. "PQ" means OpenSSL printed `Negotiated TLS1.3 group: X25519MLKEM768`; every PQ row also connected with a classical-only peer unless it says PQ-only. Outputs: `tests/deep/java/out/` and `tests/deep/java/v2/out/`.
 
 ### A. Simple client (default HTTP client, AWS SDK, JDBC driver, no TLS code)
 
-**Who this is:** no `SSLContext`, `KeyManager` or `TrustManager` code; `grep -rE 'SSLContext|KeyManagerFactory|TrustManagerFactory|namedGroups' src/` finds nothing.
+**Who:** no `SSLContext`, `KeyManager` or `TrustManager` code (`grep -rE 'SSLContext|KeyManagerFactory|TrustManagerFactory|namedGroups' src/` finds nothing). **Today:** classical on 8 to 21, PQ on 25.0.5+. **Change:** nothing in code; JDK 25.0.5+ or kit v2. **Side effects:** the ClientHello grows by about 1.2 KB; BCJSSE becomes the TLS provider for the whole JVM.
 
-**What happens today:** classical on 8 to 21, PQ on 25.0.5+ (Tested; see the library table).
+| Client | TLS engine | JDK 17 / 21 | 17 / 21 + kit | 25.0.5 | What to keep | Evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| JDK `HttpClient`, `HttpsURLConnection` | JSSE | No | PQ | PQ | n/a | Tested |
+| Apache HttpClient 5.6.5, 4.5.14 | JSSE | No | PQ | PQ | TLS 1.3 in `setTlsVersions`; no `new String[]{"TLSv1.2"}` | Tested |
+| OkHttp 4.12.0 | JSSE | No | PQ | PQ | `ConnectionSpec.MODERN_TLS` | Tested |
+| Netty 4.2.20, `SslProvider.JDK` | JSSE | No | PQ | PQ | n/a | Tested |
+| Netty 4.2.20 + tcnative-boringssl-static 2.0.85 | BoringSSL | **PQ** | PQ | PQ | No classical `jdk.tls.namedGroups` pin (Netty reads it) | Tested |
+| AWS SDK 2.59.1 `ApacheHttpClient` | JSSE | No | PQ | PQ | n/a | Tested |
+| AWS SDK 2.59.1 `NettyNioAsyncHttpClient` with tcnative | BoringSSL | **PQ** | PQ | PQ | Without tcnative it uses JSSE (not run) | Tested |
+| AWS SDK 2.59.1 `AwsCrtHttpClient` (aws-crt 0.50.0) | s2n-tls | **PQ** | PQ | PQ | SDK 2.35.11+ | Tested; Documented |
+| AWS SDK 2.35.10 `AwsCrtHttpClient` (aws-crt 0.38.9) | s2n-tls | No | n/a | n/a | Upgrade | Tested |
+| PostgreSQL JDBC 42.7.14 to PostgreSQL 18 (`ssl_groups=X25519MLKEM768`) | JSSE | No (21) | PQ (21) | PQ | `sslmode=verify-full` | Tested |
+| Static BCJSSE via `java.security`, no agent | BCJSSE | n/a | PQ (17, 21) | n/a | BC jars on the class path | Tested; e2e Fargate and ECS on EC2 |
+| Spring `WebClient`, `RestClient`, `RestTemplate`; MySQL Connector/J; Lettuce; Jedis; Kafka client | JSSE (Lettuce: Netty JDK provider by default) | Follow the JDK rows | | | TLS 1.3 allowed (`tlsVersions`, `ssl.enabled.protocols`); Kafka: leave `ssl.provider` empty | Unverified (not run) |
 
-**What to change:** nothing in code. JDK 25.0.5+, or kit v2 on 8 to 21.
-
-**Side effects:** the ClientHello grows by about 1.2 KB. BCJSSE becomes the TLS provider for the whole JVM.
-
-#### By library (client side)
-
-| Client | JDK 17 / 21 | JDK 17 / 21 + agent | JDK 25.0.5 | Evidence |
-|----|----|----|----|----|
-| JDK `HttpClient`, `HttpsURLConnection` | No | PQ | PQ | Tested |
-| Apache HttpClient 5.6.5 and 4.5.14 | No | PQ | PQ | Tested |
-| OkHttp 4.12.0 | No | PQ | PQ | Tested (also Corretto 25) |
-| Netty 4.2.20, JDK provider | No | PQ | PQ | Tested |
-| Netty 4.2.20 + `netty-tcnative-boringssl-static` 2.0.85 | **PQ** | PQ | PQ | Tested |
-| AWS SDK 2.59.1 `ApacheHttpClient` | No | PQ | PQ | Tested (server logged the group) |
-| AWS SDK 2.59.1 `NettyNioAsyncHttpClient`, tcnative on the class path | **PQ** | PQ | PQ | Tested; it picked BoringSSL. Without tcnative it uses JSSE like the Apache row (not run) |
-| AWS SDK 2.59.1 `AwsCrtHttpClient` (aws-crt 0.50.0) | **PQ** | PQ | PQ | Tested; Documented from 2.35.11 |
-| AWS SDK 2.35.10 `AwsCrtHttpClient` (aws-crt 0.38.9) | No | n/a | n/a | Tested |
-| PostgreSQL JDBC 42.7.14 to PostgreSQL 18 with `ssl_groups=X25519MLKEM768` | No (21) | PQ (21) | PQ | Tested |
-| Static BCJSSE via `java.security`, no agent | n/a | PQ (17, 21), with or without `jdk.tls.namedGroups` | n/a | Tested |
-
-#### Client libraries
-
-Almost every Java client library hands TLS to JSSE, so it follows the JDK row of the status matrix with no library setting. Only TLS 1.2 pins and explicit group lists stop it. Three clients bring their own TLS library and are PQ on any JDK: Netty with tcnative-boringssl, the AWS SDK's Netty client when tcnative is on the class path, and the AWS SDK's CRT client.
-
-| Library | TLS engine | What to set for PQ | Evidence |
-|----|----|----|----|
-| JDK `java.net.http.HttpClient` | JSSE | Nothing on 25.0.5+; agent on 8 to 21 | Tested |
-| `HttpsURLConnection` | JSSE | Same | Tested |
-| Apache HttpClient 5 (`HttpClients.createSystem()`) | JSSE | Same; keep `TLS.V_1_3` in `ClientTlsStrategyBuilder.setTlsVersions` | Tested 5.6.5 |
-| Apache HttpClient 4 | JSSE | Same; don't build `SSLConnectionSocketFactory` with `new String[]{"TLSv1.2"}` | Tested 4.5.14 |
-| OkHttp | JSSE (platform) | Same; `ConnectionSpec.MODERN_TLS` keeps 1.3 | Tested 4.12.0 |
-| Netty, `SslProvider.JDK` | JSSE | Same | Tested 4.2.20 |
-| Netty + `netty-tcnative-boringssl-static`, `SslProvider.OPENSSL` | BoringSSL | Nothing, on any JDK | Tested 4.2.20 / 2.0.85 |
-| Spring `WebClient` (Reactor Netty), `RestClient`, `RestTemplate` | Reactor Netty (JDK provider unless tcnative is configured) or JSSE | Same as the engine underneath | Not run |
-| AWS SDK v2 `ApacheHttpClient`, `UrlConnectionHttpClient` | JSSE | Same as the JDK | Tested (Apache) |
-| AWS SDK v2 `NettyNioAsyncHttpClient` | Netty: BoringSSL if tcnative is present, else JSSE | Add tcnative, or `.sslProvider(SslProvider.OPENSSL)` explicitly | Tested 2.59.1 with tcnative |
-| AWS SDK v2 `AwsCrtHttpClient`, `AwsCrtAsyncHttpClient` | s2n-tls on Linux; OS library on macOS/Windows | SDK 2.35.11+ (Documented); 2.35.10 was classical (Tested) | Tested 2.59.1 |
-| PostgreSQL JDBC | JSSE | Same; `sslmode=verify-full` | Tested 42.7.14 |
-| MySQL Connector/J | JSSE | Same; keep `TLSv1.3` in `tlsVersions` | Not run |
-| Lettuce (Redis) | Netty, JDK provider by default | Same as JDK, or `SslOptions.builder().openSslProvider()` + tcnative | Not run |
-| Jedis (Redis) | JSSE | Same as JDK | Not run |
-| Kafka Java client | JSSE `SSLEngine` | Same; keep `ssl.enabled.protocols=TLSv1.3,TLSv1.2`, leave `ssl.provider` empty | Not run |
-
-Rows marked "Not run" use JSSE through standard APIs, so they should follow the JDK row; treat them as Unverified until the live test in "How to test" passes for your build. Server-side settings for databases, Redis and Kafka brokers are on the Databases and data services tab.
+Unverified rows use standard JSSE APIs, so they should follow the JDK rows; run the live test in "How to test" for your build before you rely on them. Server settings for databases, Redis and Kafka brokers are in the Databases and data services chapter.
 
 ### B. Simple server (framework default TLS)
 
-**Who this is:** Spring Boot `server.ssl.*` or an SSL bundle, Tomcat `server.xml`, Jetty, `HttpsServer`, Quarkus or Micronaut that terminate TLS in the JVM. If an ALB, NLB TLS listener, API Gateway or CloudFront terminates TLS in front of you, set the PQ policy there instead (Load balancers and Edge tabs).
+**Who:** Spring Boot `server.ssl.*` or an SSL bundle, Tomcat `server.xml`, Jetty, `HttpsServer`, Quarkus or Micronaut terminating TLS in the JVM. **Today:** classical on 8 to 21, PQ on 25.0.5+. **Change:** JDK 25.0.5+, or kit v2 (kit v1 breaks EC certificates, case C). **Side effects:** clients that don't offer ML-KEM still connect (Tested).
 
-**What happens today:** classical on 8 to 21, PQ on 25.0.5+ (Tested: Tomcat 11.0.29, Jetty 12.1.15, `HttpsServer`, Netty).
+| Server | JDK 21 default | JDK 17 / 21 + kit v2 | JDK 25.0.5 default | Evidence |
+| --- | --- | --- | --- | --- |
+| Tomcat 11.0.29 embedded (JSSE) | Classical | PQ with RSA or EC certificate; EC fails without PKIX | PQ, preferred | Tested |
+| Tomcat 11.0.29 `groups="X25519MLKEM768,x25519"` | Classical (name unknown to SunJSSE 21, ignored) | n/a | PQ | Tested |
+| Tomcat 11.0.29 `groups="x25519,secp256r1"` | n/a | n/a | Classical (the pin removes it) | Tested |
+| Jetty 12.1.15 | Classical | PQ; EC fails without PKIX | PQ | Tested |
+| JDK `HttpsServer` | Classical | PQ; EC fails without PKIX | PQ | Tested; e2e target leg (RSA) on 8, 17, 21, 25 |
+| Spring Boot 3.5.16 SSL bundle, EC PKCS#12 | Not run | PQ on 21; fails with the agent's PKIX step switched off | Not run | Tested (21 only) |
+| Netty 4.2.20 + tcnative-boringssl-static 2.0.85 | **PQ** | n/a | PQ | Tested |
+| Netty 4.2.20, JDK provider | Classical | n/a | PQ | Tested on 25 |
+| Undertow; Quarkus; Micronaut | Follow the JSSE rows (JDK engine) or the tcnative row (native SSL) | | | Unverified; confirm the engine from the startup log |
 
-**What to change:** JDK 25.0.5+, or kit v2. With kit **v1**, a server with an EC certificate fails every handshake, PQ or classical. Kit v2 fixes this (case C).
+**Order of preference for a JVM that terminates TLS:** (1) JDK 25.0.5+; (2) Netty with tcnative on any JDK; (3) JDK 8 to 21 with kit v2; (4) otherwise a PQ-capable proxy in front (nginx or Envoy on OpenSSL 3.5, Web servers and proxies chapter) or an ALB with a PQ policy.
 
-**Side effects:** clients that don't offer ML-KEM still connect (Tested).
+**Group settings by framework:**
 
-#### By server (server side)
+- **Spring Boot** has no named-group property (checked against the [4.1.2 SSL reference](https://docs.spring.io/spring-boot/reference/features/ssl.html)); keep `enabled-protocols: [TLSv1.3, TLSv1.2]` in the bundle. To reorder groups, set `-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1`; embedded Tomcat's `groups` defaults to it. The `TomcatConnectorCustomizer` in the full files is Unverified.
+- **Standalone Tomcat:** `SSLHostConfig groups` arrived in 11.0.12 ([Tomcat 11 HTTP connector](https://tomcat.apache.org/tomcat-11.0-doc/config/http.html); Documented) and, per a mirrored changelog, 10.1.48; the 9.0 line is not sure. It defaults to `jdk.tls.namedGroups` and picks only among groups the engine knows. With the OpenSSL implementation it should pass to OpenSSL (not tested). On JDK 17 and 21, `bin/setenv.sh` adds kit v2 through `CATALINA_OPTS`.
+- **Jetty, Undertow, `HttpsServer`:** no group setting; they follow the JDK and `jdk.tls.namedGroups`.
+- **Netty server** (gRPC-Java, Reactor Netty, Vert.x): `SslContextBuilder.forServer(kmf).sslProvider(SslProvider.OPENSSL)` with tcnative on the class path. When `jdk.tls.namedGroups` is set, Netty uses that list for BoringSSL too, so a classical pin turns PQ off even with tcnative (Tested). Full code: `NettyPq.java`.
 
-| Server | JDK 21 default | JDK 17 / 21 + BCJSSE | JDK 25.0.5 default | Evidence |
-|----|----|----|----|----|
-| Tomcat 11.0.29 embedded (JSSE) | Not PQ | PQ with RSA or EC certificate with kit v2 (`ssl.KeyManagerFactory.algorithm=PKIX`); EC fails without it | PQ, and preferred | Tested |
-| Tomcat 11.0.29 with `groups="X25519MLKEM768,x25519"` | Not PQ (name unknown to SunJSSE 21, ignored) | n/a | PQ | Tested |
-| Tomcat 11.0.29 with `groups="x25519,secp256r1"` | n/a | n/a | Not PQ (the pin removes it) | Tested |
-| Jetty 12.1.15 | Not PQ | PQ with kit v2; fails with EC without the PKIX setting (Tested 17, 21) | PQ | Tested |
-| JDK `HttpsServer` | n/a | PQ with kit v2; fails with EC without the PKIX setting (Tested 17, 21) | PQ | Tested |
-| Netty 4.2.20 + tcnative-boringssl-static 2.0.85 | **PQ** (default and with `GROUPS`) | n/a | PQ | Tested |
-| Netty 4.2.20, JDK provider | Not PQ | n/a | PQ | Tested on 25 |
-| Undertow; Spring Boot on Tomcat, Jetty or Undertow; Quarkus; Micronaut | Follow the JSSE rows |  |  | Not run; same JSSE engine |
-
-#### Front door and order of preference
-
-If the Java service sits behind an ALB, an NLB TLS listener, API Gateway or CloudFront, the client-facing handshake happens there, not in the JVM: set the PQ policy on the front door (Load balancers tab, Edge and API front doors tab). The JVM's own server TLS matters for end-to-end TLS (ALB-to-target re-encryption, NLB TCP pass-through, internal services without a mesh).
-
-Order of preference for a JVM that terminates TLS:
-
-1.  **JDK 25.0.5+.** Tomcat, Jetty, the JDK `HttpsServer` and Netty (JDK provider) negotiate X25519MLKEM768 with no setting, and classical clients still connect (Tested). Undertow uses the same engine (not run).
-
-2.  **Netty with `netty-tcnative-boringssl-static`** on any JDK (gRPC-Java, Reactor Netty, Vert.x with native SSL): PQ by default (Tested on JDK 21).
-
-3.  **JDK 17/21 + kit v2.** Works with RSA and EC certificates (Tested on 17 and 21: Tomcat 11.0.29, Jetty 12.1.15, `HttpsServer`, Spring Boot 3.5.16). The earlier EC failure was the key manager: BC asks for key type `EC/secp256r1`, and the JDK default `SunX509` key manager returns no alias for it. `ssl.KeyManagerFactory.algorithm=PKIX` makes BC use its own key manager.
-
-4.  **Otherwise:** put a PQ-capable proxy in front (nginx or Envoy on OpenSSL 3.5, see the Web servers and proxies tab), or terminate on an ALB with a PQ policy.
-
-#### Spring Boot (embedded Tomcat, Jetty or Undertow)
-
-Spring Boot 4.1.2 has no named-group property; SSL bundles expose protocols and ciphers ([Spring Boot SSL reference](https://docs.spring.io/spring-boot/reference/features/ssl.html)). On JDK 25.0.5+ do nothing beyond keeping TLS 1.3 enabled:
-
-``` yaml
-spring:
-  ssl:
-    bundle:
-      jks:
-        web:
-          options:
-            enabled-protocols: [TLSv1.3, TLSv1.2]
-server:
-  ssl:
-    bundle: web
-```
-
-To restrict or reorder groups, put `-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1` in `JAVA_TOOL_OPTIONS`; embedded Tomcat's `groups` defaults to it, and Jetty and Undertow read it through the JDK. A `TomcatConnectorCustomizer` that calls `setGroups` is in the full files (Unverified).
-
-#### Standalone Tomcat (`server.xml`)
-
-Tomcat 11.0.12 added a `groups` attribute on `SSLHostConfig` (also in the 10.1 and 9.0 lines); its default is `jdk.tls.namedGroups` ([Tomcat 11 HTTP connector](https://tomcat.apache.org/tomcat-11.0-doc/config/http.html)). It only picks among groups the TLS engine knows.
-
-``` xml
-<SSLHostConfig protocols="TLSv1.3+TLSv1.2"
-               groups="X25519MLKEM768,x25519,secp256r1,secp384r1">
-```
-
-- JSSE implementation on JDK 25.0.5+: PQ (Tested via the embedded API, Tomcat 11.0.29).
-
-- JSSE on JDK 21 without BCJSSE: the name is ignored and the server stays classical (Tested).
-
-- OpenSSL implementation (Tomcat Native or the FFM OpenSSL connector): the docs don't mark `groups` as JSSE-only, so it should pass to OpenSSL; with OpenSSL 3.5 underneath that would give PQ. Not tested.
-
-- A list without `X25519MLKEM768` turns PQ off on JDK 25 (Tested).
-
-- For JDK 17/21, `bin/setenv.sh` adds kit v2 (agent + `pq-tls.security`) through `CATALINA_OPTS` (full files).
-
-#### Jetty, Undertow, JDK `HttpsServer`
-
-No group setting in their TLS objects; they follow the JDK and `jdk.tls.namedGroups`. Jetty 12.1.15 on JDK 25.0.5: PQ (Tested).
-
-#### Netty server (gRPC-Java, Reactor Netty, Vert.x)
-
-``` java
-SslContext ctx = SslContextBuilder.forServer(kmf)
-        .sslProvider(SslProvider.OPENSSL)   // tcnative-boringssl-static on the class path
-        .protocols("TLSv1.3", "TLSv1.2")
-        .build();                           // optional .option(OpenSslContextOption.GROUPS, ...)
-```
-
-When `jdk.tls.namedGroups` is set, Netty logs `Using configured namedGroups -D 'jdk.tls.namedGroup': [...]` and uses that list for BoringSSL too, so a classical pin turns PQ off even with tcnative (Tested).
-
-#### Quarkus and Micronaut
-
-Quarkus (Vert.x) and Micronaut (Netty) follow the JDK rows with the JDK SSL engine and the Netty tcnative row with native SSL. Neither was run here; confirm the engine from the startup log before claiming PQ.
-
-**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `HttpsServer` target with a PKCS#12 RSA keystore stayed classical on Corretto 8 and 21, and negotiated X25519MLKEM768 with kit v2 on Corretto 8, 17 and 21 and with no change on Corretto 25.0.5. This is the first server-side test of kit v2 on JDK 8 (cases `srv-java-*`, Load balancers tab).
+**Behind an ALB or NLB TLS listener (e2e):** with the load balancer modelled as the client on the target leg, an `HttpsServer` target with an RSA PKCS#12 keystore stayed classical on Corretto 8 and 21, negotiated X25519MLKEM768 with kit v2 on Corretto 8, 17 and 21 (Fargate; 21 also on ECS on EC2) and with no change on Corretto 25.0.5. With the ALB's classic backend policy every target negotiated classical TLS 1.2.
 
 ### C. Existing server certificates in a custom keystore or cert files
 
-**Who this is:** the JVM loads its own certificate and key. Find it with:
+**Who:** the JVM loads its own certificate and key. Find it:
 
 ```bash
 grep -rnE 'javax\.net\.ssl\.keyStore|KeyManagerFactory|KeyStore\.getInstance|certificateKeystore|server\.ssl\.(key-store|bundle)|spring\.ssl\.bundle|keyManagerAlgorithm|setKeyStorePath' \
@@ -212,113 +154,77 @@ grep -rnE 'javax\.net\.ssl\.keyStore|KeyManagerFactory|KeyStore\.getInstance|cer
 keytool -list -v -keystore server.p12 -storetype PKCS12 | grep -E 'Alias name|Entry type|Signature algorithm|Subject Public Key Algorithm'
 ```
 
-**What changes in the store: nothing.** You don't re-issue, convert or re-import any certificate or key. Keep the RSA or EC key, PKCS#12 or JKS, the aliases, the passwords and the system properties that point at the store.
+**What changes in the store: nothing.** Keep the RSA or EC key, PKCS#12 or JKS, aliases, passwords and the system properties that point at the store.
 
-**What to change:** one security property, and on JDK 8 to 21 only:
-
-```properties
-# pq-tls/pq-tls.security, loaded with -Djava.security.properties=/opt/pq-tls/pq-tls.security
-ssl.KeyManagerFactory.algorithm=PKIX
-```
-
-Kit v2 ships this file, and every packaging excerpt below already passes it. The v2 agent also sets the property itself when it is still the JDK default `SunX509`. That covers apps whose own `-Djava.security.properties` on the command line replaces the kit's flag (Tested). Code that names a key manager algorithm itself must stop naming `SunX509`:
+**What to change (JDK 8 to 21 only):** `ssl.KeyManagerFactory.algorithm=PKIX`, shipped in `pq-tls.security` and also set by agent v2 when the value is still the JDK default `SunX509`. The agent fallback covers apps whose own `-Djava.security.properties` replaces the kit's flag (Tested). Code that names `SunX509` must change:
 
 ```java
-// Fails with an EC certificate under BCJSSE (JDK 8-21 + agent):
+// Fails with an EC certificate under BCJSSE (JDK 8-21 + kit):
 KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 // Works everywhere, and picks up the kit's PKIX default:
 KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+// Tomcat server.xml: drop keyManagerAlgorithm="SunX509", or set keyManagerAlgorithm="PKIX"
 ```
 
-```xml
-<!-- Tomcat server.xml: drop keyManagerAlgorithm="SunX509", or set PKIX -->
-<SSLHostConfig protocols="TLSv1.3+TLSv1.2" keyManagerAlgorithm="PKIX">
-```
+Why: BCJSSE asks the key manager for key type `EC/secp256r1`, and SunJSSE's `SunX509` key manager returns no alias for it. RSA keys never needed the fix (BC asks for `RSA`, which SunX509 answers).
 
-**Tested proof** (`v2/out/t17-v2kit.txt`, `t21-v2kit.txt`, `t21-v1nofix.txt`, `t17-v1nofix.txt`, `t25-none.txt`, `t25-file.txt`, `tomcat-sb.txt`):
+**Tested proof** (`tests/deep/java/v2/out/t17-v2kit.txt`, `t21-v2kit.txt`, `t17-v1nofix.txt`, `t21-v1nofix.txt`, `t25-none.txt`, `t25-file.txt`, `tomcat-sb.txt`):
 
-| Keystore situation | JDK 17/21 + kit v1 (no fix) | JDK 17/21 + kit v2 | JDK 25.0.5, no kit |
+| Keystore situation | JDK 17/21 + kit v1 | JDK 17/21 + kit v2 | JDK 25.0.5, no kit |
 | --- | --- | --- | --- |
 | EC P-256 only, PKCS#12 | **Fails** (handshake_failure, also for classical clients) | PQ; classical client connects | PQ |
 | RSA only, PKCS#12 | PQ | PQ | PQ |
-| RSA + EC in one PKCS#12 | PQ, but always serves RSA; the EC entry is ignored | PQ, serves EC; a client offering only RSA signature algorithms gets RSA | PQ, serves EC |
-| Two EC certs in one store, SNI per hostname | **Fails** | PQ, right cert per SNI name | PQ, but **SNI ignored**: the default `SunX509` key manager served `alt-host`'s cert for `ks-java`. With `pq-tls.security` (PKIX): right cert per name |
+| RSA + EC in one PKCS#12 | PQ, always serves RSA | PQ, serves EC; a client offering only RSA signature algorithms gets RSA | PQ, serves EC |
+| Two EC certificates, SNI per host name | **Fails** | PQ, right certificate per SNI name | PQ, but **SNI ignored** (served `alt-host`'s certificate for `ks-java`); with `pq-tls.security`: right certificate per name |
 | EC in a legacy JKS | **Fails** | PQ | PQ |
-| Store given by `-Djavax.net.ssl.keyStore`/`keyStorePassword`/`keyStoreType` | **Fails** | PQ | PQ |
-| App passes its own `-Djava.security.properties` on the command line (replaces the kit file) | **Fails** | PQ (agent v2 fallback); with kit v1 + file: **fails** | PQ |
+| Store from `-Djavax.net.ssl.keyStore*` | **Fails** | PQ | PQ |
+| App passes its own `-Djava.security.properties` | **Fails** | PQ (agent v2 fallback) | PQ |
 | Code hard-codes `KeyManagerFactory.getInstance("SunX509")` | **Fails** | **Still fails**: change the code | PQ |
-| Tomcat 11.0.29 `SSLHostConfig` default `keyManagerAlgorithm` (EC) | Fails (lead test, `java/out/bcserver4.txt`) | PQ | PQ |
-| Tomcat `keyManagerAlgorithm="SunX509"` (EC) | Fails | **Still fails**: remove it or set `PKIX` | not run |
-| Tomcat `keyManagerAlgorithm="PKIX"`, kit fix switched off | n/a | PQ (explicit PKIX is enough) | not run |
-| Spring Boot 3.5.16 `spring.ssl.bundle.jks` with an EC PKCS#12 | Fails (agent with the fix switched off) | PQ; classical client connects | not run |
+| Tomcat 11.0.29 default `keyManagerAlgorithm` (EC) | Fails | PQ | PQ |
+| Tomcat `keyManagerAlgorithm="SunX509"` (EC) | Fails | **Still fails** | Not run |
+| Tomcat `keyManagerAlgorithm="PKIX"`, kit fix switched off | n/a | PQ (explicit PKIX is enough) | Not run |
+| Spring Boot 3.5.16 `spring.ssl.bundle.jks`, EC PKCS#12 (JDK 21) | Fails | PQ; classical client connects | Not run |
 
-- Spring Boot SSL bundles: `SslManagerBundle` and `DefaultSslManagerBundle` in `spring-boot-3.5.16.jar` call `KeyManagerFactory.getDefaultAlgorithm()` (checked with `javap`), so the kit property reaches them. No bundle change. A `key.alias` in the bundle still selects the alias.
-- RSA vs EC: RSA keys never needed the fix, because BC asks for key type `RSA` and SunX509 answers. EC keys need it. **PEM pairs** (`spring.ssl.bundle.pem`, Tomcat `certificateFile`/`certificateKeyFile`) become an in-memory keystore with the same key manager, so the same rule applies. Not run separately.
-- **Encrypted keys and key passwords:** PKCS#12 entries are always encrypted with the store password (tested above). JKS entries with a separate key password (`certificateKeyPassword`, `server.ssl.key-password`) go through the same `KeyManagerFactory.init(ks, keyPassword)`, so the fix doesn't change them. Not run separately.
-- BC is stricter than SunJSSE on certificate chains: it applies the client's `signature_algorithms` to the whole chain. A client offering only `rsa_pss_rsae_sha256` was refused an RSA cert whose CA signed with PKCS#1; adding `rsa_pkcs1_sha256` fixed it (lead test, `java/ks/run-ks2.out`, `run-ks3.out`). Modern clients offer both.
-- PKCS#11/HSM keystores (`KeyStore.getInstance("PKCS11")`): see case I.
-
-**Side effects:** with RSA and EC in one store, kit v2 starts serving the EC certificate to clients that support it (v1 served RSA). Check certificate pinning on clients (case I). On JDK 25 the property also turns on SNI-based certificate selection, so that SunJSSE stops serving the wrong certificate from a multi-cert store.
+- **Spring Boot SSL bundles** call `KeyManagerFactory.getDefaultAlgorithm()` (`SslManagerBundle`, `DefaultSslManagerBundle`, checked with `javap`), so the kit property reaches them; `key.alias` still selects the alias.
+- **PEM pairs** (`spring.ssl.bundle.pem`, Tomcat `certificateFile`) become an in-memory keystore with the same key manager, so the same rule applies. Not run separately. Separate JKS key passwords go through the same `KeyManagerFactory.init`; not run separately.
+- **BC is stricter on chains:** it applies the client's `signature_algorithms` to the whole chain. A client offering only `rsa_pss_rsae_sha256` was refused an RSA certificate whose CA signed with PKCS#1; adding `rsa_pkcs1_sha256` fixed it (`tests/deep/java/ks/`). Modern clients offer both.
+- **Side effects:** an RSA + EC store starts serving EC under kit v2 (check client pins, case I). On JDK 25, PKIX also turns on SNI-based certificate selection.
 
 ### D. Custom CA trust (private CA)
 
-**Who this is:**
+**Who:** `grep -rnE 'javax\.net\.ssl\.trustStore|TrustManagerFactory|X509TrustManager|truststore|trust-store|keytool .*-importcert|cacerts' src/ conf/ Dockerfile* helm/ *.yml *.yaml *.properties`
 
-```bash
-grep -rnE 'javax\.net\.ssl\.trustStore|TrustManagerFactory|X509TrustManager|truststore|trust-store|keytool .*-importcert|cacerts' \
-  src/ conf/ Dockerfile* helm/ *.yml *.yaml *.properties 2>/dev/null
-```
+**What to change: nothing, on any JDK.** BCJSSE uses the JDK's trust settings: `javax.net.ssl.trustStore*` when set, else `jssecacerts` or `cacerts`. `ssl.TrustManagerFactory.algorithm` stays `PKIX`; the kit doesn't touch it.
 
-Typical setups: the private CA is imported into the JDK `cacerts` (`keytool -importcert -cacerts`) in the image, a separate truststore is passed with `-Djavax.net.ssl.trustStore`, a Spring SSL bundle has a `truststore`, or the code builds a `TrustManagerFactory` from a file.
-
-**What changes in the store: nothing.** BCJSSE uses the JDK's trust settings: `javax.net.ssl.trustStore*` when set, else `$JAVA_HOME/lib/security/cacerts` (`jssecacerts` first, if it exists). Don't move the CA anywhere.
-
-**What to change:** nothing, on any JDK. Keep the CA-import step in the Dockerfile, the system properties and the trust code. `ssl.TrustManagerFactory.algorithm` stays `PKIX` (the JDK default); the kit doesn't touch it.
-
-**Tested proof** (BCJSSE client on JDK 17 and 21 with kit v1 and v2; SunJSSE on JDK 25, against a **PQ-only** OpenSSL 3.5 server whose cert is from the private CA):
-
-| Trust setup | JDK 17/21 + kit | JDK 25.0.5 | Evidence |
+| Trust setup (PQ-only OpenSSL 3.5 server, private-CA certificate) | JDK 17/21 + kit | JDK 25.0.5 | Evidence |
 | --- | --- | --- | --- |
-| No private CA configured | Fails `certificate_unknown(46)` (correct) | Fails `PKIX path building failed` (correct) | `v2/out/t*-*.txt` |
-| `-Djavax.net.ssl.trustStore=trust.p12` (+ `trustStorePassword`, `trustStoreType=PKCS12`) | Connects, TLS 1.3 PQ | Connects | `v2/out/t21-v2kit.txt`, `t17-v2kit.txt`, `t25-none.txt` |
-| CA imported into JDK `cacerts` with `keytool -importcert -cacerts` | Connects, PQ | not run | `java/ks/run-ks.out` (JDK 21) |
-| `cacerts` import + kit fix property | Connects, PQ | n/a | `java/ks/run-ks.out` |
-| JVM server truststore for client certificates (`needClientAuth` + `javax.net.ssl.trustStore`) | Accepts CA-signed client certs, rejects certs from an unknown CA | Same | case E |
+| No private CA configured | Fails `certificate_unknown(46)` (correct) | Fails `PKIX path building failed` (correct) | Tested; e2e `java-lambda-j21-sysprops-notrust-bundled` |
+| `-Djavax.net.ssl.trustStore=trust.p12` (+ password, type) | PQ | PQ | Tested; e2e Lambda `sysprops` cases |
+| App's own `TrustManagerFactory` from a truststore | PQ | PQ | e2e (the probe does this in every case) |
+| CA imported into `cacerts` with `keytool -importcert -cacerts` | PQ | Not run | Tested (JDK 21) |
 
-- Code with its own `TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())` and `init(keyStore)`: same path as the trustStore row. Not run as separate code.
-- Spring Boot `spring.ssl.bundle.*.truststore`: `DefaultSslManagerBundle` uses `TrustManagerFactory.getDefaultAlgorithm()` (javap), so trust is the same as above. Not run as a client.
-- Custom `X509TrustManager` (including trust-all code): BCJSSE calls it like SunJSSE does. Not run. Trust-all code is a finding in its own right.
-- Netty tcnative and the CRT client use their own trust inputs. Netty takes the trust manager you pass to `SslContextBuilder.trustManager(...)`. CRT uses the OS store or `TlsContextOptions` with a CA file. Neither was run with a private CA.
-
-**Side effects:** none found.
+Spring bundle truststores use `TrustManagerFactory.getDefaultAlgorithm()` (javap), so trust is the same. A custom `X509TrustManager` is called by BCJSSE as by SunJSSE (not run; trust-all code is a finding in its own right). Netty tcnative and the CRT client take their own trust inputs; neither was run with a private CA.
 
 ### E. Mutual TLS (client certificates)
 
-**Who this is:** a server with `needClientAuth`/`wantClientAuth`, Tomcat `certificateVerification="required"`, Spring `server.ssl.client-auth=need`, or a client that loads its own cert with `-Djavax.net.ssl.keyStore` or a `KeyManagerFactory`. Grep: `clientAuth|client-auth|certificateVerification|setNeedClientAuth|setWantClientAuth`.
+**Who:** `grep -rnE 'clientAuth|client-auth|certificateVerification|setNeedClientAuth|setWantClientAuth'`, or a client loading its own certificate with `-Djavax.net.ssl.keyStore` or a `KeyManagerFactory`.
 
-**What happens today (kit v1, JDK 17/21):** a JVM **client** with an **EC** client certificate silently sends **no certificate**, and the server answers `certificate_required(116)`. RSA client certs work. A JVM **server** with an EC server cert fails before client auth even starts (case C). Tested: `v2/out/t21-v1nofix.txt`, `t17-v1nofix.txt`.
+**Today with kit v1 (or a hard-coded `SunX509`):** a JVM client with an **EC** client certificate silently sends **no certificate**, and the server answers `certificate_required(116)`. RSA client certificates work. **Change:** kit v2; no change to client or server stores.
 
-**What to change:** kit v2 (the same PKIX property). No change to client or server stores.
+| Direction (kit v2 on 17 and 21; JDK 25 without a kit gives the same) | Result | Evidence |
+| --- | --- | --- |
+| JVM client, EC client certificate, to a PQ mTLS server | PQ; server verified the certificate | Tested; e2e Lambda, Fargate and EC2 `*-ec` cases |
+| Same with kit v1 behaviour, or code naming `SunX509` | mTLS refused; RSA certificate with `SunX509` still works | e2e `java-lambda-j21-ks-ec-v1`, `-j17-ks-ec-sunx509`, `-j17-ks-rsa-sunx509` |
+| Function passes its own `-Djava.security.properties` (layer) | PQ, EC mTLS works (agent v2 sets PKIX) | e2e `java-lambda-j21-layer-ownsec`, `-j11-layer-ownsec` |
+| BCJSSE server, `needClientAuth`, EC or RSA client certificate | PQ; server logged the client CN | Tested |
+| Same server, no client certificate, or one from an unknown CA | Refused (correct) | Tested |
+| BCJSSE PQ-only server (`jdk.tls.namedGroups=X25519MLKEM768`), X25519-only client | Refused (correct) | Tested |
 
-**Tested proof** (kit v2 on JDK 17 and 21; JDK 25.0.5 without a kit gives the same results):
-
-| Direction | Result |
-| --- | --- |
-| BCJSSE server, `needClientAuth`, trust = private CA; OpenSSL 3.5 client with an EC client cert, `-groups X25519MLKEM768` | PQ; server logged `client-cert=CN=client-ec` |
-| Same server, RSA client cert | PQ; `client-cert=CN=client-rsa` |
-| Same server, no client cert | Server refused: `certificate_required(116)` (correct) |
-| Same server, client cert from an unknown CA | Server refused (correct) |
-| BCJSSE server PQ-only (`-Djdk.tls.namedGroups=X25519MLKEM768`), X25519-only client | Refused (correct); with EC client cert and PQ: OK |
-| BCJSSE client, `-Djavax.net.ssl.keyStore=client-ec.p12` → OpenSSL 3.5 `s_server -tls1_3 -groups X25519MLKEM768 -Verify 1 -CAfile ca.crt` | Connects; `s_server` verified `CN=client-ec` |
-| Same, `client-rsa.p12` | Connects; verified `CN=client-rsa` |
-| Same, no keystore | Refused `certificate_required` (correct) |
-| BCJSSE client (EC cert) → BCJSSE PQ-only server | Connects, both certs exchanged |
-
-**Side effects:** the client closes with a harmless `Broken pipe` after the response when the server shuts the socket first (test artefact, seen on 17 and 21).
+**Side effect:** a harmless `Broken pipe` after the response when the server closes first (test artefact).
 
 ### F. Explicit TLS settings that block PQ
 
-**Who this is:** run the CI check (`ci/java-pq-check.sh`, full file at the end), or:
+**Who:** run `ci/java-pq-check.sh` (full file below), or:
 
 ```bash
 grep -rnE 'jdk\.tls\.namedGroups|setNamedGroups|groups="|OpenSslContextOption\.GROUPS|SSLContext\.getInstance\("TLSv1\.2"\)|TLS\.V_1_2|protocols="TLSv1\.2"|enabled-protocols|ssl\.enabled\.protocols|tlsVersions|jdk\.tls\.client\.protocols|KeyManagerFactory\.getInstance\("SunX509"|keyManagerAlgorithm' .
@@ -326,196 +232,160 @@ grep -rnE 'jdk\.tls\.namedGroups|setNamedGroups|groups="|OpenSslContextOption\.G
 
 | Setting | Effect | Change to |
 | --- | --- | --- |
-| `jdk.tls.namedGroups` without `X25519MLKEM768` | Classical on every JDK including 25, also for Netty tcnative (Tested). The agent leaves an existing value alone | `X25519MLKEM768,x25519,secp256r1,secp384r1` |
+| `jdk.tls.namedGroups` without `X25519MLKEM768` | Classical on every JDK including 25, and for Netty tcnative. The agent leaves an existing value alone (e2e `java-lambda-j25-pin`, `-j21-layer-pin`) | `X25519MLKEM768,x25519,secp256r1,secp384r1` |
 | Tomcat `groups="x25519,secp256r1"` | Classical on 25 (Tested) | Add `X25519MLKEM768` first |
-| `SSLContext.getInstance("TLSv1.2")`, `TLS.V_1_2` only, `enabled-protocols: [TLSv1.2]`, Kafka `ssl.enabled.protocols=TLSv1.2`, Connector/J `tlsVersions=TLSv1.2` | No TLS 1.3, so no ML-KEM | `"TLS"`, or list `TLSv1.3,TLSv1.2` |
-| `KeyManagerFactory.getInstance("SunX509")`, Tomcat `keyManagerAlgorithm="SunX509"` | EC certs fail under BCJSSE (Tested) | `getDefaultAlgorithm()` or `"PKIX"` |
-| `-Djava.security.properties==file` (double `=`) | Replaces all of `java.security`, so the kit line is lost | Single `=`, or add the kit line to that file |
-| Cipher lists (`ciphers=`, `setEnabledCipherSuites`) | Don't block ML-KEM if a TLS 1.3 suite stays (`TLS_AES_128_GCM_SHA256` etc.) | Keep at least one TLS 1.3 suite |
+| `SSLContext.getInstance("TLSv1.2")`, `TLS.V_1_2` only, `enabled-protocols: [TLSv1.2]`, Kafka `ssl.enabled.protocols=TLSv1.2`, Connector/J `tlsVersions=TLSv1.2` | No TLS 1.3, so no ML-KEM | `"TLS"`, or `TLSv1.3,TLSv1.2` |
+| `KeyManagerFactory.getInstance("SunX509")`, Tomcat `keyManagerAlgorithm="SunX509"` | EC certificates fail under BCJSSE (Tested) | `getDefaultAlgorithm()` or `"PKIX"` |
+| `-Djava.security.properties==file` (double `=`) | Replaces all of `java.security`; the kit line is lost | Single `=`, or add the line to that file |
+| Cipher lists (`ciphers=`, `setEnabledCipherSuites`) | No effect if a TLS 1.3 suite stays | Keep at least one TLS 1.3 suite |
 
-#### What to change, by library
+Library fixes, one line each (full code in "Netty and AWS SDK code" below):
 
-Remove TLS 1.2 pins (any JSSE client):
+| Library | Change |
+| --- | --- |
+| Any JSSE client | `SSLContext.getInstance("TLS")`, not `"TLSv1.2"` |
+| Apache HttpClient 5 custom strategy | `.setTlsVersions(TLS.V_1_3, TLS.V_1_2)` |
+| Netty with BoringSSL | `.sslProvider(SslProvider.OPENSSL)`; the `OpenSslContextOption.GROUPS` list is optional |
+| AWS SDK v2 | `.httpClient(AwsCrtHttpClient.create())` on 2.35.11+. Before 2.35.11 the builder needed `.postQuantumTlsEnabled(true)` ([AWS Security Blog](https://aws.amazon.com/blogs/security/ml-kem-post-quantum-tls-now-supported-in-aws-kms-acm-and-secrets-manager)); upgrade instead. Covers AWS calls only |
 
-``` java
-SSLContext ctx = SSLContext.getInstance("TLSv1.2"); // blocks PQ: TLS 1.2 only
-SSLContext ctx = SSLContext.getInstance("TLS");     // PQ-capable: the provider picks TLS 1.3
-```
-
-Apache HttpClient 5 with a custom TLS strategy:
-
-``` java
-var tls = ClientTlsStrategyBuilder.create()
-        .setSslContext(SSLContexts.createSystemDefault())
-        .setTlsVersions(TLS.V_1_3, TLS.V_1_2)   // keep 1.3
-        .build();
-```
-
-Netty with BoringSSL (PQ on any JDK; the explicit list is optional):
-
-``` java
-SslContext ctx = SslContextBuilder.forClient()
-        .sslProvider(SslProvider.OPENSSL)
-        .option(OpenSslContextOption.GROUPS, new String[]{"X25519MLKEM768", "X25519", "P-256"})
-        .build();
-```
-
-AWS SDK for Java v2 with the CRT client (PQ for AWS API calls on any JDK):
-
-``` java
-KmsClient kms = KmsClient.builder()
-        .httpClient(AwsCrtHttpClient.create())
-        .build();
-```
-
-Before 2.35.11 the CRT builder needed `.postQuantumTlsEnabled(true)` ([AWS Security Blog](https://aws.amazon.com/blogs/security/ml-kem-post-quantum-tls-now-supported-in-aws-kms-acm-and-secrets-manager)); upgrade rather than rely on the flag. The CRT route covers AWS calls only; other HTTPS calls in the same JVM still follow the JDK.
-
-#### JVM flags that matter
-
-| Flag | Effect |
-|----|----|
-| `-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1` | Group order. A list without `X25519MLKEM768` turns PQ off, on JDK 25 too and for Netty tcnative too (Tested) |
-| `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` | Java 8 on Lambda (the Lambda Java 8 runtime sets `jdk.tls.client.protocols=TLSv1.2,TLSv1.1,TLSv1`); harmless elsewhere |
-| `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Java 8 only: BCJSSE fails endpoint identification on sockets JDK 8's `HttpsURLConnection` opens without a host name ([bc-java#1656](https://github.com/bcgit/bc-java/issues/1656)) |
-| `-javaagent:<dir>/pq-tls-agent.jar` | JDK 8 to 21: BCJSSE first + group list |
-| `-Djava.security.properties=<file>` | Static BC registration (containers and EC2, not Lambda) |
-| `-Djava.security.properties=<dir>/pq-tls.security` | Kit v2: `ssl.KeyManagerFactory.algorithm=PKIX`, needed for EC certs under BCJSSE (Tested) |
-
+| JVM flag | Effect |
+| --- | --- |
+| `-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1` | Group order; a list without `X25519MLKEM768` turns PQ off on 25 and for tcnative (Tested) |
+| `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` | Required on the Lambda Java 8 runtime (it sets `TLSv1.2,TLSv1.1,TLSv1`, and BCJSSE honours it: e2e `java-lambda-j8-bundled-noproto` stays TLS 1.2); not needed on Corretto 8u512 elsewhere |
+| `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` | Java 8 with BCJSSE: JDK 8's `HttpsURLConnection` opens the socket without a host name and BCJSSE (1.78+, after [CVE-2024-34447, bc-java#1656](https://github.com/bcgit/bc-java/issues/1656)) then fails endpoint identification. JDK 11+ not affected |
+| `-javaagent:<dir>/pq-tls-agent.jar` | JDK 8 to 21: BCJSSE first + PQ-first group list |
+| `-Djava.security.properties=<dir>/pq-tls.security` | Kit v2: the PKIX key manager |
+| `-Djava.security.properties=<dir>/bc-static.security` | Static BC registration (containers and EC2, not Lambda); includes the PKIX line |
 
 ### G. FIPS mode
 
-**Who this is:** `bc-fips`/`bctls-fips` jars, `BouncyCastleFipsProvider` in `java.security`, a vendor FIPS JDK, or Corretto/RHEL with the OS in FIPS mode (`-Dcom.redhat.fips=true`, `/proc/sys/crypto/fips_enabled` = 1).
-
-**What happens today:** not tested here.
-
-**What to change:** don't add the kit. It uses non-FIPS `bcprov`/`bctls` jars and would put a non-validated TLS provider first. Whether the BC FIPS line (`bctls-fips`) offers X25519MLKEM768 isn't confirmed ([BC FIPS 2.1 release notes](https://support.keyfactor.com/hc/en-us/articles/53287242078619-Bouncy-Castle-Java-FIPS-2-1-X-release-notes)). Track JDK 25 with your FIPS provider and your compliance team. The key manager point still holds for any BC JSSE (FIPS or not): use `PKIX`, not `SunX509`. That is Unverified for bctls-fips. For AWS API calls from a FIPS workload, use the AWS FIPS endpoints; PQ on them depends on the service (AWS service endpoints tab).
-
-**Side effects:** n/a.
+**Who:** `bc-fips`/`bctls-fips`, `BouncyCastleFipsProvider` in `java.security`, a vendor FIPS JDK, or Corretto/RHEL with the OS in FIPS mode (`/proc/sys/crypto/fips_enabled` = 1). **Today:** not tested. **Change:** don't add the kit: it puts non-FIPS `bcprov`/`bctls` first. Whether `bctls-fips` offers X25519MLKEM768 is not sure: the [BC FIPS 2.1 release notes](https://support.keyfactor.com/hc/en-us/articles/53287242078619-Bouncy-Castle-Java-FIPS-2-1-X-release-notes) we found cover `bc-fips` and do not mention hybrid TLS groups. Track JDK 25 with your FIPS provider and compliance team. The PKIX key-manager point is Unverified for `bctls-fips`. For AWS API calls use the FIPS endpoints; PQ on them depends on the service (AWS service endpoints chapter).
 
 ### H. Libraries with their own TLS stack, and agents
 
-| Library | Stack | What the kit does | What to do | Evidence |
+| Library | Stack | Kit effect | What to do | Evidence |
 | --- | --- | --- | --- | --- |
-| Netty + `netty-tcnative-boringssl-static` 2.0.85 (gRPC-Java, Reactor Netty, Vert.x/Quarkus native, Lettuce with OpenSSL) | BoringSSL | Nothing (BoringSSL is used) | Nothing; PQ by default. Don't pin `jdk.tls.namedGroups` without ML-KEM (Netty reads it) | Tested |
-| Netty, `SslProvider.JDK` | JSSE | Kit applies | Follow the JDK row | Tested |
-| AWS SDK v2 CRT client | s2n-tls | Nothing | SDK 2.35.11+ | Tested |
-| AWS SDK v2 Apache / UrlConnection / Netty (no tcnative) | JSSE | Kit applies | Follow the JDK row | Tested (Apache) |
-| JDBC (PostgreSQL 42.7.14, Connector/J), Kafka, Jedis | JSSE | Kit applies | Keep TLS 1.3 allowed | Tested (PostgreSQL); others follow JSSE |
-| APM agents (Datadog, New Relic, OpenTelemetry) | JSSE for their exporters | Share `JAVA_TOOL_OPTIONS` | Append the kit, don't replace the variable | Not run |
-| Conscrypt, wolfJSSE, Amazon Corretto Crypto Provider (ACCP) | Own provider | If registered at position 1 after the agent, it wins | Check `Security.getProviders()` order at startup. ACCP is a JCA provider, not JSSE, so it doesn't conflict | Not run |
-| Tools the JVM shells out to (`curl`, `git`, `wget`) | Their own libraries | n/a | See Hosts and OS: GnuTLS builds have no ML-KEM; OpenSSL 3.5 builds do | Lead test |
+| Netty + tcnative-boringssl-static 2.0.85 (gRPC-Java, Reactor Netty, Vert.x/Quarkus native, Lettuce with OpenSSL) | BoringSSL | None | Nothing; don't pin `jdk.tls.namedGroups` without ML-KEM | Tested |
+| AWS SDK v2 CRT client | s2n-tls | None | SDK 2.35.11+ | Tested; Documented |
+| AWS SDK v2 Apache, UrlConnection, Netty without tcnative; JDBC; Kafka; Jedis | JSSE | Applies | Follow the JDK row; keep TLS 1.3 allowed | Tested (Apache, PostgreSQL); others Unverified |
+| APM agents (Datadog, New Relic, OpenTelemetry) | JSSE for exporters | Share `JAVA_TOOL_OPTIONS` | Append the kit, don't replace the variable | Not run |
+| Conscrypt, wolfJSSE | Own JSSE provider | The one at position 1 wins | Check `Security.getProviders()` order at startup | Not run |
+| Amazon Corretto Crypto Provider (ACCP) | JCA provider, not JSSE | No conflict expected | Check provider order | Unverified |
+| Tools the JVM shells out to (`curl`, `git`, `wget`) | Their own libraries | n/a | GnuTLS builds have no ML-KEM; OpenSSL 3.5 builds do (Hosts and OS chapter) | Tested in that chapter |
 
-Netty server code: see "Netty server (gRPC-Java, Reactor Netty, Vert.x)" under case B.
+### I. Certificate pinning, HSM/PKCS#11 and KMS-backed keys
 
-### I. Certificate or key pinning, and HSM/PKCS#11 or KMS-backed keys
-
-- **Pinning (client side):** the kit doesn't change which certificate the *peer* serves, so client pins (OkHttp `CertificatePinner`, custom trust managers) keep working. One exception: a **server** with RSA and EC in the same store starts serving EC under kit v2 (case C). Clients that pin the RSA leaf or SPKI break. Pin the CA or both keys before you roll out, or keep one key type per store.
-- **PKCS#11/HSM keys** (`KeyStore.getInstance("PKCS11")`, SunPKCS11, CloudHSM JCE provider): BCJSSE signs the handshake through the `PrivateKey` object, so the key must be usable through JCA `Signature`. Not tested here (no HSM). Test on the real HSM before rollout. If it fails, terminate TLS at an ALB/NLB with an ACM certificate, or move to JDK 25 (SunJSSE).
-- **ACM / KMS-backed keys:** ACM private keys can't be exported to a JVM. KMS asymmetric keys can't back a JSSE `KeyManager` without a custom provider. Terminate at the AWS front door. Neither is affected by the kit.
-- **ACM exportable certificates** in a keystore are ordinary keystores: case C.
+- **Client pins** (OkHttp `CertificatePinner`, custom trust managers) keep working: the kit doesn't change what the peer serves. Exception: a **server** with RSA and EC in one store serves EC under kit v2 (case C), which breaks clients pinning the RSA leaf. Pin the CA or both keys first, or keep one key type per store.
+- **PKCS#11/HSM keys** (SunPKCS11, CloudHSM JCE): BCJSSE signs through the `PrivateKey`, so the key must work through JCA `Signature`. Not tested; test on the real HSM, or terminate at an ALB/NLB with an ACM certificate, or move to JDK 25.
+- **ACM and KMS keys** can't back a JVM `KeyManager`; terminate at the AWS front door. ACM exportable certificates are ordinary keystores (case C).
 
 ### J. Other cases
 
-- **HTTPS proxy (`https.proxyHost`, `HTTPS_PROXY` in SDKs):** with CONNECT, TLS is end to end, so PQ depends on the JVM and the origin. A TLS-inspecting proxy terminates TLS: then PQ depends on the proxy (Network devices and egress tab). Not run.
-- **HTTP/2, gRPC and WebSockets** run over the same TLS handshake, so the same rows apply. gRPC-Java uses Netty: case H.
-- **Service mesh sidecar** (Istio, Linkerd, App Mesh Envoy): if the app speaks plain HTTP to the sidecar, the mesh decides PQ (Service mesh tab). The kit only matters for TLS the JVM originates.
-- **Lambda SnapStart:** the agent runs before the snapshot. Not tested.
-- **Session resumption and 0-RTT:** not tested under BCJSSE.
+- **HTTPS proxy** (`https.proxyHost`, SDK `HTTPS_PROXY`): with CONNECT, TLS is end to end, so the JVM and origin decide; a TLS-inspecting proxy decides itself (Network devices and egress chapter). Not run.
+- **HTTP/2, gRPC, WebSockets** use the same handshake; gRPC-Java uses Netty (case H).
+- **Service mesh sidecar:** if the app speaks plain HTTP to the sidecar, the mesh decides (Service mesh chapter).
+- **Lambda SnapStart:** the agent runs before the snapshot, so the provider order should be captured in it. Not tested.
+- **Session resumption and 0-RTT** under BCJSSE: not tested.
 
 ## Solution and automation
 
-1. **Inventory and detect.**
-   - JDK per workload: `java -version` in the image or on EC2; Lambda `Runtime`; ECR image labels.
-   - Kit presence: `JAVA_TOOL_OPTIONS` containing `pq-tls-agent.jar` **and** `pq-tls.security`. Running process: `jcmd <pid> VM.system_properties | grep -E 'java.version|jdk.tls.namedGroups|java.security.properties'`. Startup log: `pq-tls agent v2: ... ssl.KeyManagerFactory.algorithm=PKIX`.
-   - Keystores and key types (case C greps, `keytool -list -v`), mTLS (case E greps).
-   - Blocking settings: the CI check.
-   - Traffic: CloudTrail `tlsDetails.keyExchange` for KMS, STS, IAM, Secrets Manager, ACM and Payment Cryptography calls.
-2. **Change.** JDK 25.0.5+ where you can. Elsewhere, kit v2: copy `pq-tls/` (agent v2 jar, three BC jars, `pq-tls.security`) and set `JAVA_TOOL_OPTIONS`. If you already have kit v1, add the `pq-tls.security` flag (or swap the jar). Fix code from case F.
-3. **Package per compute type** (full files at the end):
+1. **Inventory.** JDK per workload (`java -version` in the image or on EC2, Lambda `Runtime`, ECR image labels). Kit presence: `JAVA_TOOL_OPTIONS` containing `pq-tls-agent.jar` **and** `pq-tls.security`; on a running JVM, `jcmd <pid> VM.system_properties | grep -E 'java.version|jdk.tls.namedGroups|java.security.properties'`. Keystore key types (case C), mTLS (case E), blocking settings (CI check). Traffic: CloudTrail `tlsDetails.keyExchange`.
+2. **Change.** JDK 25.0.5+ where you can; elsewhere kit v2 (Quick start). Kit v1 deployments: add the `pq-tls.security` flag or swap the jar. Fix code from case F.
+3. **Package per compute type** (full files below):
 
-| Compute | JDK 25.0.5+ | JDK 8 to 21: kit v2 | JDK 11 to 21: static `java.security` |
+| Compute | JDK 25.0.5+ | JDK 8 to 21: kit v2 | JDK 17 and 21: static `java.security` |
 | --- | --- | --- | --- |
-| Lambda zip | Runtime `java25` | `pq-tls/` at the zip root; `JAVA_TOOL_OPTIONS=-Djava.security.properties=/var/task/pq-tls/pq-tls.security -javaagent:/var/task/pq-tls/pq-tls-agent.jar` | Doesn't work: the Lambda bootstrap class path is `/var/runtime/lib` only (Tested, kit) |
-| Lambda layer | Not needed | Layer v2 (`/opt/pq-tls/{wrapper,pq-tls-agent.jar,pq-tls.security}`, `/opt/java/lib/*.jar`) + `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`. The v2 wrapper adds the `pq-tls.security` flag unless the function passes its own `java.security.properties` (Tested in the LocalStack e2e suite on `java8.al2`, `java11`, `java17`, `java21` and `java25`, `java-lambda-*-layer*`; not on real AWS) | Doesn't work |
-| Lambda container image | `public.ecr.aws/lambda/java:25` | `COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/` + `ENV JAVA_TOOL_OPTIONS` (both flags) | Not tested |
-| Fargate, ECS, EKS | `amazoncorretto:25`, `eclipse-temurin:25` | `COPY pq-tls/ /opt/pq-tls/` + `ENV JAVA_TOOL_OPTIONS="-Djava.security.properties=/opt/pq-tls/pq-tls.security -javaagent:/opt/pq-tls/pq-tls-agent.jar"`, or the same in the task definition or pod spec | `bc-static.security` (now includes the PKIX line) + BC jars on `-cp` (Tested for clients on 17 and 21; the PKIX line in this file was not run separately) |
-| EC2 | Corretto 25 (`dnf install java-25-amazon-corretto-headless`) | systemd drop-in with both flags, or the SSM document | Same file via `ExecStart` |
+| Lambda zip | Runtime `java25` | `pq-tls/` at the zip root, `JAVA_TOOL_OPTIONS=KIT` (`/var/task`) | Doesn't work (e2e `java-lambda-j21-static`) |
+| Lambda layer | Not needed (the wrapper makes no change on 25) | `pq-tls` layer v2 + `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper`; the wrapper adds `pq-tls.security` unless the function passes its own security file, and the Java 8 flags on `java8*` | Doesn't work |
+| Lambda container image | `public.ecr.aws/lambda/java:25` | `COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/` + `ENV JAVA_TOOL_OPTIONS=KIT` | Not tested |
+| Fargate, ECS on EC2, EKS | `amazoncorretto:25`, `eclipse-temurin:25` | `COPY pq-tls/ /opt/pq-tls/` + `ENV JAVA_TOOL_OPTIONS=KIT`, or the task definition or pod spec | `bc-static.security` + BC jars on `-cp` (e2e, including an EC client certificate) |
+| EC2 | `dnf install java-25-amazon-corretto-headless` | systemd drop-in, or the SSM document | Same file via `ExecStart` |
 
-Rules that apply everywhere:
+Rules everywhere:
 
-- Append to an existing `JAVA_TOOL_OPTIONS`; don't replace it. APM agents (Datadog, New Relic, OpenTelemetry Java agent) often live there.
+- Append to `JAVA_TOOL_OPTIONS`; distroless images work too (the JVM reads the variable itself).
+- `java -jar` ignores `-cp`: for static registration, use the manifest `Class-Path` or `-cp ... MainClass`.
+- Pin images by digest and record the JDK patch level; the PQ default arrived in a patch release (25.0.5).
+- If the app passes its own `-Djava.security.properties` on the command line, that wins over the kit's flag; agent v2 then sets PKIX itself (Tested), or add the line to the app's file.
+- If the app ships its own Bouncy Castle, the agent's 1.87 jars load first on the system class path; align versions.
 
-- On Java 8 add `-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2` (required on Lambda, whose Java 8 runtime limits clients to TLS 1.2) and `-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true` (required everywhere: without it BCJSSE rejects every `HttpsURLConnection` handshake with `certificate_unknown` / "No hostname specified for HTTPS endpoint ID check"). The `pq-tls` layer wrapper adds both.
-
-- Distroless images have no shell, but the JVM reads `JAVA_TOOL_OPTIONS` itself, so `ENV` works.
-
-- `java -jar` ignores `-cp`: for static registration, list the BC jars in the app jar's manifest `Class-Path` or start with `-cp ... MainClass`.
-
-- Lambda SnapStart: the agent runs before the snapshot, so the provider order is captured in it. Not tested with SnapStart.
-
-- Pin images by digest and record the JDK patch level; the PQ default arrived in a patch release (25.0.5), not a major version.
-
-- If the app already passes `-Djava.security.properties=<its file>` on the command line, that flag wins over the kit's. Either add `ssl.KeyManagerFactory.algorithm=PKIX` to the app's file, or rely on agent v2, which sets it when it finds the JDK default (Tested).
-
-4. **CI guardrails.** Run `ci/java-pq-check.sh <repo>` in every build. It fails on group pins without ML-KEM, TLS 1.2-only pins, a hard-coded `SunX509` key manager and `java.security.properties==`. It warns on JDK below 25, kit v1 packaging (agent without `pq-tls.security`), tcnative/CRT/Conscrypt and FIPS providers. Tested on a fixture: 3 FAIL + 2 WARN on the bad tree (exit 1), 1 WARN on the good one (exit 0), `v2/out/ci-check.txt`. For images, also check the base tag in the registry policy: JDK below 25 without the kit is non-compliant.
-5. **Fleet rollout.**
-   - Canary one task, pod, alias or instance per service. Lambda: a weighted alias, 10% on the version with the new `JAVA_TOOL_OPTIONS`.
-   - Watch handshake errors (`handshake_failure`, `certificate_required`, `certificate_unknown`) in app logs and ALB `TargetTLSNegotiationErrorCount`.
-   - Check the startup line, then run the live tests in "How to test".
-   - Widen by environment (dev → qa → prod).
-   - Servers with EC certs or mTLS clients: canary with kit v2 only, never v1.
-6. **Rollback.** See Pitfalls and rollback.
+4. **CI guardrail.** `ci/java-pq-check.sh <repo>` ([kit/java-v2/ci/java-pq-check.sh](REPO/kit/java-v2/ci/java-pq-check.sh)) fails on group pins without ML-KEM, TLS 1.2-only pins, a hard-coded `SunX509` and `java.security.properties==`; it warns on JDK below 25, kit v1 packaging, tcnative/CRT/Conscrypt and FIPS providers. Tested on a fixture: 3 FAIL + 2 WARN on the bad tree (exit 1), 1 WARN on the good one (exit 0), `tests/deep/java/v2/out/ci-check.txt`. Add a registry or admission rule: JDK below 25 without the kit is non-compliant.
+5. **Fleet rollout:** see the Rollout checklist.
 
 ## How to test
 
-1. **Posture.** `java -version`; the startup log shows `Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=.../pq-tls.security -javaagent:...` and `pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,..., ssl.KeyManagerFactory.algorithm=PKIX`. A JVM that prints `ssl.KeyManagerFactory.algorithm=SunX509` has the fix switched off.
-2. **Local container test, client.** Start a PQ-only and a classical-only OpenSSL 3.5 server (script below, `openssl s_server -tls1_3 -groups X25519MLKEM768` and `-groups X25519`). Run your client image against both. Both must succeed.
-3. **Server test.** `openssl s_client -connect <host>:8443 -tls1_3 -groups X25519MLKEM768 -brief` must print `Negotiated TLS1.3 group: X25519MLKEM768`. `-groups X25519` must still connect.
-4. **Case C, your own keystore.** Start the server with your real store (copy, not the prod secret) under kit v2. Run step 3. Then run step 3 with `-servername <each SNI name>` and check the `Peer certificate` CN for each. For RSA+EC stores, also run `-sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256` to see what RSA-only clients get.
-5. **Case D, your truststore.** Point the client at a PQ-only server whose cert comes from your private CA. It must connect with your truststore, and fail without it.
-6. **Case E, mTLS.** Server side: `openssl s_client ... -cert client.crt -key client.key -groups X25519MLKEM768` must connect, and must be refused without `-cert`. Client side: run your client against `openssl s_server -tls1_3 -groups X25519MLKEM768 -Verify 1 -CAfile ca.crt ...`. The s_server log must show `depth=0 CN=<your client cert>`.
-7. **In-cloud signal.** CloudTrail `tlsDetails.keyExchange = X25519MLKEM768` for the workload role's KMS/STS/Secrets Manager calls. Server: the ALB/NLB or the peer logs the negotiated group.
-8. **Rollback test.** Remove the two flags (or set `PQ_TLS_DISABLE=1` with the layer) and restart. Step 2 against the PQ-only server must now fail, and the classical one must still work.
+1. **Posture.** `java -version`; startup log `Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=.../pq-tls.security -javaagent:...` and `pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,..., ssl.KeyManagerFactory.algorithm=PKIX`. `...=SunX509` means the fix is switched off.
+2. **Client, local.** Start a PQ-only and a classical-only OpenSSL 3.5 server (`openssl s_server -tls1_3 -groups X25519MLKEM768` and `-groups X25519`, or nginx `ssl_ecdh_curve X25519MLKEM768` with `$ssl_curve` in the log format). Run your client image against both; both must succeed.
+3. **Server.** `openssl s_client -connect <host>:8443 -tls1_3 -groups X25519MLKEM768 -brief` must print `Negotiated TLS1.3 group: X25519MLKEM768`; `-groups X25519` must still connect.
+4. **Your keystore (case C).** Start the server with a copy of your real store under kit v2, run step 3 with `-servername <each SNI name>` and check the `Peer certificate` CN. For RSA + EC stores also run `-sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256`.
+5. **Your truststore (case D).** Against a PQ-only server with a private-CA certificate: connects with your truststore, fails without it.
+6. **mTLS (case E).** Server: `openssl s_client ... -cert client.crt -key client.key -groups X25519MLKEM768` connects and is refused without `-cert`. Client: against `openssl s_server -tls1_3 -groups X25519MLKEM768 -Verify 1 -CAfile ca.crt`, the server log shows `depth=0 CN=<your client cert>`.
+7. **In AWS.** CloudTrail `tlsDetails.keyExchange = X25519MLKEM768` on the role's KMS, STS, IAM, Secrets Manager, ACM and Payment Cryptography calls; for servers, the load balancer or peer logs the group.
+8. **Rollback.** Remove the flags (or `PQ_TLS_DISABLE=1` with the layer) and restart: step 2 against the PQ-only server must now fail and the classical one still work.
 
-The repeatable harness used for this tab is `run-v2.sh` (full file at the end). It builds the keystores, then runs every row of cases C, D and E for one JDK image and one kit mode.
+Handshake traces: SunJSSE `-Djavax.net.debug=ssl:handshake` shows the `key_share` group; BCJSSE logs through `java.util.logging` at `FINE` on `org.bouncycastle.jsse`. The harness for cases C to E is `run-v2.sh` (full file below).
 
-More signals:
+## Rollout checklist
 
-- **Handshake trace.** SunJSSE: `-Djavax.net.debug=ssl:handshake` shows the ServerHello `key_share` group. BCJSSE: `java.util.logging` level `FINE` on `org.bouncycastle.jsse`.
-- **Observed on AWS.** CloudTrail `tlsDetails.keyExchange` = `X25519MLKEM768` on KMS, STS, IAM, Secrets Manager, ACM and Payment Cryptography calls from the workload's role.
-- **nginx as the PQ-only test server.** `ssl_ecdh_curve X25519MLKEM768;` makes nginx PQ-only, and `$ssl_curve` in `log_format` logs the negotiated group.
+| # | Step | Done when |
+| --- | --- | --- |
+| 1 | Inventory every JVM: JDK patch level, compute type, `JAVA_TOOL_OPTIONS`, existing agents | Each workload has a row in the inventory |
+| 2 | Classify: 25.0.5+ (nothing), 8 to 21 (kit v2 or upgrade), FIPS (exception), Netty tcnative / CRT only (already PQ for those calls) | Each row has a target |
+| 3 | Find EC keystores, mTLS client certificates, hard-coded `SunX509`, group and TLS 1.2 pins (case C, E, F greps; CI check) | CI check passes, or findings fixed |
+| 4 | Check RSA + EC stores for client pinning (case I); test PKCS#11/HSM keys on the real HSM | Owners confirmed |
+| 5 | Java 8: both flags on Lambda, the host-name flag elsewhere | Present in IaC |
+| 6 | Ship kit v2 (never v1) through the shared build template; append to `JAVA_TOOL_OPTIONS` | Startup log shows `algorithm=PKIX` |
+| 7 | Canary one task, pod, alias (10% weighted) or instance per service | No new `handshake_failure`, `certificate_required` or `certificate_unknown` errors; ALB `TargetTLSNegotiationErrorCount` flat |
+| 8 | Run "How to test" steps 2 to 6 against the canary | All pass |
+| 9 | Widen dev → qa → prod | Dashboards show the workload's AWS calls as `X25519MLKEM768` |
+| 10 | Plan the move to JDK 25.0.5+ and remove the kit after it | Kit removed; CI check has no JDK warning |
+| 11 | Lambda Java on Amazon Linux 2 (`java8.al2`, `java11`, `java17`): move before AWS blocks updates on 2027-08-31 | Runtime upgraded |
 
 ## Pitfalls and rollback
 
-- **Kit v1 and EC certificates.** v1 (agent only) breaks every EC server certificate and silently drops EC client certificates (Tested on 17 and 21). Upgrade any v1 deployment to v2 before it reaches a service with EC certs or mTLS.
-- **Hard-coded `SunX509`.** In code or in Tomcat `keyManagerAlgorithm`, it beats the kit (Tested). The CI check catches it.
-- **The app's own security file wins.** A command-line `-Djava.security.properties` replaces the kit's flag from `JAVA_TOOL_OPTIONS`. Agent v2 covers that case (Tested); kit v1 + file doesn't.
-- **JDK 25 multi-cert stores.** The default `SunX509` key manager ignores SNI and served the wrong certificate (Tested). Set `ssl.KeyManagerFactory.algorithm=PKIX` on JDK 25 too if one store holds several hostnames.
-- **Served certificate type can change.** RSA+EC stores serve EC under kit v2 (case C). Check client pins.
-- **BC chain strictness** on `signature_algorithms` (case C).
+| Pitfall | Effect | Avoid it |
+| --- | --- | --- |
+| Kit v1 (agent only) | Every EC server certificate fails; EC client certificates silently not sent (Tested; e2e `java-lambda-j21-ks-ec-v1`) | Kit v2 only |
+| Hard-coded `SunX509` (code or Tomcat) | Beats the kit; EC fails (Tested; e2e `-j17-ks-ec-sunx509`) | `getDefaultAlgorithm()` or `PKIX`; CI check |
+| A pinned `jdk.tls.namedGroups` | Classical on any JDK, 25 included; the agent leaves it alone (e2e) | Add `X25519MLKEM768` first; grep launch scripts, Helm values, `JAVA_TOOL_OPTIONS` |
+| TLS 1.2 pins | No ML-KEM | Allow TLS 1.3 (case F) |
+| Java 8 without the host-name flag | Every `HttpsURLConnection` handshake fails, PQ and classical (e2e) | Add `assumeOriginalHostName=true` |
+| Java 8 on Lambda without the protocols flag | Stays classical TLS 1.2 (e2e) | Add `jdk.tls.client.protocols=TLSv1.3,TLSv1.2`, or use the layer |
+| JDK 25 multi-certificate store | SunX509 ignores SNI and serves the wrong certificate (Tested) | `pq-tls.security` (PKIX) on 25 too |
+| Served certificate type changes | RSA + EC stores serve EC under kit v2 | Check client pins |
+| BC chain strictness | RSA-PSS-only clients refused a PKCS#1-signed chain | Modern clients offer both |
+| BCJSSE is the provider for the whole process | Untested areas: PKCS#11 keys, session resumption, FIPS | Test before rollout |
+| Another agent reorders providers or replaces `SSLContext.getDefault()` | Undoes the kit | Check the startup log and provider order |
+| FIPS JVM | Non-FIPS provider put first | Don't add the kit |
+| PQ-only server too early | Classical clients fail (expected) | Enforce only when logs show no classical clients |
+| Larger ClientHello (about 1.2 KB more) | Middleboxes that mishandle a split ClientHello break the first flight; Java doesn't retry classical | Test through the real network path |
 
-- **A pinned group list wins.** `jdk.tls.namedGroups` without `X25519MLKEM768` keeps any JDK classical, 25 included, and the agent leaves an existing value alone (Tested both). Grep launch scripts, Helm values and `JAVA_TOOL_OPTIONS` for it.
+**Rollback.** Remove both `-Djava.security.properties=.../pq-tls.security` and `-javaagent:` from `JAVA_TOOL_OPTIONS` and restart (removing only the agent leaves the harmless PKIX property). Lambda: delete the variable, or `PQ_TLS_DISABLE=1` with the layer (e2e `java-lambda-j21-layer-disabled`: classical); the next cold start is classical. JDK 25: `-Djdk.tls.namedGroups=x25519,secp256r1,secp384r1` (e2e `java-lambda-j25-pin`). CRT client: swap back to `ApacheHttpClient`.
 
-- **TLS 1.2 pins.** `SSLContext.getInstance("TLSv1.2")`, `jdk.tls.client.protocols=TLSv1.2`, `enabled-protocols: [TLSv1.2]`, Kafka `ssl.enabled.protocols=TLSv1.2` all block PQ.
+## Test evidence
 
+The LocalStack e2e suite, run r1117041043 (2026-11-16, LocalStack Pro on arm64, not real AWS), ran **96 Java client cases and 7 load balancer target cases; all 103 passed**. Pass means the observed behaviour matched the case's expectation, which for a baseline case is "classical". Cases: [e2e/cases/java.py](REPO/e2e/cases/java.py). Client: [e2e/clients/java/Probe.java](REPO/e2e/clients/java/Probe.java), an app with its own `SSLContext`, truststore and client keystore over `HttpsURLConnection`, compiled for Java 8, with no PQ settings in code. Server: [e2e/clients/server/java/Server.java](REPO/e2e/clients/server/java/Server.java) (`HttpsServer`, RSA PKCS#12, default key manager). Build and pinned images: [e2e/build/java.sh](REPO/e2e/build/java.sh). Results: [e2e/results/latest/summary.md](REPO/e2e/results/latest/summary.md).
 
-- **BCJSSE is the provider for the whole process.** Mutual TLS, custom keystores and truststores were tested with kit v2 (cases C to E); still test PKCS#11 keys, session resumption and FIPS mode before rollout. If the app ships its own Bouncy Castle, the agent's 1.87 jars load first on the system class path; align the versions.
+Each client case connects to eight listeners: hybrid, PQ-only, mTLS, EC server certificate, TLS 1.2-only and three ML-DSA listeners.
 
-- **FIPS.** The agent uses non-FIPS `bcprov`/`bctls`. A FIPS JVM needs `bc-fips` + `bctls-fips`; whether the current FIPS line offers X25519MLKEM768 in BCJSSE is not confirmed ([BC Java FIPS 2.1.x release notes](https://support.keyfactor.com/hc/en-us/articles/53287242078619-Bouncy-Castle-Java-FIPS-2-1-X-release-notes)). Don't add the non-FIPS agent to a FIPS-mode JVM.
+| Compute | Cases | What it proved |
+| --- | --- | --- |
+| Lambda zip, `java8.al2` to `java25` | 46 | Baselines: classical on 8 to 21 (TLS 1.2 on 8), PQ on 25. Kit v2 in the zip and the `pq-tls` layer: PQ on 8 to 21, including EC client certificates via own `SSLContext` and via `-Djavax.net.ssl.*`. Java 8: PQ only with both flags. Negative and regression: kit v1 behaviour and hard-coded `SunX509` drop EC mTLS; group pins stay classical; `PQ_TLS_DISABLE=1` rolls back; no private CA fails; static registration doesn't work. `pq-egress` extension: PQ on every runtime |
+| Lambda container image, `lambda/java:8.al2023` to `:25` | 11 | Baselines classical on 8 to 21, PQ on 25; `Dockerfile.lambda` kit PQ on 11, 17, 21; JDK 8 PQ with the layer files and wrapper |
+| ECS on Fargate | 21 | Corretto 8 to 21 and AL2023 `dnf` Corretto classical, 25 PQ; kit v2 via task definition or image `ENV` PQ on 8, 11, 17, 21 (8 needs the host-name flag, not the protocols flag); static registration PQ on Corretto 17 and 21 and Temurin 21, including an EC client certificate |
+| ECS on EC2 | 5 | Corretto 21 classical, 21 + kit PQ, 25 PQ, 17 static PQ; JDK 8 without the host-name flag fails |
+| EC2 (AL2023 and AL2) | 13 | Corretto 11, 17, 21 classical and PQ with kit v2 (EC client certificate on 21); 25 PQ; the default `java` resolved to 25 |
+| Load balancer target leg (server) | 7 | Fargate: Corretto 8 and 21 classical, 8, 17, 21 + kit v2 PQ, 25 PQ; ECS on EC2: 21 + kit PQ. ALB classic backend policy: classical TLS 1.2 on all |
 
-- **Agent ordering.** Another agent that reorders providers or replaces `SSLContext.getDefault()` can undo this one. Check the startup log.
+Across all client cases: every working client still connected to the TLS 1.2-only listener (classical fallback); against a dual-certificate server every Java client received **ECDSA**, and the ML-DSA-only listeners refused all of them. No JDK negotiates ML-DSA in TLS yet.
 
-- **Classical client against a PQ-only server.** Expected to fail; only enforce PQ-only on servers whose clients are all upgraded.
-
-- **Larger ClientHello.** X25519MLKEM768 adds about 1.2 KB to the ClientHello. Middleboxes that mishandle a ClientHello split across packets break the first flight; Java doesn't retry with a classical share.
-
-- **Rollback.** Remove `-javaagent:` (or the `java.security.properties` flag) from `JAVA_TOOL_OPTIONS` and restart; on JDK 25 set `-Djdk.tls.namedGroups=x25519,secp256r1,secp384r1`. On Lambda, delete the variable (or set `PQ_TLS_DISABLE=1` with the kit layer); the next cold start is classical. For the CRT client, swap back to `ApacheHttpClient` in the builder. Kit v2 rollback = remove both `-Djava.security.properties=.../pq-tls.security` and `-javaagent:`; removing only the agent leaves the harmless PKIX property.
+**Not tested in e2e:** real AWS; JDK 8 with the full fix on ECS on EC2 and EC2; JDK 11 servers; servers with EC certificates (the deep tests cover them on 17, 21 and 25); Temurin 25 (deep tests only); FIPS; SnapStart; PKCS#11. Earlier deep tests (libraries, servers, keystores, CRT versions) are in [tests/deep/java](REPO/tests/deep/java), with outputs in `out/` and `v2/out/`.
 
 ## Full configuration files
 
 Every file the sections above excerpt, complete. Keep the `pq-tls/` directory name: the agent's manifest finds its jars next to it. The kit is for JDK 8 to 21 only; remove it when the JDK reaches 25.0.5 or later. Files changed in v2 are given in full below. Unchanged files are moved from the old section.
 
-The test scripts and raw output behind every "Tested" label are in the work folder `deep/java/` (`run-clients.sh`, `run-servers.sh`, `run-aws.sh`, `run-static-pg.sh`, `out/*.txt`) and, for kit v2, `deep/java/v2/` (`run-v2.sh`, `run-tomcat-sb.sh`, `out/*.txt`).
+The test scripts and raw output behind every "Tested" label are in `tests/deep/java/` (`run-clients.sh`, `run-servers.sh`, `run-aws.sh`, `run-static-pg.sh`, `out/*.txt`) and, for kit v2, `tests/deep/java/v2/` (`run-v2.sh`, `run-tomcat-sb.sh`, `out/*.txt`).
 
 ### Kit v2 (agent, security file, build)
 

@@ -2,104 +2,115 @@
 
 ## Problem statement
 
-A .NET service on Linux negotiates TLS with whatever OpenSSL the container or host ships. On the default `mcr.microsoft.com/dotnet` tags (Debian 12 for `8.0`, Ubuntu 24.04 for `10.0`) that is OpenSSL 3.0, which has no ML-KEM. On Lambda and Amazon Linux 2023 it is OpenSSL 3.5, but the AL2023 crypto policy leaves ML-KEM out of the group list. Either way the handshake uses classical X25519 or P-256 key exchange. Traffic recorded today can be decrypted later by a quantum computer (harvest now, decrypt later).
+.NET has no TLS library of its own. `SslStream` does every handshake (`HttpClient`, gRPC, Kestrel, Npgsql, MySqlConnector, StackExchange.Redis, the AWS SDK for .NET) and calls the operating system's library: OpenSSL (`libssl.so.3`) on Linux, Schannel on Windows, Apple TLS on macOS. So the image or host decides PQ, not the .NET version.
 
-Who controls the handshake: the OS TLS library, not .NET. `SslStream` (and everything built on it: `HttpClient`, Kestrel, Npgsql, MySqlConnector, StackExchange.Redis, gRPC) calls OpenSSL on Linux, Schannel on Windows and Apple's TLS on macOS. .NET has no API to set key-exchange groups. It can only block PQ, by pinning TLS 1.2.
+| Where it runs | OS TLS library | Why it is classical today |
+| --- | --- | --- |
+| Default `mcr.microsoft.com/dotnet` tags (`8.0` = Debian 12, `10.0` = Ubuntu 24.04), `-noble`, Azure Linux 3.0 | OpenSSL 3.0 to 3.3 | No ML-KEM below OpenSSL 3.5 |
+| Lambda `dotnet8`, `dotnet10`, `provided.al2023`; Amazon Linux 2023 images and EC2 | OpenSSL 3.5.8 | The AL2023 crypto policy leaves ML-KEM out of the group list |
+| Windows | Schannel | ML-KEM groups ship disabled |
 
-The good news for teams with existing certificates, keystores and CA bundles: none of them need to change. Tested on 5 images below: PFX, PEM, encrypted PEM, RSA, EC, SNI, X509Store, private CAs, custom trust code and client certificates all keep working when PQ is turned on.
+The result is classical X25519 or P-256 key exchange, which traffic recorded today does not survive once a quantum computer can break it (harvest now, decrypt later).
 
-**What decides PQ here**
+What follows from that:
 
-.NET has no TLS library of its own. `SslStream` does every handshake (HttpClient, gRPC, Kestrel, Npgsql, MySqlConnector, StackExchange.Redis, the AWS SDK). On Linux it calls the OS OpenSSL (`libssl.so.3`); on Windows it calls Schannel. So the OS image or host decides, not the .NET version. The one exception is Confluent.Kafka: librdkafka ships its own OpenSSL.
+- **No .NET API picks the key-exchange group.** `SslClientAuthenticationOptions`, `SslServerAuthenticationOptions` and `CipherSuitesPolicy` have no groups setting, and the native shim never calls `SSL_CTX_set1_groups` (Documented: [pal_ssl.c, release/10.0](https://github.com/dotnet/runtime/blob/release/10.0/src/native/libs/System.Security.Cryptography.Native/pal_ssl.c)). Code can only block PQ, by pinning TLS 1.2.
+- **`OPENSSL_CONF` is honoured.** .NET initialises OpenSSL with `OPENSSL_INIT_LOAD_CONFIG` (Documented: [openssl.c](https://github.com/dotnet/runtime/blob/release/8.0/src/native/libs/System.Security.Cryptography.Native/openssl.c); Tested on Lambda, Fargate, ECS on EC2 and EC2 in the e2e suite).
+- **Which libssl loads.** .NET tries `libssl.so.3`, then `1.1`. `CLR_OPENSSL_VERSION_OVERRIDE` (.NET 8, 9) or `DOTNET_OPENSSL_VERSION_OVERRIDE` (.NET 10+) forces a version (Documented: [opensslshim.c](https://github.com/dotnet/runtime/blob/release/10.0/src/native/libs/System.Security.Cryptography.Native/opensslshim.c)); it cannot help when the image only has OpenSSL 3.0.
+- **Rule of thumb:** OpenSSL 3.5+ with X25519MLKEM768 in the default group list = PQ. OpenSSL 3.0 to 3.4 = never PQ. AL2023 has 3.5 but needs the config file or `DEFAULT:PQ`.
+- **Certificates, keystores and CA bundles don't change.** PFX, PEM, encrypted PEM, RSA, EC, SNI, `X509Store`, private CAs, custom trust code and client certificates all kept working with PQ on (Tested, cases C, D, E).
+- **One exception:** Confluent.Kafka; librdkafka ships its own OpenSSL (case H).
 
-- **No .NET API picks the key-exchange group.** `SslClientAuthenticationOptions`, `SslServerAuthenticationOptions` and `CipherSuitesPolicy` have no groups setting, and the native shim never calls `SSL_CTX_set1_groups` (Documented: [pal_ssl.c, release/10.0](https://github.com/dotnet/runtime/blob/release/10.0/src/native/libs/System.Security.Cryptography.Native/pal_ssl.c)). Groups come from the OpenSSL config or the Schannel curve order.
+## Quick start by compute type
 
-- **`OPENSSL_CONF` is honoured.** .NET initialises OpenSSL with `OPENSSL_INIT_LOAD_CONFIG` (Documented: [openssl.c](https://github.com/dotnet/runtime/blob/release/8.0/src/native/libs/System.Security.Cryptography.Native/openssl.c); Tested on Lambda and AL2023).
+Find your row, make the one change, verify, and keep the rollback ready. Verify with a PQ-only test server (`openssl s_server -groups X25519MLKEM768 -tls1_3`): the call must succeed, and must also still succeed against a classical server (How to test).
 
-- **Which libssl loads.** .NET tries `libssl.so.3`, then `1.1`. An override env var forces a version: `CLR_OPENSSL_VERSION_OVERRIDE` in .NET 8 and 9, `DOTNET_OPENSSL_VERSION_OVERRIDE` in .NET 10 and later (Documented: [opensslshim.c](https://github.com/dotnet/runtime/blob/release/10.0/src/native/libs/System.Security.Cryptography.Native/opensslshim.c)). It cannot help when the image only has OpenSSL 3.0; the fix there is a different image.
+| Compute | Check | One change | Verify | Roll back | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Lambda zip `dotnet8`, `dotnet10` | `Runtime:` in SAM/CFN/Terraform | Ship `pq-tls/openssl-pq.cnf` (`CopyToPublishDirectory`), set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf`. Fleet option: `pq-tls` layer + `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` | PQ-only call succeeds; CloudTrail `tlsDetails.keyExchange` for the role's KMS/STS calls shows `X25519MLKEM768` | Remove `OPENSSL_CONF` (layer: `PQ_TLS_DISABLE=1`) | Tested (e2e) |
+| Lambda image `public.ecr.aws/lambda/dotnet:8`, `:10` | `FROM` line | `COPY pq-tls/openssl-pq.cnf /var/task/pq-tls/` + `ENV OPENSSL_CONF=...` | Same | Redeploy the previous image (or rebuild without the two lines) | Tested (e2e) |
+| Lambda Native AOT (`provided.al2023`) | `PublishAot` in the csproj | Same file and variable; AOT loads the system `libssl.so.3` | Same | Remove `OPENSSL_CONF` | Tested (e2e, .NET 10 AOT) |
+| ECS Fargate | `FROM` line; `openssl version` in the image | `FROM aspnet:10.0-alpine`, `10.0-resolute` or `10.0-resolute-chiseled`. AL2023 base: config file + `ENV OPENSSL_CONF`, or `update-crypto-policies --set DEFAULT:PQ` in the Dockerfile | PQ-only call succeeds; for Kestrel behind an ALB/NLB, `s_client -groups X25519MLKEM768` against the task | Previous task definition revision | Tested (e2e) |
+| ECS on EC2, EKS | Same; the container's userland decides, not the node | Same as Fargate | Same | Same; EKS: `kubectl rollout undo` | ECS on EC2: Tested (e2e). EKS: Unverified (same image, not run) |
+| EC2 Linux (AL2023.12+) | `update-crypto-policies --show`; `openssl version` | Whole host: `update-crypto-policies --set DEFAULT:PQ` via SSM, restart services. One service: `Environment=OPENSSL_CONF=...` in its systemd unit | PQ-only call from the host succeeds | `update-crypto-policies --set DEFAULT`, or remove the unit line; restart | Tested (e2e) |
+| EC2 Amazon Linux 2, Ubuntu 22.04/24.04 | `openssl version` < 3.5 | No setting helps: move to AL2023 or a PQ container image | — | — | Documented (OpenSSL 3.5 is the first with ML-KEM) |
+| Windows (IIS, HTTP.sys, Kestrel, `HttpClient`) | `Get-TlsEccCurve`; `Get-HotFix` | July 2026 cumulative update or later, then `Enable-TlsEccCurve -Name 'X25519_MLKEM768' -Position 0` (or GPO "ECC Curve Order"), reboot | `Get-TlsEccCurve` lists it first; PQ-only call succeeds | `Disable-TlsEccCurve -Name 'X25519_MLKEM768'` or remove it from the GPO; reboot | Documented; not tested |
 
-- **Rule of thumb:** OpenSSL 3.5+ with a default group list that includes X25519MLKEM768 = PQ. OpenSSL 3.0 to 3.4 = never PQ. Amazon Linux 2023 has 3.5 but its crypto policy leaves ML-KEM out until you change it.
+Everywhere: remove `SslProtocols = Tls12` caps (case F). ML-KEM needs TLS 1.3. That is the only code change PQ ever needs.
+
+The main change on Lambda (SAM; full `template.yaml` and `Function.csproj` at the end, or [configs/dotnet/](REPO/configs/dotnet/)):
+
+``` yaml
+OrdersFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    Runtime: dotnet10
+    Handler: Orders::Orders.Function::Handler
+    Environment:
+      Variables:
+        OPENSSL_CONF: /var/task/pq-tls/openssl-pq.cnf   # file shipped by Function.csproj
+```
+
+The kit file [configs/dotnet/pq-tls/openssl-pq.cnf](REPO/configs/dotnet/pq-tls/openssl-pq.cnf) is for the Amazon Linux 2023 family only: it includes the AL2023 crypto-policy file. It adds ML-KEM key exchange, not ML-DSA signatures (Test evidence).
+
+**Deadlines.** .NET 8 and 9 left Microsoft support on 2026-11-10; .NET 10 is supported to 2028-11-14 ([Microsoft](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)). Lambda `dotnet8` was deprecated on 2026-11-10; function creation is blocked from 2027-07-29 and updates from 2027-08-31, after which no file or variable can be added ([AWS](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)). Apply the PQ fix to `dotnet8` now, and move to `dotnet10` before those dates.
 
 ## Versions and native support
 
-| Version | TLS stack | PQ client by default | PQ server (Kestrel) by default | API to set groups | FIPS-mode behaviour | Proposed solution | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| .NET 10 LTS (supported to Nov 2028) | SslStream → OpenSSL (Linux), Schannel (Windows) | Lambda `dotnet10`: no. Image `10.0`/`10.0-noble`: no. `10.0-alpine`, `10.0-resolute`: yes. AL2023/EC2: no | Same as client | None. OS config only (`OPENSSL_CONF`, crypto policy, Schannel curve order) | Follows OpenSSL. AL2023 `FIPS:PQ` policy keeps ML-KEM; Windows legacy FIPS mode has no ML-KEM groups | Use `-alpine` or `-resolute` images. On Lambda/AL2023 ship `openssl-pq.cnf` + `OPENSSL_CONF` | Tested (10.0.15); FIPS rows Documented ([AL2023](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html)) |
-| .NET 9 STS (out of support since 2026-11-10) | Same | Same pattern as .NET 10 | Same | None | Same | Upgrade to .NET 10 | Unverified (same code path; not run). End of support [Documented](https://devblogs.microsoft.com/dotnet/dotnet-8-9-end-of-support/) |
-| .NET 8 LTS (out of support since 2026-11-10) | Same | Lambda `dotnet8`: no. Image `8.0` (Debian 12): no. `8.0-alpine`: yes. AL2023: no | Same as client | None | Same | Upgrade to .NET 10. Until then: `8.0-alpine`, or AL2023 + `OPENSSL_CONF` | Tested (8.0.33, 8.0.34) |
-| .NET 6 / 7 (out of support) | Same | Same as the OS OpenSSL | Same | None | Same | Upgrade | Unverified (not run) |
-| .NET Framework 4.8 / 4.8.1 (Windows only) | Schannel | Only on Windows Server 2025 / Windows 11 24H2+ with the July 2026 update and `X25519_MLKEM768` enabled | Same (IIS, HTTP.sys) | None in .NET; Schannel curve order (machine-wide) | Legacy FIPS mode: no ML-KEM groups | Patch Windows and enable the group; don't set `ServicePointManager.SecurityProtocol` to `Tls12` | Schannel Documented ([Microsoft](https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-supported-groups-in-windows-11-24h2-and-later)); .NET Framework picking it up not confirmed |
-| Native AOT (`provided.al2023`) | Loads the system `libssl.so.3` | No | n/a | None | Same as AL2023 | `openssl-pq.cnf` + `OPENSSL_CONF` | Tested |
+| Version | TLS stack | PQ by default (client and Kestrel) | API to set groups | FIPS mode | Proposed solution | Evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| .NET 10 LTS (to 2028-11-14) | SslStream → OpenSSL (Linux), Schannel (Windows) | Lambda `dotnet10`, `10.0`/`10.0-noble`, Azure Linux, AL2023: no. `10.0-alpine`, `10.0-resolute`(`-chiseled`): yes | None; OS config only | Follows OpenSSL. AL2023 `FIPS:PQ` keeps ML-KEM; Windows legacy FIPS mode has no ML-KEM groups | `-alpine` or `-resolute` images; on Lambda/AL2023 `openssl-pq.cnf` + `OPENSSL_CONF` | Tested (10.0.14, 10.0.15); FIPS Documented ([AL2023](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html)) |
+| .NET 9 STS (out of support 2026-11-10) | Same | Same pattern as .NET 10 | None | Same | Upgrade to .NET 10 | Unverified (same code path, not run) |
+| .NET 8 LTS (out of support 2026-11-10) | Same | Lambda `dotnet8`, `8.0` (Debian 12), `8.0-noble`, AL2023: no. `8.0-alpine`: yes | None | Same | Upgrade to .NET 10. Until then `8.0-alpine`, or AL2023 + `OPENSSL_CONF` | Tested (8.0.33, 8.0.34) |
+| .NET 6 / 7 (out of support) | Same | Same as the OS OpenSSL | None | Same | Upgrade | Unverified (not run) |
+| .NET Framework 4.8 / 4.8.1 (Windows only) | Schannel | Only with the July 2026 Windows update and `X25519_MLKEM768` enabled | None in .NET; Schannel curve order (machine-wide) | Legacy FIPS mode: no ML-KEM groups | Patch Windows, enable the group; don't pin `ServicePointManager.SecurityProtocol` to `Tls12` | Schannel Documented ([Microsoft](https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-supported-groups-in-windows-11-24h2-and-later)); .NET Framework picking it up not confirmed |
+| Native AOT (`provided.al2023`) | Loads the system `libssl.so.3` | No | None | Same as AL2023 | `openssl-pq.cnf` + `OPENSSL_CONF` | Tested (8.0.33 in `tests/deep`, 10.0.14 in e2e) |
 
-
-Tested 2026-11-14 on arm64: a .NET client (SslStream and HttpClient) against a PQ-only server and a classical-only server, and a Kestrel server probed with OpenSSL 3.5 `s_client`. Every row that says "No" still connected to the classical-only server, so the fix only adds PQ. Scripts and output: `deep/dotnet/run-tests.sh`, `results.txt`, `results2.txt`.
-
-**By compute type**
-
-| Compute | OS TLS library | PQ by default | Fix | Evidence |
-|----|----|----|----|----|
-| Lambda zip, `dotnet8` / `dotnet10` | AL2023, OpenSSL 3.5, crypto policy without ML-KEM | No | Ship `pq-tls/openssl-pq.cnf`, set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf`. Fleet option: the kit's `pq-tls` layer with `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` (its dotnet branch sets `OPENSSL_CONF=/opt/pq-tls/openssl-pq.cnf` unless the function sets one) | Tested (Lambda images, 2026-11-12; e2e `dotnet-lambda-dotnet8/10-bundled-conf`, `-layer-wrapper`, `-layer-conf`) |
-| Lambda image `public.ecr.aws/lambda/dotnet:8` / `:10` | Same | No | Same file and `ENV` in the Dockerfile | Tested |
-| Lambda Native AOT on `provided.al2023` | Same; the AOT binary still loads the system `libssl.so.3` | No | Same file and env var | Tested (AOT build of .NET 8.0.33 run in `provided:al2023`) |
-| Fargate, ECS, EKS (Linux) | Whatever the image ships | Depends on image (next table) | Use an `-alpine` or `-resolute` tag, or AL2023 + config file | Tested |
-| EC2 Amazon Linux 2023.12+ | OpenSSL 3.5.8 | No | `update-crypto-policies --set DEFAULT:PQ`, or `OPENSSL_CONF` in the systemd unit | Tested in an AL2023 container; policy route [Documented](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html) |
-| EC2 Amazon Linux 2, Ubuntu 22.04/24.04 | OpenSSL 1.0.2 to 3.0 | No | Migrate the OS or containerise on a PQ image | Documented (OpenSSL 3.5 is the first with ML-KEM) |
-| EC2 Windows Server 2025, Windows containers `ltsc2025` | Schannel | No (groups disabled by default) | July 2026 update or later, then enable `X25519_MLKEM768` | [Documented](https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-supported-groups-in-windows-11-24h2-and-later); not tested here |
-| EC2 Windows Server 2022 and older | Schannel | No | No Microsoft statement of support found; plan to move to 2025 | Not confirmed |
+Every row that says "no" still connected to classical-only servers, so the fix only adds PQ (Tested: [tests/deep/dotnet/run-tests.sh](REPO/tests/deep/dotnet/run-tests.sh), `results.txt`, `results2.txt`, and the e2e suite).
 
 **Container images (`mcr.microsoft.com/dotnet/aspnet`; `runtime` and `runtime-deps` use the same OS)**
 
 | Tag | OS, OpenSSL | Client PQ | Kestrel PQ | Action |
 |----|----|----|----|----|
 | `8.0` (default) | Debian 12, 3.0.22 | No | No | Change image |
+| `8.0-noble` | Ubuntu 24.04, 3.0.13 | No | Not run | Change image |
 | `10.0` (default), `10.0-noble` | Ubuntu 24.04, 3.0.13 | No | No | Change image |
-| `10.0-noble-chiseled` | Ubuntu 24.04, 3.0 | No | No | Change image |
-| `10.0-azurelinux3.0` (and `-distroless`) | Azure Linux 3.0, 3.3.7 | No | No | Change image |
-| `8.0-alpine`, `10.0-alpine` | Alpine 3.24, 3.5 | Yes | Yes | None |
+| `10.0-noble-chiseled` | Ubuntu 24.04, 3.0.13 | No | No | Change image |
+| `10.0-azurelinux3.0` | Azure Linux 3.0, 3.3.7 | No | No | Change image |
+| `8.0-alpine`, `10.0-alpine` | Alpine 3.24, 3.5.9 | Yes | Yes | None |
 | `10.0-resolute` | Ubuntu 26.04, 3.5.5 | Yes | Yes | None (glibc) |
-| `10.0-resolute-chiseled` | Ubuntu 26.04, 3.5 | Yes | Yes | None (glibc, distroless) |
-| `amazonlinux:2023` + `dnf install aspnetcore-runtime-8.0` | AL2023.12, 3.5.8 | No | No | Config file or `DEFAULT:PQ` |
-| Same + `OPENSSL_CONF=openssl-pq.cnf` | AL2023.12, 3.5.8 | Yes | Yes |  |
-| Same + `update-crypto-policies --set DEFAULT:PQ` | AL2023.12, 3.5.8 | Yes | Yes (e2e target leg, `srv-dotnet-fargate-al2023-net8-policy`) |  |
+| `10.0-resolute-chiseled` | Ubuntu 26.04, 3.5.5 | Yes | Yes | None (glibc, distroless) |
+| `amazonlinux:2023` + `dnf install aspnetcore-runtime-8.0` / `-10.0` | AL2023.12, 3.5.8 | No | No | Config file or `DEFAULT:PQ` |
+| Same + `OPENSSL_CONF=openssl-pq.cnf` | AL2023.12, 3.5.8 | Yes | Yes | — |
+| Same + `update-crypto-policies --set DEFAULT:PQ` | AL2023.12, 3.5.8 | Yes | Yes | — |
 
-All rows Tested (.NET 8.0.33/8.0.34 and 10.0.15). The `-distroless` Azure Linux variant wasn't run; it shares the 3.0 base. As of 2026-11-14 there is no .NET 8 Ubuntu 26.04 tag and no Debian 13 tag for either version (checked with `docker manifest inspect`); for .NET 8 on glibc use AL2023 or move to .NET 10.
-
-**Decision guide**
-
-- On a default `8.0` or `10.0` image: change `FROM` to `10.0-alpine` or `10.0-resolute` (or `-resolute-chiseled`). No code change.
-- On Lambda `dotnet8`/`dotnet10`, Native AOT, an AL2023 image or EC2 AL2023: ship `openssl-pq.cnf` and set `OPENSSL_CONF`, or on EC2 run `update-crypto-policies --set DEFAULT:PQ` (`FIPS:PQ` on FIPS hosts).
-- If your code or `appsettings` sets `SslProtocols` to `Tls12` only, add `Tls13` or remove the setting. That is the only code change PQ ever needs.
-- On .NET 8 or 9: plan the move to .NET 10 now (both left support on 2026-11-10). The PQ fix works on .NET 8 meanwhile.
-- On Windows: patch to the July 2026 update or later, enable `X25519_MLKEM768`, reboot. Not tested here.
-- Certificates, keystores, CA bundles and client certificates: leave them alone (cases C, D, E).
+All rows Tested (.NET 8.0.33/8.0.34, 10.0.14/10.0.15; client rows in e2e, Kestrel rows in `tests/deep` and the e2e target leg). The Azure Linux `-distroless` variant was not run; it shares the 3.3 base. As of 2026-11-14 there is no .NET 8 Ubuntu 26.04 tag and no Debian 13 tag for either version (checked with `docker manifest inspect`): for .NET 8 on glibc use AL2023 or move to .NET 10.
 
 ## Cases: what to change
 
-All tests below ran on 2026-11-14 on arm64 with these images (pulled, run by digest): `aspnet:8.0` (Debian 12, OpenSSL 3.0, .NET 8.0.34), `aspnet:8.0-alpine` (Alpine 3.24, 8.0.34), `aspnet:10.0-alpine` (10.0.15), `aspnet:10.0-resolute` (Ubuntu 26.04, OpenSSL 3.5.5, 10.0.15), and `amazonlinux:2023` + `aspnetcore-runtime-8.0` (OpenSSL 3.5.8, 8.0.33) with `OPENSSL_CONF=openssl-pq.cnf`. There is no .NET 10 Debian 12 tag. The PQ-only server is `openssl s_server -groups X25519MLKEM768 -tls1_3` and the classical server `-groups X25519`, from OpenSSL 3.5.7 (debian:trixie-slim). Kestrel was probed with `openssl s_client`, which prints the negotiated group. Scripts and output: `deep/dotnet/v2/run-cases.sh`, `results-v2.txt`.
+Unless a row says e2e, the tests below ran on 2026-11-14 on arm64 with these images (run by digest): `aspnet:8.0` (Debian 12, OpenSSL 3.0, .NET 8.0.34), `aspnet:8.0-alpine` (8.0.34), `aspnet:10.0-alpine` (10.0.15), `aspnet:10.0-resolute` (Ubuntu 26.04, OpenSSL 3.5.5, 10.0.15), and `amazonlinux:2023` + `aspnetcore-runtime-8.0` (OpenSSL 3.5.8, 8.0.33) with `OPENSSL_CONF=openssl-pq.cnf`. The PQ-only server is `openssl s_server -groups X25519MLKEM768 -tls1_3`, the classical one `-groups X25519`, both OpenSSL 3.5.7 (debian:trixie-slim). Kestrel was probed with `openssl s_client`, which prints the negotiated group. Scripts and output: [tests/deep/dotnet/v2/run-cases.sh](REPO/tests/deep/dotnet/v2/run-cases.sh), `results-v2.txt`.
 
-Result in one line: on the four PQ images every certificate, trust and mTLS case negotiated X25519MLKEM768 and still worked with a classical client. On Debian 12 the same cases all worked classically and none was PQ, so the image, not the certificate setup, decides.
+Result in one line: on the four PQ images every certificate, trust and mTLS case negotiated X25519MLKEM768 and still worked with a classical client. On Debian 12 the same cases all worked classically and none was PQ: the image decides, not the certificate setup.
 
 ### A. Simple client
 
-- **Who this is:** `HttpClient`, `IHttpClientFactory`, AWS SDK for .NET, Npgsql, MySqlConnector, StackExchange.Redis, gRPC `Grpc.Net.Client`, with no TLS code. Check: `grep -rn "SslProtocols\|SslOptions\|ClientCertificates" --include=*.cs .` returns nothing.
-- **What happens today:** classical on default images, Lambda and AL2023; PQ on `-alpine`/`-resolute`. Tested (v1, `deep/dotnet/results.txt`).
+- **Who this is:** `HttpClient`, `IHttpClientFactory`, AWS SDK for .NET, Npgsql, MySqlConnector, StackExchange.Redis, `Grpc.Net.Client`, with no TLS code. Check: `grep -rn "SslProtocols\|SslOptions\|ClientCertificates" --include=*.cs .` returns nothing.
+- **What happens today:** classical on default images, Lambda and AL2023; PQ on `-alpine`/`-resolute`. Tested (`tests/deep/dotnet/results.txt`, e2e).
 - **What to change:** the image or `OPENSSL_CONF` only. No code.
-- **Side effects:** none seen; every PQ client still reached the classical-only server (fallback, Tested).
-
-The client offers X25519MLKEM768 when the OS library does. Nothing in .NET code turns PQ on; a few settings turn it off.
+- **Side effects:** none seen; every PQ client still reached the classical-only server.
 
 | Client | TLS stack | What to set | Evidence |
 |----|----|----|----|
 | `HttpClient` / `SocketsHttpHandler` | SslStream → OS | Leave `SslOptions.EnabledSslProtocols` at `None`, or include `Tls13` | Tested |
-| `HttpClientHandler.SslProtocols` | SslStream → OS | Same: `None` or include `Tls13` | Tested via SocketsHttpHandler, which it wraps |
+| `HttpClientHandler.SslProtocols` | SslStream → OS | Same: `None` or include `Tls13` | Tested (e2e `hch-p12-clientcert`, `alpine8-callback-trust`) |
 | `SslStream` directly | OS | `SslClientAuthenticationOptions.EnabledSslProtocols = None` | Tested |
-| gRPC `Grpc.Net.Client` | HttpClient | Nothing; HTTP/2 over TLS follows the OS | [Documented](https://learn.microsoft.com/en-us/aspnet/core/grpc/client) |
+| gRPC `Grpc.Net.Client` | HttpClient | Nothing; HTTP/2 over TLS follows the OS | [Documented](https://learn.microsoft.com/en-us/aspnet/core/grpc/client); not run |
 | gRPC `Grpc.Core` (legacy C-core) | Own bundled BoringSSL | Migrate to `Grpc.Net.Client`; Grpc.Core is out of support | [Documented](https://grpc.io/blog/grpc-csharp-future/) deprecation; its ML-KEM support not confirmed |
 | AWS SDK for .NET (v3, v4) | HttpClient | Nothing in code; the OS needs OpenSSL 3.5+ with ML-KEM enabled | [Documented](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html) |
-| Npgsql 9 | SslStream ([source](https://github.com/npgsql/npgsql/blob/main/src/Npgsql/Internal/NpgsqlConnector.cs)) | Nothing; `SSL Mode=Require` or stricter | Tested against PostgreSQL 18.7 with `ssl_groups = 'X25519MLKEM768'`: alpine, resolute and AL2023+conf connect; noble fails |
-| MySqlConnector | SslStream ([source](https://github.com/mysql-net/MySqlConnector/blob/master/src/MySqlConnector/Core/ServerSession.cs)) | Don't pin `TlsVersion=TLS 1.2` in the connection string | Documented (source code) |
+| Npgsql 9 | SslStream ([source](https://github.com/npgsql/npgsql/blob/main/src/Npgsql/Internal/NpgsqlConnector.cs)) | Nothing; `SSL Mode=Require` or stricter | Tested against PostgreSQL 18.7 with `ssl_groups = 'X25519MLKEM768'`: `10.0-alpine`, `10.0-resolute` and AL2023+conf connect; `10.0` (Ubuntu 24.04) fails |
+| MySqlConnector | SslStream ([source](https://github.com/mysql-net/MySqlConnector/blob/master/src/MySqlConnector/Core/ServerSession.cs)) | Don't pin `TlsVersion=TLS 1.2` | Documented (source code) |
 | StackExchange.Redis | SslStream ([source](https://github.com/StackExchange/StackExchange.Redis/blob/main/src/StackExchange.Redis/PhysicalConnection.cs)) | Don't set `SslProtocols=Tls12` | Documented (source code) |
-| Confluent.Kafka 2.16 | librdkafka with its own statically linked OpenSSL 3.5.8 | Nothing; optional `ssl.curves.list` | Tested: PQ on the Debian 12 and Ubuntu 24.04 images, whose OS OpenSSL is 3.0 |
+| Confluent.Kafka 2.16 | librdkafka with its own statically linked OpenSSL 3.5.8 | Nothing; optional `ssl.curves.list` | See case H |
 
 ``` csharp
 // HttpClient: the only TLS setting that matters for PQ is the protocol version.
@@ -107,27 +118,24 @@ var handler = new SocketsHttpHandler();
 handler.SslOptions.EnabledSslProtocols = SslProtocols.None; // OS default: TLS 1.2 + 1.3
 // BAD: handler.SslOptions.EnabledSslProtocols = SslProtocols.Tls12;  -> never PQ
 var http = new HttpClient(handler);
-
-// gRPC: same handler
 var channel = GrpcChannel.ForAddress("https://orders.internal:8443",
-    new GrpcChannelOptions { HttpHandler = handler });
+    new GrpcChannelOptions { HttpHandler = handler });   // gRPC: same handler
 ```
 
 ### B. Simple server
 
 - **Who this is:** Kestrel (`WebApplication`, `UseKestrel`) with the default HTTPS endpoint, or behind an ALB/NLB that terminates TLS.
-- **What happens today:** Kestrel follows the image: PQ on `-alpine`, `-resolute`, AL2023 + `OPENSSL_CONF`; classical on `8.0`, `10.0`, Azure Linux. Tested (v1 and v2). Behind a load balancer the client-facing handshake is the listener policy's (see the Load balancers tab).
+- **What happens today:** Kestrel follows the image: PQ on `-alpine`, `-resolute`, AL2023 + `OPENSSL_CONF` or `DEFAULT:PQ`; classical on `8.0`, `10.0`, Azure Linux. Tested. Behind a load balancer the client-facing handshake is the listener policy's (Load balancers chapter).
 - **What to change:** the image or `OPENSSL_CONF`. Keep `SslProtocols` at `None` or include `Tls13`.
 - **Side effects:** none; X25519-only clients still connect (Tested).
 
 | Server | TLS stack | PQ setting | Evidence |
 |----|----|----|----|
-| Kestrel on Linux | SslStream → OpenSSL | None in Kestrel. Use a PQ image or `OPENSSL_CONF`; keep `SslProtocols` at `None` or include `Tls13` | Tested (status matrix) |
-| Kestrel on Windows | Schannel | Enable `X25519_MLKEM768` in Schannel | Documented; not tested |
-| IIS | Schannel via HTTP.sys | Same Schannel setting; it is machine-wide | Documented (Schannel setting applies to all its callers); not tested |
-| HTTP.sys (`UseHttpSys`) | Schannel, kernel mode | Same | Documented; not tested |
-| ASP.NET Core gRPC server | Kestrel or HTTP.sys | Follows the server above; gRPC needs HTTP/2 | Inferred from the Kestrel test; a gRPC call itself was not run |
-| Behind ALB, NLB or API Gateway | The AWS front door | The listener policy decides the client-facing leg; see the Load balancers tab | — |
+| Kestrel on Linux | SslStream → OpenSSL | None in Kestrel: PQ image or `OPENSSL_CONF`; keep `SslProtocols` at `None` or include `Tls13` | Tested |
+| Kestrel on Windows | Schannel | Enable `X25519_MLKEM768` in Schannel | Documented ([Microsoft, Kestrel demo](https://techcommunity.microsoft.com/blog/post-quantum-crypto-tech-blog/asp-net-kestrel-and-schannel-ga-with-tls-1-3-post-quantum-cryptography/4536649)); not tested |
+| IIS, HTTP.sys (`UseHttpSys`) | Schannel via HTTP.sys | Same Schannel setting; machine-wide | Documented (applies to all Schannel callers); not tested |
+| ASP.NET Core gRPC server | Kestrel or HTTP.sys | Follows the server above; gRPC needs HTTP/2 | Unverified (Kestrel test had `Http1AndHttp2`, no gRPC call made) |
+| Behind ALB, NLB or API Gateway | The AWS front door | The listener policy decides the client-facing leg | Load balancers chapter |
 
 **Kestrel excerpt** (`appsettings.json`; full `Program.cs` and file at the end):
 
@@ -143,19 +151,19 @@ var channel = GrpcChannel.ForAddress("https://orders.internal:8443",
 }
 ```
 
-The same endpoint set to `Tls12` only rejected the PQ client with a `protocol_version` alert (Tested). Code that sets `SslProtocols` in `ConfigureHttpsDefaults`, `UseHttps(o => ...)` or `SslServerAuthenticationOptions.EnabledSslProtocols` has the same effect.
+The same endpoint set to `Tls12` only rejected the PQ client with a `protocol_version` alert (Tested). `SslProtocols` set in `ConfigureHttpsDefaults`, `UseHttps(o => ...)` or `SslServerAuthenticationOptions.EnabledSslProtocols` has the same effect.
 
-**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `SslStream` server (Kestrel's TLS layer) stayed classical on `runtime:8.0` and AL2023 .NET 8, and negotiated X25519MLKEM768 on `10.0-alpine`, `aspnet:10.0-resolute`, and AL2023 with `OPENSSL_CONF` or `DEFAULT:PQ` (cases `srv-dotnet-*`, Load balancers tab).
+**Load balancer target leg (e2e, run r1117041043).** With the observer acting as an ALB/NLB connecting to an HTTPS target, an `SslStream` server with default options (what Kestrel calls) stayed classical on `runtime:8.0` and AL2023 .NET 8, and negotiated X25519MLKEM768 on `runtime:10.0-alpine` (Fargate and ECS on EC2), `aspnet:10.0-resolute`, and AL2023 with `OPENSSL_CONF` or `DEFAULT:PQ` (cases `srv-dotnet-*`). Against the classic backend policy every target fell back to classical TLS 1.2, as expected.
 
 ### C. Existing server certificates: PFX, PEM, encrypted keys, SNI, X509Store
 
 - **Who this is:** Kestrel loads your own certificate. Find it with:
   `grep -rnE "Certificates|Certificate\"|KeyPath|ServerCertificate|X509Store|UseHttps\(" --include=*.cs --include=appsettings*.json .`
   and in env vars or Helm values: `Kestrel__Certificates__Default__Path`, `ASPNETCORE_Kestrel__Certificates__Default__Password`.
-- **What happens today:** the certificate does not affect key exchange. The key exchange group comes from OpenSSL; the certificate only signs the handshake. Tested: same cert, PQ on PQ images, classical on Debian 12.
-- **What changes in the store or files:** nothing. Keep the same PFX, PEM, password, key type, store and SNI map. ML-KEM is a key exchange; your RSA or ECDSA certificate stays valid (ML-DSA certificates are a separate, later step: see the Certificates tab).
-- **What to change:** only the image or `OPENSSL_CONF` (case A/B). No config key, no code.
-- **Side effects:** none found. Unlike Java with Bouncy Castle, no key-manager setting is needed: .NET has no key-manager layer between the store and OpenSSL.
+- **What happens today:** the certificate does not affect key exchange; it only signs the handshake. Tested: same cert, PQ on PQ images, classical on Debian 12.
+- **What changes in the store or files:** nothing. Keep the same PFX, PEM, password, key type, store and SNI map. ML-KEM is key exchange; your RSA or ECDSA certificate stays valid. ML-DSA certificates are a separate, later step (Certificates chapter).
+- **What to change:** only the image or `OPENSSL_CONF` (case A/B).
+- **Side effects:** none found. Unlike Java with Bouncy Castle, there is no key-manager layer between the store and OpenSSL.
 
 **Tested proof (Kestrel server, `openssl s_client` as client).** "PQ" = `-groups X25519MLKEM768 -tls1_3` printed `Negotiated TLS1.3 group: X25519MLKEM768` and got the HTTP 200 body. "Classical" = `-groups X25519` got HTTP 200. Chain verified with `-CAfile ca.crt -verify_return_error` in both.
 
@@ -182,38 +190,31 @@ Kestrel__Certificates__Default__Password=<key password>
 # C6 SNI map in config
 Kestrel__Endpoints__Https__Sni__ec.test__Certificate__Path=/certs/server-ec.pfx
 Kestrel__Endpoints__Https__Sni__rsa.test__Certificate__Path=/certs/server-rsa.pfx
-# C7 X509Store
+# C7 X509Store (AllowInvalid only because the test CA is not in the system store)
 Kestrel__Certificates__Default__Subject=pq-server-ec
 Kestrel__Certificates__Default__Store=My
 Kestrel__Certificates__Default__Location=CurrentUser
-Kestrel__Certificates__Default__AllowInvalid=true   # needed here because the test CA is not in the system store
-```
-
-```csharp
-// C5: per-host certificate selection in code (unchanged by PQ)
-builder.WebHost.ConfigureKestrel(k => k.ConfigureHttpsDefaults(https =>
-{
-    https.ServerCertificateSelector = (ctx, name) => name == "rsa.test" ? rsaCert : ecCert;
-}));
+Kestrel__Certificates__Default__AllowInvalid=true
 ```
 
 Notes for this case:
 
-- **RSA and EC:** both work with PQ. The key type changes only the signature (RSA-PSS or ECDSA), not the key exchange.
-- **Several certificates:** Kestrel serves one certificate per endpoint unless you use `ServerCertificateSelector` or the `Sni` section. Both select by SNI, and both worked with PQ. There is no "RSA+EC in one store, pick by client" behaviour as in Java; if you need both, use SNI or two endpoints.
-- **X509Store on Linux:** CurrentUser/My lives under `~/.dotnet/corefx/cryptography/x509stores/my/`; it must be persisted (volume or image layer) or re-imported at start. On Lambda the passwd home (`/home/sbx_user…`) is read-only, so importing there fails with `CryptographicException: The X509 certificate could not be added to the store` (`UnauthorizedAccessException`): set `HOME=/tmp` (function environment variable, or an exec wrapper that exports it) before the first `X509Store` use, or load the PFX/PEM directly (E1, E2). Tested: e2e `dotnet-lambda-dotnet8/10-store-clientcert` (PQ with `HOME=/tmp`); without it the import fails before any handshake. LocalMachine/My is not writable on Linux. Root/CA stores on Linux are a read-only view of the OpenSSL trust files ([discussion](https://github.com/dotnet/runtime/issues/32875)). Not a PQ issue.
-- **Windows certificate store (Schannel):** works the same way in principle: the curve order is machine-wide and separate from the certificate. Not tested here (Documented only for Schannel groups).
-- **HSM, TPM or KMS keys:** see case I.
+- **RSA and EC:** both work with PQ. The key type changes only the signature (RSA-PSS or ECDSA).
+- **Several certificates:** Kestrel serves one certificate per endpoint unless you use `ServerCertificateSelector` (`https.ServerCertificateSelector = (ctx, name) => ...` in `ConfigureHttpsDefaults`) or the `Sni` section. Both select by SNI and both worked with PQ. There is no "RSA+EC in one store, pick by client" behaviour as in Java; use SNI or two endpoints.
+- **X509Store on Linux:** CurrentUser/My lives under `$HOME/.dotnet/corefx/cryptography/x509stores/my/`; persist it (volume or image layer) or re-import at start. LocalMachine/My is not writable on Linux; Root/CA stores are a read-only view of the OpenSSL trust files ([discussion](https://github.com/dotnet/runtime/issues/32875)).
+- **X509Store on Lambda:** the passwd home (`/home/sbx_user…`) is read-only, so an import fails with `CryptographicException: The X509 certificate could not be added to the store` (`UnauthorizedAccessException`) before any handshake. Fix: an exec wrapper in the package that exports `HOME=/tmp` (`AWS_LAMBDA_EXEC_WRAPPER=/var/task/home-wrapper`; Tested, e2e `dotnet-lambda-dotnet8/10-store-clientcert`), or load the PFX/PEM directly (E1, E2). `HOME=/tmp` as a function variable: LocalStack drops it, so e2e could not prove it (`*-store-clientcert-nohome` records that failure); AWS's own base image under the Runtime Interface Emulator honours it. Unverified on real AWS. Setting `HOME` in code with `Environment.SetEnvironmentVariable` did not help in an earlier e2e run.
+- **Windows certificate store (Schannel):** the curve order is machine-wide and separate from the certificate. Not tested.
+- **HSM, TPM or KMS keys:** case I.
 
 ### D. Custom CA trust: system store, SSL_CERT_FILE / SSL_CERT_DIR, validation callbacks, CustomTrustStore
 
 - **Who this is:** your service calls internal endpoints signed by a private CA (ACM Private CA, an on-prem CA). Find it with:
   `grep -rnE "ServerCertificateCustomValidationCallback|RemoteCertificateValidationCallback|CertificateChainPolicy|CustomTrustStore|X509Chain" --include=*.cs .`
   and in Dockerfiles: `update-ca-certificates`, `update-ca-trust`, `SSL_CERT_FILE`, `SSL_CERT_DIR`.
-- **What happens today:** trust is checked after key exchange and is independent of it. Tested: every trust method below worked with PQ on the PQ images, and failed only on Debian 12, where the PQ-only server refused the handshake before any certificate was seen.
-- **What changes in the store or bundle:** nothing. Same CA file, same hashed directory, same callback, same `X509ChainPolicy`.
-- **What to change:** only the image or `OPENSSL_CONF`. On AL2023 the kit `openssl-pq.cnf` changes only `Groups`; the CA locations (`/etc/pki/tls/certs`, `/etc/pki/ca-trust`) and `update-ca-trust` keep working (Tested, row D5).
-- **Side effects:** if you move from Debian/Ubuntu to Alpine, the CA install command is the same (`update-ca-certificates`) but needs the `ca-certificates` package (`apk add ca-certificates`); the aspnet Alpine image may only have the bundle. On AL2023 use `/etc/pki/ca-trust/source/anchors/` + `update-ca-trust`.
+- **What happens today:** trust is checked after key exchange and is independent of it. Every trust method below worked with PQ on the PQ images; on Debian 12 the PQ-only server refused the handshake before any certificate was seen.
+- **What changes in the store or bundle:** nothing. Same CA file, hashed directory, callback and `X509ChainPolicy`.
+- **What to change:** only the image or `OPENSSL_CONF`. On AL2023 the kit `openssl-pq.cnf` changes only `Groups`; `/etc/pki/ca-trust` and `update-ca-trust` keep working (Tested, D5, and e2e `dotnet-fargate-al2023-sysca-conf`).
+- **Side effects:** moving from Debian/Ubuntu to Alpine, `update-ca-certificates` needs `apk add ca-certificates` first (Tested, e2e `dotnet-fargate-alpine-sysca`).
 
 **Tested proof (.NET client, `HttpClient`).** PQ = request to the PQ-only server returned 200. Classical = request to the X25519-only server returned 200.
 
@@ -226,7 +227,7 @@ Notes for this case:
 | D4 | `SocketsHttpHandler.SslOptions.CertificateChainPolicy` with `CustomRootTrust` + `CustomTrustStore` | PQ + classical | PQ + classical | PQ + classical | PQ + classical | Classical only |
 | D5 | CA added to the system store (`update-ca-certificates` or `update-ca-trust`) | PQ + classical | PQ + classical | PQ + classical | PQ + classical | Classical only |
 
-60 requests, all as expected (Tested, `results-v2.txt`).
+60 requests, all as expected (Tested, `results-v2.txt`). D0 to D3 were repeated on Lambda `dotnet8`/`dotnet10` with the fix (e2e).
 
 ```csharp
 // D4: trust only your private CA for this client (.NET 7+). Unchanged by PQ.
@@ -239,38 +240,12 @@ handler.SslOptions.CertificateChainPolicy = new X509ChainPolicy
 };
 ```
 
-```csharp
-// D3: validation callback that keeps host-name checks and builds the chain against your CA. Unchanged by PQ.
-var handler = new HttpClientHandler
-{
-    ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) =>
-    {
-        if (cert is null || (errors & SslPolicyErrors.RemoteCertificateNameMismatch) != 0) return false;
-        using var c = new X509Chain { ChainPolicy = { TrustMode = X509ChainTrustMode.CustomRootTrust, CustomTrustStore = { ca } } };
-        return c.Build(cert);
-    }
-};
-```
-
-```dockerfile
-# D5: private CA in the system store
-# Debian/Ubuntu (resolute):
-COPY ca.crt /usr/local/share/ca-certificates/corp-ca.crt
-RUN update-ca-certificates
-# Alpine:
-RUN apk add --no-cache ca-certificates
-COPY ca.crt /usr/local/share/ca-certificates/corp-ca.crt
-RUN update-ca-certificates
-# Amazon Linux 2023:
-COPY ca.crt /etc/pki/ca-trust/source/anchors/corp-ca.crt
-RUN update-ca-trust
-```
+System store per OS family: Debian/Ubuntu `COPY ca.crt /usr/local/share/ca-certificates/corp-ca.crt` + `RUN update-ca-certificates`; Alpine the same after `apk add --no-cache ca-certificates`; AL2023 `COPY ca.crt /etc/pki/ca-trust/source/anchors/corp-ca.crt` + `RUN update-ca-trust`.
 
 Notes for this case:
 
-- **Pitfall found while testing:** `X509Certificate2.CreateFromPemFile("ca.crt")` with no key path throws `CryptographicException: The key contents do not contain a PEM...`, because it looks for a private key in the same file. Load a CA with `X509Certificate2.CreateFromPem(File.ReadAllText(path))` or `X509CertificateLoader` (.NET 9+). This is not PQ-related but appears when teams add custom trust code.
-- **Callbacks that return `true`:** they hide trust errors; PQ does not change them, but the CI check below warns on them.
-- **Certificate pinning:** see case I.
+- **Pitfall found while testing:** `X509Certificate2.CreateFromPemFile("ca.crt")` with no key path throws `CryptographicException: The key contents do not contain a PEM...`, because it looks for a private key in the same file. Load a CA with `X509Certificate2.CreateFromPem(File.ReadAllText(path))` or `X509CertificateLoader` (.NET 9+). Not PQ-related, but it appears when teams add custom trust code.
+- **Callbacks that return `true`:** they hide trust errors; PQ does not change them, but the CI check warns on them.
 
 ### E. Mutual TLS (client certificates)
 
@@ -287,10 +262,10 @@ Notes for this case:
 | E2 | `SocketsHttpHandler.SslOptions.ClientCertificates` from a PEM pair (`CreateFromPemFile(crt, key)`) | PQ + classical | PQ + classical | PQ + classical | PQ + classical | Classical only |
 | E3 | Client cert from `X509Store` CurrentUser/My | PQ + classical | PQ + classical | PQ + classical | PQ + classical | Classical only |
 | E4 | Kestrel `ClientCertificateMode.RequireCertificate` + `ClientCertificateValidation` with `CustomTrustStore`; `s_client -cert` | PQ + classical, app sees `CN=pq-client` | Same | Same | Same | Classical only |
-| E5 | Same server, client sends no cert | Handshake completes (PQ group shown), request refused, no response | Same | Same | Same | Same (classical) |
+| E5 | Same server, client sends no cert | Handshake completes (PQ group shown), request refused | Same | Same | Same | Same (classical) |
 | E6 | Same server, cert from another CA | Request refused | Same | Same | Same | Same (classical) |
 
-Servers in E0–E3: `openssl s_server -Verify 1 -CAfile ca.crt -verify_return_error`, PQ-only and classical-only. All 70 results as expected (Tested, `results-v2.txt`).
+Servers in E0–E3: `openssl s_server -Verify 1 -CAfile ca.crt -verify_return_error`, PQ-only and classical-only. All 70 results as expected (Tested, `results-v2.txt`). E1 to E3 were repeated in e2e on Lambda and Fargate, E3 also on EC2 (E3 on Lambda: see the `X509Store on Lambda` note in case C).
 
 ```csharp
 // E4: Kestrel requires and verifies client certificates against your CA. Unchanged by PQ.
@@ -302,174 +277,176 @@ builder.WebHost.ConfigureKestrel(k => k.ConfigureHttpsDefaults(https =>
         using var c = new X509Chain();
         c.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
         c.ChainPolicy.CustomTrustStore.Add(clientCa);
-        c.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck; // or Online with a reachable CRL/OCSP
         return c.Build(cert);
     };
 }));
 ```
 
-In TLS 1.3 a refused client certificate shows up after the handshake (the server sends an alert and closes). Logs that count "handshake succeeded" will count E5/E6 as handshakes; count HTTP results instead.
+In TLS 1.3 a refused client certificate shows up after the handshake (the server sends an alert and closes). Logs that count "handshake succeeded" count E5/E6 as handshakes; count HTTP results instead.
 
 ### F. Explicit TLS settings that block PQ
 
 - **Who this is:** code or config that sets protocols or ciphers. Find it with the CI check (`check-dotnet-pq.sh`, full file at the end) or:
   `grep -rnE "SslProtocols|EnabledSslProtocols|CipherSuitesPolicy|TlsVersion=|SecurityProtocol" --include=*.cs --include=*.json --include=*.config .`
-- **What happens today:**
 
 | # | Setting | Result | Evidence |
 | --- | --- | --- | --- |
-| F1 | Client `SslOptions.EnabledSslProtocols = SslProtocols.Tls12` | PQ-only server refuses (`protocol version` alert); classical works | Tested, all 5 images |
+| F1 | Client `SslOptions.EnabledSslProtocols = SslProtocols.Tls12` | PQ-only server refuses (`protocol version` alert); classical TLS 1.2 works | Tested, all 5 images; e2e on Lambda `dotnet10` and Fargate `10.0-resolute` |
+| F1b | Client `Tls12 \| Tls13` | PQ | Tested (e2e `dotnet-lambda-dotnet10-tls12-tls13`) |
 | F2 | Client `CipherSuitesPolicy` with TLS 1.3 AES-GCM suites only | PQ still works; groups are separate from cipher suites | Tested, 4 PQ images |
 | F3 | Kestrel `SslProtocols = Tls12` | PQ clients refused (`protocol version`) | Tested, all 5 images |
-| F3b | Same, with an EC certificate, client offering only X25519 | Refused (`handshake failure`). In TLS 1.2 the client's group list also limits the ECDSA cert curve; with `X25519:P-256` it connects, and an RSA cert works with X25519 only | Tested (`run-f3.sh`, `results-f3.txt`, 10.0-alpine) |
+| F3b | Same, EC certificate, client offering only X25519 | Refused (`handshake failure`): in TLS 1.2 the client's group list also limits the ECDSA cert curve; with `X25519:P-256` it connects; an RSA cert works with X25519 only | Tested ([run-f3.sh](REPO/tests/deep/dotnet/v2/run-f3.sh), `results-f3.txt`, 10.0-alpine) |
 | F4 | Kestrel `CipherSuitesPolicy` (via `OnAuthenticate`) TLS 1.3 AES-GCM only | PQ + classical | Tested, 4 PQ images |
 | F5 | `CipherSuitesPolicy` on Windows | Throws `NotSupportedException` | [Documented](https://learn.microsoft.com/en-us/dotnet/core/extensions/sslstream-best-practices) |
 | F6 | MySqlConnector `TlsVersion=TLS 1.2`, Redis `SslProtocols=Tls12`, `ServicePointManager.SecurityProtocol = Tls12` | Same effect as F1 | Documented (source code); not run |
 
 - **What to change:** remove the protocol setting (`SslProtocols.None` = OS default, Microsoft's [recommendation](https://learn.microsoft.com/en-us/dotnet/core/extensions/sslstream-best-practices)) or use `Tls12 | Tls13`. In `appsettings.json` use `"SslProtocols": [ "Tls12", "Tls13" ]` or drop the key. A `CipherSuitesPolicy` can stay if it lists TLS 1.3 suites.
-- **Side effects:** allowing TLS 1.3 may change which cipher suite is used; check any compliance rule that named TLS 1.2 suites.
+- **Side effects:** allowing TLS 1.3 may change the cipher suite; check any compliance rule that names TLS 1.2 suites.
 
 ### G. FIPS mode
 
-- .NET has no FIPS switch of its own on Linux; it uses whatever OpenSSL provider is active. On AL2023 in FIPS mode use `update-crypto-policies --set FIPS:PQ`, which AWS documents as enabling ML-KEM hybrids under the FIPS policy ([AL2023](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html)). Documented; not run here (no FIPS-enabled host).
-- Do not use the kit `openssl-pq.cnf` on a FIPS host: it re-includes the current policy file, but whether the FIPS provider stays active with it was not tested. Use `FIPS:PQ` instead.
-- Windows legacy FIPS mode (`FipsAlgorithmPolicy`): Microsoft says the ML-KEM groups are not available. Documented ([FAQ](https://techcommunity.microsoft.com/t5/post-quantum-crypto-tech-blog/windows-tls-1-3-and-post-quantum-crypto-faq/ba-p/4556389)).
-- Lambda has no FIPS mode switch for the managed runtime; FIPS endpoints (`*-fips`) are a separate AWS topic (AWS service endpoints tab).
+- .NET has no FIPS switch of its own on Linux; it uses whatever OpenSSL provider is active. On AL2023 in FIPS mode use `update-crypto-policies --set FIPS:PQ`, which AWS documents as enabling ML-KEM hybrids under the FIPS policy ([AL2023](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html)). Documented; not run (no FIPS-enabled host).
+- Don't use the kit `openssl-pq.cnf` on a FIPS host: whether the FIPS provider stays active with it was not tested. Use `FIPS:PQ`.
+- Windows legacy FIPS mode (`FipsAlgorithmPolicy`): the ML-KEM groups are not available (Documented: [supported groups](https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-supported-groups-in-windows-11-24h2-and-later)).
+- Lambda has no FIPS switch for the managed runtime; FIPS endpoints (`*-fips`) are a separate topic (AWS service endpoints chapter).
 
 ### H. Libraries with their own TLS stack
 
+- **Confluent.Kafka (librdkafka).** Ships its own statically linked OpenSSL, so the OS image, crypto policy and `OPENSSL_CONF` don't apply (whether it reads `OPENSSL_CONF` is not confirmed); `ssl.curves.list` controls the groups. Tested on `aspnet:8.0` (Debian 12, OS OpenSSL 3.0): librdkafka 2.16.0 logged `Using statically linked OpenSSL version OpenSSL 3.5.8`. The saved output was cut before the handshake line, so the PQ result itself, and the `ssl.curves.list=X25519` negative, are not in the record: Unverified until rerun. Ubuntu 24.04 was not run. On `10.0-alpine` it failed to load its native library (`DllNotFoundException`), a packaging issue not investigated. librdkafka's changelog says it bundles OpenSSL 3.5.x from 2.14.2 (Documented, [changelog](https://github.com/confluentinc/librdkafka/blob/master/CHANGELOG.md)); upgrade below that.
+
 ``` csharp
-// Confluent.Kafka: PQ by default with librdkafka >= 2.14.2 (bundled OpenSSL 3.5.x).
-// Pin the order explicitly if you want it visible in config reviews.
+// Confluent.Kafka: pin the group order explicitly so it is visible in config reviews.
 var cfg = new ProducerConfig { BootstrapServers = brokers, SecurityProtocol = SecurityProtocol.Ssl };
 cfg.Set("ssl.curves.list", "X25519MLKEM768:X25519:P-256");
 ```
 
-- **Confluent.Kafka details.** librdkafka bundled OpenSSL 3.0.x up to 2.14.1 and 3.5.x from 2.14.2 ([changelog](https://github.com/confluentinc/librdkafka/blob/master/CHANGELOG.md)); upgrade below that. Its bundled OpenSSL doesn't use the OS library, so the OS crypto policy and image don't apply (whether it reads `OPENSSL_CONF` is not confirmed); control it with `ssl.curves.list`. Setting it to `X25519` made the PQ-only handshake fail (Tested), which proves the setting is honoured. On Alpine the package failed to load its native library (`DllNotFoundException`); that is packaging, not TLS, and wasn't investigated.
-
-- **macOS developer machines.** .NET uses Apple's TLS there. AWS says PQ needs .NET 10 with the Network.framework opt-in ([AWS](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html), [Microsoft](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/libraries#tls-13-for-macos-client)). Not tested here.
-
-- **Confluent.Kafka (librdkafka):** bundles OpenSSL 3.5.8 from 2.14.2, so it is PQ even on Debian 12 and Ubuntu 24.04 images, and ignores `OPENSSL_CONF`. Tested (v1).
-- **Grpc.Core (legacy, BoringSSL):** out of support; migrate to `Grpc.Net.Client`, which uses `HttpClient`.
+- **Grpc.Core (legacy, BoringSSL):** out of support; migrate to `Grpc.Net.Client`.
 - **Microsoft.Data.SqlClient, Oracle.ManagedDataAccess:** believed to use `SslStream` on Linux and so follow the OS. Unverified (not tested, source not checked).
-- **APM agents (OpenTelemetry exporters, Datadog, New Relic .NET agents):** export over `HttpClient` or gRPC .NET; they follow the OS. Not tested; Unverified.
-- **Shelling out to `curl`, `git`, `wget`:** Alpine and resolute curl use OpenSSL 3.5 (PQ). GnuTLS builds (Debian 13, Ubuntu 26.04 `git`'s libcurl-gnutls) have no ML-KEM (lead's finding). Check `curl -V`.
+- **APM agents (OpenTelemetry exporters, Datadog, New Relic):** export over `HttpClient` or gRPC .NET, so they should follow the OS. Unverified.
+- **Shelling out to `curl`, `git`, `wget`:** Alpine and resolute curl use OpenSSL 3.5 (PQ). GnuTLS builds (Debian 13, Ubuntu 26.04 `git`'s libcurl-gnutls) have no ML-KEM (lead's finding, not rerun here). Check `curl -V`.
+- **macOS developer machines:** Apple TLS. AWS says PQ needs .NET 10 with the Network.framework opt-in ([AWS](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html), [Microsoft](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/libraries#tls-13-for-macos-client)). Documented; not tested.
 
 ### I. Pinning, HSM/PKCS#11, TPM and KMS-backed keys
 
-- **Certificate or public-key pinning** (callback comparing `GetPublicKeyString()` or a SPKI hash): unaffected. PQ key exchange does not change the server certificate or its key. Pins break only when the certificate changes, for example a later move to ML-DSA certificates. Reasoning from the TLS 1.3 design, consistent with case C/D tests; no pinning test run.
-- **Keys in an HSM or TPM on Linux:** .NET 9+ can open a key through an OpenSSL provider with `SafeEvpPKeyHandle.OpenKeyFromProvider` (for example a PKCS#11 or TPM2 provider) ([API](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.safeevppkeyhandle.openkeyfromprovider)). Key exchange is still done in software by OpenSSL, so PQ applies the same way. Using such a key as a Kestrel certificate key was not tested; not confirmed.
-- **Windows CNG / smart-card / HSM keys via the certificate store:** Schannel uses them for signing; group choice is the machine curve order. Documented in principle; not tested.
-- **AWS KMS asymmetric keys:** .NET has no built-in way to use a KMS key as a TLS private key. Use ACM certificates on the load balancer, or ACM exportable certificates. The calls to KMS itself are PQ when the client is (AWS service endpoints tab).
+- **Certificate or public-key pinning** (comparing `GetPublicKeyString()` or a SPKI hash): unaffected; PQ key exchange does not change the server certificate. Pins break only when the certificate changes, for example a later move to ML-DSA. Reasoning from the TLS 1.3 design, consistent with cases C/D; no pinning test run.
+- **Keys in an HSM or TPM on Linux:** .NET 9+ can open a key through an OpenSSL provider with `SafeEvpPKeyHandle.OpenKeyFromProvider` ([API](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.safeevppkeyhandle.openkeyfromprovider)). Key exchange is still done in software by OpenSSL, so PQ applies the same way. Using such a key as a Kestrel certificate key was not tested.
+- **Windows CNG / smart-card / HSM keys:** Schannel uses them for signing; group choice is the machine curve order. Not tested.
+- **AWS KMS asymmetric keys:** .NET has no built-in way to use a KMS key as a TLS private key. Use ACM certificates on the load balancer, or ACM exportable certificates. Calls to KMS itself are PQ when the client is.
 
 ### J. Other cases
 
-- **HTTPS proxy (`HTTPS_PROXY`):** `HttpClient` opens a CONNECT tunnel and does TLS end to end with the target, so the target's group applies. A TLS-intercepting proxy terminates TLS; then the proxy's TLS stack decides (Network devices and egress tab). Not tested here.
-- **HTTP/2 and gRPC servers:** same Kestrel TLS path as case B. The v1 test endpoint had `Http1AndHttp2` enabled and negotiated PQ; no HTTP/2 or gRPC request was made, so the HTTP/2 path itself is Unverified.
+- **HTTPS proxy (`HTTPS_PROXY`):** `HttpClient` opens a CONNECT tunnel and does TLS end to end with the target, so the target's group applies. A TLS-intercepting proxy terminates TLS and its stack decides (Network devices and egress chapter). Not tested.
 - **WebSockets (`ClientWebSocket`, SignalR):** use `SocketsHttpHandler`; same as case A. Not run.
-- **Service mesh sidecar (Istio, Linkerd, App Mesh Envoy):** if the app talks plain HTTP to the sidecar, the sidecar decides (Service mesh tab), and app-level changes don't matter for that leg.
-- **Windows hosts (IIS, HTTP.sys, Kestrel, .NET Framework):**
-
-    **Windows (IIS, HTTP.sys, Kestrel and HttpClient all use Schannel):**
+- **Service mesh sidecar (Istio, Linkerd, Envoy):** if the app talks plain HTTP to the sidecar, the sidecar decides that leg (Service mesh chapter).
+- **Lambda `pq-egress` extension:** the function sends plain HTTP to `http://127.0.0.1:2779/<route>/<path>` and the extension (Go) makes the PQ connection. An interim option when the function cannot be rebuilt soon (Tested, e2e `*-extension`, `*-combined`; not tested with AWS SDK calls). Compute chapter.
+- **Windows hosts (IIS, HTTP.sys, Kestrel, `HttpClient`, .NET Framework):** all use Schannel.
 
     ``` powershell
-    # Windows Server 2025 with KB5099536 (2026-07-14) or later; Windows 11 24H2/25H2 with KB5089573 or later
+    # Windows Server 2025 / Windows 11 24H2+, July 2026 cumulative update or later
     Enable-TlsEccCurve -Name 'X25519_MLKEM768' -Position 0
     Get-TlsEccCurve
     ```
 
-    - **Group Policy route:** Computer Configuration \> Administrative Templates \> Network \> SSL Configuration Settings \> **ECC Curve Order**, with `X25519_MLKEM768` first. A GPO overrides the cmdlet, and Microsoft says a new order takes effect on the next reboot ([Manage TLS](https://learn.microsoft.com/en-us/windows-server/security/tls/manage-tls), [Windows PQC FAQ](https://techcommunity.microsoft.com/t5/post-quantum-crypto-tech-blog/windows-tls-1-3-and-post-quantum-crypto-faq/ba-p/4556389)).
-
-    - **Limits:** the ML-KEM groups are TLS 1.3 only, disabled by default, and not available in legacy FIPS mode ([supported groups](https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-supported-groups-in-windows-11-24h2-and-later)).
-
-    - **.NET version on Windows:** AWS lists PQ on Windows from .NET 10. Whether .NET 8 on a patched Windows picks up the group is not confirmed.
-
-- **macOS developer machines:** Apple TLS; PQ needs .NET 10 with the Network.framework opt-in (see the bullet moved under H). Not tested.
+    - **Status:** Microsoft announced Schannel hybrid ML-KEM as GA in Windows 11 and Windows Server 2025 on 2026-07-14, disabled by default ([post](https://techcommunity.microsoft.com/blog/post-quantum-crypto-tech-blog/asp-net-kestrel-and-schannel-ga-with-tls-1-3-post-quantum-cryptography/4536649)). The Server 2025 update is KB5099536 (2026-07-14) per secondary sources; the Windows 11 KB number is not confirmed here. Microsoft's supported-groups page (updated 2026-10-20) still names Insider builds as the minimum, so check your build before relying on it. Not sure which statement is current.
+    - **Group Policy route:** Computer Configuration > Administrative Templates > Network > SSL Configuration Settings > **ECC Curve Order**, `X25519_MLKEM768` first. A GPO overrides the cmdlet; a new order takes effect after reboot ([Manage TLS](https://learn.microsoft.com/en-us/windows-server/security/tls/manage-tls)).
+    - **Limits:** TLS 1.3 only, disabled by default, not available in legacy FIPS mode ([supported groups](https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-supported-groups-in-windows-11-24h2-and-later)).
+    - **.NET version:** AWS lists PQ on Windows from .NET 10. Whether .NET 8 or .NET Framework on a patched host picks up the group is not confirmed (Schannel is machine-wide, so it is likely; Unverified).
 
 ## Solution and automation
 
-1. **Inventory.** Per repo: base image tag (`grep -rn "^FROM" Dockerfile*`), target framework (`grep -rn "<TargetFramework" --include=*.csproj`), Lambda runtime (`Runtime: dotnet8` in SAM/CFN, `runtime = "dotnet8"` in Terraform), and the blockers in case F (`check-dotnet-pq.sh`). Per running container: `cat /etc/os-release; openssl version` (chiseled images: inspect the tag).
-2. **Change, per compute type.**
+1. **Inventory.** Per repo: base image (`grep -rn "^FROM" Dockerfile*`), target framework (`grep -rn "<TargetFramework" --include=*.csproj`), Lambda runtime (`Runtime: dotnet8` in SAM/CFN, `runtime = "dotnet8"` in Terraform), and the case F blockers (`check-dotnet-pq.sh`). Per running container: `cat /etc/os-release; openssl version` (chiseled images have no shell: check the tag).
+2. **Change, per compute type:** the row in Quick start. Details:
+    - **Lambda zip:** add `pq-tls/openssl-pq.cnf` with `CopyToPublishDirectory` so it lands at `/var/task/pq-tls/openssl-pq.cnf`; set `OPENSSL_CONF` in SAM, CloudFormation or Terraform. If the function already sets `OPENSSL_CONF`, merge and review rather than overwrite.
+    - **Lambda Native AOT:** same file and variable. Build on AL2023 so glibc matches.
+    - **Containers:** prefer `aspnet:10.0-alpine`, `10.0-resolute` or `10.0-resolute-chiseled` (no variable needed). For .NET 8 on glibc: AL2023 base + config file + `ENV OPENSSL_CONF`. Pin the image by digest.
+    - **EC2 AL2023:** SSM document running `update-crypto-policies --set DEFAULT:PQ` then restarting services, or `Environment=OPENSSL_CONF=...` in one service's systemd unit.
+    - **EC2 Windows:** July 2026 cumulative update or later, then `Enable-PqTls.ps1` through SSM Run Command (or the GPO), reboot.
 
-    1.  **Lambda zip (dotnet8, dotnet10).** Add `pq-tls/openssl-pq.cnf` to the project with `CopyToPublishDirectory` so it lands at `/var/task/pq-tls/openssl-pq.cnf`. Set `OPENSSL_CONF` to that path in SAM, CloudFormation or Terraform. If the function already sets `OPENSSL_CONF`, don't overwrite it; merge and review.
-
-    2.  **Lambda container image.** `COPY` the file and set `ENV OPENSSL_CONF=...` on top of `public.ecr.aws/lambda/dotnet:10` (or `:8`).
-
-    3.  **Lambda Native AOT (`provided.al2023`).** Same file and env var. AOT doesn't bundle OpenSSL; it loads the runtime's `libssl.so.3` (Tested). Build on AL2023 so glibc matches.
-
-    4.  **Fargate, ECS, EKS.** Preferred: switch `FROM` to `aspnet:10.0-alpine`, `10.0-resolute` or `10.0-resolute-chiseled`; no env var needed. For .NET 8 on glibc: AL2023 base + config file + `ENV OPENSSL_CONF`. Pin the image by digest.
-
-    5.  **EC2 Linux (AL2023).** Whole host: an SSM document runs `update-crypto-policies --set DEFAULT:PQ`, then restarts services. One service only: `Environment=OPENSSL_CONF=...` in its systemd unit.
-
-    6.  **EC2 Windows.** Install the July 2026 cumulative update or later, then run `Enable-PqTls.ps1` through SSM Run Command, or set the GPO, and reboot.
-
-    The Dockerfiles, csproj files, SAM, CloudFormation, Terraform, ECS task definition, EKS manifest, systemd unit, SSM documents and PowerShell script are in Full configuration files below.
-
-3. **CI guardrail.** Run `check-dotnet-pq.sh` (full file at the end) in every pipeline. It fails the build on `SslProtocols` pinned to TLS 1.2 or lower without `Tls13`, `appsettings` `SslProtocols` arrays without `Tls13`, MySqlConnector `TlsVersion=TLS 1.2`, `ServicePointManager.SecurityProtocol` without `Tls13`/`SystemDefault`, and base images with OpenSSL below 3.5 (`aspnet:8.0`, `10.0`, `-noble`, `-jammy`, `-bookworm-slim`, `-azurelinux3.0`). It warns on `CipherSuitesPolicy`, `ssl.curves.list`, `Grpc.Core`, `OPENSSL_CONF` and disabled certificate validation. Tested on bad and good fixtures (`deep/dotnet/v2/ci/fixtures`): exit 1 with 4 findings on bad, exit 0 on good.
-4. **Fleet rollout.**
-    1. Canary one service per compute type (one Lambda, one ECS service, one EC2 host). Deploy the image or env-var change only, no app code.
-    2. Watch error rate and TLS failures for 24 h; check CloudTrail `tlsDetails.keyExchange` for KMS/STS/Secrets Manager calls from that role (expect `X25519MLKEM768`).
-    3. Roll by wave (10%, 50%, 100%) through the normal deployment pipeline; ECS/EKS rolling updates, Lambda alias weights.
-    4. Rollback = remove `OPENSSL_CONF`, revert the `FROM` line, or `update-crypto-policies --set DEFAULT`. No certificate or store to roll back, because none changed.
+    Dockerfiles, csproj files, SAM, CloudFormation, Terraform, ECS task definition, EKS manifest, systemd unit, SSM documents and the PowerShell script are in Full configuration files and [configs/dotnet/](REPO/configs/dotnet/).
+3. **CI guardrail.** Run [check-dotnet-pq.sh](REPO/configs/dotnet/tools/check-dotnet-pq.sh) in every pipeline. It fails on `SslProtocols` pinned to TLS 1.2 or lower without `Tls13` (code and `appsettings`), MySqlConnector `TlsVersion=TLS 1.2`, `ServicePointManager.SecurityProtocol` without `Tls13`/`SystemDefault`, and base images with OpenSSL below 3.5 (`aspnet:8.0`, `10.0`, `-noble`, `-jammy`, `-bookworm-slim`, `-azurelinux3.0`). It warns on `CipherSuitesPolicy`, `ssl.curves.list`, `Grpc.Core`, `OPENSSL_CONF` and disabled certificate validation. Tested on fixtures (`tests/deep/dotnet/v2/ci/fixtures`): bad tree exit 1 with 4 findings, good tree exit 0.
 
 ## How to test
 
-1. **Posture.** In the image or host: `cat /etc/os-release; openssl version` (3.5 or later needed). AL2023: `echo $OPENSSL_CONF` or `update-crypto-policies --show` (`DEFAULT:PQ`). Repo: `sh check-dotnet-pq.sh .` exits 0.
-2. **Start the harness.** One container runs four OpenSSL 3.5 servers with your private CA's certificate: PQ-only (8443), classical-only (8444), and the same two requiring a client certificate (8445, 8446). See `run-cases.sh` (the `dotnet2-tools` container).
-3. **Client tests (cases A, D, E, F).** Run your app's own HTTP call, or the probe `kclient.dll`, against all four ports. Pass = PQ-only and classical-only both return 200; with mTLS, the cert-required ports return 200 only with your client certificate. Script: `client-cases.sh` (runs D0–D5, E0–E3, F1–F2).
+1. **Posture.** Image or host: `cat /etc/os-release; openssl version` (3.5+ needed). AL2023: `echo $OPENSSL_CONF` or `update-crypto-policies --show` (`DEFAULT:PQ`). Windows: `Get-TlsEccCurve` lists `X25519_MLKEM768` first. Repo: `sh check-dotnet-pq.sh .` exits 0.
+2. **Harness.** One container runs four OpenSSL 3.5 servers with your private CA's certificate: PQ-only (8443), classical-only (8444), and the same two requiring a client certificate (8445, 8446). See `run-cases.sh` (Full configuration files).
+3. **Client tests (cases A, D, E, F).** Run your app's own call, or the probe `kclient.dll`, against all four ports. Pass = PQ-only and classical-only both return 200; the cert-required ports return 200 only with your client certificate. Script: `client-cases.sh`.
 4. **Server tests (cases B, C, E, F).** Start your Kestrel service with its real certificate config, then from an OpenSSL 3.5 container:
 
 ```bash
 printf 'GET / HTTP/1.1\r\nHost: api.internal\r\nConnection: close\r\n\r\n' | \
   openssl s_client -connect api.internal:8443 -servername api.internal -groups X25519MLKEM768 -tls1_3 \
-  -CAfile ca.crt -verify_return_error -brief -ign_eof   # expect: Negotiated TLS1.3 group: X25519MLKEM768 and your response
+  -CAfile ca.crt -verify_return_error -brief -ign_eof   # expect: Negotiated TLS1.3 group: X25519MLKEM768
 # fallback: same with -groups X25519 (and no -tls1_3): must also succeed
 # mTLS: add -cert client.crt -key client.key; without them the request must be refused
 # every SNI name you serve: repeat with each -servername
 ```
 
-5. **Negative control.** Run the same tests on the old image (or without `OPENSSL_CONF`): PQ-only must fail and classical must pass. This proves the test can tell the difference.
-6. **In the cloud.** CloudTrail `tlsDetails.keyExchange` for KMS, STS, IAM, Secrets Manager, ACM calls from the service role; load balancer or front-door logs for inbound legs (their tabs). .NET itself doesn't expose the negotiated group (`ITlsHandshakeFeature` shows protocol and cipher only).
-7. **Rollback test.** Remove the env var or revert the image in a canary and rerun step 3: PQ-only fails again, classical still passes.
+5. **Negative control.** Same tests on the old image or without `OPENSSL_CONF`: PQ-only must fail, classical must pass. This proves the test can tell the difference.
+6. **In the cloud.** .NET doesn't expose the negotiated group (`ITlsHandshakeFeature` shows protocol and cipher only), so app logs can't prove PQ. Use CloudTrail `tlsDetails.keyExchange` for KMS, STS, IAM, Secrets Manager and ACM calls from the service role (expect `X25519MLKEM768`), the database or server side, or load balancer and front-door logs (their chapters).
+7. **Rollback test.** Remove the variable or revert the image in a canary and rerun step 3: PQ-only fails again, classical still passes.
 
-**Reference checks**
+## Rollout checklist
 
-- **Posture (Linux image or host):** `cat /etc/os-release`; `openssl version` where present (chiseled images have no shell: check the base tag). OpenSSL below 3.5 = not PQ. On AL2023 also check `echo $OPENSSL_CONF` or `update-crypto-policies --show` (expect `DEFAULT:PQ`).
-
-- **Posture (code and config):** search for `SslProtocols.Tls12`, `EnabledSslProtocols`, `"SslProtocols"` in `appsettings*.json`, `TlsVersion=` in MySQL connection strings, `SslProtocols=` in Redis strings, and `Grpc.Core` package references.
-
-- **Posture (Windows):** `Get-TlsEccCurve` lists `X25519_MLKEM768` first; `Get-HotFix` shows the July 2026 update or later.
-
-- **Live client test:** run the app's call against a server started with `openssl s_server -groups X25519MLKEM768 -tls1_3 -www`; it must succeed. Against `-groups X25519` it must also succeed (fallback). Probe used here: `deep/dotnet/client/Program.cs`.
-
-- **Live server test:** `openssl s_client -connect host:8443 -groups X25519MLKEM768 -tls1_3 -brief` prints `Negotiated TLS1.3 group: X25519MLKEM768`; with `-groups X25519` it must still connect. Or `curl --curves X25519MLKEM768 https://host:8443/` with curl built on OpenSSL 3.5 (Tested against Kestrel on Alpine).
-
-- **Observed signal:** .NET doesn't expose the negotiated group (`ITlsHandshakeFeature` shows only protocol and cipher), so app logs can't prove PQ. Use CloudTrail `tlsDetails.keyExchange` for calls to KMS, STS, IAM, Secrets Manager and ACM (expect `X25519MLKEM768`), the database server side, or the load balancer and front-door logs (see their tabs).
+| # | Step | Done when |
+| --- | --- | --- |
+| 1 | Inventory every .NET workload: compute, image tag or Lambda runtime, target framework, `OPENSSL_CONF` already set, Windows hosts | One row per service |
+| 2 | Add `check-dotnet-pq.sh` to CI in warn mode, then fail mode | Pipelines green with no TLS 1.2 pins |
+| 3 | Remove `SslProtocols`/`TlsVersion` TLS 1.2 caps (case F) | Grep and CI clean |
+| 4 | Pick the fix per row of Quick start; for Lambda `dotnet8` also schedule the move to `dotnet10` (blocked from 2027-07-29 create, 2027-08-31 update) | Plan per service |
+| 5 | Lambda code that opens an `X509Store`: add the `HOME=/tmp` exec wrapper, or load the PFX/PEM directly | Client-cert call works with the fix on |
+| 6 | Musl check before moving to Alpine: native packages (Confluent.Kafka), ICU, DNS. Use `10.0-resolute` if any fail | Service tests pass on the new image |
+| 7 | Canary one service per compute type with the image or variable change only, no app code | Harness: PQ-only and classical both pass |
+| 8 | Watch 24 h: error rate, TLS failures, CloudTrail `tlsDetails.keyExchange` for the role | `X25519MLKEM768` seen, no new errors |
+| 9 | Roll out in waves (10%, 50%, 100%): ECS/EKS rolling updates, Lambda alias weights, SSM rate control for EC2 | All services PQ |
+| 10 | Windows: patch, enable the group by GPO or SSM, reboot in maintenance windows | `Get-TlsEccCurve` shows it first |
+| 11 | Keep the rollback ready (next section) and test it once in the canary | PQ-only fails again after rollback |
 
 ## Pitfalls and rollback
 
-- **Default image tags are not PQ.** `8.0` (Debian 12) and `10.0` (Ubuntu 24.04) ship OpenSSL 3.0; Azure Linux 3.0 ships 3.3. No env var fixes OpenSSL below 3.5, and `DOTNET_OPENSSL_VERSION_OVERRIDE` can only pick a libssl that is installed. Change the image.
-
-- **The kit config file is AL2023-only.** It includes `/etc/crypto-policies/...`, which doesn't exist on Debian, Ubuntu or Alpine. Don't copy it into other images.
-
-- **`OPENSSL_CONF` replaces the system config.** The kit file re-includes the AL2023 policy so other settings stay; a hand-written file that doesn't can drop provider or FIPS settings.
-
-- **TLS 1.2 pins.** `SslProtocols.Tls12` anywhere (handler, Kestrel, MySQL `TlsVersion`, Redis `SslProtocols`) disables PQ without an error against servers that also accept 1.2.
-
-- **Alpine is musl.** Test native dependencies (Confluent.Kafka failed to load its native library here), ICU/globalization and DNS behaviour before switching. `10.0-resolute` is the glibc alternative.
-
-- **Classical servers keep working.** Every PQ client in the tests still connected to the X25519-only server, so the change is low risk for outbound calls.
-
-- **Windows:** the group order is machine-wide; a GPO "ECC Curve Order" overrides local cmdlet changes, and the policy takes effect on reboot.
-
-- **Rollback:** remove the `OPENSSL_CONF` env var (Lambda, ECS, systemd) or run `update-crypto-policies --set DEFAULT`; revert the `FROM` line; on Windows run `Disable-TlsEccCurve -Name 'X25519_MLKEM768'` (or remove it from the GPO) and reboot.
-
-- **Debian 12 and Ubuntu 24.04 images hide the problem in tests that only use classical servers.** Every certificate and trust case passed classically there (Tested). Always test against a PQ-only server.
+- **Default image tags are not PQ.** `8.0` (Debian 12), `10.0` (Ubuntu 24.04) and `-noble` ship OpenSSL 3.0; Azure Linux 3.0 ships 3.3. No variable fixes OpenSSL below 3.5. Change the image.
+- **Tests against classical servers hide the problem.** Every certificate and trust case passed classically on Debian 12 (Tested). Always test against a PQ-only server.
+- **The kit config file is AL2023-only.** It includes `/etc/crypto-policies/...`, which doesn't exist on Debian, Ubuntu or Alpine.
+- **`OPENSSL_CONF` replaces the system config.** The kit file re-includes the AL2023 policy; a hand-written file that doesn't can drop provider or FIPS settings.
+- **The kit config file adds ML-KEM, not ML-DSA.** With it, ML-DSA-only servers still fail (Tested, e2e). Hosts that need ML-DSA certificates should use `DEFAULT:PQ` or a native OpenSSL 3.5 image.
+- **TLS 1.2 pins** (handler, Kestrel, MySQL `TlsVersion`, Redis `SslProtocols`) disable PQ without an error against servers that also accept 1.2. A TLS 1.2-only Kestrel with an EC certificate also refused clients whose group list lacks P-256 (F3b).
+- **Alpine is musl.** Test native dependencies (Confluent.Kafka failed to load here), ICU and DNS before switching; `10.0-resolute` is the glibc alternative.
+- **`X509Store` on Linux** lives under `$HOME`; a read-only root filesystem, a new container or Lambda loses it unless mounted, re-imported or `HOME` is writable (case C).
 - **`CreateFromPemFile(caPath)` with one argument throws for a CA-only file.** Use `CreateFromPem(File.ReadAllText(path))` (Tested).
-- **TLS 1.2-only Kestrel with an EC certificate** refused clients whose group list lacks P-256 (Tested, F3b). One more reason to allow TLS 1.3.
-- **Kestrel `X509Store` certificates on Linux** live in the user's home directory; a read-only root filesystem or a new container loses them unless mounted or re-imported. Not PQ-related.
-- **Alpine CA install** may need `apk add ca-certificates` before `update-ca-certificates`.
-- **.NET 8 and 9 are out of support since 2026-11-10.** The PQ fix works on .NET 8, but plan the move to .NET 10 ([Microsoft](https://devblogs.microsoft.com/dotnet/dotnet-8-9-end-of-support/)).
+- **Windows:** the group order is machine-wide; a GPO overrides local cmdlet changes, and changes take effect after reboot.
+- **Classical servers keep working.** Every PQ client in the tests still connected to X25519-only and TLS 1.2-only servers, so the change is low risk for outbound calls.
+
+**Rollback**, per compute type; no certificate or store to roll back, because none changed:
+
+| Compute | Rollback |
+| --- | --- |
+| Lambda zip / AOT | Remove `OPENSSL_CONF` (layer: `PQ_TLS_DISABLE=1`), or shift the alias back |
+| Lambda image | Redeploy the previous image |
+| ECS, EKS | Previous task definition revision or `kubectl rollout undo` (reverts the `FROM` line or variable) |
+| EC2 AL2023 | `update-crypto-policies --set DEFAULT` or remove the unit's `Environment=` line; restart services |
+| Windows | `Disable-TlsEccCurve -Name 'X25519_MLKEM768'` or remove it from the GPO; reboot |
+
+## Test evidence
+
+What the e2e suite proved for .NET in run r1117041043 (LocalStack Pro 2026.10.6 on arm64, not real AWS): 78 .NET cases, all PASS, where PASS means the observed result matched the documented expectation. Each client case connected to the observer's listeners: hybrid, PQ-only, mTLS, EC certificate, TLS 1.2-only, and three ML-DSA certificate targets. Cases: [e2e/cases/dotnet.py](REPO/e2e/cases/dotnet.py); probes: [e2e/clients/dotnet/Probe.cs](REPO/e2e/clients/dotnet/Probe.cs) and [e2e/clients/server/dotnet/Server.cs](REPO/e2e/clients/server/dotnet/Server.cs); build: [e2e/build/dotnet.sh](REPO/e2e/build/dotnet.sh) (it builds the fix files from `configs/dotnet/`, so the published files are what was tested); results: [e2e/results/latest/summary.md](REPO/e2e/results/latest/summary.md).
+
+| Compute | Cases | Baseline (no change) | With the fix | Also proved |
+| --- | --- | --- | --- | --- |
+| Lambda (zip `dotnet8`/`dotnet10`, image, Native AOT) | 33 | Classical; PQ-only server refused (8.0.34, 10.0.15, AOT 10.0.14; OpenSSL 3.5.8) | PQ with the bundled file, the `pq-tls` layer (`OPENSSL_CONF` or exec wrapper), the combined layer, the container image `ENV`, and the `pq-egress` extension | Trust D0–D3, client certs E1–E3 stay working; TLS 1.2 pin never PQ, `Tls12\|Tls13` PQ; `X509Store` needs the `HOME=/tmp` wrapper |
+| ECS Fargate | 25 client + 6 target | Classical on `8.0`, `8.0-noble`, `10.0`, `10.0-noble-chiseled`, `10.0-azurelinux3.0`, AL2023 | PQ out of the box on `8.0-alpine`, `10.0-alpine`, `10.0-resolute`, `-resolute-chiseled`; AL2023 PQ with `OPENSSL_CONF` (task definition or baked in `Dockerfile.al2023`) or `DEFAULT:PQ` | System CA stores (`update-ca-certificates`, `update-ca-trust`), `SSL_CERT_FILE`, PEM and store client certs; Kestrel-path target leg PQ on the same images |
+| ECS on EC2 | 6 client + 1 target | Classical on `8.0` and AL2023 | PQ on `10.0-alpine`, `10.0-resolute`, AL2023 + `OPENSSL_CONF` or `DEFAULT:PQ` | Same results as Fargate: the container's userland decides |
+| EC2 AL2023.12 (dnf .NET 8.0.33, 10.0.14) | 7 | Classical | PQ per service (`OPENSSL_CONF`) and host-wide (`DEFAULT:PQ`) | `X509Store` client cert under `DEFAULT:PQ` |
+
+**ML-DSA certificates (Tested, e2e).** OpenSSL offers ML-DSA only when its signature list includes it:
+
+| Setup | ML-DSA + ECDSA server | ML-DSA-only server | ML-DSA client certificate |
+| --- | --- | --- | --- |
+| .NET 10 on `-alpine`, `-resolute`, AL2023 `DEFAULT:PQ` | ML-DSA | Works | Works |
+| .NET 8 on `8.0-alpine`, AL2023 `DEFAULT:PQ` | ML-DSA | Works | Fails: .NET 8 has no ML-DSA key type ("not a known key algorithm") |
+| Kit `openssl-pq.cnf` (Lambda, AL2023 config route), and every OpenSSL 3.0/3.3 image | ECDSA | Fails | Fails |
+
+**Earlier tests** (Docker, 2026-11-14, arm64): cases C, D, E, F in [tests/deep/dotnet/v2/](REPO/tests/deep/dotnet/v2/) (`results-v2.txt`: 90 + 60 + 70 results in cases C, D, E as expected), versions, Kestrel, Npgsql and Native AOT in [tests/deep/dotnet/](REPO/tests/deep/dotnet/) (`results.txt`, `results2.txt`).
+
+**Not tested:** real AWS; EKS; Windows (all Schannel rows are Documented); FIPS hosts; gRPC and HTTP/2 calls; MySqlConnector, Redis, SqlClient and APM agents; the Confluent.Kafka handshake result (output truncated); `HOME=/tmp` as a Lambda function variable on real AWS; the SSM documents and IaC files as deployed resources.
 
 ## Full configuration files
 

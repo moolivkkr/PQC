@@ -1,0 +1,3155 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Post-Quantum TLS on AWS: Java</title><style>
+body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
+h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
+h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:9pt;page-break-inside:auto}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#e8edf3} tr{page-break-inside:avoid}
+code{font-family:Menlo,Consolas,monospace;font-size:8.5pt;background:#f2f2f2;padding:0 2px;word-break:break-word}
+code.nb{white-space:nowrap;word-break:normal}
+pre{background:#f2f2f2;padding:8px;font-size:8pt;white-space:pre-wrap;word-break:break-all;border:1px solid #ddd}
+pre code{background:none;padding:0}
+p.excerpt{font-size:9pt;margin-top:-4px}
+.cover{text-align:left;padding-top:160px}.cover h1{page-break-before:avoid;border:none;font-size:28pt}
+.cover .sub{font-size:14pt;color:#444}.cover .meta{margin-top:60px;font-size:10.5pt}
+.toc ul{padding-left:0}.toc li{list-style:none;margin:2px 0}.toc li.l0{margin-top:8px;font-weight:600}
+.toc li.l1{margin-left:22px;font-weight:400;font-size:9.5pt}.toc li.l2{margin-left:22px;font-weight:400;font-size:9.5pt}
+a{color:#0b57d0;text-decoration:none}
+@media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
+@page{size:A4;margin:16mm 14mm}
+</style></head><body>
+<div class="cover"><h1 class="title">Post-Quantum TLS on AWS: Java</h1>
+<p class="sub">For Java application teams: what to change on Lambda, ECS, EKS and EC2, every case, how to test, and the evidence</p><p>Start with the one-page summary. The detailed guide covers every Java version, the cases teams meet (own keystores, custom CA trust, mutual TLS, explicit TLS settings, FIPS, libraries with their own TLS), how to test and roll back, and the configuration files. The last chapter lists every end-to-end test case run for Java.</p>
+<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="https://github.com/moolivkkr/PQC">https://github.com/moolivkkr/PQC</a></p></div>
+<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul><li class="l0"><a href="#ch-summary-java">1 Summary for Java teams</a></li><li class="l0"><a href="#ch-lang-context">2 Context for application
+teams</a><ul><li class="l2"><a href="#ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</a></li><li class="l2"><a href="#ch-lang-context--how-the-fix-ships">2.2 How the fix ships</a></li><li class="l2"><a href="#ch-lang-context--evidence-labels">2.3 Evidence labels</a></li><li class="l2"><a href="#ch-lang-context--related-documents">2.4 Related documents</a></li></ul></li><li class="l0"><a href="#ch-06-java">3 Java: detailed guide</a><ul><li class="l2"><a href="#ch-06-java--problem-statement">3.1 Problem statement</a></li><li class="l2"><a href="#ch-06-java--quick-start-by-compute-type">3.2 Quick start by compute type</a></li><li class="l2"><a href="#ch-06-java--versions-and-native-support">3.3 Versions and native support</a></li><li class="l2"><a href="#ch-06-java--cases-what-to-change">3.4 Cases: what to change</a></li><li class="l2"><a href="#ch-06-java--solution-and-automation">3.5 Solution and automation</a></li><li class="l2"><a href="#ch-06-java--how-to-test">3.6 How to test</a></li><li class="l2"><a href="#ch-06-java--rollout-checklist">3.7 Rollout checklist</a></li><li class="l2"><a href="#ch-06-java--pitfalls-and-rollback">3.8 Pitfalls and rollback</a></li><li class="l2"><a href="#ch-06-java--test-evidence">3.9 Test evidence</a></li><li class="l2"><a href="#ch-06-java--full-configuration-files">3.10 Configuration files</a></li></ul></li><li class="l0"><a href="#ch-tests-java">4 Test evidence and test cases</a><ul><li class="l2"><a href="#ch-tests-java--summary">4.1 Summary</a></li><li class="l2"><a href="#ch-tests-java--every-client-case">4.2 Every client case</a></li><li class="l2"><a href="#ch-tests-java--load-balancer-target-cases-7">4.3 Load balancer target cases
+(7)</a></li></ul></li></ul></div>
+<h1 id="ch-summary-java">1 Summary for Java teams</h1>
+<p><strong>What decides PQ.</strong> The JSSE provider inside the JVM,
+not OpenSSL, so the OS and image do not matter. JDK 25.0.5+ negotiates
+X25519MLKEM768 by default (JEP 527, backported to 25.0.5). JDK 8 to 21
+have no ML-KEM; the fix is Bouncy Castle JSSE as the TLS provider,
+loaded by our kit v2 agent, or a move to JDK 25.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda java8.al2, java11, java17, java21</td>
+<td>No</td>
+<td>Kit v2 agent:
+<code>JAVA_TOOL_OPTIONS=-javaagent:/var/task/pq-tls/pq-tls-agent.jar</code>
+(or the <code class="nb">pq-tls</code> layer, which adds the Java 8 flags)</td>
+</tr>
+<tr>
+<td>Lambda java25</td>
+<td>Yes</td>
+<td>Nothing</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td>JDK 25.0.5+ images: yes; 8 to 21: no</td>
+<td>Move to Corretto or Temurin 25.0.5+, or the agent, or a static
+<code>java.security</code> Bouncy Castle entry (17, 21)</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Same as containers</td>
+<td>Same; <code>JAVA_TOOL_OPTIONS</code> in the service unit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Prefer JDK 25.0.5+ where the application can move. Oracle plans
+backports to 21 and 17, then 11 and 8; secondary reports say H1 and H2
+2027 (Claimed, not shipped).</li>
+<li>Otherwise, the kit v2 agent. Java 8 also needs
+<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> on Lambda and
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>
+everywhere.</li>
+<li><strong>Servers with an EC certificate</strong> need
+<code>ssl.KeyManagerFactory.algorithm=PKIX</code> under Bouncy Castle,
+or every handshake fails. Kit v2 sets it; code that hard-codes
+<code class="nb">SunX509</code> (or Tomcat
+<code>keyManagerAlgorithm="SunX509"</code>) still fails, and the CI
+check flags it.</li>
+<li>Without Bouncy Castle: Netty <code>tcnative-boringssl</code> 2.0.85,
+or the AWS SDK v2 CRT client (PQ by default from 2.35.11 per AWS; 2.59.1
+Tested PQ, 2.35.10 classical).</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change to JKS or
+PKCS#12 stores, <code class="nb">cacerts</code> or
+<code>javax.net.ssl.trustStore</code>; mutual TLS works with kit v2 (kit
+v1 silently sent no EC client certificate). <strong>Risk:</strong>
+Bouncy Castle becomes the TLS provider for the whole process: test FIPS,
+custom keystore and mutual TLS services first. <strong>ML-DSA:</strong>
+no JDK negotiates ML-DSA in TLS yet; Java gets ECDSA from a
+dual-certificate server.</p>
+<p><strong>Rollback:</strong> remove the <code>-javaagent</code> option.
+<strong>Detect:</strong> CloudTrail for AWS calls; server logs for
+inbound.</p>
+<p><strong>Tested:</strong> 96 client cases (Lambda 57, Fargate 21, ECS
+on EC2 5, EC2 13) and 7 load balancer target cases, all passing; Tomcat
+11, Jetty 12 and the JDK HttpsServer with EC certificates on JDK 17 and
+21 under kit v2, and EC keystores on JDK 25 with no change (container
+tests). Not yet run: real AWS, JDK 8 on EC2, FIPS.</p>
+
+<h1 id="ch-lang-context">2 Context for application
+teams</h1>
+<h2 id="ch-lang-context--what-pqc-enabled-means">2.1 What &quot;PQC-enabled&quot; means</h2>
+<p>A <strong>PQ connection</strong> is a TLS 1.3 handshake that
+negotiated a hybrid ML-KEM key exchange group, X25519MLKEM768 (ML-KEM is
+FIPS 203). It protects traffic recorded today from being decrypted by a
+future quantum computer. Your service is <strong>PQ-enabled</strong>
+when it offers or accepts that group first <strong>and</strong> still
+connects to classical peers, so nothing breaks. It is
+<strong>done</strong> when the programme's dashboards show its
+connections as PQ, not when the change is deployed.</p>
+<p>What does <strong>not</strong> change: your certificates, keystores,
+private CA trust and mutual TLS. ML-KEM works with today's RSA and ECDSA
+certificates. ML-DSA (PQ certificates, FIPS 204) is a separate, later
+track; your summary page says what your runtime can do with it.</p>
+<h2 id="ch-lang-context--how-the-fix-ships">2.2 How the fix ships</h2>
+<p>Every fix is one of: a configuration file plus a variable, a Java
+agent, a base image or a version. The shared <code class="nb">pq-tls</code> kit
+versions these files once, and the shared build template adds them, so
+your service picks the fix up on its next release and rolls back by
+removing one setting. Guardrails in the pipeline warn first and fail
+later on settings that block PQ.</p>
+<table>
+<thead>
+<tr>
+<th>Where a variable goes</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (zip or image)</td>
+<td><code>Environment.Variables</code> (CloudFormation, SAM),
+<code>environment</code> (CDK, Terraform)</td>
+</tr>
+<tr>
+<td>Container images</td>
+<td><code>ENV NAME=value</code> in the Dockerfile</td>
+</tr>
+<tr>
+<td>ECS task, EKS pod (override)</td>
+<td><code>containerDefinitions[].environment</code>;
+<code>spec.containers[].env</code></td>
+</tr>
+<tr>
+<td>EC2 service</td>
+<td><code>Environment=NAME=value</code> in the systemd unit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--evidence-labels">2.3 Evidence labels</h2>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tested</td>
+<td>Run between 2026-11-12 and 2026-11-16 in Lambda base images,
+official images or the LocalStack end-to-end suite. Not run on real
+AWS</td>
+</tr>
+<tr>
+<td>Documented</td>
+<td>Stated in vendor documentation, not tested here</td>
+</tr>
+<tr>
+<td>Claimed</td>
+<td>A vendor plan, not shipped</td>
+</tr>
+<tr>
+<td>Unverified</td>
+<td>Believed true; confirm before relying on it</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-lang-context--related-documents">2.4 Related documents</h2>
+<p>The programme's white paper (<code>docs/PQC-White-Paper.pdf</code>)
+explains detection, the inventory and the rollout. The complete guide
+(<code>PQC-Detection-and-Remediation.pdf</code>) holds the
+infrastructure detail (load balancers, databases, service mesh, hosts).
+Every configuration file named in this document is in the repository
+under <code class="nb">configs/</code>, and every test under <code class="nb">e2e/</code> and
+<code class="nb">tests/</code>.</p>
+
+<h1 id="ch-06-java">3 Java: detailed guide</h1>
+<h2 id="ch-06-java--problem-statement">3.1 Problem statement</h2>
+<p>Java services on JDK 8 to 21 negotiate classical key exchange only
+(X25519 or P-256), so traffic recorded today can be decrypted later by a
+quantum computer. That covers outbound calls to AWS APIs, databases and
+partners, and any TLS the JVM terminates itself.</p>
+<p><strong>What decides PQ is the JVM's TLS provider (JSSE), not the
+OS.</strong> Apache HttpClient, OkHttp, the JDK <code>HttpClient</code>,
+<code>HttpsURLConnection</code>, JDBC drivers, Kafka, Tomcat, Jetty and
+Spring Boot all hand TLS to JSSE, so the base image's OpenSSL and crypto
+policy make no difference to them.</p>
+<table>
+<thead>
+<tr>
+<th>JDK</th>
+<th>PQ by default?</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>25.0.5 and later, 27</td>
+<td>Yes, client and server, X25519MLKEM768 first (Tested on Corretto and
+Temurin 25.0.5). SecP256r1MLKEM768 and SecP384r1MLKEM1024 are also
+supported (Documented, <a
+href="https://www.oracle.com/java/technologies/javase/25-0-5-relnotes.html">Oracle
+25.0.5 release notes</a>, JDK-8314323)</td>
+<td>Nothing</td>
+</tr>
+<tr>
+<td>25.0.0 to 25.0.4</td>
+<td>No (Documented)</td>
+<td>Patch to 25.0.5+</td>
+</tr>
+<tr>
+<td>8, 11, 17, 21</td>
+<td>No: SunJSSE has no ML-KEM group</td>
+<td>Kit v2: Bouncy Castle JSSE (BCJSSE) 1.87 as the TLS provider, loaded
+by <code>pq-tls-agent.jar</code>; or move to 25.0.5+</td>
+</tr>
+</tbody>
+</table>
+<p>Why other pages say "JDK 27": <a
+href="https://openjdk.org/jeps/527">JEP 527</a> (hybrid ML-KEM key
+exchange in TLS 1.3) shipped in JDK 27 (released 2026-09-15), and the
+AWS SDK guide names only JDK 27 (<a
+href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">AWS
+SDKs and Tools guide</a>). The October 2026 update 25.0.5 carries the
+same feature as a backport (Documented). Oracle plans PQ TLS for 21 and
+17, then 11 and 8 (<a
+href="https://blogs.oracle.com/java/post-quantum-cryptography-in-long-term-support-jdk-releases">Oracle
+Java blog, 2026-08</a>); secondary reports put 21 and 17 in H1 2027 and
+11 and 8 in H2 2027. Claimed, not shipped; we could not open Oracle's
+own table, so the dates are not sure. Remove the kit when your vendor
+ships it.</p>
+<p>Three stacks bypass JSSE, so the JDK version does not matter for
+them:</p>
+<ul>
+<li><strong>Netty with
+<code>netty-tcnative-boringssl-static</code></strong>
+(<code>SslProvider.OPENSSL</code>; gRPC-Java, Reactor Netty or Vert.x
+with native SSL): BoringSSL decides. PQ by default (Tested 2.0.85 on JDK
+17 and 21).</li>
+<li><strong>AWS SDK for Java v2 CRT client</strong>
+(<code>AwsCrtHttpClient</code>): s2n-tls on Linux decides. PQ by default
+from SDK 2.35.11 (Documented, <a
+href="https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html">AWS
+SDKs and Tools guide</a>; Tested 2.59.1 PQ, 2.35.10 classical). On macOS
+and Windows it uses the OS TLS library.</li>
+<li><strong>Tomcat with the OpenSSL implementation</strong> (Tomcat
+Native or the FFM connector): the linked OpenSSL decides (Tomcat 11.0.29
+on OpenSSL 3.5.5 Tested PQ in the Web servers and proxies chapter).</li>
+</ul>
+<p><strong>Certificates and stores do not change.</strong> JKS and
+PKCS#12 keystores, <code class="nb">cacerts</code>,
+<code>javax.net.ssl.trustStore</code> and mutual TLS keep working. Under
+BCJSSE one security property matters:
+<code>ssl.KeyManagerFactory.algorithm=PKIX</code>, which kit v2 sets.
+Without it BCJSSE cannot use EC certificates, as a server or as an mTLS
+client (Tested).</p>
+<h2 id="ch-06-java--quick-start-by-compute-type">3.2 Quick start by compute type</h2>
+<p>Kit v2 = the <code class="nb">pq-tls/</code> directory
+(<code>pq-tls-agent.jar</code> v2, <code>pq-tls.security</code>, three
+Bouncy Castle 1.87 jars) plus <code>JAVA_TOOL_OPTIONS</code> with both
+flags. Source: <a href="https://github.com/moolivkkr/PQC/tree/main/kit/java-v2">kit/java-v2</a>. Below,
+<code class="nb">KIT</code> stands for
+<code>-Djava.security.properties=&lt;dir&gt;/pq-tls/pq-tls.security -javaagent:&lt;dir&gt;/pq-tls/pq-tls-agent.jar</code>,
+where <code>&lt;dir&gt;</code> is <code class="nb">/var/task</code> on Lambda and
+<code class="nb">/opt</code> elsewhere. <strong>Append</strong> <code class="nb">KIT</code> to
+an existing <code>JAVA_TOOL_OPTIONS</code>; don't replace it (APM agents
+live there).</p>
+<p><strong>Java 8 adds two flags.</strong>
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>
+everywhere: without it every <code>HttpsURLConnection</code> handshake
+fails under BCJSSE.
+<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> on Lambda only:
+the Lambda Java 8 runtime limits clients to TLS 1.2. The
+<code class="nb">pq-tls</code> layer adds both (Tested).</p>
+<h3 id="ch-06-java--clients">Clients</h3>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Check</th>
+<th>One change</th>
+<th>Verify</th>
+<th>Roll back</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda <code class="nb">java8.al2</code>, <code class="nb">java11</code>,
+<code class="nb">java17</code>, <code class="nb">java21</code> (zip)</td>
+<td><code class="nb">Runtime</code> in the function configuration</td>
+<td><code class="nb">pq-tls/</code> at the zip root and
+<code>JAVA_TOOL_OPTIONS=KIT</code> (Java 8: plus both Java 8 flags). Or
+the <code class="nb">pq-tls</code> layer with
+<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code></td>
+<td>Log line
+<code>pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,... ssl.KeyManagerFactory.algorithm=PKIX</code>;
+CloudTrail <code>tlsDetails.keyExchange</code> on the role's KMS or STS
+calls</td>
+<td>Delete the variable, or set <code>PQ_TLS_DISABLE=1</code> with the
+layer; the next cold start is classical</td>
+</tr>
+<tr>
+<td>Lambda <code class="nb">java25</code></td>
+<td><code class="nb">Runtime</code> = <code class="nb">java25</code></td>
+<td>Nothing (25.0.5 Tested)</td>
+<td>CloudTrail <code>keyExchange</code></td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Lambda container image
+(<code>public.ecr.aws/lambda/java:8.al2023</code> to
+<code class="nb">:21</code>)</td>
+<td>Base image tag and digest</td>
+<td><code>COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/</code> and
+<code>ENV JAVA_TOOL_OPTIONS=KIT</code>; or base
+<code>lambda/java:25</code> and no change</td>
+<td>As for zip</td>
+<td>Revert the image; a function variable overrides image
+<code class="nb">ENV</code> without a rebuild</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td><code>docker run --rm --entrypoint java &lt;image&gt; -version</code></td>
+<td>Base image <code>amazoncorretto:25</code> or
+<code>eclipse-temurin:25</code> (25.0.5+). Or
+<code>COPY pq-tls/ /opt/pq-tls/</code> and
+<code>ENV JAVA_TOOL_OPTIONS=KIT</code>, or the same variable in the task
+definition</td>
+<td>Startup log line; CloudTrail; your server or egress proxy logs the
+group</td>
+<td>Revert the image tag, or remove the task definition variable</td>
+</tr>
+<tr>
+<td>ECS on EC2, EKS</td>
+<td>As for Fargate</td>
+<td>As for Fargate; EKS sets the variable in
+<code>spec.containers[].env</code></td>
+<td>As for Fargate, plus Zeek on mirrored node ENIs</td>
+<td>As for Fargate</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td><code>java -version</code> for the service's own <code class="nb">java</code>
+(via SSM)</td>
+<td><code>dnf install java-25-amazon-corretto-headless</code> and point
+the unit at it. Or kit v2 in <code>/opt/pq-tls/</code> and a systemd
+drop-in <code>Environment="JAVA_TOOL_OPTIONS=KIT"</code></td>
+<td><code>journalctl -u &lt;service&gt; | grep 'pq-tls agent v2'</code>;
+CloudTrail; Zeek</td>
+<td>Remove the drop-in, <code>systemctl daemon-reload</code>,
+restart</td>
+</tr>
+</tbody>
+</table>
+<p>Notes, all Tested in e2e unless marked:</p>
+<ul>
+<li><strong>Lambda zip, static <code>java.security</code> registration
+does not work</strong> (the bootstrap class path is
+<code>/var/runtime/lib</code> only); use the agent.</li>
+<li><strong>Lambda container image with JDK 8:</strong> the bundled kit
+needs both Java 8 flags. Tested only with the layer's files in
+<code class="nb">/opt</code> plus the wrapper; the bundled form with both flags is
+Unverified.</li>
+<li><strong>Containers, JDK 17 and 21, without an agent:</strong>
+<code>bc-static.security</code> plus the BC jars on <code class="nb">-cp</code>
+also gives PQ (Tested, Fargate and ECS on EC2).</li>
+<li><strong>EC2 with several Corretto packages:</strong> on AL2023,
+<code class="nb">java</code> on <code class="nb">PATH</code> resolved to 25 once 25 was
+installed (<code>alternatives</code> picks the highest). Check which
+binary the unit starts.</li>
+<li><strong>JDK 8 on ECS on EC2 and on EC2</strong> with the full fix
+were not run; Fargate JDK 8 was.</li>
+</ul>
+<h3 id="ch-06-java--servers-the-jvm-terminates-tls">Servers (the JVM terminates
+TLS)</h3>
+<p>If an ALB, NLB TLS listener, API Gateway or CloudFront terminates TLS
+in front of the JVM, set the PQ policy there; the JVM's own TLS matters
+for the target leg (ALB re-encryption), NLB TCP pass-through and
+internal services. See the Load balancers chapter.</p>
+<table>
+<thead>
+<tr>
+<th>Server situation</th>
+<th>One change</th>
+<th>Verify</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JDK 25.0.5+, any certificate</td>
+<td>Nothing. One keystore with several certificates for SNI: also add
+<code>pq-tls.security</code> (PKIX), or the wrong certificate is
+served</td>
+<td><code>openssl s_client -connect &lt;host&gt;:8443 -tls1_3 -groups X25519MLKEM768 -brief</code>
+prints <code>Negotiated TLS1.3 group: X25519MLKEM768</code>;
+<code>-groups X25519</code> still connects</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>JDK 8 to 21, RSA certificate</td>
+<td>Kit v2 (Java 8: plus the host-name flag)</td>
+<td>As above</td>
+<td>Tested (8, 17, 21 in e2e)</td>
+</tr>
+<tr>
+<td>JDK 8 to 21, <strong>EC certificate</strong></td>
+<td>Kit v2, which sets
+<code>ssl.KeyManagerFactory.algorithm=PKIX</code>. Remove any hard-coded
+<code class="nb">SunX509</code> (code or Tomcat <code>keyManagerAlgorithm</code>)
+or every handshake fails</td>
+<td>As above, plus <code>-servername</code> for each SNI name</td>
+<td>Tested 17, 21; JDK 8 and 11 Unverified</td>
+</tr>
+<tr>
+<td>Any JDK, Netty with tcnative</td>
+<td>Nothing</td>
+<td>As above</td>
+<td>Tested 21</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-06-java--versions-and-native-support">3.3 Versions and native support</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>TLS stack</th>
+<th>PQ client by default?</th>
+<th>PQ server by default?</th>
+<th>API to set groups</th>
+<th>FIPS mode</th>
+<th>Proposed solution</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JDK 25.0.5+ (Corretto, Temurin)</td>
+<td>SunJSSE</td>
+<td>Yes on every compute type</td>
+<td>Yes (Tomcat, Jetty, <code>HttpsServer</code>, Netty JDK
+provider)</td>
+<td><code>-Djdk.tls.namedGroups</code>,
+<code>SSLParameters.setNamedGroups</code> (JDK 20+), Tomcat
+<code>SSLHostConfig groups</code></td>
+<td>Not tested</td>
+<td>Upgrade. Optional <code>pq-tls.security</code> (PKIX) for
+multi-certificate SNI stores (case C)</td>
+<td>Tested (client, server, keystores, mTLS); Documented</td>
+</tr>
+<tr>
+<td>JDK 21 (21.0.13)</td>
+<td>SunJSSE</td>
+<td>No</td>
+<td>No</td>
+<td><code>jdk.tls.namedGroups</code> (no ML-KEM names)</td>
+<td>Not tested</td>
+<td>Kit v2, or upgrade to 25</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>JDK 17 (17.0.21)</td>
+<td>SunJSSE</td>
+<td>No</td>
+<td>No</td>
+<td>Same</td>
+<td>Not tested</td>
+<td>Kit v2, or upgrade</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>JDK 11 (11.0.33)</td>
+<td>SunJSSE</td>
+<td>No</td>
+<td>No</td>
+<td>Same</td>
+<td>Not tested</td>
+<td>Kit v2</td>
+<td>Tested client (Lambda zip, layer, image; Fargate; EC2 AL2 and
+AL2023). Server not tested</td>
+</tr>
+<tr>
+<td>JDK 8 (8u512)</td>
+<td>SunJSSE; TLS 1.2 client default on the Lambda Java 8 runtime only
+(plain Corretto 8u512 offers TLS 1.3)</td>
+<td>No</td>
+<td>No</td>
+<td>Same</td>
+<td>Not tested</td>
+<td>Kit v2 + host-name flag; on Lambda also the protocols flag</td>
+<td>Tested client (Lambda zip, layer, image with layer files; Fargate)
+and server (Fargate, RSA certificate)</td>
+</tr>
+<tr>
+<td>Any JDK + Netty tcnative-boringssl-static 2.0.85</td>
+<td>BoringSSL</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><code>OpenSslContextOption.GROUPS</code>; also reads
+<code>jdk.tls.namedGroups</code></td>
+<td>n/a</td>
+<td>Nothing</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Any JDK + AWS SDK v2 CRT client (2.35.11+)</td>
+<td>s2n-tls (Linux)</td>
+<td>Yes, AWS API calls only</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>Not tested</td>
+<td>Nothing; before 2.35.11, upgrade</td>
+<td>Tested 2.59.1; Documented</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-06-java--by-jdk-and-compute-type">By JDK and compute type</h3>
+<p>PQ = connected to a PQ-only server; every PQ cell also connected to a
+classical-only server, so fallback works. Evidence is the LocalStack e2e
+run r1117041043 (2026-11-16) unless marked; see Test evidence below.</p>
+<table>
+<thead>
+<tr>
+<th>JDK</th>
+<th>Lambda zip</th>
+<th>Lambda image</th>
+<th>Fargate</th>
+<th>ECS on EC2 / EKS</th>
+<th>EC2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>25.0.5</td>
+<td>PQ, runtime <code class="nb">java25</code></td>
+<td>PQ, <code>lambda/java:25</code></td>
+<td>PQ, <code>amazoncorretto:25</code>; AL2023 <code class="nb">dnf</code> Corretto
+25</td>
+<td>PQ, <code>amazoncorretto:25</code></td>
+<td>PQ, AL2023 Corretto 25 package</td>
+</tr>
+<tr>
+<td>21.0.13</td>
+<td>Classical; kit or layer gives PQ; static registration does not</td>
+<td>Classical; kit gives PQ</td>
+<td>Classical; kit or static gives PQ (Corretto, Temurin, AL2023
+<code class="nb">dnf</code>)</td>
+<td>Classical; kit gives PQ</td>
+<td>Classical; kit gives PQ (AL2023)</td>
+</tr>
+<tr>
+<td>17.0.21</td>
+<td>Classical; kit or layer gives PQ</td>
+<td>Classical; kit gives PQ</td>
+<td>Classical; kit or static gives PQ</td>
+<td>Static gives PQ; kit not run</td>
+<td>Classical; kit gives PQ (AL2, AL2023)</td>
+</tr>
+<tr>
+<td>11.0.33</td>
+<td>Classical; kit or layer gives PQ</td>
+<td>Classical; kit gives PQ</td>
+<td>Classical; kit gives PQ</td>
+<td>Not run</td>
+<td>Classical; kit gives PQ (AL2, AL2023)</td>
+</tr>
+<tr>
+<td>8u512</td>
+<td>TLS 1.2 classical; kit + both Java 8 flags, or the layer, gives
+PQ</td>
+<td>TLS 1.2 classical; layer files + wrapper give PQ</td>
+<td>TLS 1.3 classical; kit + host-name flag gives PQ (protocols flag not
+needed)</td>
+<td>Kit without the host-name flag fails every handshake; full fix not
+run</td>
+<td>Not run</td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="nb">pq-egress</code> Lambda extension also gave PQ on
+<code class="nb">java8.al2</code> to <code class="nb">java25</code> (it originates the TLS
+itself).</p>
+<h3 id="ch-06-java--decision-guide">Decision guide</h3>
+<ul>
+<li>JDK 25.0.5 or later: change nothing; look for pins (case F).</li>
+<li>JDK 8 to 21: roll out kit v2 and plan the upgrade to 25.</li>
+<li>Already shipped kit v1 (agent only)? Add the
+<code>pq-tls.security</code> flag or swap in the v2 jar before any JVM
+with an EC certificate, server or mTLS client, gets it.</li>
+<li>Netty tcnative or the CRT client: those connections are already PQ;
+everything else in the JVM still needs the kit.</li>
+<li>FIPS JVM: don't add the kit (case G).</li>
+</ul>
+<h2 id="ch-06-java--cases-what-to-change">3.4 Cases: what to change</h2>
+<p>Deep tests (marked "Tested" in this section unless an e2e case is
+named): 2026-11-14, containers on arm64,
+<code>eclipse-temurin:17-jre</code> 17.0.21, <code class="nb">:21-jre</code>
+21.0.13, <code class="nb">:25-jre</code> 25.0.5, BC 1.87, peers OpenSSL 3.5.7 on
+<code>debian:trixie-slim</code>. "PQ" means OpenSSL printed
+<code>Negotiated TLS1.3 group: X25519MLKEM768</code>; every PQ row also
+connected with a classical-only peer unless it says PQ-only. Outputs:
+<code>tests/deep/java/out/</code> and
+<code>tests/deep/java/v2/out/</code>.</p>
+<h3
+id="a-simple-client-default-http-client-aws-sdk-jdbc-driver-no-tls-code">A.
+Simple client (default HTTP client, AWS SDK, JDBC driver, no TLS
+code)</h3>
+<p><strong>Who:</strong> no <code>SSLContext</code>,
+<code>KeyManager</code> or <code>TrustManager</code> code
+(<code>grep -rE 'SSLContext|KeyManagerFactory|TrustManagerFactory|namedGroups' src/</code>
+finds nothing). <strong>Today:</strong> classical on 8 to 21, PQ on
+25.0.5+. <strong>Change:</strong> nothing in code; JDK 25.0.5+ or kit
+v2. <strong>Side effects:</strong> the ClientHello grows by about 1.2
+KB; BCJSSE becomes the TLS provider for the whole JVM.</p>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>TLS engine</th>
+<th>JDK 17 / 21</th>
+<th>17 / 21 + kit</th>
+<th>25.0.5</th>
+<th>What to keep</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JDK <code>HttpClient</code>, <code>HttpsURLConnection</code></td>
+<td>JSSE</td>
+<td>No</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>n/a</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Apache HttpClient 5.6.5, 4.5.14</td>
+<td>JSSE</td>
+<td>No</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>TLS 1.3 in <code>setTlsVersions</code>; no
+<code>new String[]{"TLSv1.2"}</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>OkHttp 4.12.0</td>
+<td>JSSE</td>
+<td>No</td>
+<td>PQ</td>
+<td>PQ</td>
+<td><code>ConnectionSpec.MODERN_TLS</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Netty 4.2.20, <code>SslProvider.JDK</code></td>
+<td>JSSE</td>
+<td>No</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>n/a</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Netty 4.2.20 + tcnative-boringssl-static 2.0.85</td>
+<td>BoringSSL</td>
+<td><strong>PQ</strong></td>
+<td>PQ</td>
+<td>PQ</td>
+<td>No classical <code>jdk.tls.namedGroups</code> pin (Netty reads
+it)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK 2.59.1 <code>ApacheHttpClient</code></td>
+<td>JSSE</td>
+<td>No</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>n/a</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK 2.59.1 <code>NettyNioAsyncHttpClient</code> with
+tcnative</td>
+<td>BoringSSL</td>
+<td><strong>PQ</strong></td>
+<td>PQ</td>
+<td>PQ</td>
+<td>Without tcnative it uses JSSE (not run)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK 2.59.1 <code>AwsCrtHttpClient</code> (aws-crt 0.50.0)</td>
+<td>s2n-tls</td>
+<td><strong>PQ</strong></td>
+<td>PQ</td>
+<td>PQ</td>
+<td>SDK 2.35.11+</td>
+<td>Tested; Documented</td>
+</tr>
+<tr>
+<td>AWS SDK 2.35.10 <code>AwsCrtHttpClient</code> (aws-crt 0.38.9)</td>
+<td>s2n-tls</td>
+<td>No</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>Upgrade</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>PostgreSQL JDBC 42.7.14 to PostgreSQL 18
+(<code>ssl_groups=X25519MLKEM768</code>)</td>
+<td>JSSE</td>
+<td>No (21)</td>
+<td>PQ (21)</td>
+<td>PQ</td>
+<td><code>sslmode=verify-full</code></td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Static BCJSSE via <code>java.security</code>, no agent</td>
+<td>BCJSSE</td>
+<td>n/a</td>
+<td>PQ (17, 21)</td>
+<td>n/a</td>
+<td>BC jars on the class path</td>
+<td>Tested; e2e Fargate and ECS on EC2</td>
+</tr>
+<tr>
+<td>Spring <code class="nb">WebClient</code>, <code>RestClient</code>,
+<code>RestTemplate</code>; MySQL Connector/J; Lettuce; Jedis; Kafka
+client</td>
+<td>JSSE (Lettuce: Netty JDK provider by default)</td>
+<td>Follow the JDK rows</td>
+<td></td>
+<td></td>
+<td>TLS 1.3 allowed (<code>tlsVersions</code>,
+<code>ssl.enabled.protocols</code>); Kafka: leave
+<code>ssl.provider</code> empty</td>
+<td>Unverified (not run)</td>
+</tr>
+</tbody>
+</table>
+<p>Unverified rows use standard JSSE APIs, so they should follow the JDK
+rows; run the live test in "How to test" for your build before you rely
+on them. Server settings for databases, Redis and Kafka brokers are in
+the Databases and data services chapter.</p>
+<h3 id="ch-06-java--b-simple-server-framework-default-tls">B. Simple server
+(framework default TLS)</h3>
+<p><strong>Who:</strong> Spring Boot <code>server.ssl.*</code> or an SSL
+bundle, Tomcat <code>server.xml</code>, Jetty, <code>HttpsServer</code>,
+Quarkus or Micronaut terminating TLS in the JVM. <strong>Today:</strong>
+classical on 8 to 21, PQ on 25.0.5+. <strong>Change:</strong> JDK
+25.0.5+, or kit v2 (kit v1 breaks EC certificates, case C). <strong>Side
+effects:</strong> clients that don't offer ML-KEM still connect
+(Tested).</p>
+<table>
+<thead>
+<tr>
+<th>Server</th>
+<th>JDK 21 default</th>
+<th>JDK 17 / 21 + kit v2</th>
+<th>JDK 25.0.5 default</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tomcat 11.0.29 embedded (JSSE)</td>
+<td>Classical</td>
+<td>PQ with RSA or EC certificate; EC fails without PKIX</td>
+<td>PQ, preferred</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Tomcat 11.0.29 <code>groups="X25519MLKEM768,x25519"</code></td>
+<td>Classical (name unknown to SunJSSE 21, ignored)</td>
+<td>n/a</td>
+<td>PQ</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Tomcat 11.0.29 <code>groups="x25519,secp256r1"</code></td>
+<td>n/a</td>
+<td>n/a</td>
+<td>Classical (the pin removes it)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Jetty 12.1.15</td>
+<td>Classical</td>
+<td>PQ; EC fails without PKIX</td>
+<td>PQ</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>JDK <code>HttpsServer</code></td>
+<td>Classical</td>
+<td>PQ; EC fails without PKIX</td>
+<td>PQ</td>
+<td>Tested; e2e target leg (RSA) on 8, 17, 21, 25</td>
+</tr>
+<tr>
+<td>Spring Boot 3.5.16 SSL bundle, EC PKCS#12</td>
+<td>Not run</td>
+<td>PQ on 21; fails with the agent's PKIX step switched off</td>
+<td>Not run</td>
+<td>Tested (21 only)</td>
+</tr>
+<tr>
+<td>Netty 4.2.20 + tcnative-boringssl-static 2.0.85</td>
+<td><strong>PQ</strong></td>
+<td>n/a</td>
+<td>PQ</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Netty 4.2.20, JDK provider</td>
+<td>Classical</td>
+<td>n/a</td>
+<td>PQ</td>
+<td>Tested on 25</td>
+</tr>
+<tr>
+<td>Undertow; Quarkus; Micronaut</td>
+<td>Follow the JSSE rows (JDK engine) or the tcnative row (native
+SSL)</td>
+<td></td>
+<td></td>
+<td>Unverified; confirm the engine from the startup log</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Order of preference for a JVM that terminates TLS:</strong>
+(1) JDK 25.0.5+; (2) Netty with tcnative on any JDK; (3) JDK 8 to 21
+with kit v2; (4) otherwise a PQ-capable proxy in front (nginx or Envoy
+on OpenSSL 3.5, Web servers and proxies chapter) or an ALB with a PQ
+policy.</p>
+<p><strong>Group settings by framework:</strong></p>
+<ul>
+<li><strong>Spring Boot</strong> has no named-group property (checked
+against the <a
+href="https://docs.spring.io/spring-boot/reference/features/ssl.html">4.1.2
+SSL reference</a>); keep
+<code>enabled-protocols: [TLSv1.3, TLSv1.2]</code> in the bundle. To
+reorder groups, set
+<code>-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1</code>;
+embedded Tomcat's <code class="nb">groups</code> defaults to it. The
+<code>TomcatConnectorCustomizer</code> in the full files is
+Unverified.</li>
+<li><strong>Standalone Tomcat:</strong>
+<code>SSLHostConfig groups</code> arrived in 11.0.12 (<a
+href="https://tomcat.apache.org/tomcat-11.0-doc/config/http.html">Tomcat
+11 HTTP connector</a>; Documented) and, per a mirrored changelog,
+10.1.48; the 9.0 line is not sure. It defaults to
+<code>jdk.tls.namedGroups</code> and picks only among groups the engine
+knows. With the OpenSSL implementation it should pass to OpenSSL (not
+tested). On JDK 17 and 21, <code>bin/setenv.sh</code> adds kit v2
+through <code>CATALINA_OPTS</code>.</li>
+<li><strong>Jetty, Undertow, <code>HttpsServer</code>:</strong> no group
+setting; they follow the JDK and <code>jdk.tls.namedGroups</code>.</li>
+<li><strong>Netty server</strong> (gRPC-Java, Reactor Netty, Vert.x):
+<code>SslContextBuilder.forServer(kmf).sslProvider(SslProvider.OPENSSL)</code>
+with tcnative on the class path. When <code>jdk.tls.namedGroups</code>
+is set, Netty uses that list for BoringSSL too, so a classical pin turns
+PQ off even with tcnative (Tested). Full code:
+<code>NettyPq.java</code>.</li>
+</ul>
+<p><strong>Behind an ALB or NLB TLS listener (e2e):</strong> with the
+load balancer modelled as the client on the target leg, an
+<code>HttpsServer</code> target with an RSA PKCS#12 keystore stayed
+classical on Corretto 8 and 21, negotiated X25519MLKEM768 with kit v2 on
+Corretto 8, 17 and 21 (Fargate; 21 also on ECS on EC2) and with no
+change on Corretto 25.0.5. With the ALB's classic backend policy every
+target negotiated classical TLS 1.2.</p>
+<h3
+id="c-existing-server-certificates-in-a-custom-keystore-or-cert-files">C.
+Existing server certificates in a custom keystore or cert files</h3>
+<p><strong>Who:</strong> the JVM loads its own certificate and key. Find
+it:</p>
+<pre class="bash"><code>grep -rnE &#39;javax\.net\.ssl\.keyStore|KeyManagerFactory|KeyStore\.getInstance|certificateKeystore|server\.ssl\.(key-store|bundle)|spring\.ssl\.bundle|keyManagerAlgorithm|setKeyStorePath&#39; \
+  src/ conf/ *.yml *.yaml *.properties Dockerfile* helm/ 2&gt;/dev/null
+keytool -list -v -keystore server.p12 -storetype PKCS12 | grep -E &#39;Alias name|Entry type|Signature algorithm|Subject Public Key Algorithm&#39;</code></pre>
+<p><strong>What changes in the store: nothing.</strong> Keep the RSA or
+EC key, PKCS#12 or JKS, aliases, passwords and the system properties
+that point at the store.</p>
+<p><strong>What to change (JDK 8 to 21 only):</strong>
+<code>ssl.KeyManagerFactory.algorithm=PKIX</code>, shipped in
+<code>pq-tls.security</code> and also set by agent v2 when the value is
+still the JDK default <code class="nb">SunX509</code>. The agent fallback covers
+apps whose own <code>-Djava.security.properties</code> replaces the
+kit's flag (Tested). Code that names <code class="nb">SunX509</code> must
+change:</p>
+<pre class="java"><code>// Fails with an EC certificate under BCJSSE (JDK 8-21 + kit):
+KeyManagerFactory kmf = KeyManagerFactory.getInstance(&quot;SunX509&quot;);
+// Works everywhere, and picks up the kit&#39;s PKIX default:
+KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+// Tomcat server.xml: drop keyManagerAlgorithm=&quot;SunX509&quot;, or set keyManagerAlgorithm=&quot;PKIX&quot;</code></pre>
+<p>Why: BCJSSE asks the key manager for key type
+<code>EC/secp256r1</code>, and SunJSSE's <code class="nb">SunX509</code> key
+manager returns no alias for it. RSA keys never needed the fix (BC asks
+for <code class="nb">RSA</code>, which SunX509 answers).</p>
+<p><strong>Tested proof</strong>
+(<code>tests/deep/java/v2/out/t17-v2kit.txt</code>,
+<code>t21-v2kit.txt</code>, <code>t17-v1nofix.txt</code>,
+<code>t21-v1nofix.txt</code>, <code>t25-none.txt</code>,
+<code>t25-file.txt</code>, <code>tomcat-sb.txt</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Keystore situation</th>
+<th>JDK 17/21 + kit v1</th>
+<th>JDK 17/21 + kit v2</th>
+<th>JDK 25.0.5, no kit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EC P-256 only, PKCS#12</td>
+<td><strong>Fails</strong> (handshake_failure, also for classical
+clients)</td>
+<td>PQ; classical client connects</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>RSA only, PKCS#12</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>RSA + EC in one PKCS#12</td>
+<td>PQ, always serves RSA</td>
+<td>PQ, serves EC; a client offering only RSA signature algorithms gets
+RSA</td>
+<td>PQ, serves EC</td>
+</tr>
+<tr>
+<td>Two EC certificates, SNI per host name</td>
+<td><strong>Fails</strong></td>
+<td>PQ, right certificate per SNI name</td>
+<td>PQ, but <strong>SNI ignored</strong> (served <code class="nb">alt-host</code>'s
+certificate for <code class="nb">ks-java</code>); with
+<code>pq-tls.security</code>: right certificate per name</td>
+</tr>
+<tr>
+<td>EC in a legacy JKS</td>
+<td><strong>Fails</strong></td>
+<td>PQ</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>Store from <code>-Djavax.net.ssl.keyStore*</code></td>
+<td><strong>Fails</strong></td>
+<td>PQ</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>App passes its own <code>-Djava.security.properties</code></td>
+<td><strong>Fails</strong></td>
+<td>PQ (agent v2 fallback)</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>Code hard-codes
+<code>KeyManagerFactory.getInstance("SunX509")</code></td>
+<td><strong>Fails</strong></td>
+<td><strong>Still fails</strong>: change the code</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>Tomcat 11.0.29 default <code>keyManagerAlgorithm</code> (EC)</td>
+<td>Fails</td>
+<td>PQ</td>
+<td>PQ</td>
+</tr>
+<tr>
+<td>Tomcat <code>keyManagerAlgorithm="SunX509"</code> (EC)</td>
+<td>Fails</td>
+<td><strong>Still fails</strong></td>
+<td>Not run</td>
+</tr>
+<tr>
+<td>Tomcat <code>keyManagerAlgorithm="PKIX"</code>, kit fix switched
+off</td>
+<td>n/a</td>
+<td>PQ (explicit PKIX is enough)</td>
+<td>Not run</td>
+</tr>
+<tr>
+<td>Spring Boot 3.5.16 <code>spring.ssl.bundle.jks</code>, EC PKCS#12
+(JDK 21)</td>
+<td>Fails</td>
+<td>PQ; classical client connects</td>
+<td>Not run</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Spring Boot SSL bundles</strong> call
+<code>KeyManagerFactory.getDefaultAlgorithm()</code>
+(<code>SslManagerBundle</code>, <code>DefaultSslManagerBundle</code>,
+checked with <code class="nb">javap</code>), so the kit property reaches them;
+<code class="nb">key.alias</code> still selects the alias.</li>
+<li><strong>PEM pairs</strong> (<code>spring.ssl.bundle.pem</code>,
+Tomcat <code>certificateFile</code>) become an in-memory keystore with
+the same key manager, so the same rule applies. Not run separately.
+Separate JKS key passwords go through the same
+<code>KeyManagerFactory.init</code>; not run separately.</li>
+<li><strong>BC is stricter on chains:</strong> it applies the client's
+<code>signature_algorithms</code> to the whole chain. A client offering
+only <code>rsa_pss_rsae_sha256</code> was refused an RSA certificate
+whose CA signed with PKCS#1; adding <code>rsa_pkcs1_sha256</code> fixed
+it (<code>tests/deep/java/ks/</code>). Modern clients offer both.</li>
+<li><strong>Side effects:</strong> an RSA + EC store starts serving EC
+under kit v2 (check client pins, case I). On JDK 25, PKIX also turns on
+SNI-based certificate selection.</li>
+</ul>
+<h3 id="ch-06-java--d-custom-ca-trust-private-ca">D. Custom CA trust (private
+CA)</h3>
+<p><strong>Who:</strong>
+<code>grep -rnE 'javax\.net\.ssl\.trustStore|TrustManagerFactory|X509TrustManager|truststore|trust-store|keytool .*-importcert|cacerts' src/ conf/ Dockerfile* helm/ *.yml *.yaml *.properties</code></p>
+<p><strong>What to change: nothing, on any JDK.</strong> BCJSSE uses the
+JDK's trust settings: <code>javax.net.ssl.trustStore*</code> when set,
+else <code>jssecacerts</code> or <code class="nb">cacerts</code>.
+<code>ssl.TrustManagerFactory.algorithm</code> stays <code class="nb">PKIX</code>;
+the kit doesn't touch it.</p>
+<table>
+<thead>
+<tr>
+<th>Trust setup (PQ-only OpenSSL 3.5 server, private-CA
+certificate)</th>
+<th>JDK 17/21 + kit</th>
+<th>JDK 25.0.5</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No private CA configured</td>
+<td>Fails <code>certificate_unknown(46)</code> (correct)</td>
+<td>Fails <code>PKIX path building failed</code> (correct)</td>
+<td>Tested; e2e
+<code>java-lambda-j21-sysprops-notrust-bundled</code></td>
+</tr>
+<tr>
+<td><code>-Djavax.net.ssl.trustStore=trust.p12</code> (+ password,
+type)</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>Tested; e2e Lambda <code class="nb">sysprops</code> cases</td>
+</tr>
+<tr>
+<td>App's own <code>TrustManagerFactory</code> from a truststore</td>
+<td>PQ</td>
+<td>PQ</td>
+<td>e2e (the probe does this in every case)</td>
+</tr>
+<tr>
+<td>CA imported into <code class="nb">cacerts</code> with
+<code>keytool -importcert -cacerts</code></td>
+<td>PQ</td>
+<td>Not run</td>
+<td>Tested (JDK 21)</td>
+</tr>
+</tbody>
+</table>
+<p>Spring bundle truststores use
+<code>TrustManagerFactory.getDefaultAlgorithm()</code> (javap), so trust
+is the same. A custom <code>X509TrustManager</code> is called by BCJSSE
+as by SunJSSE (not run; trust-all code is a finding in its own right).
+Netty tcnative and the CRT client take their own trust inputs; neither
+was run with a private CA.</p>
+<h3 id="ch-06-java--e-mutual-tls-client-certificates">E. Mutual TLS (client
+certificates)</h3>
+<p><strong>Who:</strong>
+<code>grep -rnE 'clientAuth|client-auth|certificateVerification|setNeedClientAuth|setWantClientAuth'</code>,
+or a client loading its own certificate with
+<code>-Djavax.net.ssl.keyStore</code> or a
+<code>KeyManagerFactory</code>.</p>
+<p><strong>Today with kit v1 (or a hard-coded
+<code class="nb">SunX509</code>):</strong> a JVM client with an <strong>EC</strong>
+client certificate silently sends <strong>no certificate</strong>, and
+the server answers <code>certificate_required(116)</code>. RSA client
+certificates work. <strong>Change:</strong> kit v2; no change to client
+or server stores.</p>
+<table>
+<thead>
+<tr>
+<th>Direction (kit v2 on 17 and 21; JDK 25 without a kit gives the
+same)</th>
+<th>Result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JVM client, EC client certificate, to a PQ mTLS server</td>
+<td>PQ; server verified the certificate</td>
+<td>Tested; e2e Lambda, Fargate and EC2 <code class="nb">*-ec</code> cases</td>
+</tr>
+<tr>
+<td>Same with kit v1 behaviour, or code naming <code class="nb">SunX509</code></td>
+<td>mTLS refused; RSA certificate with <code class="nb">SunX509</code> still
+works</td>
+<td>e2e <code>java-lambda-j21-ks-ec-v1</code>,
+<code>-j17-ks-ec-sunx509</code>, <code>-j17-ks-rsa-sunx509</code></td>
+</tr>
+<tr>
+<td>Function passes its own <code>-Djava.security.properties</code>
+(layer)</td>
+<td>PQ, EC mTLS works (agent v2 sets PKIX)</td>
+<td>e2e <code>java-lambda-j21-layer-ownsec</code>,
+<code>-j11-layer-ownsec</code></td>
+</tr>
+<tr>
+<td>BCJSSE server, <code>needClientAuth</code>, EC or RSA client
+certificate</td>
+<td>PQ; server logged the client CN</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>Same server, no client certificate, or one from an unknown CA</td>
+<td>Refused (correct)</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>BCJSSE PQ-only server
+(<code>jdk.tls.namedGroups=X25519MLKEM768</code>), X25519-only
+client</td>
+<td>Refused (correct)</td>
+<td>Tested</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Side effect:</strong> a harmless <code>Broken pipe</code>
+after the response when the server closes first (test artefact).</p>
+<h3 id="ch-06-java--f-explicit-tls-settings-that-block-pq">F. Explicit TLS settings
+that block PQ</h3>
+<p><strong>Who:</strong> run <code>ci/java-pq-check.sh</code> (full file
+below), or:</p>
+<pre class="bash"><code>grep -rnE &#39;jdk\.tls\.namedGroups|setNamedGroups|groups=&quot;|OpenSslContextOption\.GROUPS|SSLContext\.getInstance\(&quot;TLSv1\.2&quot;\)|TLS\.V_1_2|protocols=&quot;TLSv1\.2&quot;|enabled-protocols|ssl\.enabled\.protocols|tlsVersions|jdk\.tls\.client\.protocols|KeyManagerFactory\.getInstance\(&quot;SunX509&quot;|keyManagerAlgorithm&#39; .</code></pre>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Effect</th>
+<th>Change to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jdk.tls.namedGroups</code> without
+<code>X25519MLKEM768</code></td>
+<td>Classical on every JDK including 25, and for Netty tcnative. The
+agent leaves an existing value alone (e2e
+<code>java-lambda-j25-pin</code>, <code>-j21-layer-pin</code>)</td>
+<td><code>X25519MLKEM768,x25519,secp256r1,secp384r1</code></td>
+</tr>
+<tr>
+<td>Tomcat <code>groups="x25519,secp256r1"</code></td>
+<td>Classical on 25 (Tested)</td>
+<td>Add <code>X25519MLKEM768</code> first</td>
+</tr>
+<tr>
+<td><code>SSLContext.getInstance("TLSv1.2")</code>,
+<code class="nb">TLS.V_1_2</code> only, <code>enabled-protocols: [TLSv1.2]</code>,
+Kafka <code>ssl.enabled.protocols=TLSv1.2</code>, Connector/J
+<code>tlsVersions=TLSv1.2</code></td>
+<td>No TLS 1.3, so no ML-KEM</td>
+<td><code class="nb">"TLS"</code>, or <code>TLSv1.3,TLSv1.2</code></td>
+</tr>
+<tr>
+<td><code>KeyManagerFactory.getInstance("SunX509")</code>, Tomcat
+<code>keyManagerAlgorithm="SunX509"</code></td>
+<td>EC certificates fail under BCJSSE (Tested)</td>
+<td><code>getDefaultAlgorithm()</code> or <code class="nb">"PKIX"</code></td>
+</tr>
+<tr>
+<td><code>-Djava.security.properties==file</code> (double
+<code class="nb">=</code>)</td>
+<td>Replaces all of <code>java.security</code>; the kit line is
+lost</td>
+<td>Single <code class="nb">=</code>, or add the line to that file</td>
+</tr>
+<tr>
+<td>Cipher lists (<code class="nb">ciphers=</code>,
+<code>setEnabledCipherSuites</code>)</td>
+<td>No effect if a TLS 1.3 suite stays</td>
+<td>Keep at least one TLS 1.3 suite</td>
+</tr>
+</tbody>
+</table>
+<p>Library fixes, one line each (full code in "Netty and AWS SDK code"
+below):</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Any JSSE client</td>
+<td><code>SSLContext.getInstance("TLS")</code>, not
+<code class="nb">"TLSv1.2"</code></td>
+</tr>
+<tr>
+<td>Apache HttpClient 5 custom strategy</td>
+<td><code>.setTlsVersions(TLS.V_1_3, TLS.V_1_2)</code></td>
+</tr>
+<tr>
+<td>Netty with BoringSSL</td>
+<td><code>.sslProvider(SslProvider.OPENSSL)</code>; the
+<code>OpenSslContextOption.GROUPS</code> list is optional</td>
+</tr>
+<tr>
+<td>AWS SDK v2</td>
+<td><code>.httpClient(AwsCrtHttpClient.create())</code> on 2.35.11+.
+Before 2.35.11 the builder needed
+<code>.postQuantumTlsEnabled(true)</code> (<a
+href="https://aws.amazon.com/blogs/security/ml-kem-post-quantum-tls-now-supported-in-aws-kms-acm-and-secrets-manager">AWS
+Security Blog</a>); upgrade instead. Covers AWS calls only</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>JVM flag</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-Djdk.tls.namedGroups=X25519MLKEM768,x25519,secp256r1,secp384r1</code></td>
+<td>Group order; a list without <code>X25519MLKEM768</code> turns PQ off
+on 25 and for tcnative (Tested)</td>
+</tr>
+<tr>
+<td><code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code></td>
+<td>Required on the Lambda Java 8 runtime (it sets
+<code>TLSv1.2,TLSv1.1,TLSv1</code>, and BCJSSE honours it: e2e
+<code>java-lambda-j8-bundled-noproto</code> stays TLS 1.2); not needed
+on Corretto 8u512 elsewhere</td>
+</tr>
+<tr>
+<td><code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code></td>
+<td>Java 8 with BCJSSE: JDK 8's <code>HttpsURLConnection</code> opens
+the socket without a host name and BCJSSE (1.78+, after <a
+href="https://github.com/bcgit/bc-java/issues/1656">CVE-2024-34447,
+bc-java#1656</a>) then fails endpoint identification. JDK 11+ not
+affected</td>
+</tr>
+<tr>
+<td><code>-javaagent:&lt;dir&gt;/pq-tls-agent.jar</code></td>
+<td>JDK 8 to 21: BCJSSE first + PQ-first group list</td>
+</tr>
+<tr>
+<td><code>-Djava.security.properties=&lt;dir&gt;/pq-tls.security</code></td>
+<td>Kit v2: the PKIX key manager</td>
+</tr>
+<tr>
+<td><code>-Djava.security.properties=&lt;dir&gt;/bc-static.security</code></td>
+<td>Static BC registration (containers and EC2, not Lambda); includes
+the PKIX line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-06-java--g-fips-mode">G. FIPS mode</h3>
+<p><strong>Who:</strong> <code class="nb">bc-fips</code>/<code>bctls-fips</code>,
+<code>BouncyCastleFipsProvider</code> in <code>java.security</code>, a
+vendor FIPS JDK, or Corretto/RHEL with the OS in FIPS mode
+(<code>/proc/sys/crypto/fips_enabled</code> = 1).
+<strong>Today:</strong> not tested. <strong>Change:</strong> don't add
+the kit: it puts non-FIPS <code class="nb">bcprov</code>/<code class="nb">bctls</code> first.
+Whether <code>bctls-fips</code> offers X25519MLKEM768 is not sure: the
+<a
+href="https://support.keyfactor.com/hc/en-us/articles/53287242078619-Bouncy-Castle-Java-FIPS-2-1-X-release-notes">BC
+FIPS 2.1 release notes</a> we found cover <code class="nb">bc-fips</code> and do
+not mention hybrid TLS groups. Track JDK 25 with your FIPS provider and
+compliance team. The PKIX key-manager point is Unverified for
+<code>bctls-fips</code>. For AWS API calls use the FIPS endpoints; PQ on
+them depends on the service (AWS service endpoints chapter).</p>
+<h3 id="ch-06-java--h-libraries-with-their-own-tls-stack-and-agents">H. Libraries
+with their own TLS stack, and agents</h3>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Stack</th>
+<th>Kit effect</th>
+<th>What to do</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Netty + tcnative-boringssl-static 2.0.85 (gRPC-Java, Reactor Netty,
+Vert.x/Quarkus native, Lettuce with OpenSSL)</td>
+<td>BoringSSL</td>
+<td>None</td>
+<td>Nothing; don't pin <code>jdk.tls.namedGroups</code> without
+ML-KEM</td>
+<td>Tested</td>
+</tr>
+<tr>
+<td>AWS SDK v2 CRT client</td>
+<td>s2n-tls</td>
+<td>None</td>
+<td>SDK 2.35.11+</td>
+<td>Tested; Documented</td>
+</tr>
+<tr>
+<td>AWS SDK v2 Apache, UrlConnection, Netty without tcnative; JDBC;
+Kafka; Jedis</td>
+<td>JSSE</td>
+<td>Applies</td>
+<td>Follow the JDK row; keep TLS 1.3 allowed</td>
+<td>Tested (Apache, PostgreSQL); others Unverified</td>
+</tr>
+<tr>
+<td>APM agents (Datadog, New Relic, OpenTelemetry)</td>
+<td>JSSE for exporters</td>
+<td>Share <code>JAVA_TOOL_OPTIONS</code></td>
+<td>Append the kit, don't replace the variable</td>
+<td>Not run</td>
+</tr>
+<tr>
+<td>Conscrypt, wolfJSSE</td>
+<td>Own JSSE provider</td>
+<td>The one at position 1 wins</td>
+<td>Check <code>Security.getProviders()</code> order at startup</td>
+<td>Not run</td>
+</tr>
+<tr>
+<td>Amazon Corretto Crypto Provider (ACCP)</td>
+<td>JCA provider, not JSSE</td>
+<td>No conflict expected</td>
+<td>Check provider order</td>
+<td>Unverified</td>
+</tr>
+<tr>
+<td>Tools the JVM shells out to (<code class="nb">curl</code>, <code class="nb">git</code>,
+<code class="nb">wget</code>)</td>
+<td>Their own libraries</td>
+<td>n/a</td>
+<td>GnuTLS builds have no ML-KEM; OpenSSL 3.5 builds do (Hosts and OS
+chapter)</td>
+<td>Tested in that chapter</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-06-java--i-certificate-pinning-hsmpkcs11-and-kms-backed-keys">I.
+Certificate pinning, HSM/PKCS#11 and KMS-backed keys</h3>
+<ul>
+<li><strong>Client pins</strong> (OkHttp <code>CertificatePinner</code>,
+custom trust managers) keep working: the kit doesn't change what the
+peer serves. Exception: a <strong>server</strong> with RSA and EC in one
+store serves EC under kit v2 (case C), which breaks clients pinning the
+RSA leaf. Pin the CA or both keys first, or keep one key type per
+store.</li>
+<li><strong>PKCS#11/HSM keys</strong> (SunPKCS11, CloudHSM JCE): BCJSSE
+signs through the <code>PrivateKey</code>, so the key must work through
+JCA <code class="nb">Signature</code>. Not tested; test on the real HSM, or
+terminate at an ALB/NLB with an ACM certificate, or move to JDK 25.</li>
+<li><strong>ACM and KMS keys</strong> can't back a JVM
+<code>KeyManager</code>; terminate at the AWS front door. ACM exportable
+certificates are ordinary keystores (case C).</li>
+</ul>
+<h3 id="ch-06-java--j-other-cases">J. Other cases</h3>
+<ul>
+<li><strong>HTTPS proxy</strong> (<code>https.proxyHost</code>, SDK
+<code>HTTPS_PROXY</code>): with CONNECT, TLS is end to end, so the JVM
+and origin decide; a TLS-inspecting proxy decides itself (Network
+devices and egress chapter). Not run.</li>
+<li><strong>HTTP/2, gRPC, WebSockets</strong> use the same handshake;
+gRPC-Java uses Netty (case H).</li>
+<li><strong>Service mesh sidecar:</strong> if the app speaks plain HTTP
+to the sidecar, the mesh decides (Service mesh chapter).</li>
+<li><strong>Lambda SnapStart:</strong> the agent runs before the
+snapshot, so the provider order should be captured in it. Not
+tested.</li>
+<li><strong>Session resumption and 0-RTT</strong> under BCJSSE: not
+tested.</li>
+</ul>
+<h2 id="ch-06-java--solution-and-automation">3.5 Solution and automation</h2>
+<ol type="1">
+<li><strong>Inventory.</strong> JDK per workload
+(<code>java -version</code> in the image or on EC2, Lambda
+<code class="nb">Runtime</code>, ECR image labels). Kit presence:
+<code>JAVA_TOOL_OPTIONS</code> containing <code>pq-tls-agent.jar</code>
+<strong>and</strong> <code>pq-tls.security</code>; on a running JVM,
+<code>jcmd &lt;pid&gt; VM.system_properties | grep -E 'java.version|jdk.tls.namedGroups|java.security.properties'</code>.
+Keystore key types (case C), mTLS (case E), blocking settings (CI
+check). Traffic: CloudTrail <code>tlsDetails.keyExchange</code>.</li>
+<li><strong>Change.</strong> JDK 25.0.5+ where you can; elsewhere kit v2
+(Quick start). Kit v1 deployments: add the <code>pq-tls.security</code>
+flag or swap the jar. Fix code from case F.</li>
+<li><strong>Package per compute type</strong> (full files below):</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>JDK 25.0.5+</th>
+<th>JDK 8 to 21: kit v2</th>
+<th>JDK 17 and 21: static <code>java.security</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip</td>
+<td>Runtime <code class="nb">java25</code></td>
+<td><code class="nb">pq-tls/</code> at the zip root,
+<code>JAVA_TOOL_OPTIONS=KIT</code> (<code class="nb">/var/task</code>)</td>
+<td>Doesn't work (e2e <code>java-lambda-j21-static</code>)</td>
+</tr>
+<tr>
+<td>Lambda layer</td>
+<td>Not needed (the wrapper makes no change on 25)</td>
+<td><code class="nb">pq-tls</code> layer v2 +
+<code>AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper</code>; the wrapper
+adds <code>pq-tls.security</code> unless the function passes its own
+security file, and the Java 8 flags on <code class="nb">java8*</code></td>
+<td>Doesn't work</td>
+</tr>
+<tr>
+<td>Lambda container image</td>
+<td><code>public.ecr.aws/lambda/java:25</code></td>
+<td><code>COPY pq-tls/ ${LAMBDA_TASK_ROOT}/pq-tls/</code> +
+<code>ENV JAVA_TOOL_OPTIONS=KIT</code></td>
+<td>Not tested</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td><code>amazoncorretto:25</code>, <code>eclipse-temurin:25</code></td>
+<td><code>COPY pq-tls/ /opt/pq-tls/</code> +
+<code>ENV JAVA_TOOL_OPTIONS=KIT</code>, or the task definition or pod
+spec</td>
+<td><code>bc-static.security</code> + BC jars on <code class="nb">-cp</code> (e2e,
+including an EC client certificate)</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td><code>dnf install java-25-amazon-corretto-headless</code></td>
+<td>systemd drop-in, or the SSM document</td>
+<td>Same file via <code class="nb">ExecStart</code></td>
+</tr>
+</tbody>
+</table>
+<p>Rules everywhere:</p>
+<ul>
+<li>Append to <code>JAVA_TOOL_OPTIONS</code>; distroless images work too
+(the JVM reads the variable itself).</li>
+<li><code>java -jar</code> ignores <code class="nb">-cp</code>: for static
+registration, use the manifest <code>Class-Path</code> or
+<code>-cp ... MainClass</code>.</li>
+<li>Pin images by digest and record the JDK patch level; the PQ default
+arrived in a patch release (25.0.5).</li>
+<li>If the app passes its own <code>-Djava.security.properties</code> on
+the command line, that wins over the kit's flag; agent v2 then sets PKIX
+itself (Tested), or add the line to the app's file.</li>
+<li>If the app ships its own Bouncy Castle, the agent's 1.87 jars load
+first on the system class path; align versions.</li>
+</ul>
+<ol start="4" type="1">
+<li><strong>CI guardrail.</strong>
+<code>ci/java-pq-check.sh &lt;repo&gt;</code> (<a
+href="https://github.com/moolivkkr/PQC/blob/main/kit/java-v2/ci/java-pq-check.sh">kit/java-v2/ci/java-pq-check.sh</a>)
+fails on group pins without ML-KEM, TLS 1.2-only pins, a hard-coded
+<code class="nb">SunX509</code> and <code>java.security.properties==</code>; it
+warns on JDK below 25, kit v1 packaging, tcnative/CRT/Conscrypt and FIPS
+providers. Tested on a fixture: 3 FAIL + 2 WARN on the bad tree (exit
+1), 1 WARN on the good one (exit 0),
+<code>tests/deep/java/v2/out/ci-check.txt</code>. Add a registry or
+admission rule: JDK below 25 without the kit is non-compliant.</li>
+<li><strong>Fleet rollout:</strong> see the Rollout checklist.</li>
+</ol>
+<h2 id="ch-06-java--how-to-test">3.6 How to test</h2>
+<ol type="1">
+<li><strong>Posture.</strong> <code>java -version</code>; startup log
+<code>Picked up JAVA_TOOL_OPTIONS: -Djava.security.properties=.../pq-tls.security -javaagent:...</code>
+and
+<code>pq-tls agent v2: BCJSSE first, groups=X25519MLKEM768,..., ssl.KeyManagerFactory.algorithm=PKIX</code>.
+<code>...=SunX509</code> means the fix is switched off.</li>
+<li><strong>Client, local.</strong> Start a PQ-only and a classical-only
+OpenSSL 3.5 server
+(<code>openssl s_server -tls1_3 -groups X25519MLKEM768</code> and
+<code>-groups X25519</code>, or nginx
+<code>ssl_ecdh_curve X25519MLKEM768</code> with <code>$ssl_curve</code>
+in the log format). Run your client image against both; both must
+succeed.</li>
+<li><strong>Server.</strong>
+<code>openssl s_client -connect &lt;host&gt;:8443 -tls1_3 -groups X25519MLKEM768 -brief</code>
+must print <code>Negotiated TLS1.3 group: X25519MLKEM768</code>;
+<code>-groups X25519</code> must still connect.</li>
+<li><strong>Your keystore (case C).</strong> Start the server with a
+copy of your real store under kit v2, run step 3 with
+<code>-servername &lt;each SNI name&gt;</code> and check the
+<code>Peer certificate</code> CN. For RSA + EC stores also run
+<code>-sigalgs rsa_pss_rsae_sha256:rsa_pkcs1_sha256</code>.</li>
+<li><strong>Your truststore (case D).</strong> Against a PQ-only server
+with a private-CA certificate: connects with your truststore, fails
+without it.</li>
+<li><strong>mTLS (case E).</strong> Server:
+<code>openssl s_client ... -cert client.crt -key client.key -groups X25519MLKEM768</code>
+connects and is refused without <code class="nb">-cert</code>. Client: against
+<code>openssl s_server -tls1_3 -groups X25519MLKEM768 -Verify 1 -CAfile ca.crt</code>,
+the server log shows
+<code>depth=0 CN=&lt;your client cert&gt;</code>.</li>
+<li><strong>In AWS.</strong> CloudTrail
+<code>tlsDetails.keyExchange = X25519MLKEM768</code> on the role's KMS,
+STS, IAM, Secrets Manager, ACM and Payment Cryptography calls; for
+servers, the load balancer or peer logs the group.</li>
+<li><strong>Rollback.</strong> Remove the flags (or
+<code>PQ_TLS_DISABLE=1</code> with the layer) and restart: step 2
+against the PQ-only server must now fail and the classical one still
+work.</li>
+</ol>
+<p>Handshake traces: SunJSSE
+<code>-Djavax.net.debug=ssl:handshake</code> shows the
+<code class="nb">key_share</code> group; BCJSSE logs through
+<code>java.util.logging</code> at <code class="nb">FINE</code> on
+<code>org.bouncycastle.jsse</code>. The harness for cases C to E is
+<code class="nb">run-v2.sh</code> (full file below).</p>
+<h2 id="ch-06-java--rollout-checklist">3.7 Rollout checklist</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Inventory every JVM: JDK patch level, compute type,
+<code>JAVA_TOOL_OPTIONS</code>, existing agents</td>
+<td>Each workload has a row in the inventory</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Classify: 25.0.5+ (nothing), 8 to 21 (kit v2 or upgrade), FIPS
+(exception), Netty tcnative / CRT only (already PQ for those calls)</td>
+<td>Each row has a target</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Find EC keystores, mTLS client certificates, hard-coded
+<code class="nb">SunX509</code>, group and TLS 1.2 pins (case C, E, F greps; CI
+check)</td>
+<td>CI check passes, or findings fixed</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Check RSA + EC stores for client pinning (case I); test PKCS#11/HSM
+keys on the real HSM</td>
+<td>Owners confirmed</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Java 8: both flags on Lambda, the host-name flag elsewhere</td>
+<td>Present in IaC</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Ship kit v2 (never v1) through the shared build template; append to
+<code>JAVA_TOOL_OPTIONS</code></td>
+<td>Startup log shows <code>algorithm=PKIX</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Canary one task, pod, alias (10% weighted) or instance per
+service</td>
+<td>No new <code>handshake_failure</code>,
+<code>certificate_required</code> or <code>certificate_unknown</code>
+errors; ALB <code>TargetTLSNegotiationErrorCount</code> flat</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Run "How to test" steps 2 to 6 against the canary</td>
+<td>All pass</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Widen dev → qa → prod</td>
+<td>Dashboards show the workload's AWS calls as
+<code>X25519MLKEM768</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Plan the move to JDK 25.0.5+ and remove the kit after it</td>
+<td>Kit removed; CI check has no JDK warning</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Lambda Java on Amazon Linux 2 (<code class="nb">java8.al2</code>,
+<code class="nb">java11</code>, <code class="nb">java17</code>): move before AWS blocks
+updates on 2027-08-31</td>
+<td>Runtime upgraded</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-06-java--pitfalls-and-rollback">3.8 Pitfalls and rollback</h2>
+<table>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>Effect</th>
+<th>Avoid it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kit v1 (agent only)</td>
+<td>Every EC server certificate fails; EC client certificates silently
+not sent (Tested; e2e <code>java-lambda-j21-ks-ec-v1</code>)</td>
+<td>Kit v2 only</td>
+</tr>
+<tr>
+<td>Hard-coded <code class="nb">SunX509</code> (code or Tomcat)</td>
+<td>Beats the kit; EC fails (Tested; e2e
+<code>-j17-ks-ec-sunx509</code>)</td>
+<td><code>getDefaultAlgorithm()</code> or <code class="nb">PKIX</code>; CI
+check</td>
+</tr>
+<tr>
+<td>A pinned <code>jdk.tls.namedGroups</code></td>
+<td>Classical on any JDK, 25 included; the agent leaves it alone
+(e2e)</td>
+<td>Add <code>X25519MLKEM768</code> first; grep launch scripts, Helm
+values, <code>JAVA_TOOL_OPTIONS</code></td>
+</tr>
+<tr>
+<td>TLS 1.2 pins</td>
+<td>No ML-KEM</td>
+<td>Allow TLS 1.3 (case F)</td>
+</tr>
+<tr>
+<td>Java 8 without the host-name flag</td>
+<td>Every <code>HttpsURLConnection</code> handshake fails, PQ and
+classical (e2e)</td>
+<td>Add <code>assumeOriginalHostName=true</code></td>
+</tr>
+<tr>
+<td>Java 8 on Lambda without the protocols flag</td>
+<td>Stays classical TLS 1.2 (e2e)</td>
+<td>Add <code>jdk.tls.client.protocols=TLSv1.3,TLSv1.2</code>, or use
+the layer</td>
+</tr>
+<tr>
+<td>JDK 25 multi-certificate store</td>
+<td>SunX509 ignores SNI and serves the wrong certificate (Tested)</td>
+<td><code>pq-tls.security</code> (PKIX) on 25 too</td>
+</tr>
+<tr>
+<td>Served certificate type changes</td>
+<td>RSA + EC stores serve EC under kit v2</td>
+<td>Check client pins</td>
+</tr>
+<tr>
+<td>BC chain strictness</td>
+<td>RSA-PSS-only clients refused a PKCS#1-signed chain</td>
+<td>Modern clients offer both</td>
+</tr>
+<tr>
+<td>BCJSSE is the provider for the whole process</td>
+<td>Untested areas: PKCS#11 keys, session resumption, FIPS</td>
+<td>Test before rollout</td>
+</tr>
+<tr>
+<td>Another agent reorders providers or replaces
+<code>SSLContext.getDefault()</code></td>
+<td>Undoes the kit</td>
+<td>Check the startup log and provider order</td>
+</tr>
+<tr>
+<td>FIPS JVM</td>
+<td>Non-FIPS provider put first</td>
+<td>Don't add the kit</td>
+</tr>
+<tr>
+<td>PQ-only server too early</td>
+<td>Classical clients fail (expected)</td>
+<td>Enforce only when logs show no classical clients</td>
+</tr>
+<tr>
+<td>Larger ClientHello (about 1.2 KB more)</td>
+<td>Middleboxes that mishandle a split ClientHello break the first
+flight; Java doesn't retry classical</td>
+<td>Test through the real network path</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rollback.</strong> Remove both
+<code>-Djava.security.properties=.../pq-tls.security</code> and
+<code>-javaagent:</code> from <code>JAVA_TOOL_OPTIONS</code> and restart
+(removing only the agent leaves the harmless PKIX property). Lambda:
+delete the variable, or <code>PQ_TLS_DISABLE=1</code> with the layer
+(e2e <code>java-lambda-j21-layer-disabled</code>: classical); the next
+cold start is classical. JDK 25:
+<code>-Djdk.tls.namedGroups=x25519,secp256r1,secp384r1</code> (e2e
+<code>java-lambda-j25-pin</code>). CRT client: swap back to
+<code>ApacheHttpClient</code>.</p>
+<h2 id="ch-06-java--test-evidence">3.9 Test evidence</h2>
+<p>The LocalStack e2e suite, run r1117041043 (2026-11-16, LocalStack Pro
+on arm64, not real AWS), ran <strong>96 Java client cases and 7 load
+balancer target cases; all 103 passed</strong>. Pass means the observed
+behaviour matched the case's expectation, which for a baseline case is
+"classical". Cases: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/java.py">e2e/cases/java.py</a>. Client: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/java/Probe.java">e2e/clients/java/Probe.java</a>,
+an app with its own <code>SSLContext</code>, truststore and client
+keystore over <code>HttpsURLConnection</code>, compiled for Java 8, with
+no PQ settings in code. Server: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/java/Server.java">e2e/clients/server/java/Server.java</a>
+(<code>HttpsServer</code>, RSA PKCS#12, default key manager). Build and
+pinned images: <a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/java.sh">e2e/build/java.sh</a>.
+Results: <a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/results/latest/summary.md">e2e/results/latest/summary.md</a>.</p>
+<p>Each client case connects to eight listeners: hybrid, PQ-only, mTLS,
+EC server certificate, TLS 1.2-only and three ML-DSA listeners.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>What it proved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda zip, <code class="nb">java8.al2</code> to <code class="nb">java25</code></td>
+<td>46</td>
+<td>Baselines: classical on 8 to 21 (TLS 1.2 on 8), PQ on 25. Kit v2 in
+the zip and the <code class="nb">pq-tls</code> layer: PQ on 8 to 21, including EC
+client certificates via own <code>SSLContext</code> and via
+<code>-Djavax.net.ssl.*</code>. Java 8: PQ only with both flags.
+Negative and regression: kit v1 behaviour and hard-coded
+<code class="nb">SunX509</code> drop EC mTLS; group pins stay classical;
+<code>PQ_TLS_DISABLE=1</code> rolls back; no private CA fails; static
+registration doesn't work. <code class="nb">pq-egress</code> extension: PQ on every
+runtime</td>
+</tr>
+<tr>
+<td>Lambda container image, <code>lambda/java:8.al2023</code> to
+<code class="nb">:25</code></td>
+<td>11</td>
+<td>Baselines classical on 8 to 21, PQ on 25;
+<code>Dockerfile.lambda</code> kit PQ on 11, 17, 21; JDK 8 PQ with the
+layer files and wrapper</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>21</td>
+<td>Corretto 8 to 21 and AL2023 <code class="nb">dnf</code> Corretto classical, 25
+PQ; kit v2 via task definition or image <code class="nb">ENV</code> PQ on 8, 11,
+17, 21 (8 needs the host-name flag, not the protocols flag); static
+registration PQ on Corretto 17 and 21 and Temurin 21, including an EC
+client certificate</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>5</td>
+<td>Corretto 21 classical, 21 + kit PQ, 25 PQ, 17 static PQ; JDK 8
+without the host-name flag fails</td>
+</tr>
+<tr>
+<td>EC2 (AL2023 and AL2)</td>
+<td>13</td>
+<td>Corretto 11, 17, 21 classical and PQ with kit v2 (EC client
+certificate on 21); 25 PQ; the default <code class="nb">java</code> resolved to
+25</td>
+</tr>
+<tr>
+<td>Load balancer target leg (server)</td>
+<td>7</td>
+<td>Fargate: Corretto 8 and 21 classical, 8, 17, 21 + kit v2 PQ, 25 PQ;
+ECS on EC2: 21 + kit PQ. ALB classic backend policy: classical TLS 1.2
+on all</td>
+</tr>
+</tbody>
+</table>
+<p>Across all client cases: every working client still connected to the
+TLS 1.2-only listener (classical fallback); against a dual-certificate
+server every Java client received <strong>ECDSA</strong>, and the
+ML-DSA-only listeners refused all of them. No JDK negotiates ML-DSA in
+TLS yet.</p>
+<p><strong>Not tested in e2e:</strong> real AWS; JDK 8 with the full fix
+on ECS on EC2 and EC2; JDK 11 servers; servers with EC certificates (the
+deep tests cover them on 17, 21 and 25); Temurin 25 (deep tests only);
+FIPS; SnapStart; PKCS#11. Earlier deep tests (libraries, servers,
+keystores, CRT versions) are in <a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/java">tests/deep/java</a>, with outputs in
+<code class="nb">out/</code> and <code class="nb">v2/out/</code>.</p>
+<h2 id="ch-06-java--full-configuration-files">3.10 Configuration files</h2>
+<p>The complete files for this chapter are in the repository under <a href="https://github.com/moolivkkr/PQC/tree/main/configs/java"><code>configs/java/</code></a>. This paper shows only the main change from each; copy from the repository, not from the paper. 35 files:</p><table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls-agent/src/PqTlsAgent.java"><code>configs/java/pq-tls-agent/src/PqTlsAgent.java</code></a></td><td><code>pq-tls-agent/src/PqTlsAgent.java</code> (v2)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls/pq-tls.security"><code>configs/java/pq-tls/pq-tls.security</code></a></td><td><code>pq-tls/pq-tls.security</code> (new in v2)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls-agent/MANIFEST.MF"><code>configs/java/pq-tls-agent/MANIFEST.MF</code></a></td><td><code>pq-tls-agent/MANIFEST.MF</code> (zip, image and EC2 layout: jars next to the agent)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls-agent/MANIFEST-layer.MF"><code>configs/java/pq-tls-agent/MANIFEST-layer.MF</code></a></td><td><code>pq-tls-agent/MANIFEST-layer.MF</code> (Lambda layer layout: agent in <code>/opt/pq-tls</code>, jars in <code>/opt/java/lib</code>)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls-agent/build.sh"><code>configs/java/pq-tls-agent/build.sh</code></a></td><td><code>pq-tls-agent/build.sh</code> (v2: also builds the layer jar and copies <code>pq-tls.security</code>)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls-layer/wrapper"><code>configs/java/pq-tls-layer/wrapper</code></a></td><td><code>pq-tls-layer/wrapper</code> (v2; only the Java branch changed from the layer's v1 wrapper, see the Python and Node.js chapters for the other branches)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pom.xml"><code>configs/java/pom.xml</code></a></td><td><code class="nb">pom.xml</code> (excerpt: only the dependencies that matter for PQ; pick the options your service uses)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/build.gradle.kts"><code>configs/java/build.gradle.kts</code></a></td><td><code>build.gradle.kts</code> (same choices)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls/bc-static.security"><code>configs/java/pq-tls/bc-static.security</code></a></td><td><code>pq-tls/bc-static.security</code> (v2: adds the key manager line; load with <code>-Djava.security.properties=&lt;path&gt;</code>)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/src/main/resources/application.yml"><code>configs/java/src/main/resources/application.yml</code></a></td><td><code>src/main/resources/application.yml</code></td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/src/main/java/com/example/PqTomcatGroups.java"><code>configs/java/src/main/java/com/example/PqTomcatGroups.java</code></a></td><td><code>src/main/java/com/example/PqTomcatGroups.java</code> (Unverified: Tomcat's <code>SSLHostConfig.setGroups</code> was tested; this Spring wiring and the Boot 4 package name were </td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/conf/server.xml"><code>configs/java/conf/server.xml</code></a></td><td><code>conf/server.xml</code> (connector; <code class="nb">groups</code> needs Tomcat 11.0.12+ or the matching 10.1/9.0 releases)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/bin/setenv.sh"><code>configs/java/bin/setenv.sh</code></a></td><td><code>bin/setenv.sh</code> (v2)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/NettyPq.java"><code>configs/java/NettyPq.java</code></a></td><td><code>NettyPq.java</code> (client and server; the explicit list is optional, the tested default already prefers X25519MLKEM768)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/AwsClients.java"><code>configs/java/AwsClients.java</code></a></td><td><code>AwsClients.java</code> (AWS SDK for Java v2 CRT client; PQ by default from 2.35.11)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/template.yaml"><code>configs/java/template.yaml</code></a></td><td><code>template.yaml</code> (SAM, zip)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/template-layer.yaml"><code>configs/java/template-layer.yaml</code></a></td><td><code>template-layer.yaml</code> (SAM, layer v2)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/lambda.yaml"><code>configs/java/lambda.yaml</code></a></td><td><code>lambda.yaml</code> (plain CloudFormation)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/lambda.tf"><code>configs/java/lambda.tf</code></a></td><td><code class="nb">lambda.tf</code> (Terraform; zip, and the layer variant)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/Dockerfile.lambda"><code>configs/java/Dockerfile.lambda</code></a></td><td><code>Dockerfile.lambda</code> (Lambda container image, java21 base; for java25 drop the COPY and ENV lines)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/Dockerfile"><code>configs/java/Dockerfile</code></a></td><td><code>Dockerfile</code> (preferred: JDK 25.0.5+, no PQ-specific lines)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/Dockerfile.jdk21-agent"><code>configs/java/Dockerfile.jdk21-agent</code></a></td><td><code>Dockerfile.jdk21-agent</code> (kit v2, JDK 17/21 until the upgrade)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/Dockerfile.distroless-agent"><code>configs/java/Dockerfile.distroless-agent</code></a></td><td><code>Dockerfile.distroless-agent</code> (distroless has no shell; the JVM reads JAVA_TOOL_OPTIONS itself)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/Dockerfile.static"><code>configs/java/Dockerfile.static</code></a></td><td><code>Dockerfile.static</code> (static provider registration instead of the agent; <code>bc-static.security</code> v2 holds the PKIX line)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/taskdef.json"><code>configs/java/taskdef.json</code></a></td><td><code>taskdef.json</code> (ECS / Fargate; only needed if the image does not already set it)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/ecs.tf"><code>configs/java/ecs.tf</code></a></td><td><code class="nb">ecs.tf</code> (Terraform)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/ecs.yaml"><code>configs/java/ecs.yaml</code></a></td><td><code class="nb">ecs.yaml</code> (CloudFormation)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/deployment.yaml"><code>configs/java/deployment.yaml</code></a></td><td><code>deployment.yaml</code> (EKS)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/etc/systemd/system/orders-java.service"><code>configs/java/etc/systemd/system/orders-java.service</code></a></td><td><code>/etc/systemd/system/orders-java.service</code></td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/etc/systemd/system/orders-java.service.d/pq-tls.conf"><code>configs/java/etc/systemd/system/orders-java.service.d/pq-tls.conf</code></a></td><td><code>/etc/systemd/system/orders-java.service.d/pq-tls.conf</code> (drop-in, when you cannot edit the unit)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/pq-tls-ssm.yaml"><code>configs/java/pq-tls-ssm.yaml</code></a></td><td><code>pq-tls-ssm.yaml</code> (SSM Command document: install kit v2 from S3 and add the drop-in)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/ci/java-pq-check.sh"><code>configs/java/ci/java-pq-check.sh</code></a></td><td><code>ci/java-pq-check.sh</code></td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/V2Test.java"><code>configs/java/V2Test.java</code></a></td><td><code>V2Test.java</code> (server with a keystore and optional client auth, client, embedded Tomcat)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/run-v2.sh"><code>configs/java/run-v2.sh</code></a></td><td><code class="nb">run-v2.sh</code> (one JDK image and one kit mode per run; needs Docker, <code>debian:trixie-slim</code> for OpenSSL 3.5 and the keystores from <code>build-v2.sh</code>)</td></tr><tr><td><a href="https://github.com/moolivkkr/PQC/blob/main/configs/java/build-v2.sh"><code>configs/java/build-v2.sh</code></a></td><td><code>build-v2.sh</code> (builds kit v2 and the test classes, makes the client and rogue certs)</td></tr></tbody></table>
+
+<h1 id="ch-tests-java">4 Test evidence and test cases</h1>
+<p>Run r1117041043 (2026-11-16), LocalStack Pro end-to-end suite. Each
+case deploys the runtime and fix on real Lambda, ECS or EC2 resources in
+LocalStack and connects to a TLS observer; PASS means the observed
+result matched the expectation in the case file (a baseline that stays
+classical as documented passes). Not run on real AWS or x86_64.</p>
+<h2 id="ch-tests-java--summary">4.1 Summary</h2>
+<p>96 client cases and 7 load balancer target cases; 103 passed.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Cases</th>
+<th>PQ on <code class="nb">hybrid</code></th>
+<th>Connected to <code class="nb">pqonly</code></th>
+<th>Runtimes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda</td>
+<td>57</td>
+<td>39</td>
+<td>39</td>
+<td>image, java11, java17, java21, java25, java8.al2</td>
+</tr>
+<tr>
+<td>ECS Fargate</td>
+<td>21</td>
+<td>14</td>
+<td>14</td>
+<td>pqc-java:al2023 /usr/lib/jvm/jre-17/bin/java, pqc-java:al2023
+/usr/lib/jvm/jre-21/bin/java, pqc-java:al2023
+/usr/lib/jvm/jre-25/bin/java, pqc-java:corretto11 java,
+pqc-java:corretto17 java, pqc-java:corretto17-static java,
+pqc-java:corretto21 java, pqc-java:corretto21-agent-image java and 4
+more</td>
+</tr>
+<tr>
+<td>ECS on EC2</td>
+<td>5</td>
+<td>3</td>
+<td>3</td>
+<td>pqc-java:corretto17-static java, pqc-java:corretto21 java,
+pqc-java:corretto25 java, pqc-java:corretto8 java</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>13</td>
+<td>8</td>
+<td>8</td>
+<td>pqc-al2 /usr/lib/jvm/jre-11/bin/java, pqc-al2
+/usr/lib/jvm/jre-17/bin/java, pqc-al2023 /usr/lib/jvm/jre-11/bin/java,
+pqc-al2023 /usr/lib/jvm/jre-17/bin/java, pqc-al2023
+/usr/lib/jvm/jre-21/bin/java, pqc-al2023 /usr/lib/jvm/jre-25/bin/java,
+pqc-al2023 java</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What the cases vary:</strong> no change: the runtime's
+default (expected classical where the paper says so) (27); kit v1 or v2
+Java agent (Bouncy Castle JSSE) (17); the <code class="nb">pq-tls</code> layer and
+<code>AWS_LAMBDA_EXEC_WRAPPER</code> (16); kit files bundled in the
+Lambda package (13); the <code class="nb">pq-egress</code> Lambda extension (6);
+static <code>java.security</code> Bouncy Castle entry (6); Lambda
+container image, unchanged (5); Lambda container image with the fix in
+the Dockerfile (4); Lambda container image with the layer contents
+(2).</p>
+<p><strong>ML-DSA:</strong> 86 got ECDSA from the dual server and failed
+the ML-DSA-only targets; 4 failed every target for reasons unrelated to
+ML-DSA.</p>
+<p><strong>Load balancer target leg:</strong> 7 servers (ecs-ec2,
+ecs-fargate); 5 negotiated PQ with the ALB's PQ backend policy (the rest
+are baselines); 7 of 7 negotiated classical TLS 1.2 with the classic
+policy.</p>
+<table>
+<thead>
+<tr>
+<th>Test component</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case definitions (one entry per case, with its expectation)</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/cases/java.py">e2e/cases/java.py</a></td>
+</tr>
+<tr>
+<td>Probe deployed in every case</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/java/Probe.java">e2e/clients/java/Probe.java</a></td>
+</tr>
+<tr>
+<td>Build and deploy script</td>
+<td><a href="https://github.com/moolivkkr/PQC/blob/main/e2e/build/java.sh">e2e/build/java.sh</a></td>
+</tr>
+<tr>
+<td>Load balancer target server</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/e2e/clients/server/java/Server.java">e2e/clients/server/java/Server.java</a></td>
+</tr>
+<tr>
+<td>Earlier tests: existing certificates, keystores, libraries
+(containers)</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/tests/deep/java">tests/deep/java/</a></td>
+</tr>
+<tr>
+<td>Earlier tests: Lambda base images under the Runtime Interface
+Emulator</td>
+<td><a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/Client.java">tests/lambda/Client.java</a>, <a
+href="https://github.com/moolivkkr/PQC/tree/main/tests/lambda/agent">tests/lambda/agent/</a>, <a
+href="https://github.com/moolivkkr/PQC/blob/main/tests/lambda/run-java-al2023.sh">tests/lambda/run-java-al2023.sh</a>,
+<a href="https://github.com/moolivkkr/PQC/tree/main/kit/java-v2">kit/java-v2/</a></td>
+</tr>
+<tr>
+<td>Configuration and test harness files from the chapter</td>
+<td><a href="https://github.com/moolivkkr/PQC/tree/main/configs/java">configs/java/</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-java--every-client-case">4.2 Every client case</h2>
+<p>Cells: what the client negotiated with each target (hybrid, PQ-only,
+mutual TLS, TLS 1.2 only) and the certificate it got from the dual
+ML-DSA/ECDSA server.</p>
+<h3 id="ch-tests-java--lambda-57-cases">Lambda (57 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>java-lambda-image-j11-baseline</code></td>
+<td>11.0.33</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j11-fixed</code></td>
+<td>11.0.33</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j17-baseline</code></td>
+<td>17.0.21</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j17-fixed</code></td>
+<td>17.0.21</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j21-baseline</code></td>
+<td>21.0.13</td>
+<td>image-baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j21-fixed</code></td>
+<td>21.0.13</td>
+<td>image-fixed</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j25-baseline</code></td>
+<td>25.0.5</td>
+<td>image-baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j8-baseline</code></td>
+<td>1.8.0_512</td>
+<td>image-baseline</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j8-fixed</code></td>
+<td>1.8.0_512</td>
+<td>image-fixed</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j8-layer</code></td>
+<td>1.8.0_512</td>
+<td>image-layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-image-j8-layer-hostfix</code></td>
+<td>1.8.0_512</td>
+<td>image-layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j11-baseline</code></td>
+<td>11.0.33</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j11-bundled</code></td>
+<td>11.0.33</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j11-combined</code></td>
+<td>11.0.33</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j11-extension</code></td>
+<td>11.0.33</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j11-layer</code></td>
+<td>11.0.33</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j11-layer-ownsec</code></td>
+<td>11.0.33</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-baseline</code></td>
+<td>17.0.21</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-bundled</code></td>
+<td>17.0.21</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-combined</code></td>
+<td>17.0.21</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-combined-ext</code></td>
+<td>17.0.21</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-extension</code></td>
+<td>17.0.21</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-ks-ec-pkix</code></td>
+<td>17.0.21</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-ks-ec-sunx509</code></td>
+<td>17.0.21</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-ks-rsa-sunx509</code></td>
+<td>17.0.21</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j17-layer</code></td>
+<td>17.0.21</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-bundled</code></td>
+<td>21.0.13</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-combined</code></td>
+<td>21.0.13</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-extension</code></td>
+<td>21.0.13</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-ks-ec-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-ks-ec-bundled</code></td>
+<td>21.0.13</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-ks-ec-layer</code></td>
+<td>21.0.13</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-ks-ec-v1</code></td>
+<td>21.0.13</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-layer</code></td>
+<td>21.0.13</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-layer-disabled</code></td>
+<td>21.0.13</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-layer-ownsec</code></td>
+<td>21.0.13</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-layer-pin</code></td>
+<td>21.0.13</td>
+<td>layer</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-static</code></td>
+<td>21.0.13</td>
+<td>static</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-sysprops-ec-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-sysprops-ec-bundled</code></td>
+<td>21.0.13</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j21-sysprops-notrust-bundled</code></td>
+<td>21.0.13</td>
+<td>bundled</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-combined</code></td>
+<td>25.0.5</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-extension</code></td>
+<td>25.0.5</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-ks-ec-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-layer</code></td>
+<td>25.0.5</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-pin</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j25-sysprops-ec-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-baseline</code></td>
+<td>1.8.0_512</td>
+<td>baseline</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-bundled</code></td>
+<td>1.8.0_512</td>
+<td>bundled</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-bundled-hostfix</code></td>
+<td>1.8.0_512</td>
+<td>bundled</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-bundled-noproto</code></td>
+<td>1.8.0_512</td>
+<td>bundled</td>
+<td>classical 1.2</td>
+<td>fail</td>
+<td>classical 1.2</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-combined</code></td>
+<td>1.8.0_512</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-extension</code></td>
+<td>1.8.0_512</td>
+<td>extension</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>—</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-layer</code></td>
+<td>1.8.0_512</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-lambda-j8-layer-hostfix</code></td>
+<td>1.8.0_512</td>
+<td>layer</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-java--ecs-fargate-21-cases">ECS Fargate (21 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>java-fargate-al2023-j17-baseline</code></td>
+<td>17.0.21</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-al2023-j21-agent</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-al2023-j21-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-al2023-j25-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto11-agent</code></td>
+<td>11.0.33</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto11-baseline</code></td>
+<td>11.0.33</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto17-agent</code></td>
+<td>17.0.21</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto17-baseline</code></td>
+<td>17.0.21</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto17-static</code></td>
+<td>17.0.21</td>
+<td>static</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto21-agent</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto21-agent-ec</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto21-agent-image</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto21-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto21-static</code></td>
+<td>21.0.13</td>
+<td>static</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto21-static-ec</code></td>
+<td>21.0.13</td>
+<td>static</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto25-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto8-agent</code></td>
+<td>1.8.0_512</td>
+<td>agent</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto8-agent-hostfix</code></td>
+<td>1.8.0_512</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto8-agent-noproto</code></td>
+<td>1.8.0_512</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-corretto8-baseline</code></td>
+<td>1.8.0_512</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-fargate-temurin21-static</code></td>
+<td>21.0.13</td>
+<td>static</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-java--ecs-on-ec2-5-cases">ECS on EC2 (5 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>java-ecsec2-corretto17-static</code></td>
+<td>17.0.21</td>
+<td>static</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ecsec2-corretto21-agent</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ecsec2-corretto21-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ecsec2-corretto25-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ecsec2-corretto8-agent</code></td>
+<td>1.8.0_512</td>
+<td>agent</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>fail</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ch-tests-java--ec2-13-cases">EC2 (13 cases)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>hybrid</th>
+<th>pqonly</th>
+<th>mtls</th>
+<th>tls12</th>
+<th>ML-DSA dual</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>java-ec2-al2-j11-agent</code></td>
+<td>11.0.33</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2-j11-baseline</code></td>
+<td>11.0.33</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2-j17-agent</code></td>
+<td>17.0.21</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2-j17-baseline</code></td>
+<td>17.0.21</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-default-java</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j11-agent</code></td>
+<td>11.0.33</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j11-baseline</code></td>
+<td>11.0.33</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j17-agent</code></td>
+<td>17.0.21</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j17-baseline</code></td>
+<td>17.0.21</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j21-agent</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j21-agent-ec</code></td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j21-baseline</code></td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>fail</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>java-ec2-al2023-j25-baseline</code></td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>ECDSA</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-tests-java--load-balancer-target-cases-7">4.3 Load balancer target cases
+(7)</h2>
+<p>The workload is the HTTPS server; the observer connects like an ALB
+with the PQ backend policy (alb-pq) or the classic one
+(alb-classic).</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Compute</th>
+<th>Runtime</th>
+<th>Mode</th>
+<th>alb-pq</th>
+<th>alb-classic</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>srv-java-ecsec2-corretto21-agent</code></td>
+<td>ecs-ec2</td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-java-fargate-corretto17-agent</code></td>
+<td>ecs-fargate</td>
+<td>17.0.21</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-java-fargate-corretto21-agent</code></td>
+<td>ecs-fargate</td>
+<td>21.0.13</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-java-fargate-corretto21-baseline</code></td>
+<td>ecs-fargate</td>
+<td>21.0.13</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-java-fargate-corretto25</code></td>
+<td>ecs-fargate</td>
+<td>25.0.5</td>
+<td>baseline</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-java-fargate-corretto8-agent</code></td>
+<td>ecs-fargate</td>
+<td>1.8.0_512</td>
+<td>agent</td>
+<td><strong>PQ</strong></td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>srv-java-fargate-corretto8-baseline</code></td>
+<td>ecs-fargate</td>
+<td>1.8.0_512</td>
+<td>baseline</td>
+<td>classical</td>
+<td>classical 1.2</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+</body></html>

@@ -1,0 +1,1345 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Post-Quantum TLS on AWS</title><style>
+body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
+h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
+h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:9pt;page-break-inside:auto}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#e8edf3} tr{page-break-inside:avoid}
+code{font-family:Menlo,Consolas,monospace;font-size:8.5pt;background:#f2f2f2;padding:0 2px;word-break:break-word}
+code.nb{white-space:nowrap;word-break:normal}
+pre{background:#f2f2f2;padding:8px;font-size:8pt;white-space:pre-wrap;word-break:break-all;border:1px solid #ddd}
+pre code{background:none;padding:0}
+p.excerpt{font-size:9pt;margin-top:-4px}
+.cover{text-align:left;padding-top:160px}.cover h1{page-break-before:avoid;border:none;font-size:28pt}
+.cover .sub{font-size:14pt;color:#444}.cover .meta{margin-top:60px;font-size:10.5pt}
+.toc ul{padding-left:0}.toc li{list-style:none;margin:2px 0}.toc li.l0{margin-top:8px;font-weight:600}
+.toc li.l1{margin-left:22px;font-weight:400;font-size:9.5pt}.toc li.l2{margin-left:22px;font-weight:400;font-size:9.5pt}
+a{color:#0b57d0;text-decoration:none}
+@media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
+@page{size:A4;margin:16mm 14mm}
+</style></head><body>
+<div class="cover"><h1 class="title">Post-Quantum TLS on AWS</h1>
+<p class="sub">White paper: what we are solving, how we detect and track it, and how we fix it by compute type and language</p><p>The approach in brief: what "PQC-enabled" means, the use cases, detection with AWS logs and Zeek, the inventory and dashboards, solutions by compute type, one page per language, infrastructure, enforcement and the rollout. Each language team has its own detailed document; the complete guide has every detail.</p>
+<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="https://github.com/moolivkkr/PQC">https://github.com/moolivkkr/PQC</a></p></div>
+<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul><li class="l0"><a href="#ch-paper-01-introduction">1 Introduction</a><ul><li class="l2"><a href="#ch-paper-01-introduction--what-we-are-solving">1.1 What we are solving</a></li><li class="l2"><a href="#ch-paper-01-introduction--what-pqc-enabled-means">1.2 What &quot;PQC-enabled&quot; means</a></li><li class="l2"><a href="#ch-paper-01-introduction--scope">1.3 Scope</a></li><li class="l2"><a href="#ch-paper-01-introduction--approach">1.4 Approach</a></li><li class="l2"><a href="#ch-paper-01-introduction--evidence">1.5 Evidence</a></li></ul></li><li class="l0"><a href="#ch-paper-02-use-cases">2 Use cases: key exchange
+and certificates</a></li><li class="l0"><a href="#ch-paper-03-detection">3 Detection</a></li><li class="l0"><a href="#ch-paper-04-inventory">4 Inventory and dashboards</a></li><li class="l0"><a href="#ch-paper-05-compute">5 Solutions by compute type</a></li><li class="l0"><a href="#ch-paper-06-languages">6 Solutions by language</a></li><li class="l1"><a href="#ch-summary-go">6.1 Go</a></li><li class="l1"><a href="#ch-summary-python">6.2 Python</a></li><li class="l1"><a href="#ch-summary-nodejs">6.3 Node.js</a></li><li class="l1"><a href="#ch-summary-java">6.4 Java</a></li><li class="l1"><a href="#ch-summary-dotnet">6.5 .NET</a></li><li class="l0"><a href="#ch-paper-07-infrastructure">7 Infrastructure and services</a></li><li class="l0"><a href="#ch-paper-08-enforcement">8 Enforcement and guardrails</a></li><li class="l0"><a href="#ch-paper-09-rollout">9 Rollout, gaps and open items</a></li><li class="l0"><a href="#ch-paper-10-documents">Appendix. Documents, code and
+tests</a></li></ul></div>
+<h1 id="ch-paper-01-introduction">1 Introduction</h1>
+<h2 id="ch-paper-01-introduction--what-we-are-solving">1.1 What we are solving</h2>
+<p>Every TLS connection we own agrees its session key with a classical
+key exchange (X25519 or ECDHE P-256) unless something changes it.
+Traffic recorded today can be decrypted once a large quantum computer
+exists ("harvest now, decrypt later"), so data that must stay
+confidential for years is exposed now.</p>
+<ul>
+<li><strong>Classical is still the default where we run.</strong> On
+Lambda and Amazon Linux 2023, Python, Node.js and .NET negotiate
+classical X25519; Java before 25 and Node.js 18 and 20 cannot negotiate
+PQ at all.</li>
+<li><strong>It fails silently.</strong> A PQ client and a classical
+server, or the reverse, quietly agree on classical. Only logs, sensors
+and the inventory show it.</li>
+<li><strong>One date is fixed.</strong> AWS blocks updates to deprecated
+Lambda runtimes (Node.js 18 and 20, Python 3.9 to 3.11, Java on Amazon
+Linux 2, <code>provided.al2</code>, <code class="nb">dotnet8</code>) from
+2027-08-31. After that no fix can be added to them.</li>
+</ul>
+<h2 id="ch-paper-01-introduction--what-pqc-enabled-means">1.2 What &quot;PQC-enabled&quot; means</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+<th>Proven by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PQ connection</strong></td>
+<td>TLS 1.3 handshake that negotiated a hybrid ML-KEM group
+(X25519MLKEM768; ML-KEM is FIPS 203)</td>
+<td>The negotiated group in CloudTrail, ELB logs, Zeek or the
+application log</td>
+</tr>
+<tr>
+<td><strong>PQ-enabled client or server</strong></td>
+<td>Offers or accepts the hybrid group first <strong>and</strong> still
+accepts classical peers</td>
+<td>A PQ-only and a classical-only test server both connect</td>
+</tr>
+<tr>
+<td><strong>PQ-done workload</strong></td>
+<td>Every connection it owns that can be PQ is observed as PQ; the rest
+are recorded exceptions</td>
+<td>Dashboards, not the deployment record</td>
+</tr>
+<tr>
+<td><strong>PQ-signed certificate</strong></td>
+<td>Certificate or signature using ML-DSA (FIPS 204). A separate, slower
+track</td>
+<td>Certificate algorithm; TLS signature algorithm</td>
+</tr>
+</tbody>
+</table>
+<p>It does <strong>not</strong> mean new certificates (ML-KEM works with
+today's RSA and ECDSA certificates), PQ-only endpoints (classical
+fallback stays until logs show no classical traffic), encryption at
+rest, or FIPS-validated PQ.</p>
+<h2 id="ch-paper-01-introduction--scope">1.3 Scope</h2>
+<p>Connections: internet to front doors (ALB, NLB, CloudFront, API
+Gateway); front door to target; workload to AWS APIs, internal services,
+third parties and data stores; SSH to hosts; devices to AWS IoT Core;
+and certificates and signatures. Compute: Lambda (zip and image), ECS on
+Fargate, ECS on EC2 and EKS, EC2. Languages: Go, Python, Node.js, Java,
+.NET.</p>
+<h2 id="ch-paper-01-introduction--approach">1.4 Approach</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What</th>
+<th>Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 Detect</td>
+<td>Observed signals (what was negotiated) plus posture (what will be
+negotiated)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2 Inventory and track</td>
+<td>One classified list of every component; dashboards to done</td>
+<td>4</td>
+</tr>
+<tr>
+<td>3 Remediate</td>
+<td>One tested change per workload, by compute type and language; then
+infrastructure</td>
+<td>5, 6, 7</td>
+</tr>
+<tr>
+<td>4 Enforce</td>
+<td>Guardrails in the pipeline, AWS Organizations and Kubernetes, warn
+then fail</td>
+<td>8</td>
+</tr>
+<tr>
+<td>5 Prove</td>
+<td>Done only when observed PQ; the rest are owned exceptions</td>
+<td>9</td>
+</tr>
+</tbody>
+</table>
+<p>Certificates run alongside: ML-DSA roots and long-lived signatures
+first, internal dual-certificate pilots next, public HTTPS when AWS and
+browsers support it.</p>
+<h2 id="ch-paper-01-introduction--evidence">1.5 Evidence</h2>
+<p>Every claim carries a label: <strong>Tested</strong> (run between
+2026-11-12 and 2026-11-16 in Lambda base images, official images or the
+LocalStack end-to-end suite; not on real AWS),
+<strong>Documented</strong> (vendor documentation),
+<strong>Claimed</strong> (vendor plan) or <strong>Unverified</strong>.
+The end-to-end suite deploys real Lambda functions, ECS tasks and EC2
+instances in LocalStack Pro: run r1117041043 passed 471 of 471 cases
+(437 client cases, 32 load balancer target cases, 2 detection checks).
+Language teams have their own documents with the full detail; every
+configuration file and test is in the repository.</p>
+
+<h1 id="ch-paper-02-use-cases">2 Use cases: key exchange
+and certificates</h1>
+<p><strong>ML-KEM protects key exchange</strong> and stops traffic
+recorded today from being read later: urgent for every connection, and
+no new certificates. <strong>ML-DSA protects certificates and
+signatures</strong>: a forged signature matters only once a quantum
+computer exists, so it is urgent only where trust must last for years.
+In TLS today, "hybrid" key exchange is one group (X25519MLKEM768);
+"hybrid" certificates mean a <strong>dual certificate</strong> (the
+server holds ECDSA and ML-DSA and sends what the client asks for).
+Composite certificates have no TLS code points yet (Documented).</p>
+<table>
+<thead>
+<tr>
+<th>Use case</th>
+<th>Key exchange (ML-KEM)</th>
+<th>Certificate (ML-DSA)</th>
+<th>Do now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Public HTTPS</td>
+<td>PQ policy on ALB, NLB, CloudFront, API Gateway REST</td>
+<td>Not possible: AWS front doors and browsers serve RSA/ECDSA only</td>
+<td>Key exchange now; keep ECDSA certificates</td>
+</tr>
+<tr>
+<td>Internal HTTPS (private CA)</td>
+<td>Language fix per workload</td>
+<td>Dual certificate from AWS Private CA; OpenSSL 3.5 clients get
+ML-DSA, Go and Java get ECDSA</td>
+<td>Key exchange now; pilot dual certificates. Never ML-DSA-only</td>
+</tr>
+<tr>
+<td>Workload identity and mTLS</td>
+<td>Same as internal</td>
+<td>ML-DSA client keys work on OpenSSL 3.5 stacks and .NET 10; not .NET
+8, Go, Java. IAM Roles Anywhere accepts ML-DSA</td>
+<td>Pilot Roles Anywhere; mesh identities stay ECDSA</td>
+</tr>
+<tr>
+<td>User certificates</td>
+<td>Windows Schannel opt-in</td>
+<td>AD CS 2025 issues ML-DSA; Microsoft calls Schannel ML-DSA a
+pilot</td>
+<td>Separate test CA only</td>
+</tr>
+<tr>
+<td>Devices and IoT</td>
+<td>AWS IoT Core has no PQ policy</td>
+<td>IoT Core: RSA/ECDSA only</td>
+<td><strong>Plan now:</strong> ML-DSA root alongside ECDSA in new
+firmware</td>
+</tr>
+<tr>
+<td>Code and firmware signing</td>
+<td>n/a</td>
+<td>KMS ML-DSA keys; Private CA code-signing certificates; AWS Signer is
+ECDSA only</td>
+<td><strong>Plan now:</strong> add an ML-DSA signature for artifacts
+verified for years</td>
+</tr>
+<tr>
+<td>SSH</td>
+<td>OpenSSH 10 defaults to <code>mlkem768x25519-sha256</code>
+(Tested)</td>
+<td>OpenSSH 10.6 hybrid ML-DSA keys</td>
+<td>Upgrade OpenSSH; ML-DSA keys only where all clients are 10.6+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tested across 409 client cases:</strong> 91 used ML-DSA on
+all three test targets, 4 (.NET 8) on server certificates only, 307 got
+ECDSA from the dual server, and every client that connects at all still
+connected to the dual server. So ML-DSA roots can be distributed now,
+and dual certificates break nobody; ML-DSA-only servers would break Go,
+Java, OpenSSL 3.0 and the default Amazon Linux 2023 policy.</p>
+
+<h1 id="ch-paper-03-detection">3 Detection</h1>
+<p>Two kinds of signal, used together. <strong>Observed</strong> signals
+show what a handshake negotiated and prove a fix worked.
+<strong>Posture</strong> predicts what a workload will negotiate from
+its runtime, versions and settings, and covers what no log or sensor
+sees (Lambda and Fargate calls to non-AWS services). A TLS 1.2
+connection is never PQ, so the protocol version alone flags it.</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Sees</th>
+<th>Covers</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CloudTrail <code>tlsDetails.keyExchange</code></td>
+<td>Group per AWS API call</td>
+<td>KMS, STS, IAM, Secrets Manager, ACM, Roles Anywhere (others "coming
+soon")</td>
+<td>Documented</td>
+</tr>
+<tr>
+<td>ALB connection logs, NLB TLS access logs</td>
+<td>Group per inbound connection</td>
+<td>Every ALB and NLB TLS listener (logs off by default)</td>
+<td>Documented</td>
+</tr>
+<tr>
+<td><strong>Zeek</strong> on VPC Traffic Mirroring</td>
+<td><code class="nb">ssl.log</code> <code class="nb">curve</code>; our script adds
+<code class="nb">pq</code> and raises a notice</td>
+<td>East-west and egress traffic of EC2 hosts, ECS and EKS nodes, NAT
+instances, proxies</td>
+<td><strong>Tested</strong>: Zeek 7.2.2 classified every handshake in
+the e2e stack; 8.0.10 on a pcap</td>
+</tr>
+<tr>
+<td>Application handshake log</td>
+<td>One JSON line per handshake</td>
+<td>Any compute, including Lambda and Fargate</td>
+<td><strong>Tested</strong>: a CloudWatch filter found 892 of 892
+classical handshakes</td>
+</tr>
+<tr>
+<td>Proxy and server logs</td>
+<td>Envoy, nginx, HAProxy group variables</td>
+<td>Self-managed servers and egress proxies</td>
+<td>Tested (Envoy, nginx)</td>
+</tr>
+<tr>
+<td>Posture inventory</td>
+<td>Runtime, settings, policies, classified</td>
+<td>Everything AWS APIs list</td>
+<td><strong>Tested</strong> on LocalStack: 25 of 25</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>AWS API calls</th>
+<th>Other outbound</th>
+<th>Packet capture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda</td>
+<td>CloudTrail</td>
+<td>Posture or application log only</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Fargate</td>
+<td>CloudTrail</td>
+<td>Posture, application log or an egress proxy</td>
+<td>No</td>
+</tr>
+<tr>
+<td>ECS on EC2, EKS, EC2</td>
+<td>CloudTrail</td>
+<td><strong>Zeek</strong> on mirrored ENIs</td>
+<td>Yes (Nitro)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zeek</strong> is the only signal for east-west and egress
+traffic that no AWS log covers, whatever made the connection. Mirror
+only TLS ports from NAT instances, egress proxies and busy hosts; don't
+truncate packets (the hybrid ClientHello spans two segments); write JSON
+logs to S3 for Athena. It cannot see Fargate or Lambda, nor certificate
+types in TLS 1.3.</p>
+<p><strong>Blind spots</strong> and their cover: Lambda and Fargate to
+non-AWS services (posture, app logs, egress proxy); AWS APIs not yet
+logging <code>keyExchange</code> (posture); AWS-managed legs such as
+CloudFront to origin and API Gateway to integrations (recorded
+exceptions); IoT Core (device inventory).</p>
+
+<h1 id="ch-paper-04-inventory">4 Inventory and dashboards</h1>
+<p>The inventory is one list of everything that makes or ends a TLS
+connection, each with a status, an owner and a next action. A component
+is <strong>done</strong> when its posture is PQ and observed signals
+show no classical connections for seven days, or when it is a recorded
+exception.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+<th>Next action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="nb">pq</code></td>
+<td>PQ today with no change</td>
+<td>Confirm with observed signals</td>
+</tr>
+<tr>
+<td><code class="nb">pq-fixed</code></td>
+<td>Our fix is applied</td>
+<td>Confirm; classical traffic here means a failed fix</td>
+</tr>
+<tr>
+<td><code class="nb">bridge</code></td>
+<td>Partial fix (Python 3.9 to 3.11 shim, <code class="nb">pq-egress</code>
+extension)</td>
+<td>Plan the runtime upgrade</td>
+</tr>
+<tr>
+<td><code class="nb">fixable</code></td>
+<td>One change makes it PQ</td>
+<td>Release the fix</td>
+</tr>
+<tr>
+<td><code class="nb">upgrade</code></td>
+<td>Only a runtime upgrade helps</td>
+<td>Schedule before the block-update date</td>
+</tr>
+<tr>
+<td><code class="nb">blocked</code></td>
+<td>AWS offers no PQ option</td>
+<td>Migrate, front it, or record an exception</td>
+</tr>
+<tr>
+<td><code class="nb">scan</code></td>
+<td>Needs an image or binary scan</td>
+<td>Scan</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sources.</strong> Lambda functions, ECS task definitions, ELB
+listeners, Classic load balancers and API Gateway are read by
+<code>configs/inventory/pq_inventory.py</code> (read-only; Tested on
+LocalStack, 25 of 25 components classified correctly). Next to add:
+container image scans (Inspector SBOM), EC2 hosts (SSM Inventory), EKS
+workloads, RDS and data services, certificates (ACM, Private CA),
+CloudFront and IoT devices.</p>
+<p><strong>Pipeline.</strong> Inventory output, CloudTrail, ELB logs,
+Zeek <code class="nb">ssl.log</code> and application handshake logs land in S3;
+Athena views (<code>configs/inventory/athena-views.sql</code>) put them
+in one shape and join observed calls to workloads by IAM role;
+dashboards in QuickSight or Managed Grafana read the views. The views
+follow documented log formats but have not been run on Athena
+(Unverified).</p>
+<table>
+<thead>
+<tr>
+<th>Dashboard</th>
+<th>Question</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Programme</td>
+<td>How many components are PQ; is the classical share falling?</td>
+<td>All <code class="nb">pq</code>, <code class="nb">pq-fixed</code> or exceptions</td>
+</tr>
+<tr>
+<td>By compute type, by language and runtime</td>
+<td>Where is each workload; which runtimes hit a deadline?</td>
+<td>No <code class="nb">fixable</code> or <code class="nb">upgrade</code> left</td>
+</tr>
+<tr>
+<td>Front doors and infrastructure</td>
+<td>Are all listeners and APIs on PQ policies?</td>
+<td>All PQ or recorded</td>
+</tr>
+<tr>
+<td>Network (Zeek)</td>
+<td>Which hosts still make classical connections, to where?</td>
+<td>Only exception destinations</td>
+</tr>
+<tr>
+<td>Fix verification</td>
+<td>Did each fix work?</td>
+<td>No <code class="nb">pq-fixed</code> workload with classical calls</td>
+</tr>
+<tr>
+<td>Certificates; Exceptions</td>
+<td>Algorithms and expiry; owners and review dates</td>
+<td>Plans in place; no overdue review</td>
+</tr>
+</tbody>
+</table>
+<p><strong>First four weeks:</strong> run the inventory in every
+account; turn on ELB connection logs and the CloudTrail alarm; deploy
+Zeek on mirrored ENIs of NAT instances, proxies and the busiest hosts;
+build the Programme, By compute type and Fix verification
+dashboards.</p>
+
+<h1 id="ch-paper-05-compute">5 Solutions by compute type</h1>
+<p>The language and its version decide whether a connection
+<strong>can</strong> be PQ; the compute type decides <strong>who owns
+the TLS library, where the fix lives and how we see the result</strong>.
+Every fix is a file, a variable, a base image or a version, versioned
+once in the shared <code class="nb">pq-tls</code> kit and shipped through the build
+template, so each workload picks it up on its next release and rolls
+back by removing it.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>Who owns the TLS library</th>
+<th>Where the fix lives</th>
+<th>How we see it</th>
+<th>e2e cases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (zip, image)</td>
+<td>AWS (zip); you, from an AWS base image</td>
+<td>Files under <code>/var/task/pq-tls/</code> plus a variable; or the
+<code class="nb">pq-tls</code> layer</td>
+<td>CloudTrail; application logs</td>
+<td>250</td>
+</tr>
+<tr>
+<td>ECS on Fargate</td>
+<td>You (the image)</td>
+<td>Base image, Dockerfile, task definition</td>
+<td>CloudTrail; app logs; egress proxy</td>
+<td>109 + 27 target</td>
+</tr>
+<tr>
+<td>ECS on EC2, EKS</td>
+<td>You (the image); node OS doesn't matter</td>
+<td>Same; pod spec on EKS</td>
+<td>Plus Zeek on node ENIs</td>
+<td>24 + 5 target</td>
+</tr>
+<tr>
+<td>EC2 hosts</td>
+<td>You (OS packages)</td>
+<td>OS crypto policy via SSM, service unit</td>
+<td>CloudTrail; Zeek; SSM Inventory</td>
+<td>54</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fix by language and compute</strong> (detail in each language
+document):</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Lambda</th>
+<th>Containers (Fargate, ECS, EKS)</th>
+<th>EC2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go</td>
+<td>Go 1.24+ build with <code class="nb">go</code> line ≥ 1.24, or
+<code>GODEBUG=tlsmlkem=1</code></td>
+<td>Same; base image irrelevant</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Python 3.12+</td>
+<td><code>openssl-pq.cnf</code> + <code>OPENSSL_CONF</code></td>
+<td>Debian 13 or Alpine image; on AL2023 the config or
+<code>DEFAULT:PQ</code></td>
+<td><code>DEFAULT:PQ</code> via SSM</td>
+</tr>
+<tr>
+<td>Python 3.9 to 3.11</td>
+<td>Upgrade; bridge: shim or layer</td>
+<td>Not blocked: any OpenSSL 3.5 image</td>
+<td>As above</td>
+</tr>
+<tr>
+<td>Node.js 22, 24</td>
+<td><code>openssl-pq-node.cnf</code> + <code>OPENSSL_CONF</code>
+(overrides the bootstrap)</td>
+<td>Official image 22.20+ / 24.5+: PQ by default</td>
+<td>Official binaries</td>
+</tr>
+<tr>
+<td>Node.js 18, 20</td>
+<td>Upgrade; interim <code class="nb">pq-egress</code> extension</td>
+<td>Upgrade</td>
+<td>Upgrade</td>
+</tr>
+<tr>
+<td>Java 8 to 21</td>
+<td>Kit v2 agent via <code>JAVA_TOOL_OPTIONS</code></td>
+<td>JDK 25.0.5+ image, or the agent</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Java 25</td>
+<td>Nothing</td>
+<td>JDK 25.0.5+</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>.NET 8, 10</td>
+<td><code>openssl-pq.cnf</code> + <code>OPENSSL_CONF</code></td>
+<td>Alpine or Ubuntu 26.04 image; on AL2023 the config</td>
+<td><code>DEFAULT:PQ</code>; Windows: Schannel group</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lambda</strong> ships the fix three ways, in order of
+preference: bundled in the package by the build template (no layer
+limit); the <code class="nb">pq-tls</code> layer with
+<code>AWS_LAMBDA_EXEC_WRAPPER</code> (one layer for all runtimes,
+<code>PQ_TLS_DISABLE=1</code> rolls back); or, interim, the
+<code class="nb">pq-egress</code> extension, which makes the TLS connection for
+runtimes that cannot (the app calls it over loopback). All three Tested
+in e2e, not on real AWS. Runtimes AWS blocks on 2027-08-31 move
+first.</p>
+<p><strong>Containers</strong> usually need one Dockerfile line: a base
+image that is PQ by default (<code>python:3.13-slim-trixie</code>,
+<code class="nb">node:24</code>, Corretto 25, .NET 10 Alpine). As ALB/NLB targets,
+the same fix makes the load balancer's backend leg PQ (32 target cases
+Tested).</p>
+<p><strong>EC2 hosts</strong> take
+<code>update-crypto-policies --set DEFAULT:PQ</code> on AL2023, in waves
+by tag through SSM State Manager; Amazon Linux 2 must migrate; Debian 13
+and Ubuntu 26.04 are PQ for OpenSSL programs but not GnuTLS tools (wget,
+Debian git).</p>
+
+<h1 id="ch-paper-06-languages">6 Solutions by language</h1>
+<p>One page per language follows: what decides PQ, the change on each
+compute type, what to watch with existing certificates, ML-DSA, rollback
+and what was tested. Each language team has its own document with every
+version, case (simple client and server, own keystores, custom CA trust,
+mutual TLS, explicit settings, FIPS, libraries with their own TLS,
+pinning), test procedure, configuration file and test case.</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>What decides PQ</th>
+<th>PQ by default today</th>
+<th>Main action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go</td>
+<td><code>crypto/tls</code> in the binary: toolchain and <code class="nb">go</code>
+line</td>
+<td>Go 1.24+ with <code class="nb">go</code> ≥ 1.24, everywhere</td>
+<td>Build with 1.26, raise the <code class="nb">go</code> line</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>The platform OpenSSL</td>
+<td>Debian 13 and Alpine images</td>
+<td>Config file on Lambda and AL2023; upgrade 3.9 to 3.11</td>
+</tr>
+<tr>
+<td>Node.js</td>
+<td>Bundled OpenSSL plus its config</td>
+<td>Official 22.20+ and 24.5+ (not on Lambda)</td>
+<td>Override file on Lambda; upgrade 18 and 20</td>
+</tr>
+<tr>
+<td>Java</td>
+<td>The JVM's JSSE provider</td>
+<td>JDK 25.0.5+</td>
+<td>JDK 25, or the Bouncy Castle agent for 8 to 21</td>
+</tr>
+<tr>
+<td>.NET</td>
+<td>The OS (OpenSSL, Schannel)</td>
+<td>Alpine and Ubuntu 26.04 images</td>
+<td>Config file or PQ base image; Windows opt-in</td>
+</tr>
+</tbody>
+</table>
+<p>Rust (rustls with aws-lc-rs, AWS SDK for Rust), Ruby and PHP (system
+OpenSSL) are Documented, not tested.</p>
+
+<h1 id="ch-summary-go">6.1 Go</h1>
+<p><strong>What decides PQ.</strong> Go's own <code>crypto/tls</code> is
+compiled into the binary, so the OS, base image and Lambda runtime play
+no part. Three things decide the result: the toolchain version, the
+<code class="nb">go</code> line in <code class="nb">go.mod</code>, and any explicit TLS
+settings in code. A binary built with Go 1.24+ <strong>and</strong> a
+<code class="nb">go</code> line of 1.24+ negotiates X25519MLKEM768 by default on
+every compute type.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda (<code>provided.al2023</code>,
+<code>provided.al2</code>)</td>
+<td>Yes with Go 1.24+ and <code class="nb">go</code> ≥ 1.24</td>
+<td>Rebuild with Go 1.26, raise the <code class="nb">go</code> line; or
+<code>GODEBUG=tlsmlkem=1</code></td>
+</tr>
+<tr>
+<td>ECS Fargate, ECS on EC2, EKS</td>
+<td>Same rule; the base image does not matter</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Same rule</td>
+<td>Same; the systemd unit can carry <code class="nb">GODEBUG</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li><code>go version -m &lt;binary&gt;</code> shows Go 1.23 or older:
+rebuild with Go 1.26. Nothing else helps (1.23 offers only the
+pre-standard Kyber draft).</li>
+<li>The <code class="nb">go</code> line is below 1.24: raise it to 1.26. If you
+can't yet, <code>godebug tlsmlkem=1</code> in <code class="nb">go.mod</code> or
+<code>GODEBUG=tlsmlkem=1</code> in the deployment.</li>
+<li>Code or a library sets <code>CurvePreferences</code> or
+<code>MaxVersion: tls.VersionTLS12</code>: add X25519MLKEM768 or remove
+the setting.</li>
+<li>FIPS mode: use Go 1.26+ native FIPS 140-3 (1.24 has no PQ in FIPS
+mode; <code>fips140=only</code> on 1.25 fails every handshake). The AWS
+SDK for Go v2 in FIPS mode forces classical curves: re-add the hybrids
+with <code>WithTransportOptions</code>.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change. Watch two
+things: <code>SSL_CERT_FILE</code> replaces the system bundle rather
+than adding to it, and <code>x/crypto/pkcs12</code> cannot read OpenSSL
+3 PKCS#12 files (use <code class="nb">go-pkcs12</code>). <strong>ML-DSA:</strong>
+Go 1.23 to 1.27 never negotiate ML-DSA in TLS; they get the ECDSA
+certificate from a dual-certificate server and fail an ML-DSA-only
+one.</p>
+<p><strong>Rollback:</strong>
+<code>GODEBUG=tlsmlkem=0,tlssecpmlkem=0</code> in the environment; no
+rebuild. <strong>Detect:</strong> CloudTrail for AWS calls; Go 1.25+ can
+log <code>ConnectionState().CurveID</code> itself.</p>
+<p><strong>Tested:</strong> 118 client cases (Lambda 77, Fargate 22, ECS
+on EC2 5, EC2 14) and 5 load balancer target cases, all passing,
+covering Go 1.23 to 1.27, every <code class="nb">go</code> line,
+<code class="nb">GODEBUG</code>, FIPS modes and the AWS SDK fix.</p>
+
+<h1 id="ch-summary-python">6.2 Python</h1>
+<p><strong>What decides PQ.</strong> The standard library
+<code class="nb">ssl</code> module uses the platform's OpenSSL, so the OS image and
+its crypto policy decide. OpenSSL 3.5 can do ML-KEM, but Amazon Linux
+2023's crypto policy leaves it out, so Lambda and AL2023 images
+negotiate classical X25519 until a config file adds it. Libraries that
+bundle their own TLS (grpcio, awscrt, psycopg binary, pyOpenSSL,
+confluent-kafka) are already PQ on every runtime.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda python3.12 to 3.14</td>
+<td>No</td>
+<td>Ship <code>openssl-pq.cnf</code>, set
+<code>OPENSSL_CONF=/var/task/pq-tls/openssl-pq.cnf</code> (or the
+<code class="nb">pq-tls</code> layer)</td>
+</tr>
+<tr>
+<td>Lambda python3.9 to 3.11 (Amazon Linux 2, OpenSSL 1.1.1)</td>
+<td>No</td>
+<td>Upgrade to 3.12+ before 2027-08-31. Bridge: the shim (requests and
+boto3 only) or the layer</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td>Debian 13 (<code class="nb">-trixie</code>) and Alpine 3.24: yes. Debian 12,
+Ubuntu 24.04, AL2023: no</td>
+<td>Move to a trixie or Alpine image; on AL2023, <code>DEFAULT:PQ</code>
+in the Dockerfile or the config file</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>AL2023: no; Debian 13, Ubuntu 26.04: yes</td>
+<td><code>update-crypto-policies --set DEFAULT:PQ</code> via SSM, or
+<code>OPENSSL_CONF</code> in the service unit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Pick the row above; one file and one variable, or one base image
+change.</li>
+<li>Don't use <code>OPENSSL_CONF=/dev/null</code>: it enables PQ but
+drops the crypto policy and changes the cipher list.</li>
+<li>Remove <code>set_ecdh_curve(...)</code> and TLS 1.2 maximums from
+code; on Python 3.15, <code>SSLContext.set_groups()</code> is the right
+API if you must pin groups.</li>
+<li>Python 3.9 to 3.11 bridge: build pyOpenSSL, cryptography <strong>and
+idna</strong> in each version's Lambda image (without idna every request
+fails); <code>truststore.inject_into_ssl()</code> disables it.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change for
+<code>load_cert_chain</code>, <code class="nb">cafile</code>, certifi or
+<code>REQUESTS_CA_BUNDLE</code>. gunicorn with an encrypted key file
+fails every worker: use an <code>ssl_context</code> hook.
+<strong>ML-DSA:</strong> works on OpenSSL 3.5 images (Debian 13, Alpine)
+and through the 3.9 to 3.11 shim; AL2023 also needs
+<code>SignatureAlgorithms</code> (<code>openssl-pq-mldsa.cnf</code> or
+<code>DEFAULT:PQ</code>).</p>
+<p><strong>Rollback:</strong> remove <code>OPENSSL_CONF</code> (or
+<code>PQ_TLS_DISABLE=1</code> with the layer). <strong>Detect:</strong>
+CloudTrail for AWS calls; log <code>SSLSocket.group()</code> on Python
+3.15+.</p>
+<p><strong>Tested:</strong> 59 client cases (Lambda 35, Fargate 13, ECS
+on EC2 3, EC2 8) and 6 load balancer target cases, all passing.</p>
+
+<h1 id="ch-summary-nodejs">6.3 Node.js</h1>
+<p><strong>What decides PQ.</strong> Official Node.js binaries bundle
+their own OpenSSL: 22.20+ and 24.5+ ship OpenSSL 3.5 and are PQ by
+default (use 24.9+ as the policy floor, as AWS does). On Lambda, the
+runtime's bootstrap sets <code>OPENSSL_CONF</code> to a file whose group
+list has no ML-KEM, so Lambda Node is classical until that file is
+overridden. Official Node 18 and 20 bundle OpenSSL without ML-KEM (3.0
+in <code class="nb">node:20</code> images; 3.1 and 3.2 on Lambda
+<code>nodejs18.x</code> and <code>nodejs20.x</code>). Distro Node links
+the system OpenSSL, so AL2023 <code class="nb">dnf</code> Node, even
+<code class="nb">nodejs20</code>, is fixable with the system policy or config.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda nodejs22.x, nodejs24.x</td>
+<td>No (bootstrap config)</td>
+<td>Ship <code>openssl-pq-node.cnf</code>, set <code>OPENSSL_CONF</code>
+to it (or the <code class="nb">pq-tls</code> layer). Prefer 24:
+<code>nodejs22.x</code> updates are blocked from 2027-08-31</td>
+</tr>
+<tr>
+<td>Lambda nodejs26.x (preview)</td>
+<td>Not sure: the base image is PQ unless
+<code>AWS_LAMBDA_TLS_PROFILE=aws</code> selects its classical profile
+(Docker test only)</td>
+<td>Set <code>OPENSSL_CONF</code> as for 22 and 24</td>
+</tr>
+<tr>
+<td>Lambda nodejs18.x, nodejs20.x</td>
+<td>No, and no setting helps</td>
+<td>Upgrade before 2027-08-31; interim, the <code class="nb">pq-egress</code>
+extension for calls that must be PQ</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td>Official <code class="nb">node</code> images 22.20+ and 24.5+: yes. AL2023
+<code class="nb">dnf</code> Node: no</td>
+<td>Official image 24.9+; AL2023 <code class="nb">dnf</code> Node:
+<code>DEFAULT:PQ</code> in the Dockerfile or <code>OPENSSL_CONF</code>
+(EKS not tested)</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Official binaries: yes. AL2023 <code class="nb">dnf</code> Node: no</td>
+<td>Official binaries, or <code>DEFAULT:PQ</code> / a per-service
+<code>OPENSSL_CONF</code> for <code class="nb">dnf</code> Node</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Lambda: ship the override file and variable. Our file replaces AWS's
+rather than including it, so add a pipeline check that diffs AWS's file
+against ours on each new runtime image.</li>
+<li>Upgrade Node 18 and 20; don't put X25519MLKEM768 first in
+<code class="nb">ecdhCurve</code> on bundled Node 20: it crashes.</li>
+<li>Remove explicit <code class="nb">ecdhCurve</code> lists and TLS 1.2 maximums,
+or add X25519MLKEM768 to them.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change for key/cert,
+modern PFX, <code class="nb">ca</code> or <code>NODE_EXTRA_CA_CERTS</code>. Legacy
+RC2 or 3DES PFX files fail on every current runtime: re-export them. The
+Lambda image has an empty system CA store: set
+<code>SSL_CERT_FILE</code>. <strong>ML-DSA:</strong> Node on OpenSSL 3.5
+(Lambda 22 and 24 even unfixed, official 22.20+/24.5+ images, fixed
+AL2023 Node) negotiates ML-DSA on all three targets; unfixed AL2023 Node
+and Node 20 get ECDSA.</p>
+<p><strong>Rollback:</strong> remove <code>OPENSSL_CONF</code> (or
+<code>PQ_TLS_DISABLE=1</code> with the layer). <strong>Detect:</strong>
+CloudTrail for AWS calls; application handshake logs.</p>
+<p><strong>Tested:</strong> 93 client cases (Lambda 48, Fargate 28, ECS
+on EC2 5, EC2 12) and 7 load balancer target cases, all passing
+(LocalStack, run r1117041043; not yet on real AWS).</p>
+
+<h1 id="ch-summary-java">6.4 Java</h1>
+<p><strong>What decides PQ.</strong> The JSSE provider inside the JVM,
+not OpenSSL, so the OS and image do not matter. JDK 25.0.5+ negotiates
+X25519MLKEM768 by default (JEP 527, backported to 25.0.5). JDK 8 to 21
+have no ML-KEM; the fix is Bouncy Castle JSSE as the TLS provider,
+loaded by our kit v2 agent, or a move to JDK 25.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda java8.al2, java11, java17, java21</td>
+<td>No</td>
+<td>Kit v2 agent:
+<code>JAVA_TOOL_OPTIONS=-javaagent:/var/task/pq-tls/pq-tls-agent.jar</code>
+(or the <code class="nb">pq-tls</code> layer, which adds the Java 8 flags)</td>
+</tr>
+<tr>
+<td>Lambda java25</td>
+<td>Yes</td>
+<td>Nothing</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td>JDK 25.0.5+ images: yes; 8 to 21: no</td>
+<td>Move to Corretto or Temurin 25.0.5+, or the agent, or a static
+<code>java.security</code> Bouncy Castle entry (17, 21)</td>
+</tr>
+<tr>
+<td>EC2</td>
+<td>Same as containers</td>
+<td>Same; <code>JAVA_TOOL_OPTIONS</code> in the service unit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Prefer JDK 25.0.5+ where the application can move. Oracle plans
+backports to 21 and 17, then 11 and 8; secondary reports say H1 and H2
+2027 (Claimed, not shipped).</li>
+<li>Otherwise, the kit v2 agent. Java 8 also needs
+<code>-Djdk.tls.client.protocols=TLSv1.3,TLSv1.2</code> on Lambda and
+<code>-Dorg.bouncycastle.jsse.client.assumeOriginalHostName=true</code>
+everywhere.</li>
+<li><strong>Servers with an EC certificate</strong> need
+<code>ssl.KeyManagerFactory.algorithm=PKIX</code> under Bouncy Castle,
+or every handshake fails. Kit v2 sets it; code that hard-codes
+<code class="nb">SunX509</code> (or Tomcat
+<code>keyManagerAlgorithm="SunX509"</code>) still fails, and the CI
+check flags it.</li>
+<li>Without Bouncy Castle: Netty <code>tcnative-boringssl</code> 2.0.85,
+or the AWS SDK v2 CRT client (PQ by default from 2.35.11 per AWS; 2.59.1
+Tested PQ, 2.35.10 classical).</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change to JKS or
+PKCS#12 stores, <code class="nb">cacerts</code> or
+<code>javax.net.ssl.trustStore</code>; mutual TLS works with kit v2 (kit
+v1 silently sent no EC client certificate). <strong>Risk:</strong>
+Bouncy Castle becomes the TLS provider for the whole process: test FIPS,
+custom keystore and mutual TLS services first. <strong>ML-DSA:</strong>
+no JDK negotiates ML-DSA in TLS yet; Java gets ECDSA from a
+dual-certificate server.</p>
+<p><strong>Rollback:</strong> remove the <code>-javaagent</code> option.
+<strong>Detect:</strong> CloudTrail for AWS calls; server logs for
+inbound.</p>
+<p><strong>Tested:</strong> 96 client cases (Lambda 57, Fargate 21, ECS
+on EC2 5, EC2 13) and 7 load balancer target cases, all passing; Tomcat
+11, Jetty 12 and the JDK HttpsServer with EC certificates on JDK 17 and
+21 under kit v2, and EC keystores on JDK 25 with no change (container
+tests). Not yet run: real AWS, JDK 8 on EC2, FIPS.</p>
+
+<h1 id="ch-summary-dotnet">6.5 .NET</h1>
+<p><strong>What decides PQ.</strong> .NET has no API for TLS groups: it
+uses the operating system's stack, OpenSSL on Linux and Schannel on
+Windows. So the base image and its crypto policy decide, exactly as for
+Python. Lambda's dotnet8 and dotnet10 runtimes have OpenSSL 3.5 under
+the AL2023 policy, which leaves ML-KEM out.</p>
+<table>
+<thead>
+<tr>
+<th>Compute</th>
+<th>PQ today?</th>
+<th>What to change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lambda dotnet8, dotnet10 (zip, image, Native AOT)</td>
+<td>No</td>
+<td>Ship <code>openssl-pq.cnf</code>, set <code>OPENSSL_CONF</code> (or
+the <code class="nb">pq-tls</code> layer). dotnet8 is deprecated: creation blocked
+from 2027-07-29, updates from 2027-08-31; move to dotnet10</td>
+</tr>
+<tr>
+<td>Fargate, ECS on EC2, EKS</td>
+<td><code>8.0-alpine</code>, <code>10.0-alpine</code>,
+<code>10.0-resolute</code> (Ubuntu 26.04): yes. Default <code class="nb">8.0</code>
+and <code class="nb">10.0</code> tags, <code class="nb">-noble</code>, Azure Linux, AL2023:
+no</td>
+<td>Use an Alpine or <code class="nb">resolute</code> image; on AL2023 the config
+file or <code>DEFAULT:PQ</code></td>
+</tr>
+<tr>
+<td>EC2 Linux</td>
+<td>AL2023: no</td>
+<td><code>DEFAULT:PQ</code> via SSM, or <code>OPENSSL_CONF</code> in the
+service unit</td>
+</tr>
+<tr>
+<td>Windows</td>
+<td>Opt-in, not tested</td>
+<td>Schannel group <code>X25519_MLKEM768</code> (TLS 1.3 only) via GPO
+or SSM, after the July 2026 update</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to change, in order</strong></p>
+<ol type="1">
+<li>Pick the row above. There is nothing to change in code, and nothing
+code can do.</li>
+<li>Remove <code>EnabledSslProtocols = Tls12</code> caps: ML-KEM needs
+TLS 1.3.</li>
+<li>On Lambda, code that opens an <code class="nb">X509Store</code> needs a
+writable <code class="nb">HOME</code>: export <code class="nb">HOME=/tmp</code> from an exec
+wrapper in the package (tested), or load the PFX/PEM directly.</li>
+</ol>
+<p><strong>Certificates and keystores:</strong> no change for PFX, PEM,
+<code class="nb">X509Store</code>, custom validation callbacks or
+<code>CustomTrustStore</code>.
+<code>X509Certificate2.CreateFromPemFile(caPath)</code> throws on a
+CA-only file: use <code>CreateFromPem(File.ReadAllText(path))</code>.
+<strong>ML-DSA:</strong> .NET 10 on Alpine, <code class="nb">resolute</code> or
+AL2023 with <code>DEFAULT:PQ</code> accepts ML-DSA server certificates
+and presents ML-DSA client certificates (client side tested; a .NET
+server with an ML-DSA certificate was not). The
+<code>openssl-pq.cnf</code> route (Lambda, AL2023 config) adds ML-KEM
+only: ML-DSA-only servers fail. .NET 8 receives ML-DSA server
+certificates but cannot load an ML-DSA client key.</p>
+<p><strong>Rollback:</strong> remove <code>OPENSSL_CONF</code> (or
+<code>PQ_TLS_DISABLE=1</code> with the layer), revert the
+<code class="nb">FROM</code> line, or
+<code>update-crypto-policies --set DEFAULT</code>.
+<strong>Detect:</strong> CloudTrail for AWS calls; .NET does not expose
+the negotiated group, so application logs cannot prove PQ.</p>
+<p><strong>Tested:</strong> 71 client cases (Lambda 33, Fargate 25, ECS
+on EC2 6, EC2 7) and 7 load balancer target cases, all passing, on
+LocalStack and Docker (not real AWS). Not tested: EKS, Windows, FIPS
+hosts.</p>
+
+<h1 id="ch-paper-07-infrastructure">7 Infrastructure and services</h1>
+<p>Most infrastructure becomes PQ by configuration we control today;
+some legs wait for AWS. Where the client is our own code (SDKs, database
+drivers, apps behind a mesh) the fix is the language fix. Full detail
+per area is in the complete guide.</p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>PQ today</th>
+<th>Main action</th>
+<th>Blocked by AWS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Load balancers</td>
+<td>ALB and NLB opt-in</td>
+<td>2025-09 PQ policy; SCP on
+<code>elasticloadbalancing:SecurityPolicy</code>; target leg needs the
+target's fix (Tested)</td>
+<td>Classic LB (migrate)</td>
+</tr>
+<tr>
+<td>Edge and API front doors</td>
+<td>CloudFront viewer on; API Gateway REST opt-in</td>
+<td>REST PQ policies; front HTTP and WebSocket APIs with CloudFront or a
+PQ ALB</td>
+<td>CloudFront to origin; API Gateway egress; HTTP and WebSocket
+APIs</td>
+</tr>
+<tr>
+<td>AWS service endpoints</td>
+<td>KMS, Secrets Manager, STS, IAM, ACM, S3, DynamoDB</td>
+<td>Client-side language fixes; CloudTrail to prove</td>
+<td>Unlisted services (e.g. SSM)</td>
+</tr>
+<tr>
+<td>Network devices and egress</td>
+<td>Squid, Envoy, strongSwan 6.0.2+, vendor appliances</td>
+<td>PQ egress proxy for what can't upgrade; Zeek for detection</td>
+<td>Network Firewall TLS inspection; AWS VPN</td>
+</tr>
+<tr>
+<td>Service mesh</td>
+<td>Linkerd 2.19+ on; Istio 1.27+, Envoy opt-in</td>
+<td>Upgrade or set mesh config</td>
+<td>ECS Service Connect</td>
+</tr>
+<tr>
+<td>Databases and data services</td>
+<td>RDS and Aurora by version; PostgreSQL 18, MySQL 26.7+, Valkey
+8.1</td>
+<td>Engine upgrade, group config, PQ-capable drivers</td>
+<td>RDS Proxy, ElastiCache, MSK, OpenSearch</td>
+</tr>
+<tr>
+<td>Hosts and OS</td>
+<td>AL2023, RHEL opt-in; Debian 13 and Ubuntu 26.04 on (OpenSSL only);
+Windows opt-in</td>
+<td><code>DEFAULT:PQ</code> via SSM; Schannel group via GPO or SSM</td>
+<td>Amazon Linux 2 (migrate)</td>
+</tr>
+<tr>
+<td>Web servers and proxies</td>
+<td>nginx, Apache, HAProxy on OpenSSL 3.5; Envoy 1.40+</td>
+<td>Set groups on both listener and upstream leg</td>
+<td>None</td>
+</tr>
+<tr>
+<td>IoT</td>
+<td>Classical into IoT Core; wolfSSL, awscrt, Mosquitto can do PQ</td>
+<td>PQ-capable stacks and ML-DSA roots in new firmware</td>
+<td>IoT Core</td>
+</tr>
+<tr>
+<td>WAF</td>
+<td>Follows the resource it is attached to</td>
+<td>PQ on the resource</td>
+<td>Same as the resource</td>
+</tr>
+<tr>
+<td>Certificates (ML-DSA)</td>
+<td>Private CA, KMS, Roles Anywhere issue ML-DSA</td>
+<td>Dual-certificate pilot after ML-KEM</td>
+<td>ACM, ELB, CloudFront, public web PKI</td>
+</tr>
+<tr>
+<td>Mobile, desktop, CLI</td>
+<td>Browsers and Apple 26 on; Windows opt-in</td>
+<td>Upgrade CI toolboxes and clients</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>TLS 1.3 at the front door:</strong> allow 1.2 and 1.3 with a
+PQ policy first, measure, then move each endpoint to 1.3-only once its
+TLS 1.2 traffic reaches zero. Every "blocked by AWS" leg goes into the
+exception register and is rechecked against AWS's PQ readiness page each
+quarter.</p>
+
+<h1 id="ch-paper-08-enforcement">8 Enforcement and guardrails</h1>
+<p>Guardrails keep new work PQ while the backlog is fixed. All start in
+warn mode and move to fail on a schedule; each step is reversible by
+flipping the mode.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Controls</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Organisation</td>
+<td>SCP on ELB and API Gateway security policies; optional RCP for TLS
+1.3 on named S3 buckets; Config rules for ELB, API Gateway and
+CloudFront policies and a Guard rule for Lambda settings</td>
+<td>Documented; JSON and rules Tested on samples</td>
+</tr>
+<tr>
+<td>Pipeline</td>
+<td>cfn-guard (14 rules) and a CloudFormation Guard Hook; conftest on
+Terraform plans; Checkov; Dockerfile and SBOM policies;
+<code>check-go-pq.sh</code>, <code>check-jdk-pq.sh</code></td>
+<td>Tested on good and bad samples</td>
+</tr>
+<tr>
+<td>Kubernetes</td>
+<td>Kyverno (audit, then deny) and Gatekeeper for ALB Ingress, NLB
+Service, ingress-nginx, istiod and pod variables</td>
+<td>Tested (CLI)</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>CloudTrail metric filter and alarm; EventBridge rules on non-PQ
+changes; hourly classical share from ELB logs; Zeek notices</td>
+<td>Partly Tested; AWS-side Unverified</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Schedule:</strong> week 0 inventory and warn everywhere; week
+2 block new risk (SCP on new OUs, pipeline fails on changed resources);
+week 6 fail all resources in CI with exceptions for the rest; week 8
+org-wide SCP. <strong>Exceptions</strong> carry an owner, a reason
+(blocked by AWS, third party, legacy client) and a review date. Security
+Hub ELB.17 passes non-PQ policies, so a green control does not mean
+PQ.</p>
+
+<h1 id="ch-paper-09-rollout">9 Rollout, gaps and open items</h1>
+<p><strong>Mechanism.</strong> Every change ships as a release: (1) the
+inventory classifies each workload; (2) a bot opens a pull request
+bumping the shared build template, which adds the right file and
+variable; (3) the normal pipeline releases it, with guardrails warning
+then failing; (4) observed signals confirm the change, because shipping
+is not proof. Dormant workloads are ranked by observed classical
+traffic; runtimes past AWS's block date cannot change, so they go
+first.</p>
+<table>
+<thead>
+<tr>
+<th>Phase (proposed)</th>
+<th>Window</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0. Prove on real AWS (CloudTrail <code>keyExchange</code>, ELB logs,
+one workload per language and compute)</td>
+<td>2026-11-23 to 2026-12-18</td>
+</tr>
+<tr>
+<td>1. Inventory and baseline; dashboards</td>
+<td>2026-11-23 to 2027-01-15</td>
+</tr>
+<tr>
+<td>Wave A. Runtime upgrades for runtimes AWS blocks (Node 18 and 20,
+Python 3.9 to 3.11, Java on AL2, <code>provided.al2</code>,
+<code class="nb">dotnet8</code>)</td>
+<td>2026-12-01 to 2027-06-30</td>
+</tr>
+<tr>
+<td>2. Guardrails in warn mode</td>
+<td>2027-01-04 to 2027-02-12</td>
+</tr>
+<tr>
+<td>3. Front doors to PQ policies</td>
+<td>2027-01-11 to 2027-03-12</td>
+</tr>
+<tr>
+<td>4. Workload waves B to D through the build template</td>
+<td>2027-02-01 to 2027-06-30</td>
+</tr>
+<tr>
+<td>5. Enforce (guardrails fail, org-wide SCP)</td>
+<td>2027-07-01 to 2027-09-30</td>
+</tr>
+<tr>
+<td>Certificate track (ML-DSA roots and signing first, then
+dual-certificate pilots)</td>
+<td>2026-11-23 to 2027-12-17</td>
+</tr>
+</tbody>
+</table>
+<p>Dates and owners are in the rollout plan
+(<code>artifacts/PQC-TLS-rollout-plan.md</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Gap or risk</th>
+<th>Impact</th>
+<th>Next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nothing ran on real AWS or x86_64</td>
+<td>Lab results may differ from AWS</td>
+<td>Phase 0</td>
+</tr>
+<tr>
+<td>Node.js 18 and 20, Python 3.9 to 3.11 on Lambda</td>
+<td>No full in-process fix; AWS blocks updates 2027-08-31</td>
+<td>Upgrade first; bridges only for urgent calls</td>
+</tr>
+<tr>
+<td>Bouncy Castle agent on Java 8 to 21</td>
+<td>Replaces the TLS provider process-wide</td>
+<td>Test FIPS, keystore and mTLS services first; prefer JDK 25</td>
+</tr>
+<tr>
+<td>Lambda and Fargate to non-AWS services</td>
+<td>No AWS log shows the group</td>
+<td>Posture, application logs, egress proxy</td>
+</tr>
+<tr>
+<td>AWS-blocked legs (CloudFront origin, API Gateway egress and HTTP
+APIs, IoT Core, RDS Proxy, ElastiCache, MSK, OpenSearch, VPN)</td>
+<td>Classical by design today</td>
+<td>Exception register; quarterly recheck</td>
+</tr>
+<tr>
+<td>ML-DSA</td>
+<td>Public HTTPS can't use it; Go and Java don't negotiate it; chains
+grow to ~12 KB</td>
+<td>Dual certificates only; certificate track</td>
+</tr>
+<tr>
+<td>Inventory dashboards and Athena views</td>
+<td>Not run on AWS</td>
+<td>Build in Phase 0</td>
+</tr>
+<tr>
+<td>Node config file replaces AWS's</td>
+<td>Drift on runtime updates</td>
+<td>Pipeline diff check</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What we ask:</strong> an AWS sandbox account for Phase 0,
+owners per language and per infrastructure area, and agreement to the
+warn-then-fail schedule.</p>
+
+<h1 id="ch-paper-10-documents">Appendix. Documents, code and
+tests</h1>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Executive summary (<code>docs/PQC-Executive-Summary.pdf</code>)</td>
+<td>Leadership: the problem, the plan, the asks</td>
+</tr>
+<tr>
+<td>This white paper (<code>docs/PQC-White-Paper.pdf</code>)</td>
+<td>Architects, platform and security teams</td>
+</tr>
+<tr>
+<td>Language documents (<code>docs/languages/PQC-Go.pdf</code>,
+<code>PQC-Python.pdf</code>, <code>PQC-Nodejs.pdf</code>,
+<code>PQC-Java.pdf</code>, <code>PQC-dotnet.pdf</code>)</td>
+<td>Each language's application teams: every version, case, test and
+file</td>
+</tr>
+<tr>
+<td>Complete guide (<code>PQC-Detection-and-Remediation.pdf</code>)</td>
+<td>Everything in one reference, including the twelve infrastructure
+areas and enforcement in full</td>
+</tr>
+<tr>
+<td>Rollout plan (<code>artifacts/PQC-TLS-rollout-plan.md</code>)</td>
+<td>Programme management</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Configuration files, by chapter</td>
+<td><code class="nb">configs/</code> (index: <code>configs/MANIFEST.md</code>)</td>
+</tr>
+<tr>
+<td>Inventory script and Athena views</td>
+<td><code>configs/inventory/</code></td>
+</tr>
+<tr>
+<td>Java kit v2 (agent, layer wrapper, CI check)</td>
+<td><code>kit/java-v2/</code></td>
+</tr>
+<tr>
+<td>End-to-end suite (cases, probes, observer, results)</td>
+<td><code class="nb">e2e/</code> (results:
+<code>e2e/results/latest/summary.md</code>)</td>
+</tr>
+<tr>
+<td>Zeek and inventory checks</td>
+<td><code>e2e/zeek/check.sh</code>,
+<code>e2e/inventory/test_inventory.py</code></td>
+</tr>
+<tr>
+<td>Earlier container and Lambda tests</td>
+<td><code>tests/deep/</code>, <code>tests/lambda/</code></td>
+</tr>
+</tbody>
+</table>
+</body></html>

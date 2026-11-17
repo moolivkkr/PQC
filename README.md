@@ -4,9 +4,20 @@ Post-quantum cryptography (PQC) migration notes for AWS workloads: how to detect
 
 Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2026-11-16 in AWS Lambda base images or official container images, and in the end-to-end suite below), **Documented** (stated in vendor docs), **Claimed** (vendor plan, not shipped), or **Unverified**.
 
-## White paper (2026-11-16)
+## Documents (2026-11-16)
 
-*Post-Quantum TLS on AWS: Detection, Inventory and Remediation*, by Kishore Mooli.
+By Kishore Mooli. Pick the one for your audience; each is PDF, DOCX and HTML with the same name.
+
+| Document | For | Contents |
+|----------|-----|----------|
+| [docs/PQC-Executive-Summary.pdf](docs/PQC-Executive-Summary.pdf) ([docx](docs/PQC-Executive-Summary.docx), [html](docs/PQC-Executive-Summary.html)) | Leadership | 3 pages: the problem, what "PQC-enabled" means, what we found, the plan, risks, decisions and asks |
+| [docs/PQC-White-Paper.pdf](docs/PQC-White-Paper.pdf) ([docx](docs/PQC-White-Paper.docx), [html](docs/PQC-White-Paper.html)) | Architects, platform and security teams | 20 pages: introduction, use cases, detection, inventory and dashboards, solutions by compute type, one page per language, infrastructure, enforcement, rollout and gaps |
+| `docs/languages/PQC-{Go,Python,Nodejs,Java,dotnet}.pdf` (and `.docx`, `.html`) | Each language's application teams | Summary for the team, shared context, the full language chapter (every version, compute type, case, configuration file link) and that language's test evidence per compute type |
+| Complete guide (below) | Reference | Everything in one document, including the twelve infrastructure areas and enforcement in full |
+
+### Complete guide
+
+*Post-Quantum TLS on AWS: Complete Guide*, kept as the single reference.
 
 | File | Contents |
 |------|----------|
@@ -28,9 +39,10 @@ Each finding carries an evidence label: **Tested** (run between 2026-11-12 and 2
 
 | Path | What it is |
 |------|------------|
+| `src/paper/`, `src/exec/`, `src/summary/`, `src/lang/` | Sources of the white paper, the executive summary, the one-page language summaries (used in the white paper and the language documents) and the shared context and generated test pages of the language documents |
 | `src/*.md` | **Source of truth.** One markdown file per chapter (10 introduction, 11 use cases, 12 detection, 13 inventory, 14 compute, 15 languages, 03-07 language chapters, 08 infrastructure, 21 enforcement, 23 rollout, 24 test appendix, 22 config index, 25 sources); edit these, then rebuild |
 | `configs/inventory/` | `pq_inventory.py` (read-only posture inventory: Lambda, ECS, ELB, API Gateway, classified) and `athena-views.sql` (posture and observed signals in one place, for the dashboards) |
-| `build/gen-appendix-tests.py` | Regenerates `src/24-appendix-tests.md` from the latest e2e results |
+| `build/gen-appendix-tests.py` | Regenerates `src/24-appendix-tests.md` and `src/lang/tests-<language>.md` from the latest e2e results |
 | `src/html-infra/` | The twelve infrastructure child sections, as exported HTML (2026-11-14) |
 | `src/deck/` | Source of the slide deck: `deck.json`, `deck.css` and one HTML file per slide (claude.ai Slides format) |
 | `configs/<section>/` | Every file listed in the Configuration file index, extracted from the sections' "Full configuration files". `configs/MANIFEST.md` lists them |
@@ -51,7 +63,7 @@ Rebuild everything:
 ```bash
 python3 -I build/extract-configs.py .      # configs/ from the chapters' full configuration sections
 python3 -I build/gen-appendix-tests.py .   # after an e2e run
-bash build/build.sh
+bash build/build.sh                        # all documents; or name some: guide paper exec go python nodejs java dotnet
 ```
 
 Deck (PPTX and PDF): `bash build/deck.sh`

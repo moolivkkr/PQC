@@ -1,0 +1,160 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Post-Quantum TLS on AWS: Executive Summary</title><style>
+body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
+h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
+h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:9pt;page-break-inside:auto}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#e8edf3} tr{page-break-inside:avoid}
+code{font-family:Menlo,Consolas,monospace;font-size:8.5pt;background:#f2f2f2;padding:0 2px;word-break:break-word}
+code.nb{white-space:nowrap;word-break:normal}
+pre{background:#f2f2f2;padding:8px;font-size:8pt;white-space:pre-wrap;word-break:break-all;border:1px solid #ddd}
+pre code{background:none;padding:0}
+p.excerpt{font-size:9pt;margin-top:-4px}
+.cover{text-align:left;padding-top:160px}.cover h1{page-break-before:avoid;border:none;font-size:28pt}
+.cover .sub{font-size:14pt;color:#444}.cover .meta{margin-top:60px;font-size:10.5pt}
+.toc ul{padding-left:0}.toc li{list-style:none;margin:2px 0}.toc li.l0{margin-top:8px;font-weight:600}
+.toc li.l1{margin-left:22px;font-weight:400;font-size:9.5pt}.toc li.l2{margin-left:22px;font-weight:400;font-size:9.5pt}
+a{color:#0b57d0;text-decoration:none}
+@media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
+@page{size:A4;margin:16mm 14mm}
+</style></head><body>
+<div class="cover"><h1 class="title">Post-Quantum TLS on AWS: Executive Summary</h1>
+<p class="sub">The problem, what we found, the plan and the decisions we need</p>
+<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="https://github.com/moolivkkr/PQC">https://github.com/moolivkkr/PQC</a></p></div>
+
+<h1 id="ch-exec-summary">Executive summary</h1>
+<h2 id="ch-exec-summary--the-problem">The problem</h2>
+<p>Our TLS connections agree their session keys with classical
+cryptography. Traffic recorded today can be decrypted once a large
+quantum computer exists ("harvest now, decrypt later"), so anything that
+must stay confidential for years is exposed now. The fix, hybrid ML-KEM
+key exchange (X25519MLKEM768), is standardised (FIPS 203) and supported
+by AWS, browsers and current language runtimes, but it is <strong>off by
+default on most of what we run</strong>: Lambda and Amazon Linux 2023
+negotiate classical keys for Python, Node.js and .NET, and Java before
+25 and Node.js 18 and 20 cannot negotiate PQ at all. Nothing fails when
+a connection is classical, so only measurement shows where we stand.</p>
+<p><strong>"PQC-enabled" in this programme</strong> means every
+connection we own negotiates hybrid ML-KEM where both ends can, keeps
+classical fallback so nothing breaks, and is <strong>proven</strong> by
+logs or sensors, not assumed from a deployment. It does not mean new
+certificates: ML-KEM works with today's certificates. PQ certificates
+(ML-DSA) are a separate, slower track for long-lived trust such as
+device firmware roots and code signing.</p>
+<h2 id="ch-exec-summary--what-we-found">What we found</h2>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Every language (Go, Python, Node.js, Java, .NET) can be made PQ on
+every compute type we use (Lambda, ECS on Fargate and EC2, EKS, EC2)
+with <strong>one change per workload</strong>: a config file, an agent,
+a base image or a version</td>
+<td>471 of 471 end-to-end cases passed on real Lambda, ECS and EC2
+deployments in LocalStack Pro (2026-11-16)</td>
+</tr>
+<tr>
+<td>Existing certificates, keystores, private CAs and mutual TLS
+<strong>keep working</strong> with the fix in all five languages</td>
+<td>Tested per language</td>
+</tr>
+<tr>
+<td>Classical connections <strong>can be detected</strong>: CloudTrail
+and load balancer logs for AWS-facing traffic, Zeek network sensors for
+internal and egress traffic, application logs for Lambda and
+Fargate</td>
+<td>Zeek and log checks Tested; AWS-side logs Documented</td>
+</tr>
+<tr>
+<td>A posture <strong>inventory</strong> classifies every Lambda
+function, ECS task, load balancer and API by what it needs</td>
+<td>Script Tested on LocalStack (25 of 25)</td>
+</tr>
+<tr>
+<td><strong>AWS blocks some legs today</strong>: CloudFront to origin,
+API Gateway egress and HTTP APIs, IoT Core, RDS Proxy, ElastiCache, MSK,
+OpenSearch, AWS VPN</td>
+<td>Documented; recorded as exceptions</td>
+</tr>
+<tr>
+<td><strong>Fixed deadline</strong>: AWS blocks updates to deprecated
+Lambda runtimes from <strong>2027-08-31</strong>; after that they cannot
+be fixed</td>
+<td>AWS runtime page (forecast)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ch-exec-summary--the-plan">The plan</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What</th>
+<th>When (proposed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prove</td>
+<td>Confirm the lab results on real AWS (one workload per language and
+compute; logs)</td>
+<td>2026-11-23 to 2026-12-18</td>
+</tr>
+<tr>
+<td>See</td>
+<td>Inventory every account; dashboards for the classical share; Zeek on
+internal traffic</td>
+<td>to 2027-01-15</td>
+</tr>
+<tr>
+<td>Fix</td>
+<td>Runtime upgrades for runtimes AWS will block (first); the shared fix
+through the build template for everything else; front doors to PQ
+policies</td>
+<td>2026-12 to 2027-06-30</td>
+</tr>
+<tr>
+<td>Hold</td>
+<td>Guardrails warn, then fail, so new work stays PQ</td>
+<td>2027-01 to 2027-09-30</td>
+</tr>
+<tr>
+<td>Certificates</td>
+<td>ML-DSA roots for long-lived devices and signing; internal
+dual-certificate pilots</td>
+<td>to 2027-12-17</td>
+</tr>
+</tbody>
+</table>
+<p>Each change rides the normal release pipeline and is rolled back by
+removing one setting. A workload is done only when the dashboards show
+its traffic as PQ; anything AWS or a third party blocks is a recorded
+exception with an owner and a review date.</p>
+<h2 id="ch-exec-summary--risks">Risks</h2>
+<ul>
+<li><strong>Lab, not production:</strong> nothing has run on real AWS
+yet; Phase 0 closes this.</li>
+<li><strong>Runtime upgrades</strong> for Node.js 18 and 20, Python 3.9
+to 3.11 and Java on Amazon Linux 2 must finish before AWS's 2027-08-31
+block.</li>
+<li><strong>Blind spots:</strong> Lambda and Fargate calls to non-AWS
+services are visible only through posture and application logs.</li>
+<li><strong>Java 8 to 21</strong> relies on Bouncy Castle as the TLS
+provider until teams move to JDK 25.</li>
+</ul>
+<h2 id="ch-exec-summary--decisions-and-asks">Decisions and asks</h2>
+<ol type="1">
+<li>An AWS sandbox account for Phase 0 (four weeks).</li>
+<li>A named owner per language and per infrastructure area.</li>
+<li>Agreement to the warn-then-fail guardrail schedule and the exception
+process.</li>
+<li>Prioritise the runtime upgrades AWS will block.</li>
+</ol>
+<p>The white paper has the approach; each language team has its own
+document; every configuration file and test is in the repository.</p>
+</body></html>

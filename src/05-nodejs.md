@@ -2,49 +2,122 @@
 
 ## Problem statement
 
-Most Node.js services on AWS already negotiate hybrid post-quantum key exchange (X25519MLKEM768) without any change, but three groups don't: Lambda nodejs22.x/24.x functions, official Node builds 20 or older (or 22.0–22.19, 24.0–24.4), and code that pins TLS groups or caps TLS at 1.2. On those paths the session keys come from classical X25519 or P-256 alone. An attacker who records the traffic today can decrypt it once a large quantum computer exists ("harvest now, decrypt later"). Data with a long confidentiality life (credentials, personal data, payment data) is at risk now, not later.
+Official Node.js 22.20+ and 24.5+ negotiate hybrid post-quantum key exchange (X25519MLKEM768) with no change. Four groups stay classical (X25519 or P-256 alone), so traffic recorded today can be decrypted once a large quantum computer exists ("harvest now, decrypt later"):
 
-Who controls the handshake: the OpenSSL inside the `node` process (bundled in official builds, the system library in distro builds), then the OpenSSL config file Node reads, then the TLS options in code. The OS crypto policy matters only for distro-built Node. Certificates, private keys, key stores, CA bundles and client certificates do not take part in the key-exchange choice: every existing-certificate, custom-trust and mutual-TLS setup tested below kept working unchanged (cases C, D, E).
+| Group | Why it is classical | Fix |
+| --- | --- | --- |
+| Lambda `nodejs22.x`, `nodejs24.x` (zip and AWS base image) | The bootstrap sets `OPENSSL_CONF` to a file whose `Groups` omits ML-KEM | Ship `openssl-pq-node.cnf` and point `OPENSSL_CONF` at it |
+| Official Node 20 and older, 22.0–22.19, 24.0–24.4; Lambda `nodejs18.x`, `nodejs20.x` | Bundled OpenSSL has no ML-KEM (3.0.x; Lambda 18 = 3.1.8, Lambda 20 = 3.2.6) | Upgrade; no setting helps |
+| Distro Node on Amazon Linux 2023 (`dnf install nodejs20/22/24`) | Links the system OpenSSL 3.5.8, whose `DEFAULT` crypto policy omits ML-KEM | `DEFAULT:PQ` policy, or `OPENSSL_CONF` = `openssl-pq-node-system.cnf` |
+| Code that pins groups or caps TLS at 1.2 | `ecdhCurve` / `tls.DEFAULT_ECDH_CURVE` without `X25519MLKEM768`, `maxVersion: 'TLSv1.2'`, `--tls-max-v1.2` | Remove the setting, or put `X25519MLKEM768` first |
 
-The OpenSSL that the `node` binary uses decides, and then the OpenSSL config file Node reads. Official Node builds bundle OpenSSL: 22.20.0+ and 24.5.0+ carry OpenSSL 3.5 and offer X25519MLKEM768 first by default, on any OS. Distro builds (AL2023 `dnf`, Debian `apt`, Alpine `apk`) link the system OpenSSL and follow the system config.
+What decides, in order: the OpenSSL inside the `node` process (bundled in official builds, the system library in distro builds), the OpenSSL config file Node reads, then TLS options in code. The OS crypto policy matters only for distro-built Node. Node reads the `nodejs_conf` section of the file named by `--openssl-config` or `OPENSSL_CONF` (the flag wins); `--openssl-shared-config` makes it read `openssl_conf` instead; both flags are allowed in `NODE_OPTIONS` ([Node CLI docs](https://nodejs.org/api/cli.html#--openssl-shared-config), Documented).
 
-Three things turn PQ off again: a config file whose `Groups` omits ML-KEM (the Lambda bootstrap sets one), an explicit `ecdhCurve` or `tls.DEFAULT_ECDH_CURVE` without `X25519MLKEM768`, and a TLS 1.2 cap. Every client library tested (fetch, undici, axios, got, node-fetch, AWS SDK v3, grpc-js, pg, mysql2, ioredis, kafkajs) inherits Node's defaults.
+Certificates, keys, PFX files, CA bundles and client certificates take no part in the key-exchange choice: every existing-certificate, custom-trust and mutual-TLS setup tested kept working unchanged (cases C, D, E). Every client library tested (fetch, undici, axios, got, node-fetch, AWS SDK v3, grpc-js, pg, mysql2, ioredis, kafkajs) inherits Node's defaults.
 
-Node reads the `nodejs_conf` section of the file named by `--openssl-config` or `OPENSSL_CONF` (the flag wins). `--openssl-shared-config` makes it read `openssl_conf` instead. Both flags are allowed in `NODE_OPTIONS` ([Node CLI docs](https://nodejs.org/api/cli.html#--openssl-shared-config), Documented).
+## Quick start by compute type
+
+One change per workload. "Verify" means a PQ-only test server (`openssl s_server -groups X25519MLKEM768 -tls1_3`) accepts the client and a classical one still does; for AWS API calls, CloudTrail `tlsDetails.keyExchange` shows `X25519MLKEM768`. `pq-check.js` and the full files are under Full configuration files and in [configs/nodejs](REPO/configs/nodejs).
+
+**Lambda `nodejs22.x` and `nodejs24.x`** (e2e: 31 zip cases on 22 and 24, 6 of them the main fix)
+
+| Step | What to do |
+| --- | --- |
+| Check | `aws lambda get-function-configuration --function-name <fn> --query 'Environment.Variables.OPENSSL_CONF'` returns nothing: classical (the bootstrap's file) |
+| One change | Package `pq-tls/openssl-pq-node.cnf` and set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf`. No code change: attach the `pq-tls` layer with `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` |
+| Verify | `node pq-check.js <pq-only-host>:443` from the function reports `"pq":true`; CloudTrail shows `X25519MLKEM768` for KMS, STS or Secrets Manager calls from the function's role |
+| Roll back | Remove `OPENSSL_CONF` (layer: set `PQ_TLS_DISABLE=1`), or shift the alias back to the previous version |
+
+Plan the move to `nodejs24.x`: `nodejs22.x` is deprecated on 2027-05-30 and blocked from updates on 2027-08-31 ([Lambda runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html), Documented).
+
+**Lambda `nodejs18.x` and `nodejs20.x`** (e2e: 13 cases)
+
+| Step | What to do |
+| --- | --- |
+| Check | `aws lambda list-functions --query "Functions[?contains(['nodejs18.x','nodejs20.x'],Runtime)].FunctionName"` |
+| One change | Change `Runtime` to `nodejs24.x`, then apply the fix above. The config file, `--openssl-config` and the layer change nothing here (Tested: still classical, startup not broken). Interim for calls that must be PQ now: the `pq-egress` extension |
+| Verify | As above, after the runtime change |
+| Roll back | Revert `Runtime`; possible only until updates to these runtimes are blocked on 2027-08-31 (Documented) |
+
+**Lambda container image on `public.ecr.aws/lambda/nodejs:22` or `:24`** (e2e: 2 fixed, 2 baselines)
+
+| Step | What to do |
+| --- | --- |
+| Check | The Dockerfile has no `ENV OPENSSL_CONF`: classical |
+| One change | `COPY pq-tls/ /var/task/pq-tls/` and `ENV OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf` (the bootstrap keeps a value that is already set) |
+| Verify | As for zip |
+| Roll back | Redeploy the previous image digest |
+
+**Amazon ECS on Fargate** (e2e: 28 client cases, 6 load balancer target cases)
+
+| Step | What to do |
+| --- | --- |
+| Check | `docker run --rm --entrypoint node <image> -p "process.version+' '+process.versions.openssl"`: official 22.20+/24.5+ with 3.5.x needs nothing. AL2023 `dnf` Node also prints 3.5.x but is classical under the `DEFAULT` policy |
+| One change | Official image: `FROM node:24-slim@sha256:<digest>` (24.9+ as policy floor). AL2023 `dnf` Node: `RUN update-crypto-policies --set DEFAULT:PQ` in the Dockerfile, or `OPENSSL_CONF=/etc/app/openssl-pq-node-system.cnf` in the task definition |
+| Verify | `pq-check.js` in the task against a PQ-only target; CloudTrail for AWS calls |
+| Roll back | Previous task definition revision or image digest |
+
+**Amazon ECS on EC2 and Amazon EKS** (e2e: 5 client cases and 1 target case on ECS on EC2; EKS not run)
+
+| Step | What to do |
+| --- | --- |
+| Check | As for Fargate: the image decides; the node's OS and crypto policy do not reach the container |
+| One change | As for Fargate. EKS: `OPENSSL_CONF` goes in `spec.containers[].env` (Unverified: no EKS case in the suite) |
+| Verify | As for Fargate; on EC2-backed nodes Zeek on mirrored ENIs also shows the group |
+| Roll back | Previous task definition revision; EKS `kubectl rollout undo` |
+
+**Amazon EC2** (e2e: 12 cases on AL2023 2023.12.20261109)
+
+| Step | What to do |
+| --- | --- |
+| Check | `node -p "process.execPath+' '+process.version+' '+process.versions.openssl"` per service; for distro Node also `update-crypto-policies --show` |
+| One change | Official binaries 24.9+: nothing else (host `DEFAULT:PQ` does not affect them, Tested). AL2023 `dnf` Node: `Environment=OPENSSL_CONF=/etc/app/openssl-pq-node-system.cnf` in the unit, or host-wide `update-crypto-policies --set DEFAULT:PQ`, then restart the service |
+| Verify | `pq-check.js` on the host; the `pq-node-posture.json` SSM document across the fleet |
+| Roll back | Remove the drop-in, or `update-crypto-policies --set DEFAULT`; restart |
 
 ## Versions and native support
 
-Tested 2026-11-14 against an OpenSSL 3.5.7 PQ-only server (`-groups X25519MLKEM768 -tls1_3`) and a classical-only server (`-groups X25519`). "Yes" = the PQ-only server was accepted with no setting, and the classical server still worked.
+Tested 2026-11-14 to 2026-11-16 against an OpenSSL 3.5.7 PQ-only server (`-groups X25519MLKEM768 -tls1_3`) and a classical-only server (`-groups X25519`), and in the e2e suite. "Yes" = the PQ-only server was accepted with no setting, and the classical server still worked.
 
-| Version | TLS stack | PQ client by default (Lambda / container image / EC2 or AL2023) | PQ server by default | API to set groups | FIPS-mode behaviour | Proposed solution | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Official 24.5+ (tested 24.5.0, 24.9.0, 24.22.3) | Bundled OpenSSL 3.5.x (24.22.3 = 3.5.9) | Lambda `nodejs24.x`: **No** (bootstrap config) / `node:24`, `-slim`, `-alpine`: Yes / official tarball on EC2: Yes | Yes; on Lambda No (same config) | `ecdhCurve` option, `tls.DEFAULT_ECDH_CURVE`, OpenSSL `Groups` via `OPENSSL_CONF` or `--openssl-config` | `--enable-fips` needs an OpenSSL FIPS provider you configure; official builds ship none. ML-KEM under FIPS: not tested | Lambda: ship `openssl-pq-node.cnf` (or the `pq-tls` layer). Elsewhere: nothing | Tested |
-| Official 22.20+ (tested 22.20.0, 22.23.5) | Bundled OpenSSL 3.5.x (22.23.5 = 3.5.9) | Lambda `nodejs22.x`: **No** / `node:22` images: Yes / EC2: Yes | Yes; Lambda No | same | same | same | Tested |
-| Official 26.x (tested 26.13.1) | Bundled OpenSSL 3.5.9 | `nodejs26.x` preview: not tested / `node:26-slim`: Yes / EC2: Yes | Yes | same | same | nothing | Tested (container) |
-| Official 22.0–22.19, 24.0–24.4 | Bundled OpenSSL 3.0.x | No / No / No | No | `ecdhCurve`; a PQ-first string throws `ERR_CRYPTO_OPERATION_FAILED` | n/a | Upgrade to 22.20+ or 24.9+ | Tested (22.19.0, 24.4.1) |
-| Official 20.x, 18.x (`nodejs20.x` deprecated Apr 30 2026) | Bundled OpenSSL without ML-KEM: 3.0.x in `node:20-slim`/`-alpine`; Lambda `nodejs18.x` 3.1.8, `nodejs20.x` 3.2.6 | No / No / No | No | as above, PQ-first throws | n/a | Upgrade; no setting adds PQ (the config file and `pq-tls` layer leave it classical without breaking startup) | Tested (`node:20-slim`, `node:20-alpine` 20.20.2; e2e `node-lambda-n18-*`, `node-lambda-n20-*`) |
-| AL2023 `dnf install nodejs20` / `nodejs22` / `nodejs24` (20.20.2, 22.23.4, 24.22.1) | System OpenSSL 3.5.8 + crypto policy (Node 20 included: it links the system library, so it is fixable like 22/24) | n/a / No / No until `update-crypto-policies --set DEFAULT:PQ` | No (same policy) | as above, plus the crypto policy | AL2023 FIPS mode uses the system FIPS provider; ML-KEM there not tested | `DEFAULT:PQ`, or `OPENSSL_CONF` = `openssl-pq-node-system.cnf` | Tested (`amazonlinux:2023`; e2e `node-fargate-al2023-n20-conf`, `-policy`, `node-ec2-al2023-n20-*` on AL2023 2023.12.20261109) |
-| Debian 13 `apt install nodejs` (20.19.2) | System OpenSSL 3.5.7 | n/a / Yes / Yes | Yes | as above | not tested | nothing (check `process.versions.openssl`, not the major) | Tested (`debian:trixie-slim`) |
-| Alpine 3.22 `apk add nodejs` (22.23.5) | System OpenSSL 3.5.9 | n/a / Yes / n/a | Yes | as above | not tested | nothing | Tested (`alpine:3.22`) |
-| Deno 2.9.8 / Bun 1.4.4 | rustls / BoringSSL | n/a / Yes (client) / Yes | not tested | runtime-specific | not tested | nothing | Tested (client, `denoland/deno`, `oven/bun`) |
+| Version | TLS stack | PQ client by default (Lambda / container image / EC2) | PQ server by default | FIPS mode | Fix | Evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| Official 24.5+ (tested 24.5.0, 24.9.0, 24.22.3) | Bundled OpenSSL 3.5.x (24.22.3 = 3.5.9) | Lambda `nodejs24.x`: **No** (bootstrap config) / `node:24`, `-slim`, `-alpine`: Yes / official tarball: Yes | Yes; on Lambda No (same config) | `--enable-fips` needs a FIPS provider you configure; official builds ship none. ML-KEM under FIPS: not tested | Lambda: `openssl-pq-node.cnf`. Elsewhere: nothing | Tested |
+| Official 22.20+ (tested 22.20.0, 22.23.5) | Bundled OpenSSL 3.5.x (22.23.5 = 3.5.9) | Lambda `nodejs22.x`: **No** / `node:22` images: Yes / EC2: Yes | Yes; Lambda No | same | same | Tested |
+| Official 26.x (tested 26.13.1) | Bundled OpenSSL 3.5.9 | Lambda `nodejs26.x` (public preview): depends on `AWS_LAMBDA_TLS_PROFILE`, see below / `node:26-slim`: Yes / EC2: Yes | Yes | same | Lambda: set `OPENSSL_CONF` as for 22/24 | Tested (container, e2e); Lambda image Tested in Docker only |
+| Official 22.0–22.19, 24.0–24.4 | Bundled OpenSSL 3.0.x | No / No / No | No | n/a | Upgrade to 22.20+ or 24.9+ | Tested (22.19.0, 24.4.1) |
+| Official 20.x, 18.x | Bundled OpenSSL without ML-KEM: 3.0.x in `node:20-slim`/`-alpine`; Lambda `nodejs18.x` 3.1.8, `nodejs20.x` 3.2.6 | No / No / No | No | n/a | Upgrade; no setting adds PQ | Tested (`node:20-slim`, `node:20-alpine` 20.20.2; e2e `node-lambda-n18-*`, `-n20-*`) |
+| AL2023 `dnf install nodejs20` / `nodejs22` / `nodejs24` (20.20.2, 22.23.4, 24.22.1) | System OpenSSL 3.5.8 + crypto policy | n/a / No / No until `DEFAULT:PQ` | No (same policy) | AL2023 FIPS mode uses the system FIPS provider; ML-KEM there not tested | `DEFAULT:PQ`, or `OPENSSL_CONF` = `openssl-pq-node-system.cnf`. Node 20 included: it links the system library | Tested (e2e Fargate, ECS on EC2, EC2) |
+| Debian 13 `apt install nodejs` (20.19.2) | System OpenSSL 3.5.7 | n/a / Yes / Yes | Yes | not tested | nothing (check `process.versions.openssl`, not the major) | Tested (`debian:trixie-slim`, e2e) |
+| Alpine 3.22 `apk add nodejs` (22.23.5) | System OpenSSL 3.5.9 | n/a / Yes / n/a | Yes | not tested | nothing | Tested (`alpine:3.22`, e2e) |
+| Deno 2.9.8 / Bun 1.4.4 | rustls / BoringSSL | n/a / Yes (client) / Yes | not tested | not tested | nothing | Tested (client) |
 
-FIPS source: [Node CLI docs, `--enable-fips`](https://nodejs.org/api/cli.html#--enable-fips) ("a configured provider named `fips` must be available", Documented). The upstream OpenSSL 3.5.4 FIPS module was submitted for FIPS 140-3 validation in October 2025 ([OpenSSL announcement](https://mirror.openssl-library.org/post/2025-10-09-ossl3.5.4-fips-submission/)); I found no issued certificate, so a FIPS-validated ML-KEM path for Node is not confirmed.
+The API to set groups is the same everywhere: the `ecdhCurve` option, `tls.DEFAULT_ECDH_CURVE`, or OpenSSL `Groups` via `OPENSSL_CONF` / `--openssl-config`. On OpenSSL 3.0 builds a PQ-first `ecdhCurve` throws `ERR_CRYPTO_OPERATION_FAILED`.
 
-Version floor: AWS's SDK guide says 22.20 and 24.9.0 ([AWS SDK PQ TLS guide](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html)). Node's release notes put the OpenSSL 3.5 upgrade in 24.5.0 ([v24.5.0 release](https://nodejs.org/en/blog/release/v24.5.0)), and 24.5.0 negotiated X25519MLKEM768 here. Use 24.9+ as the policy floor (it matches AWS), but don't flag 24.5–24.8 as classical. Lambda dates from [Lambda runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html).
+**Version floor.** Node's release notes put the OpenSSL 3.5 upgrade in 22.20.0 ("now bundles OpenSSL 3.5.2", [v22.20.0](https://nodejs.org/en/blog/release/v22.20.0)) and 24.5.0 ([v24.5.0](https://nodejs.org/en/blog/release/v24.5.0)), both Documented; 22.20.0 and 24.5.0 negotiated X25519MLKEM768 here and 22.19.0 and 24.4.1 did not (Tested). AWS's SDK guide names v22.20 and v24.9.0 ([AWS SDK PQ TLS guide](https://docs.aws.amazon.com/sdkref/latest/guide/pqtls-details.html)). Use 24.9+ as the policy floor to match AWS, but don't flag 24.5–24.8 as classical.
 
-Decision guide:
+**Lambda `nodejs26.x` (public preview).** The preview base image (`public.ecr.aws/lambda/nodejs:26`, `sha256:c805b481…`, Node 26.13.1, OpenSSL 3.5.9, pulled 2026-11-16) no longer ships the classical `/var/runtime/openssl_conf/openssl.cnf`. Its bootstrap sources `resolve-tls-profile.sh`, which maps `AWS_LAMBDA_TLS_PROFILE` to a file under `/var/runtime/tls-profiles/` and keeps Node's defaults when the variable is unset. Run in Docker with that script sourced, against PQ-only and classical servers ([test and output](REPO/tests/deep/nodejs/lambda-nodejs26/)):
 
-- Lambda `nodejs22.x` or `nodejs24.x`: set `OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf` (or attach the `pq-tls` layer). Nothing else in the function changes.
-- Lambda `nodejs18.x`/`nodejs20.x`, or any official Node build below 22.20 / 24.5: upgrade the runtime or base image. There is no setting.
-- Distro Node that links a system OpenSSL 3.5 (AL2023 `nodejs20`, Debian 13 `nodejs` 20.19): no upgrade needed; it takes the same fix as other distro Node below. Decide by `process.versions.openssl`, not by the Node major.
-- Container or EC2 on official Node 22.20+/24.5+: nothing to change. Run the CI check (case F) to make sure no code pins groups or TLS 1.2.
-- Distro Node on AL2023: set the host or image crypto policy to `DEFAULT:PQ`, or ship the system config file.
-- Your code sets `ecdhCurve`, `tls.DEFAULT_ECDH_CURVE`, `maxVersion: 'TLSv1.2'`, `secureProtocol: 'TLSv1_2_method'` or `--tls-max-v1.2`: change it (case F).
-- You load your own certificates, keys, PFX files, CA bundles or client certificates: nothing to change in them (cases C, D, E). The one exception found: legacy RC2/3DES PFX files fail on every Node 17+ build regardless of PQ; re-export them (case C).
+| `AWS_LAMBDA_TLS_PROFILE` | Profile file | PQ-only server | Classical server |
+| --- | --- | --- | --- |
+| unset | none (Node defaults) | X25519MLKEM768 | X25519 |
+| `aws` (and every other partition name) | `commercial-2025.conf` (no ML-KEM in `Groups`) | handshake failure | X25519 |
+| `commercial/2026` | `commercial-2026.conf` (ML-KEM groups first, ML-DSA signatures) | X25519MLKEM768 | X25519 |
+| `cnsa` | `cnsa-1.0.conf` (`Groups = secp384r1`) | handshake failure | handshake failure (test server offers X25519 only) |
+| `aws` + `OPENSSL_CONF=…/openssl-pq-node.cnf`, or `NODE_OPTIONS=--openssl-config=…` | yours (the script keeps a customer value) | X25519MLKEM768 | X25519 |
+
+The profile map's comment says the sandbox sends the partition (`aws`) as `AWS_LAMBDA_TLS_PROFILE`, which would make a real `nodejs26.x` function classical. I'm not sure: no AWS account was available, and a preview can change before GA. Treat `nodejs26.x` like 22 and 24 (set `OPENSSL_CONF`) until a real function proves otherwise. Lambda lists `nodejs26.x` as preview, not for production ([Lambda runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html), Documented).
+
+**FIPS.** [Node CLI docs, `--enable-fips`](https://nodejs.org/api/cli.html#--enable-fips): "a configured provider named `fips` must be available" (Documented). The OpenSSL 3.5.4 FIPS module was submitted for FIPS 140-3 validation in October 2025 ([OpenSSL](https://mirror.openssl-library.org/post/2025-10-09-ossl3.5.4-fips-submission/)); I found no issued certificate, so a FIPS-validated ML-KEM path for Node is not confirmed.
+
+**Beyond compute type** (Quick start covers the runtime):
+
+- Distro Node linked to a system OpenSSL 3.5 (AL2023 `nodejs20`, Debian 13 `nodejs` 20.19) is fixable without an upgrade. Decide by `process.versions.openssl`, not the Node major.
+- Code that sets `ecdhCurve`, `tls.DEFAULT_ECDH_CURVE`, `maxVersion: 'TLSv1.2'`, `secureProtocol: 'TLSv1_2_method'` or `--tls-max-v1.2`: change it (case F), on every compute type.
+- Your own certificates, keys, PFX files, CA bundles and client certificates: no change (cases C, D, E). The one exception: legacy RC2/3DES PFX files fail on every current runtime, PQ or not; re-export them (case C).
 
 ## Cases: what to change
 
-Find your situation below. Each case names who it applies to, what happens today, what to change and the test behind it. Unless a row says otherwise, "Tested" means all four runtimes gave the same result: `node:22` (22.23.5, `node@sha256:e13726ca…`), `node:24` (24.22.3, `node@sha256:9d266751…`), and `public.ecr.aws/lambda/nodejs:22` / `:24` (22.23.5 / 24.22.3) with `OPENSSL_CONF` set to the kit's `openssl-pq-node.cnf`. The same Lambda images with AWS's own file (`/var/runtime/openssl_conf/openssl.cnf`) were run as the "before" baseline.
+Find your situation below. Unless a row says otherwise, "Tested" means four runtimes gave the same result: `node:22` (22.23.5, `node@sha256:e13726ca…`), `node:24` (24.22.3, `node@sha256:9d266751…`), and `public.ecr.aws/lambda/nodejs:22` / `:24` (22.23.5 / 24.22.3) with `OPENSSL_CONF` set to `openssl-pq-node.cnf`. The same Lambda images with AWS's own file (`/var/runtime/openssl_conf/openssl.cnf`) were the "before" baseline.
 
 ### A. Simple client (default fetch, HTTP client, AWS SDK, DB driver)
 
@@ -52,7 +125,7 @@ Find your situation below. Each case names who it applies to, what happens today
 
 **What happens today:** PQ on official Node 22.20+/24.5+ in containers and EC2; classical on Lambda nodejs22/24 until the config is overridden; classical on official Node 20 and older (distro Node 20 on a system OpenSSL 3.5, such as AL2023 `nodejs20`, takes the config fix). Every tested library inherits Node's defaults (Tested).
 
-**What to change:** nothing, except on Lambda (see Solution and automation) and on old runtimes (upgrade).
+**What to change:** nothing, except on Lambda (config file), AL2023 `dnf` Node (system fix) and old runtimes (upgrade): see Quick start.
 
 **Side effects:** the ClientHello grows by about 1.2 KB (the ML-KEM key share). Classical-only servers still negotiate X25519 (Tested).
 
@@ -108,11 +181,11 @@ setGlobalDispatcher(new Agent({ connect: { /* no ecdhCurve, or a PQ-first list *
 
 **Who this is:** `https.createServer`, `http2.createSecureServer`, `tls.createServer`, Express or Fastify over HTTPS, or a grpc-js server, configured with only a key and certificate.
 
-**What happens today:** on 22.20+/24.5+ the server accepts X25519MLKEM768 and still serves classical and TLS 1.2 clients (Tested). Inside a Lambda function with AWS's config, a Node TLS server is classical too: PQ-only clients were refused on all servers in the case C matrix (Tested, baseline run).
+**What happens today:** on 22.20+/24.5+ the server accepts X25519MLKEM768 and still serves classical and TLS 1.2 clients. Inside a Lambda function with AWS's config, a Node TLS server is classical too: PQ-only clients were refused on all servers in the case C matrix (Tested, baseline run).
 
-**What to change:** nothing. Behind an ALB the client-facing handshake is the load balancer's.
+**What to change:** nothing on 22.20+/24.5+; AL2023 `dnf` Node takes the system fix.
 
-Node servers accept X25519MLKEM768 by default on 22.20+/24.5+ and still serve classical and TLS 1.2 clients. Tested with `openssl s_client` (OpenSSL 3.5.7) against each server on `node:24-slim`, `node:22-alpine`, `node:24.5-alpine` and `node:20-slim`.
+Tested with `openssl s_client` (OpenSSL 3.5.7) against each server on `node:24-slim`, `node:22-alpine`, `node:24.5-alpine` and `node:20-slim`:
 
 | Server | PQ-only client | Classical client | Default OpenSSL 3.5 client gets | Evidence |
 |----|----|----|----|----|
@@ -133,11 +206,9 @@ fastify({ https: { key, cert } });                                       // Fast
 http2.createSecureServer({ key, cert, allowHTTP1: true }, handler);      // HTTP/2
 ```
 
-Behind a load balancer the client-facing handshake belongs to the load balancer, not Node: see Load balancers for ALB and NLB policies. With an NLB TCP (pass-through) listener, Node terminates TLS and the table above applies. Whether an ALB offers ML-KEM on its re-encrypted connection to an HTTPS target was not checked here. For nginx or Envoy in front of Node see Web servers and proxies; for mesh sidecars see Service mesh.
+**Behind a load balancer** the client-facing handshake belongs to the load balancer (see Load balancers). With an NLB TCP (pass-through) listener, Node terminates TLS and the table above applies. On the target leg, with the load balancer modelled as the client (e2e r1117041043, Fargate and ECS on EC2): an `https.createServer` target on `node:24-slim` negotiated X25519MLKEM768 with no change; `node:20-slim` and unfixed AL2023 nodejs22 stayed classical; AL2023 nodejs20 with `OPENSSL_CONF`, and nodejs22 with `OPENSSL_CONF` or `DEFAULT:PQ`, gave X25519MLKEM768 (cases `srv-node-*`). Whether a real ALB offers ML-KEM to an HTTPS target was not checked on AWS. For nginx or Envoy in front of Node see Web servers and proxies; for mesh sidecars see Service mesh.
 
-The server has no API for the negotiated group: `getEphemeralKeyInfo()` returns `null` on server sockets ([Node TLS docs](https://nodejs.org/api/tls.html#tlssocketgetephemeralkeyinfo)). Probe the server with `s_client` instead (see Verify).
-
-**Behind an ALB or NLB TLS listener (e2e, 2026-11-15):** with the load balancer modelled as the client on the target leg, an `https.createServer` target on `node:24-slim` negotiated X25519MLKEM768 with no change; `node:20-slim` and AL2023 nodejs22 stayed classical, and AL2023 nodejs20/22 with `OPENSSL_CONF` or `DEFAULT:PQ` gave X25519MLKEM768 (cases `srv-node-*`, Load balancers tab).
+A Node server has no API for the negotiated group (How to test, step 3); probe it with `s_client`.
 
 ### C. Existing server certificates, keys and PFX files
 
@@ -324,7 +395,7 @@ A PQ-first `ecdhCurve` string throws `ERR_CRYPTO_OPERATION_FAILED: Failed to set
 | --- | --- | --- | --- |
 | fetch/undici, axios, got, node-fetch, AWS SDK v3 (`NodeHttpHandler`), @grpc/grpc-js, pg, mysql2, ioredis, kafkajs | `node:tls` | yes | Tested (case A table) |
 | Native addons with their own OpenSSL or TLS: node-rdkafka (librdkafka), oracledb Thick mode (Oracle Client), `aws-crt` (AWS CRT, s2n-tls on Linux), older Prisma engines | their own | not necessarily | Not tested. Find them with `find node_modules -name '*.node'` and probe each against the PQ-only server |
-| Child processes: `curl`, `git`, `wget` from `child_process` | the binary's library | GnuTLS builds have no ML-KEM; OpenSSL-linked curl works | Tested by the lead (GnuTLS on Debian 13, Ubuntu 26.04) |
+| Child processes: `curl`, `git`, `wget` from `child_process` | the binary's library | GnuTLS builds have no ML-KEM; OpenSSL-linked curl works | Tested (GnuTLS builds on Debian 13, Ubuntu 26.04; see Hosts and OS) |
 | APM and tracing exporters (dd-trace, OpenTelemetry OTLP/HTTP) | `node:http(s)` | expected yes | Unverified |
 | Deno, Bun | rustls / BoringSSL | own defaults (PQ) | Tested (client) |
 
@@ -342,27 +413,28 @@ A PQ-first `ecdhCurve` string throws `ERR_CRYPTO_OPERATION_FAILED: Failed to set
 - **Service mesh sidecar:** the app speaks plaintext to the sidecar; the mesh decides (see Service mesh).
 - **`NODE_TLS_REJECT_UNAUTHORIZED=0` or `rejectUnauthorized: false`:** doesn't affect PQ, but turns off the trust checks that cases D and E rely on. Remove it while you are in the code.
 
+
 ## Solution and automation
 
-1. **Inventory and detect.** List Lambda runtimes and overrides, report every Node process on EC2 with the SSM document, and scan repositories with the CI check.
-
-The Lambda inventory command and the EC2 SSM posture document are in How to test, step 6.
-
-2. **Change: packaging per compute type.** Lambda zip and image need the config file; containers and EC2 on official Node need nothing.
+1. **Inventory.** List Lambda runtimes and overrides, report every Node process on EC2 with the SSM document, and scan repositories with the CI check (How to test, steps 5 and 6).
+2. **Change, per compute type** (below). Lambda zip and image need the config file; containers and EC2 on official Node need nothing.
+3. **Guardrails** in CI and the base-image pipeline.
+4. **Canary rollout** with a rollback switch (Rollout checklist).
 
 ### Lambda zip (nodejs22.x, nodejs24.x)
 
-The bootstrap sets `OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf` when the variable is unset, and that file's `Groups` omits ML-KEM. The bootstrap's own comment says "Customers can opt-in to PQC by setting OPENSSL_CONF=/dev/null" (read from `/var/runtime/bootstrap` in `public.ecr.aws/lambda/nodejs:22` and `:24`). Methods below were run under each image's Runtime Interface Emulator with the real bootstrap.
+The bootstrap sets `OPENSSL_CONF=/var/runtime/openssl_conf/openssl.cnf` when the variable is unset, and that file's `Groups` omits ML-KEM. Its own comment says "Customers can opt-in to PQC by setting OPENSSL_CONF=/dev/null" (read from `/var/runtime/bootstrap` in `public.ecr.aws/lambda/nodejs:22` and `:24`).
 
 | Method | Setting | Result | Evidence |
 |----|----|----|----|
-| Ship the PQ config (recommended) | `OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf` | PQ; classical fallback OK | Tested (RIE, 22 and 24) |
-| Command-line flag | `NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf` | PQ | Tested (RIE) |
-| AWS's opt-in | `OPENSSL_CONF=/dev/null` | PQ (OpenSSL built-in defaults) | Tested (RIE) |
-| In code | `tls.DEFAULT_ECDH_CURVE = 'X25519MLKEM768:X25519:P-256:P-384'` before the first connection | PQ | Tested (container with AWS's file set) |
-| No change | bootstrap default | PQ-only server fails | Tested (RIE) |
+| Ship the PQ config (recommended) | `OPENSSL_CONF=/var/task/pq-tls/openssl-pq-node.cnf` | PQ; classical fallback OK | Tested (e2e, RIE; 22 and 24) |
+| Command-line flag | `NODE_OPTIONS=--openssl-config=/var/task/pq-tls/openssl-pq-node.cnf` | PQ | Tested (e2e, RIE) |
+| `pq-tls` layer, no package change | `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` | PQ; leaves a function's own `OPENSSL_CONF` alone; chains an existing wrapper via `PQ_TLS_NEXT_WRAPPER` | Tested (e2e) |
+| AWS's opt-in | `OPENSSL_CONF=/dev/null` | PQ (OpenSSL built-in defaults) | Tested (e2e, RIE) |
+| In code | `tls.DEFAULT_ECDH_CURVE = 'X25519MLKEM768:X25519:P-256:P-384'` before the first connection | PQ, even with AWS's file | Tested (e2e, preload via `NODE_OPTIONS=--require`) |
+| No change | bootstrap default | PQ-only server fails | Tested (e2e, RIE) |
 
-Prefer the shipped file: it keeps AWS's structure, so review sees any future AWS setting, and `check-lambda-node-conf.sh` (below) catches drift. Zip layout:
+Prefer the shipped file: it keeps AWS's structure, so review sees any future AWS setting, and `check-lambda-node-conf.sh` (below) catches drift. The main change:
 
 ``` text
 function.zip
@@ -372,73 +444,72 @@ function.zip
 ```
 
 ``` yaml
-# SAM / CloudFormation (full templates below)
+# SAM / CloudFormation (Terraform: environment { variables = { OPENSSL_CONF = "..." } })
 Environment:
   Variables:
     OPENSSL_CONF: /var/task/pq-tls/openssl-pq-node.cnf
 ```
 
-``` hcl
-# Terraform
-environment { variables = { OPENSSL_CONF = "/var/task/pq-tls/openssl-pq-node.cnf" } }
-```
-
-Without code changes, the `pq-tls` layer with `AWS_LAMBDA_EXEC_WRAPPER=/opt/pq-tls/wrapper` sets the same variable to `/opt/pq-tls/openssl-pq-node.cnf` and leaves a function's own `OPENSSL_CONF` alone (Tested 2026-11-12). nodejs18.x and nodejs20.x have no fix: change `Runtime` to `nodejs22.x` or `nodejs24.x`.
+`nodejs18.x` and `nodejs20.x` have no in-process fix: change `Runtime`. For calls that must be PQ before then, the `pq-egress` extension makes the outbound TLS connection with X25519MLKEM768; the function sends plain HTTP to `http://127.0.0.1:2779/<route>/<path>` (Tested in e2e on 18, 20, 22 and 24; not tested for AWS SDK calls, which sign the host name). See Solutions by compute type.
 
 ### Lambda container image
 
-On `public.ecr.aws/lambda/nodejs:22` or `:24`, copy the file and set `ENV OPENSSL_CONF`. The bootstrap keeps a value that is already set (Tested). Full `Dockerfile.lambda` below.
+On `public.ecr.aws/lambda/nodejs:22` or `:24`, copy the file and set `ENV OPENSSL_CONF`; the bootstrap keeps a value that is already set (Tested, e2e). Full `Dockerfile.lambda` below.
 
 ### Fargate, ECS, EKS
 
-Official `node:22`, `node:24` and `node:26` images (Debian or Alpine) need nothing: they set no `OPENSSL_CONF` and bundle OpenSSL 3.5 (Tested). The host OS and its crypto policy don't affect these images. Pin the image by digest and keep it at 22.20+/24.9+.
+Official `node:22`, `node:24` and `node:26` images (Debian or Alpine) need nothing: they set no `OPENSSL_CONF` and bundle OpenSSL 3.5 (Tested). Pin the image by digest and keep it at 22.20+/24.9+.
 
-For an AL2023-based image with `dnf install nodejs22`, run `update-crypto-policies --set DEFAULT:PQ` in the Dockerfile ([AL2023 PQ guide](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html), Documented; Tested here), or set `OPENSSL_CONF` to `openssl-pq-node-system.cnf`. The same crypto-policy rules are on Python. The task definition and pod spec need no TLS setting; the full files below show where `OPENSSL_CONF` would go and keep `NODE_OPTIONS` free of `--tls-max-v1.2`.
+For an AL2023 image with `dnf install nodejs20/22/24`, run `update-crypto-policies --set DEFAULT:PQ` in the Dockerfile ([AL2023 PQ guide](https://docs.aws.amazon.com/linux/al2023/ug/crypto-policies-pq.html), Documented; Tested here), or set `OPENSSL_CONF` to `openssl-pq-node-system.cnf` in the task definition or pod spec. Keep `NODE_OPTIONS` free of `--tls-max-v1.2`.
 
 ### EC2
 
-Install official Node 22.20+/24.9+ binaries: PQ by default, crypto policy not involved. With AL2023's `nodejs22` package, set the host policy (`update-crypto-policies --set DEFAULT:PQ`, then restart the services) or add `Environment=OPENSSL_CONF=...` to the unit. Debian 13 packages are PQ by default. Host-wide policy is on Hosts and OS. Full systemd unit and an SSM posture document below.
+Official Node 22.20+/24.9+ binaries are PQ by default; the crypto policy is not involved. With AL2023's `nodejs20/22/24` packages, set the host policy (`update-crypto-policies --set DEFAULT:PQ`, then restart services) or add `Environment=OPENSSL_CONF=...` to the unit. Debian 13 packages are PQ by default. Host-wide policy is on Hosts and OS.
 
-3. **CI guardrails.** Run `ci/check-node-tls.sh` on every repository. It fails the build on classical `ecdhCurve` / `DEFAULT_ECDH_CURVE` lists, TLS 1.2 caps, `nodejs18.x`/`nodejs20.x`, `OPENSSL_CONF` pointing at AWS's file, and `node` base images below 22.20 / 24.5, and warns on `node_modules` that set these options. Tested against fixtures: 9 findings in the bad set, none in the good set (`ci-check.out`). A reviewed exception carries `pq-tls-ok` on the same line. Add `RUN node pq-check.js` in Dockerfiles, and `check-lambda-node-conf.sh` in the pipeline that bumps the Lambda base image.
+### Guardrails
+
+`ci/check-node-tls.sh` fails the build on classical `ecdhCurve` / `DEFAULT_ECDH_CURVE` lists, TLS 1.2 caps, `nodejs18.x`/`nodejs20.x`, `OPENSSL_CONF` pointing at AWS's file, and `node` base images below 22.20 / 24.5, and warns on `node_modules` that set these options. Tested against fixtures: 9 findings in the bad set, none in the good set (`ci-check.out`). A reviewed exception carries `pq-tls-ok` on the same line. Also add `RUN node pq-check.js` in Dockerfiles, and `check-lambda-node-conf.sh` in the pipeline that bumps the Lambda base image.
 
 ```yaml
-# GitHub Actions step
 - name: PQ TLS guardrail (Node.js)
   run: bash ci/check-node-tls.sh .
 ```
 
-4. **Fleet rollout with canary and rollback.**
-    - Lambda: publish a version with `OPENSSL_CONF` set, shift 10% with alias weighted routing ([Lambda alias routing](https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html), Documented), watch errors and latency, then move to 100%. Rollback = shift the alias back.
-    - ECS/Fargate: the official-image services need no change. For distro-Node images, deploy with the deployment circuit breaker and rollback on. EKS: a rolling update with a readiness probe on the TLS port.
-    - EC2: change the systemd unit or the crypto policy on one instance per Auto Scaling group first, then the launch template.
-    - Signal: CloudTrail `tlsDetails.keyExchange` for KMS, STS, IAM, Secrets Manager and ACM calls from the canary role.
-
 ## How to test
 
-1.  **Posture (per runtime):** `node -p "process.version + ' ' + process.versions.openssl"` must show 22.20+/24.5+ and 3.5+ (or a distro build linked to 3.5+). On Lambda also check `OPENSSL_CONF` and `NODE_OPTIONS`. `pq-check.js` (below) prints all of these and whether the runtime can parse `X25519MLKEM768`. Capable is not enabled: Lambda with AWS's file reports capable and still sends a classical list.
+1.  **Posture:** `node -p "process.version + ' ' + process.versions.openssl"` must show 22.20+/24.5+ and 3.5+ (or a distro build linked to 3.5+). On Lambda also check `OPENSSL_CONF` and `NODE_OPTIONS`. `pq-check.js` prints these and whether the runtime can parse `X25519MLKEM768`. Capable is not enabled: Lambda with AWS's file reports capable and still sends a classical list.
+2.  **Live test (client):** `node pq-check.js pq-only.example.internal:443 classical.example.internal:443`. The PQ-only target must report `"pq":true`; the classical one must connect and report `"pq":false` (the script then exits 1 by design).
+3.  **Live test (server):** `openssl s_client -connect host:443 -groups X25519MLKEM768 -tls1_3 -brief` must print `Negotiated TLS1.3 group: X25519MLKEM768`; `-groups X25519` must still connect. A Node server has no API for the negotiated group (`getEphemeralKeyInfo()` returns `null` on server sockets, [Node TLS docs](https://nodejs.org/api/tls.html#tlssocketgetephemeralkeyinfo)).
+4.  **Observed signal:** in a client, `socket.getEphemeralKeyInfo()` returns `{"type":"TLSGroup","name":"X25519MLKEM768"}` on Node 24 and 26, `{}` on Node 22 (TLS 1.3 with no EC key, here the hybrid group), and `{"type":"ECDH","name":"X25519",...}` when classical (Tested, also in every e2e client case). For AWS calls, CloudTrail `tlsDetails.keyExchange`: see AWS service endpoints.
+5.  **Code and dependency scan:** `grep -rnE "ecdhCurve|DEFAULT_ECDH_CURVE|maxVersion|secureProtocol|TLSv1_2_method|tls-max-v1\.2" --include='*.js' --include='*.mjs' --include='*.cjs' --include='*.ts' .`, including `node_modules`.
+6.  **Fleet inventory:** `aws lambda list-functions --query "Functions[?starts_with(Runtime,'nodejs')].[FunctionName,Runtime,Environment.Variables.OPENSSL_CONF]" --output text`. For EC2, the `pq-node-posture.json` SSM document. Blocking old runtimes is on Enforcement and guardrails.
 
-2.  **Live test (client):** `node pq-check.js pq-only.example.internal:443 classical.example.internal:443`. The PQ-only target must report `"pq":true`. The classical target must connect; it reports `"pq":false`, which is the expected fallback (the script then exits 1 by design). Build the two targets with `openssl s_server -groups X25519MLKEM768 -tls1_3` and `-groups X25519`.
+Case tests (scripts in Full configuration files; Docker on a laptop or CI runner, no AWS account):
 
-3.  **Live test (server):** `openssl s_client -connect host:443 -groups X25519MLKEM768 -tls1_3 -brief` must print `Negotiated TLS1.3 group: X25519MLKEM768`. `-groups X25519` must still connect.
-
-4.  **Observed signal:** in the client, `socket.getEphemeralKeyInfo()` returns `{"type":"TLSGroup","name":"X25519MLKEM768"}` on Node 24 and 26, `{}` on Node 22 (TLS 1.3 with no EC key, which here meant the hybrid group), and `{"type":"ECDH","name":"X25519"}` when classical (Tested). For AWS calls, CloudTrail `tlsDetails.keyExchange` shows the group for KMS, STS, IAM, Secrets Manager, ACM and Payment Cryptography: see AWS service endpoints.
-
-5.  **Code and dependency scan:** `grep -rnE "ecdhCurve|DEFAULT_ECDH_CURVE|maxVersion|secureProtocol|TLSv1_2_method|tls-max-v1\.2" --include='*.js' --include='*.mjs' --include='*.cjs' --include='*.ts' .` Include `node_modules`: a dependency can set it too.
-
-6.  **Fleet inventory:** `aws lambda list-functions --query "Functions[?starts_with(Runtime,'nodejs')].[FunctionName,Runtime,Environment.Variables.OPENSSL_CONF]" --output text` lists runtimes and overrides. For EC2, run the `pq-node-posture.json` SSM document (below). Blocking old runtimes is on Enforcement and guardrails.
-
-Case tests (each script is in Full configuration files; run them on a laptop or CI runner with Docker; no AWS account needed):
-
-1. Create a private CA, RSA/EC server certs, encrypted keys, PFX files and client certs: `bash gen-certs.sh` inside an OpenSSL 3.5 container (debian:trixie-slim with `openssl`). Replace them with copies of your own files to test your real store.
-2. Start the four reference servers: `bash start-ossl.sh` (PQ-only 4431, classical 4432, PQ-only with client cert required 4433, classical with client cert 4434).
-3. Run the whole case matrix for one runtime: `bash run-cases.sh node24 node@sha256:<digest> -`, and for Lambda `bash run-cases.sh lambda24-pq public.ecr.aws/lambda/nodejs@sha256:<digest> /k/openssl-pq-node.cnf`. Expect: every PQ-only probe shows `X25519MLKEM768`, every classical probe `X25519`, the case F blockers fail, the legacy PFX fails.
-4. Case C on your own server: start it in the same Docker network and probe with `openssl s_client -connect <host>:<port> -groups X25519MLKEM768 -tls1_3 -brief` (must print `Negotiated TLS1.3 group: X25519MLKEM768` and your certificate), then `-groups X25519` (must connect), then `-tls1_2` (must connect if you support TLS 1.2). For SNI add `-servername <name>`; for an RSA+EC store add `-sigalgs RSA-PSS+SHA256:RSA+SHA256` to see the RSA cert.
-5. Case D with your trust setup: run `node cli.cjs trust-env` with your `NODE_EXTRA_CA_CERTS` / `SSL_CERT_FILE` / flags, against servers whose cert chains to your CA. `trust-none` must fail.
-6. Case E: `node cli.cjs mtls` with your client cert files in place of `client.pem`/`client.key`. The negative rows must fail with `CERTIFICATE_REQUIRED`.
+1. `bash gen-certs.sh` inside an OpenSSL 3.5 container: private CA, RSA/EC server certs, encrypted keys, PFX files, client certs. Swap in copies of your own files to test your real store.
+2. `bash start-ossl.sh`: PQ-only 4431, classical 4432, PQ-only with client cert required 4433, classical with client cert 4434.
+3. `bash run-cases.sh node24 node@sha256:<digest> -`, and for Lambda `bash run-cases.sh lambda24-pq public.ecr.aws/lambda/nodejs@sha256:<digest> /k/openssl-pq-node.cnf`. Expect every PQ-only probe `X25519MLKEM768`, every classical probe `X25519`, the case F blockers to fail and the legacy PFX to fail.
+4. Your own server (case C): probe with `openssl s_client ... -groups X25519MLKEM768 -tls1_3 -brief`, then `-groups X25519`, then `-tls1_2`. Add `-servername <name>` for SNI and `-sigalgs RSA-PSS+SHA256:RSA+SHA256` to see the RSA cert of an RSA+EC store.
+5. Your trust setup (case D): `node cli.cjs trust-env` with your `NODE_EXTRA_CA_CERTS` / `SSL_CERT_FILE` / flags; `trust-none` must fail.
+6. Your client cert (case E): `node cli.cjs mtls`; the no-cert rows must fail with `CERTIFICATE_REQUIRED`.
 7. Lambda with the real bootstrap: `bash run-lambda-rie.sh` (Runtime Interface Emulator, host port 18661+).
-8. Rollback test: rerun step 3 or 7 without `OPENSSL_CONF`. PQ-only targets must fail and classical ones must still pass; that proves the setting was what made the difference.
+8. Rollback: rerun step 3 or 7 without `OPENSSL_CONF`. PQ-only targets must fail and classical ones pass.
 
-Results of this run, 2026-11-14: about 170 checks on each of 6 runtime setups (node:22, node:24, Lambda 22 and 24 with and without the PQ file), plus 6 emulator invocations, 8 pinning checks, 4 PFX checks and the CI fixtures. All matched the expected result except three findings that are not caused by PQ: legacy PFX, global `fetch` with an npm undici 8 dispatcher, and the Lambda image's empty system store.
+Results, 2026-11-14: about 170 checks on each of 6 runtime setups (node:22, node:24, Lambda 22 and 24 with and without the PQ file), 6 emulator invocations, 8 pinning checks, 4 PFX checks and the CI fixtures. All matched except three findings not caused by PQ: legacy PFX, global `fetch` with an npm undici 8 dispatcher, and the Lambda image's empty system store.
+
+## Rollout checklist
+
+| # | Step | Done when |
+| --- | --- | --- |
+| 1 | Inventory: Lambda functions by runtime and `OPENSSL_CONF`; container images by Node version and OpenSSL; EC2 services by binary (official or `dnf`) | Every Node workload has a row and a fix from Quick start |
+| 2 | Move `nodejs18.x` and `nodejs20.x` to `nodejs24.x` first (update block 2027-08-31); `pq-egress` only where a call must be PQ sooner | No 18/20 functions, or a recorded exception |
+| 3 | Run `ci/check-node-tls.sh` in warn mode on every repo; fix pinned `ecdhCurve`, `DEFAULT_ECDH_CURVE` and TLS 1.2 caps | No findings, or `pq-tls-ok` with a reviewer |
+| 4 | Add `openssl-pq-node.cnf` to the shared Lambda build template; add `check-lambda-node-conf.sh` to the base-image bump pipeline | Template release published |
+| 5 | Re-export legacy RC2/3DES PFX files (case C); on Lambda images set `SSL_CERT_FILE` if you rely on the OS store (case D) | `run-cases.sh` passes with your files |
+| 6 | Canary: Lambda, publish a version and shift 10% with alias weighted routing ([Lambda alias routing](https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html), Documented); ECS, deployment circuit breaker with rollback; EKS, rolling update with a readiness probe; EC2, one instance per Auto Scaling group | Errors and latency flat for the canary period |
+| 7 | Verify on the canary: CloudTrail `tlsDetails.keyExchange` for KMS, STS, Secrets Manager calls from its role; `pq-check.js` for third-party targets | `X25519MLKEM768` observed |
+| 8 | Roll out to 100%, then the launch template or base image | All workloads on the fix |
+| 9 | Turn the CI check to fail mode and add the runtime guardrail (Enforcement and guardrails) | New code can't regress |
 
 ## Pitfalls and rollback
 
@@ -447,23 +518,43 @@ Results of this run, 2026-11-14: about 170 checks on each of 6 runtime setups (n
 | Classical `ecdhCurve` on a client | PQ-only server rejects; hybrid servers downgrade to X25519 | remove it, or put `X25519MLKEM768` first | Tested |
 | Classical `ecdhCurve` on a server | every client silently gets X25519 | same | Tested |
 | PQ-first `ecdhCurve` on Node 20 / OpenSSL 3.0 | throws at startup; a server process crashes | upgrade, or feature-detect (`tls-pq.js`) | Tested |
-| `tls.DEFAULT_ECDH_CURVE` set to a classical list | clients and servers lose PQ | remove it | Tested |
-| `--tls-max-v1.2`, `maxVersion: 'TLSv1.2'`, `secureProtocol: 'TLSv1_2_method'` | no TLS 1.3, so no ML-KEM | remove the cap | Tested (`--tls-max-v1.2`) |
+| `tls.DEFAULT_ECDH_CURVE` set to a classical list | clients and servers lose PQ, even with the PQ file set | remove it | Tested (e2e `node-lambda-n24-code-ecdh-classical`) |
+| `--tls-max-v1.2`, `maxVersion: 'TLSv1.2'`, `secureProtocol: 'TLSv1_2_method'` | no TLS 1.3, so no ML-KEM | remove the cap | Tested (e2e `-tls-max-12` on Lambda and Fargate) |
 | Lambda bootstrap config | nodejs22/24 stay classical | ship `openssl-pq-node.cnf` | Tested |
-| Function already sets `OPENSSL_CONF` (FIPS, custom engine) | your file would replace theirs | merge the `Groups` line into their file | Unverified (not tested with a FIPS config) |
-| AL2023 `dnf` Node | follows the system crypto policy; classical by default | `DEFAULT:PQ` or `OPENSSL_CONF` | Tested |
-| "Node 20 is never PQ" | wrong for Debian 13's 20.19.2 on system OpenSSL 3.5.7, and for AL2023 `dnf install nodejs20` (20.20.2, OpenSSL 3.5.8) once `DEFAULT:PQ` or `OPENSSL_CONF` is set | check `process.versions.openssl`, not the major version | Tested |
+| Lambda `nodejs26.x` preview with `AWS_LAMBDA_TLS_PROFILE=aws` | `commercial-2025` profile, classical | set `OPENSSL_CONF` as for 22/24 | Tested (Docker, base image); real sandbox value not sure |
+| Function already sets `OPENSSL_CONF` (FIPS, custom engine) | the layer leaves it alone, so the function stays classical | merge the `Groups` line into their file | Tested (e2e `node-lambda-n24-layer-ownconf`); FIPS config not tested |
+| AL2023 `dnf` Node, including `nodejs20` | follows the system crypto policy; classical by default | `DEFAULT:PQ` or `OPENSSL_CONF` | Tested |
+| "Node 20 is never PQ" | wrong for Debian 13's 20.19.2 (OpenSSL 3.5.7) and AL2023 `nodejs20` 20.20.2 (3.5.8) once fixed | check `process.versions.openssl`, not the major | Tested |
 | Bun reports `process.versions.openssl` = `1.1.0` | version-based posture checks misread it | live test instead | Tested (Bun 1.4.4 is PQ) |
 | Lambda runtime pinned in Manual update mode | could stay below 22.20 | check the runtime version ARN | Unverified |
 | Larger ClientHello (about 1.2 KB more key share) | some middleboxes drop it | live test through the real network path | not observed here |
-| Legacy PFX (RC2-40/3DES) | server or mTLS client fails to start: `Unsupported PKCS12 PFX data`; the Lambda nodejs24 image cannot load the legacy provider (`Unable to load legacy provider`) | re-export with `openssl pkcs12 -legacy` then `-export` | Tested |
+| Legacy PFX (RC2-40/3DES) | `Unsupported PKCS12 PFX data`; the Lambda nodejs24 image can't load the legacy provider | re-export (case C) | Tested (e2e on Lambda 20, 22, 24 and Fargate) |
 | Global `fetch` with a `dispatcher` from a different undici major | `UND_ERR_INVALID_ARG: invalid onRequestStart method` | import `fetch` and `Agent` from the same `undici` package | Tested (undici 8.12.4 on Node 22/24) |
-| Lambda image: CA added to the OS store, `--use-system-ca`/`--use-openssl-ca` without `SSL_CERT_FILE` | no system CAs load; private CA not trusted | set `SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt`, or use `NODE_EXTRA_CA_CERTS` | Tested (base image; real runtime not checked) |
+| Lambda image: CA in the OS store, `--use-system-ca`/`--use-openssl-ca` without `SSL_CERT_FILE` | no system CAs load; private CA not trusted | `SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt`, or `NODE_EXTRA_CA_CERTS` | Tested (base image; real runtime not checked) |
 | TLS 1.3 mTLS without a client cert | `secureConnect` fires, error arrives on first read | check the first response, not just the connect | Tested |
 | `secureProtocol: 'TLSv1_3_method'` | throws `ERR_TLS_INVALID_PROTOCOL_METHOD` | `minVersion: 'TLSv1.3'` | Tested |
-| Lambda AWS config also governs Node servers inside the function | PQ-only clients refused | same `OPENSSL_CONF` fix | Tested |
+| Node TLS server inside a Lambda function | AWS's file governs it too: PQ-only clients refused | same `OPENSSL_CONF` fix | Tested |
 
-Rollback is a config change each time: remove `OPENSSL_CONF` or `NODE_OPTIONS` from the function (back to AWS's classical file); remove the `ENV` line from a Lambda image; redeploy the previous image digest for containers; run `update-crypto-policies --set DEFAULT` on AL2023. On a server, `TLS_ECDH_CURVE=X25519:P-256:P-384` in `server.js` (below) is a temporary classical-only switch.
+**Rollback** is a config change each time: remove `OPENSSL_CONF` or `NODE_OPTIONS` from the function, or set `PQ_TLS_DISABLE=1` with the layer still attached (Tested, e2e `node-lambda-n24-layer-disabled`: back to classical); remove the `ENV` line from a Lambda image; redeploy the previous image digest for containers; `update-crypto-policies --set DEFAULT` on AL2023. On a server, `TLS_ECDH_CURVE=X25519:P-256:P-384` in `server.js` (below) is a temporary classical-only switch.
+
+## Test evidence
+
+The LocalStack end-to-end suite (run r1117041043, 2026-11-16) deploys each Node.js workload into LocalStack Pro, on AWS's own Lambda images (`public.ecr.aws/lambda/nodejs`), official `node` images and AL2023 2023.12.20261109, and grades what it negotiates against a TLS observer. **100 Node.js cases, 100 pass**: 93 client cases and 7 load balancer target cases. "Pass" means the behaviour matched this chapter, which for a baseline is "classical". Each client case runs eight targets: hybrid, PQ-only, mTLS, EC certificate, TLS 1.2, and three ML-DSA targets.
+
+| Compute | Cases | What it proved |
+| --- | --- | --- |
+| Lambda zip, `nodejs22.x` / `nodejs24.x` | 31 | Baseline classical. Fixed by the bundled file, `--openssl-config`, the layer, `/dev/null` and a PQ-first `DEFAULT_ECDH_CURVE`. Layer leaves a function's own config alone, chains an existing wrapper, rolls back with `PQ_TLS_DISABLE=1`. Pitfalls reproduced: classical `DEFAULT_ECDH_CURVE`, `--tls-max-v1.2`. `NODE_EXTRA_CA_CERTS`, global `fetch` and modern PFX work with the fix; legacy PFX fails mTLS only |
+| Lambda zip, `nodejs18.x` / `nodejs20.x` | 13 | Classical with every in-process method (file, flag, layer), startup unaffected; the `pq-egress` extension (alone or in the combined layer) gives X25519MLKEM768 on the hybrid, PQ-only, mTLS and EC-certificate targets |
+| Lambda container image, nodejs 22 / 24 | 4 | Base image classical; `COPY` + `ENV OPENSSL_CONF` gives PQ |
+| ECS on Fargate | 28 client, 6 target | Official images: 20 and 22.19 / 24.4 classical, 22.20 / 24.5 / 26 PQ (slim and alpine). Debian 13 and Alpine 3.22 distro Node PQ. AL2023 `dnf` nodejs20/22/24: classical, PQ with `OPENSSL_CONF` or `DEFAULT:PQ`. Target leg behind a PQ ALB policy: PQ for `node:24-slim` and fixed AL2023 servers, classical for `node:20-slim` and unfixed AL2023 |
+| ECS on EC2 | 5 client, 1 target | Same results as Fargate for `node:24-slim`, `node:20-slim` and AL2023 nodejs22/24 |
+| EC2 | 12 | AL2023 `dnf` nodejs20/22/24: classical, PQ with a per-service `OPENSSL_CONF` or host `DEFAULT:PQ`. Official 22 and 24 binaries PQ; host `DEFAULT:PQ` does not change them |
+
+**ML-DSA (separate track).** Every client on OpenSSL 3.5 with TLS 1.3 allowed (official 22.20+/24.5+/26, Debian 13, Alpine 3.22) accepted an ML-DSA server certificate, an ML-DSA-only server and ML-DSA mutual TLS, including Lambda 22/24 with AWS's classical file (that file restricts groups, not signatures). AL2023 `dnf` Node does so only after `DEFAULT:PQ` or the system file. Unfixed AL2023 Node, Node 20 / 22.19 / 24.4 and `--tls-max-v1.2` get ECDSA from a dual-certificate server and fail ML-DSA-only. The `pq-egress` cases did not run the ML-DSA targets.
+
+**Not tested:** real AWS (LocalStack and Docker on arm64 only); EKS; Lambda `nodejs26.x` in the suite (Docker only, above); FIPS providers; `pq-egress` for AWS SDK calls; native addons with their own TLS (case H).
+
+Code and results: [e2e/cases/node.py](REPO/e2e/cases/node.py) (client cases and expectations), [e2e/cases/server.py](REPO/e2e/cases/server.py) (target cases), [e2e/clients/node/index.js](REPO/e2e/clients/node/index.js) (probe), [e2e/build/node.sh](REPO/e2e/build/node.sh) (packages and images, built from `configs/nodejs/`), [e2e/lambda/extension/pq-egress](REPO/e2e/lambda/extension/pq-egress), [e2e/results/latest/summary.md](REPO/e2e/results/latest/summary.md). Earlier case tests (C to I, client libraries, servers, emulator) with outputs: [tests/deep/node](REPO/tests/deep/node) and [tests/deep/node/v2](REPO/tests/deep/node/v2). The per-case list is in Appendix A.
 
 ## Full configuration files
 

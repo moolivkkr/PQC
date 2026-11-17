@@ -1,7 +1,10 @@
 """Combine the per-chapter HTML fragments in build/tabs/ into one white paper.
 
-Usage: python3 -I build/combine.py <pqc repo dir>
-Writes build/pqc-combined.html (cover, numbered contents) and build/pqc-for-docx.html (body only).
+Usage: python3 -I build/combine.py <pqc repo dir> [document ...]
+Documents (DOCS below): guide (the complete reference), paper (white paper), exec (executive summary),
+go, python, nodejs, java, dotnet (language documents). Default: all.
+Writes build/out/<document>.html (cover, numbered contents) and build/out/<document>-docx.html (body only),
+and prints "<document> <output path>" lines that build/build.sh renders to PDF and DOCX.
 
 What it does to the chapters:
 - numbers chapters (1, 2, ... and 6.1, 6.2 for sub-chapters; appendices keep their letters) and builds a linked
@@ -17,12 +20,10 @@ import html, os, re, sys
 
 R = sys.argv[1]
 T = os.path.join(R, "build", "tabs")
-TITLE = "Post-Quantum TLS on AWS: Detection, Inventory and Remediation"
-SUBTITLE = "A white paper on making every TLS connection quantum-safe, by language, compute type and infrastructure service"
 GH = "https://github.com/moolivkkr/PQC"
 MAX_LINES = 20
 # (file in build/tabs, level, doc tab id used by cross-tab refs in the exported infrastructure HTML)
-ORDER = [
+GUIDE = [
     ("10-introduction.html", 0, "2b549c4f-a403"), ("11-use-cases.html", 0, None), ("12-detection.html", 0, None),
     ("13-inventory.html", 0, None), ("14-compute.html", 0, None), ("15-languages.html", 0, "5dd6e4e1-9c38"),
     ("03-go.html", 1, "f452a156-1a48"), ("04-python.html", 1, "35b45b8c-c6f8"),
@@ -38,6 +39,51 @@ ORDER = [
     ("21-enforcement.html", 0, "0803191b-9855"), ("23-rollout-gaps.html", 0, None),
     ("24-appendix-tests.html", 0, None), ("22-config-index.html", 0, "f5950343-31dd"), ("25-sources.html", 0, None),
 ]
+LANGS = [("go", "Go", "03-go", "Go"), ("python", "Python", "04-python", "Python"),
+         ("nodejs", "Node.js", "05-nodejs", "Nodejs"), ("java", "Java", "06-java", "Java"),
+         ("dotnet", ".NET", "07-dotnet", "dotnet")]
+DATE = "2026-11-16"
+DOCS = {
+    "guide": dict(out="PQC-Detection-and-Remediation", order=GUIDE, toc=2,
+                  title="Post-Quantum TLS on AWS: Complete Guide",
+                  sub="Detection, inventory and remediation by language, compute type and infrastructure service: "
+                      "the full reference",
+                  blurb="Every chapter in full: use cases, detection, inventory, solutions by compute type, the five "
+                        "language chapters, twelve infrastructure areas, enforcement, rollout, test appendix, "
+                        "configuration index and sources. For a short read, see the white paper and the executive "
+                        "summary; language teams have their own documents."),
+    "paper": dict(out="docs/PQC-White-Paper", toc=2,
+                  order=[("paper-01-introduction.html", 0, None), ("paper-02-use-cases.html", 0, None),
+                         ("paper-03-detection.html", 0, None), ("paper-04-inventory.html", 0, None),
+                         ("paper-05-compute.html", 0, None), ("paper-06-languages.html", 0, None)]
+                        + [(f"summary-{k}.html", 1, None) for k, *_ in LANGS]
+                        + [("paper-07-infrastructure.html", 0, None), ("paper-08-enforcement.html", 0, None),
+                           ("paper-09-rollout.html", 0, None), ("paper-10-documents.html", 0, None)],
+                  title="Post-Quantum TLS on AWS",
+                  sub="White paper: what we are solving, how we detect and track it, and how we fix it by compute "
+                      "type and language",
+                  blurb="The approach in brief: what \"PQC-enabled\" means, the use cases, detection with AWS logs "
+                        "and Zeek, the inventory and dashboards, solutions by compute type, one page per language, "
+                        "infrastructure, enforcement and the rollout. Each language team has its own detailed "
+                        "document; the complete guide has every detail."),
+    "exec": dict(out="docs/PQC-Executive-Summary", toc=0, numbered=False,
+                 order=[("exec-summary.html", 0, None)],
+                 title="Post-Quantum TLS on AWS: Executive Summary",
+                 sub="The problem, what we found, the plan and the decisions we need", blurb=""),
+}
+for key, name, chap, fname in LANGS:
+    DOCS[key] = dict(out=f"docs/languages/PQC-{fname}", toc=2,
+                     order=[(f"summary-{key}.html", 0, None), ("lang-context.html", 0, None),
+                            (f"{chap}.html", 0, None), (f"tests-{key}.html", 0, None)],
+                     titles={f"summary-{key}.html": "Summary for " + name + " teams",
+                             f"{chap}.html": name + ": detailed guide"},
+                     title=f"Post-Quantum TLS on AWS: {name}",
+                     sub=f"For {name} application teams: what to change on Lambda, ECS, EKS and EC2, every case, "
+                         "how to test, and the evidence",
+                     blurb=f"Start with the one-page summary. The detailed guide covers every {name} version, the "
+                           "cases teams meet (own keystores, custom CA trust, mutual TLS, explicit TLS settings, FIPS, "
+                           "libraries with their own TLS), how to test and roll back, and the configuration files. "
+                           "The last chapter lists every end-to-end test case run for " + name + ".")
 CONFIG_DIR = {"03-go": "go", "04-python": "python", "05-nodejs": "nodejs", "06-java": "java", "07-dotnet": "dotnet",
               "21-enforcement": "enforcement", "08-infrastructure": "infrastructure"}
 TAB_DIR = {"Go": "go", "Python": "python", "Node.js": "nodejs", "Java": "java", ".NET": "dotnet",
@@ -112,71 +158,27 @@ def shorten_pre(h, src_name):
     return re.sub(r"(<pre[^>]*><code[^>]*>)(.*?)</code></pre>", cut, h, flags=re.S)
 
 
-missing = [f for f, _, _ in ORDER if not os.path.exists(os.path.join(T, f))]
-if missing:
-    sys.exit("MISSING " + ", ".join(missing))
-
-anchors, toc, parts, stats = {}, [], [], []
-num0 = num1 = 0
-for i, (name, lvl, fid) in enumerate(ORDER):
-    base = name[:-5]
-    chid = "ch-" + slug(base)
-    h = open(os.path.join(T, name), encoding="utf-8").read()
-    m = re.search(r'<h1 id="([^"]+)"[^>]*>(.*?)</h1>', h, re.S)
-    if not m:
-        sys.exit(f"no h1 in {name}")
-    title = text(m.group(2))
-    if title.startswith("Appendix"):
-        label = ""
-    elif lvl == 0:
-        num0, num1 = num0 + 1, 0
-        label = f"{num0}"
-    else:
-        num1 += 1
-        label = f"{num0}.{num1}"
-    shown = f"{label} {title}".strip()
-    h = h.replace(m.group(0), f'<h1 id="{chid}">{html.escape(shown)}</h1>', 1)
-    if fid:
-        anchors[fid] = chid
-    # code: full configuration section -> links; other long blocks -> excerpts
-    folder = CONFIG_DIR.get(base) or slug(base)
-    before = sum(b.count("\n") for b in re.findall(r"<pre.*?</pre>", h, re.S))
-    h, _ = strip_full_config(h, folder)
-    src_name = base + (".md" if base[:2].isdigit() else ".html")
-    if not base[:2].isdigit():
-        src_name = "html-infra/" + name
-    h = shorten_pre(h, src_name)
-    after = sum(b.count("\n") for b in re.findall(r"<pre.*?</pre>", h, re.S))
-    stats.append((shown, before, after))
-    # document-wide heading ids; same-chapter links follow them
-    ids = set(re.findall(r'<h[2-6] id="([^"]+)"', h))
-    h = re.sub(r'<(h[2-6]) id="([^"]+)"', lambda x: f'<{x.group(1)} id="{chid}--{x.group(2)}"', h)
-    h = re.sub(r'href="#([^"]+)"', lambda x: f'href="#{chid}--{x.group(1)}"' if x.group(1) in ids else x.group(0), h)
-    # number the sections of top-level chapters and list them in the contents
-    secs = []
-    if lvl == 0:
-
-        def num_h2(x):
-            nonlocal_n = secs.__len__() + 1
-            secs.append((x.group(1), text(x.group(2)), nonlocal_n))
-            prefix = f"{label}.{nonlocal_n} " if label else ""
-            return f'<h2 id="{x.group(1)}">{html.escape(prefix + text(x.group(2)))}</h2>'
-        h = re.sub(r'<h2 id="([^"]+)"[^>]*>(.*?)</h2>', num_h2, h, flags=re.S)
-    if lvl == 0:
-        num1 = len(secs)  # sub-chapters number after the parent's own sections (6.5 Go after 6.1-6.4)
-    toc.append((shown, lvl, chid, [(a, (f"{label}.{n} " if label else "") + t) for a, t, n in secs]))
-    h = re.sub(r'<figure data-embed="node/7c981588-62e7">.*?</figure>', ROLLOUT, h, flags=re.S)
-    h = h.replace("&#91;embedded content: rollout loop · 4 steps, repeated per release cycle]",
-                  "Rollout loop: 1 Classify, 2 Change request, 3 Release, 4 Verify, repeated per release cycle.")
-    parts.append(h)
-
-body = "\n".join(parts)
-body = re.sub(r'<a data-atom="ref" data-ref="file/([0-9a-f-]+)">',
-              lambda m: f'<a href="#{anchors.get(m.group(1), "")}">', body)
-body = re.sub(r'href="REPO/([^"]*)"', lambda m: f'href="{repo_url(m.group(1))}"', body)
 
 
-# configuration index: link the file name in each row to its file in configs/
+def chapter_ids(order):
+    return {"ch-" + slug(f[:-5]) for f, *_ in order}
+
+
+# a link to a chapter missing from the current document goes to the document where that chapter lives
+HOME = {}
+for _key in ["exec", "paper", "guide"] + [k for k, *_ in LANGS]:
+    for _c in chapter_ids(DOCS[_key]["order"]):
+        if _key in [k for k, *_ in LANGS] or _c not in HOME:
+            HOME[_c] = _key
+for _key in [k for k, *_ in LANGS]:  # the language chapters belong to their language document
+    for _c in chapter_ids(DOCS[_key]["order"]):
+        HOME[_c] = _key
+
+
+def doc_url(key):
+    return f"{GH}/blob/main/{DOCS[key]['out']}.pdf"
+
+
 def link_index_row(m):
     row = m.group(0)
     cells = re.findall(r"<td>(.*?)</td>", row, re.S)
@@ -195,45 +197,7 @@ def link_index_row(m):
     return row.replace(c.group(0), f'<a href="{repo_url("configs/" + hits[0])}">{c.group(0)}</a>', 1)
 
 
-idx = re.search(r'<h1 id="ch-22-config-index">.*?(?=<h1 |\Z)', body, re.S)
-if idx:
-    linked = re.sub(r"<tr>.*?</tr>", link_index_row, idx.group(0), flags=re.S)
-    print("config index rows linked:", linked.count('href="' + GH), "of", linked.count("<tr>") - 3)
-    body = body[:idx.start()] + linked + body[idx.end():]
-
-# "tab" was the word for a section in the old multi-tab document
-body = re.sub(r"(<pre.*?</pre>)|\b(tab|tabs|Tab|Tabs)\b(?![-_./=])",
-              lambda m: m.group(1) or {"tab": "chapter", "tabs": "chapters", "Tab": "Chapter",
-                                       "Tabs": "Chapters"}[m.group(2)], body, flags=re.S)
-
-# short inline code (up to 9 characters: "fixable", "pq-fixed") never breaks mid-word; longer code still wraps
-body = re.sub(r"(<pre.*?</pre>)|<code>([^<\s]{1,9})</code>",
-              lambda m: m.group(1) or f'<code class="nb">{m.group(2)}</code>', body, flags=re.S)
-
-left = re.findall(r'data-(?:ref|embed)="[^"]*"', body)
-print("unresolved refs/embeds:", left)
-ids = set(re.findall(r'id="([^"]+)"', body))
-dead = sorted({h for h in re.findall(r'href="#([^"]+)"', body) if h not in ids})
-print("dead internal links:", dead)
-print("code lines per chapter (before -> after):")
-for t, b, a in stats:
-    if b:
-        print(f"  {b:5} -> {a:4}  {t}")
-print("total code lines", sum(b for _, b, _ in stats), "->", sum(a for _, _, a in stats))
-
-
-def toc_html():
-    out = []
-    for t, lvl, a, secs in toc:
-        out.append(f'<li class="l{lvl}"><a href="#{a}">{html.escape(t)}</a>')
-        if secs:
-            out.append('<ul>' + "".join(f'<li class="l2"><a href="#{s}">{html.escape(st)}</a></li>'
-                                        for s, st in secs) + "</ul>")
-        out.append("</li>")
-    return "".join(out)
-
-
-css = """
+CSS = """
 body{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#1a1a1a;background:#fff;max-width:none}
 h1{font-size:20pt;border-bottom:2px solid #1f3a5f;color:#1f3a5f;padding-bottom:4px;page-break-before:always;margin-top:0}
 h2{font-size:14pt;margin-top:18px;color:#1f3a5f}h3{font-size:12pt}h4{font-size:11pt}
@@ -253,14 +217,125 @@ a{color:#0b57d0;text-decoration:none}
 @media screen{body{max-width:1100px;margin:0 auto;padding:0 16px}}
 @page{size:A4;margin:16mm 14mm}
 """
-cover = f"""<div class="cover"><h1 class="title">{TITLE}</h1>
-<p class="sub">{SUBTITLE}</p>
-<p>What we are solving, what "PQC-enabled" means, and how we detect classical connections, inventory and track every component, and fix each language on each compute type and each AWS infrastructure service. Every result is labelled Tested, Documented, Claimed or Unverified.</p>
-<p class="meta">Kishore Mooli<br>Edition of 2026-11-16<br>Code, configuration files and tests: <a href="{GH}">{GH}</a></p></div>
-<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul>{toc_html()}</ul></div>"""
-head = (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
-        f'content="width=device-width,initial-scale=1"><title>{TITLE}</title><style>{css}</style></head><body>')
-out = os.path.join(R, "build")
-open(os.path.join(out, "pqc-combined.html"), "w", encoding="utf-8").write(f"{head}\n{cover}\n{body}</body></html>")
-open(os.path.join(out, "pqc-for-docx.html"), "w", encoding="utf-8").write(f"{head}\n{body}</body></html>")
-print("chapters", len(parts), "bytes", len(body))
+
+
+def build(key):
+    spec = DOCS[key]
+    order, numbered, titles = spec["order"], spec.get("numbered", True), spec.get("titles", {})
+    missing = [f for f, *_ in order if not os.path.exists(os.path.join(T, f))]
+    if missing:
+        sys.exit(f"{key}: MISSING " + ", ".join(missing))
+    anchors, toc, parts, stats = {}, [], [], []
+    num0 = num1 = 0
+    for name, lvl, fid in order:
+        base = name[:-5]
+        chid = "ch-" + slug(base)
+        h = open(os.path.join(T, name), encoding="utf-8").read()
+        m = re.search(r'<h1 id="([^"]+)"[^>]*>(.*?)</h1>', h, re.S)
+        if not m:
+            sys.exit(f"no h1 in {name}")
+        title = titles.get(name) or text(m.group(2))
+        if title.startswith("Appendix") or not numbered:
+            label = ""
+        elif lvl == 0:
+            num0, num1 = num0 + 1, 0
+            label = f"{num0}"
+        else:
+            num1 += 1
+            label = f"{num0}.{num1}"
+        shown = f"{label} {title}".strip()
+        h = h.replace(m.group(0), f'<h1 id="{chid}">{html.escape(shown)}</h1>', 1)
+        if fid:
+            anchors[fid] = chid
+        # code: full configuration section -> links; other long blocks -> excerpts
+        folder = CONFIG_DIR.get(base) or slug(base)
+        before = sum(b.count("\n") for b in re.findall(r"<pre.*?</pre>", h, re.S))
+        h, _ = strip_full_config(h, folder)
+        if base[:2].isdigit():
+            src_name = base + ".md"
+        elif name in os.listdir(os.path.join(R, "src", "html-infra")):
+            src_name = "html-infra/" + name
+        else:
+            src_name = base + ".md"
+        h = shorten_pre(h, src_name)
+        after = sum(b.count("\n") for b in re.findall(r"<pre.*?</pre>", h, re.S))
+        stats.append((shown, before, after))
+        ids = set(re.findall(r'<h[2-6] id="([^"]+)"', h))
+        h = re.sub(r'<(h[2-6]) id="([^"]+)"', lambda x: f'<{x.group(1)} id="{chid}--{x.group(2)}"', h)
+        h = re.sub(r'href="#([^"]+)"', lambda x: f'href="#{chid}--{x.group(1)}"' if x.group(1) in ids else x.group(0), h)
+        secs = []
+        if lvl == 0:
+            def num_h2(x):
+                n = len(secs) + 1
+                secs.append((x.group(1), text(x.group(2)), n))
+                prefix = f"{label}.{n} " if label else ""
+                return f'<h2 id="{x.group(1)}">{html.escape(prefix + text(x.group(2)))}</h2>'
+            h = re.sub(r'<h2 id="([^"]+)"[^>]*>(.*?)</h2>', num_h2, h, flags=re.S)
+            num1 = len(secs)  # sub-chapters number after the parent's own sections
+        toc.append((shown, lvl, chid, [(a, (f"{label}.{n} " if label else "") + t) for a, t, n in secs]))
+        h = re.sub(r'<figure data-embed="node/7c981588-62e7">.*?</figure>', ROLLOUT, h, flags=re.S)
+        h = h.replace("&#91;embedded content: rollout loop · 4 steps, repeated per release cycle]",
+                      "Rollout loop: 1 Classify, 2 Change request, 3 Release, 4 Verify, repeated per release cycle.")
+        parts.append(h)
+
+    body = "\n".join(parts)
+    # exported infrastructure HTML refers to other tabs by doc id
+    all_fids = {fid: "ch-" + slug(f[:-5]) for d in DOCS.values() for f, _, fid in d["order"] if fid}
+    body = re.sub(r'<a data-atom="ref" data-ref="file/([0-9a-f-]+)">',
+                  lambda m: f'<a href="#{anchors.get(m.group(1)) or all_fids.get(m.group(1), "")}">', body)
+    body = re.sub(r'href="REPO/([^"]*)"', lambda m: f'href="{repo_url(m.group(1))}"', body)
+    idx = re.search(r'<h1 id="ch-22-config-index">.*?(?=<h1 |\Z)', body, re.S)
+    if idx:
+        linked = re.sub(r"<tr>.*?</tr>", link_index_row, idx.group(0), flags=re.S)
+        body = body[:idx.start()] + linked + body[idx.end():]
+    # "tab" was the word for a section in the old multi-tab document
+    body = re.sub(r"(<pre.*?</pre>)|\b(tab|tabs|Tab|Tabs)\b(?![-_./=])",
+                  lambda m: m.group(1) or {"tab": "chapter", "tabs": "chapters", "Tab": "Chapter",
+                                           "Tabs": "Chapters"}[m.group(2)], body, flags=re.S)
+    # short inline code (up to 9 characters) never breaks mid-word; longer code still wraps
+    body = re.sub(r"(<pre.*?</pre>)|<code>([^<\s]{1,9})</code>",
+                  lambda m: m.group(1) or f'<code class="nb">{m.group(2)}</code>', body, flags=re.S)
+    # links to chapters this document does not contain go to the document that has them
+    ids = set(re.findall(r'id="([^"]+)"', body))
+
+    def outside(m):
+        target = m.group(1)
+        if target in ids:
+            return m.group(0)
+        home = HOME.get(target.split("--")[0])
+        return f'href="{doc_url(home)}"' if home and home != key else m.group(0)
+    body = re.sub(r'href="#([^"]+)"', outside, body)
+    left = re.findall(r'data-(?:ref|embed)="[^"]*"', body)
+    dead = sorted({h for h in re.findall(r'href="#([^"]+)"', body) if h not in ids})
+    print(f"[{key}] chapters {len(parts)}; code lines {sum(b for _, b, _ in stats)} -> {sum(a for _, _, a in stats)}; "
+          f"unresolved {left}; dead links {dead}")
+
+    def toc_html():
+        out = []
+        for t, lvl, a, secs in toc:
+            out.append(f'<li class="l{lvl}"><a href="#{a}">{html.escape(t)}</a>')
+            if secs and spec["toc"] >= 2:
+                out.append('<ul>' + "".join(f'<li class="l2"><a href="#{s}">{html.escape(st)}</a></li>'
+                                            for s, st in secs) + "</ul>")
+            out.append("</li>")
+        return "".join(out)
+
+    toc_block = (f'<div class="toc" style="page-break-before:always"><h2>Contents</h2><ul>{toc_html()}</ul></div>'
+                 if spec["toc"] else "")
+    blurb = f"<p>{spec['blurb']}</p>" if spec["blurb"] else ""
+    cover = f"""<div class="cover"><h1 class="title">{html.escape(spec['title'])}</h1>
+<p class="sub">{html.escape(spec['sub'])}</p>{blurb}
+<p class="meta">Kishore Mooli<br>Edition of {DATE}<br>Code, configuration files and tests: <a href="{GH}">{GH}</a></p></div>
+{toc_block}"""
+    head = (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
+            f'content="width=device-width,initial-scale=1"><title>{html.escape(spec["title"])}</title>'
+            f'<style>{CSS}</style></head><body>')
+    out = os.path.join(R, "build", "out")
+    os.makedirs(out, exist_ok=True)
+    open(os.path.join(out, key + ".html"), "w", encoding="utf-8").write(f"{head}\n{cover}\n{body}</body></html>")
+    open(os.path.join(out, key + "-docx.html"), "w", encoding="utf-8").write(f"{head}\n{body}</body></html>")
+    print(f"OUT {key} {spec['out']} {spec['title']}")
+
+
+for k in (sys.argv[2:] or list(DOCS)):
+    build(k)
