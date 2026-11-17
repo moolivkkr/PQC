@@ -30,7 +30,7 @@ services:
       MAIN_CONTAINER_NAME: pqc-e2e-localstack
       MAIN_DOCKER_NETWORK: pqc-e2e
       LOCALSTACK_HOST: localhost.localstack.cloud:${PQC_LS_PORT:-4600}
-      SERVICES: lambda,ecs,ecr,ec2,logs,iam,sts,s3,ssm,cloudwatch,secretsmanager
+      SERVICES: lambda,ecs,ecr,ec2,logs,iam,sts,s3,ssm,cloudwatch,secretsmanager,elbv2,elb,apigateway,apigatewayv2,acm
       PERSISTENCE: "0"
       DEBUG: "0"
       # Lambda: AWS base images (public.ecr.aws/lambda/*) on the test network, arm64 native

@@ -77,6 +77,19 @@ After the cases run, two checks test visibility of non-PQ handshakes:
 - **Server side:** the observer's handshake log must contain every one of them, plus TLS 1.2 negotiations, without
   any client-side logging.
 
+Two standalone checks run against the same stack (`source e2e/env.sh` first):
+
+- **Zeek** (`bash e2e/zeek/check.sh`): Zeek 7.2.2 sniffs the observer's interface with
+  `configs/network-devices-and-egress/opt/zeek/share/zeek/site/pq-tls.zeek` loaded and JSON logs on, while an
+  OpenSSL 3.5 client and an OpenSSL 3.0 client connect to the hybrid, TLS 1.2 and dual-certificate listeners.
+  `ssl.log` must show `curve` X25519MLKEM768 with `pq: true` for the PQ client's TLS 1.3 handshakes, x25519 with
+  `pq: false` for the rest, and `notice.log` three `PQTLS::Classical_Key_Exchange` notices. Passed 2026-11-16.
+- **Posture inventory** (`python3 e2e/inventory/test_inventory.py`, needs boto3): creates 17 Lambda functions,
+  3 ECS task definitions, an ALB with a PQ and a classical listener, a Classic LB, an API Gateway REST domain and
+  an HTTP API, runs `configs/inventory/pq_inventory.py`, checks the status of each of the 25 components, then
+  deletes them. Passed 25/25 on 2026-11-16. LocalStack needs `elbv2,elb,apigateway,apigatewayv2,acm` in
+  `SERVICES` (set in `compose.yaml`).
+
 ## Run it
 
 Step-by-step instructions for every language, reading results and troubleshooting: [RUNNING.md](RUNNING.md).
